@@ -1,0 +1,79 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba3b8b30b7d3d124482f44bf0dbbbfaf, type: 3}
+  m_Name: DataSet Mod
+  m_EditorClassIdentifier: 
+  Points:
+  - Name: NOW
+    RawDegrees: 0
+    Distance: 0
+    Details: 
+  - Name: ELNAT
+    RawDegrees: 20
+    Distance: 45.7
+    Details: 
+  - Name: NORTA
+    RawDegrees: 5
+    Distance: 40.1
+    Details: 
+  - Name: DLE-5
+    RawDegrees: 6
+    Distance: 5
+    Details: 
+  - Name: DLE
+    RawDegrees: 3
+    Distance: 18
+    Details: D
+  - Name: DV582
+    RawDegrees: 39
+    Distance: 9.4
+    Details: 
+  - Name: DV583
+    RawDegrees: 91
+    Distance: 4
+    Details: 
+  - Name: DV584
+    RawDegrees: 91
+    Distance: 4
+    Details: 
+  - Name: DV585
+    RawDegrees: 91
+    Distance: 4
+    Details: 
+  - Name: DV575
+    RawDegrees: 30
+    Distance: 5
+    Details: 
+  - Name: DV574
+    RawDegrees: 271
+    Distance: 24
+    Details: 
+  - Name: DV573
+    RawDegrees: 271
+    Distance: 4
+    Details: 
+  - Name: DV572
+    RawDegrees: 271
+    Distance: 4
+    Details: 
+  - Name: XAVER
+    RawDegrees: 276
+    Distance: 4.3
+    Details: 
+  - Name: HANB
+    RawDegrees: 271
+    Distance: 4.9
+    Details: 
+  - Name: RW27R
+    RawDegrees: 271
+    Distance: 4
+    Details: 

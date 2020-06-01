@@ -1,0 +1,24 @@
+fileFormatVersion: 2
+guid: 1f75670a6b8644ff18013685866ab457
+timeCreated: 1516084308
+licenseType: Pro
+TrueTypeFontImporter:
+  serializedVersion: 4
+  fontSize: 15
+  forceTextureCase: -1
+  characterSpacing: 0
+  characterPadding: 1
+  includeFontData: 1
+  fontName: TeX Gyre Heros
+  fontNames:
+  - TeX Gyre Heros
+  fallbackFontReferences:
+  - {fileID: 12800000, guid: c900c2f3b67ae4f2ea67ccd19530b565, type: 3}
+  - {fileID: 12800000, guid: 910397e8b5a4a4158b997d7193177c80, type: 3}
+  - {fileID: 12800000, guid: a7dc875b4301d4df7a98297129dcaff9, type: 3}
+  customCharacters: 
+  fontRenderingMode: 0
+  ascentCalculationMode: 1
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

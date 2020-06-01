@@ -1,0 +1,414 @@
+﻿using UnityEngine;
+using System.Linq;
+
+[CreateAssetMenu(fileName = "Data", menuName = "ScriptableObjects/DataSet")]
+public class DataSetScriptableObject : ScriptableObject
+{
+    public DataPoint[] Points;
+
+    public void InitIds()
+    {
+        for(var i=0;i<Points.Length;i++)
+        {
+            Points[i].ID = i;
+        }
+    }
+
+    public DataPoint GetPoint(int nodeId)
+    {
+        var _index = GetIndex(nodeId);
+        if(Points.Length <= _index || _index < 0)
+        {
+            Debug.Log($"error: {_index}");
+        }
+        return Points[GetIndex(nodeId)];
+    }
+
+    public int GetIndex(int nodeId)
+    {
+        for(int i=0;i<Points.Length;i++)
+        {
+            if(Points[i].ID == nodeId)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    int GetNewId()
+    {
+        var _id = Points.Length;
+        while (Points.Any(x => x.ID == _id))
+        {
+            _id++;
+        }
+        return _id;
+    }
+
+    public DataSetScriptableObject Clone()
+    {
+        var _newSet = CreateInstance<DataSetScriptableObject>();// new DataSetScriptableObject();
+        _newSet.Points = new DataPoint[Points.Length];
+        for (var i = 0; i < Points.Length; i++)
+        {
+            _newSet.Points[i] = Points[i].Clone();
+        }
+
+        return _newSet;
+    }
+
+  
+    public bool FindFreeFlightExitPosition(out PathVertexIndex intersectionTargetVertex, out float distanceUntilVertex)
+    {
+        var _planePosition = GameManager.Instance.Aircraft.Position;
+        var _planeDirection = Geometry.GetDirectionFromHeading(GameManager.Instance.Aircraft.Heading);
+        var _segmentA = Vector2.zero;
+        var _segmentB = Vector2.zero;
+
+        for (var i = 1; i < Points.Length; i++)
+        {
+            _segmentA = _segmentB;
+            // on could take the positions from PathLines
+            _segmentB = Geometry.GetNextPosition(_segmentA, Points[i].Distance, Points[i].Degrees);
+
+            if (Geometry.FindLineSegmentIntersection(_planePosition, _planeDirection.x, _planeDirection.y,
+                    _segmentA, _segmentB, out var _intersection)
+                && GameManager.Instance.PathLines.FindClosestVertexToDistanceOnLineActive(
+                    (_intersection - _segmentA).magnitude, i, out var _targetVertexIndex, out var _targetVertexPosition))
+            {
+                intersectionTargetVertex = new PathVertexIndex
+                {
+                    CurrentLine = i,
+                    HeadingBefore = Geometry.GetHeadingOfDirection(_segmentB - _segmentA),
+                    UnreachedPoint = _targetVertexIndex,
+                    VertexPosition = _targetVertexPosition
+                };
+                distanceUntilVertex = (_intersection - _segmentA).magnitude;
+                return true;
+            }
+        }
+
+        intersectionTargetVertex = new PathVertexIndex();
+        distanceUntilVertex = 0;
+        return false;
+    }
+
+    public void ShortcutNodes(int firstNodeToDissolve, int toId, out DataPoint reducedPoint) // @#$ refactor for passed nodes ?
+    {
+        var _startIndex = GetIndex(firstNodeToDissolve);
+        var _endIndex = GetIndex(toId);
+
+        var _offset = _endIndex - _startIndex;
+
+        var _newSet = new DataPoint[Points.Length - _offset];
+
+        for (var i = 0; i < _startIndex; i++)
+        {
+            _newSet[i] = Points[i];
+        }
+
+        // compute new distance
+        var _endPosition = Geometry.GetNextPosition(Vector2.zero, Points[_startIndex].Distance, Points[_startIndex].Degrees);
+        for (var i = _startIndex; i < _endIndex; i++)
+        {
+            _endPosition = Geometry.GetNextPosition(_endPosition, Points[i + 1].Distance, Points[i + 1].Degrees);
+        }
+
+        //compute new angle
+        var _angle = Geometry.AngleBetween(_endPosition, Vector2.up);
+
+        reducedPoint = Points[_endIndex].Clone();
+        reducedPoint.ClearDetails();
+        reducedPoint.Distance = _endPosition.magnitude;
+        reducedPoint.RawDegrees = _angle;
+        reducedPoint.IsModified = true;
+
+        _newSet[_startIndex] = reducedPoint;
+
+        for (var i = _endIndex + 1; i < Points.Length; i++)
+        {
+            var _newIndex = i - _offset;
+            _newSet[_newIndex] = Points[i];
+        }
+
+        Points = _newSet;
+
+    }
+
+    public void ClearModifiedFlags()
+    {
+        for (var i = 0; i < Points.Length; i++)
+        {
+            Points[i].IsModified = false;
+        }
+    }
+
+    public void AddRelativeNodeOnDirection(int nodeId, int distance, out DataPoint insertionNode, out DataPoint afterInsertion) // @#$ todo refactor for passed nodes ?
+    {
+        var _nodeIndex = GetIndex(nodeId);
+        var _node = Points[_nodeIndex];
+
+        float _distanceToBefore;
+        float _distanceFromAfter;
+        afterInsertion = null;
+
+        if (distance <= 0)
+        {
+            afterInsertion = _node;
+            _distanceToBefore = -distance;
+            _distanceFromAfter = afterInsertion.Distance - _distanceToBefore;
+        }
+        else // if > 0
+        {
+            if (Points.Length > _nodeIndex + 1)
+            {
+                afterInsertion = Points[_nodeIndex + 1];
+                _distanceToBefore = afterInsertion.Distance - distance;
+            }
+            else
+            {
+                Debug.LogError("Not Possible");
+                insertionNode = null;
+                return;
+            }
+            _distanceFromAfter = distance;
+        }
+
+        insertionNode = new DataPoint
+        {
+            Name = _node.Name + "01",
+            Distance = _distanceFromAfter,
+            RawDegrees = afterInsertion.RawDegrees,
+            ID = GetNewId()
+        };
+
+        afterInsertion.Distance = _distanceToBefore;
+
+        // replace set with new set that also contains insertion node
+        var _newSet = new DataPoint[Points.Length + 1];
+        var _offset = 0;
+        for (var i = 0; i < Points.Length; i++)
+        {
+            if (i == _nodeIndex + (distance > 0 ? 1 : 0))
+            {
+                _newSet[i] = insertionNode;
+                _offset = 1;
+            }
+
+            _newSet[i + _offset] = Points[i];
+        }
+
+        Points = _newSet;
+    }
+
+    void AddRelativeNodeAfter(int relativeFromNodeId, float rawDegrees, int distance,
+        out DataPoint insertionNode, out DataPoint afterInsertion, bool addCurveOffset = true)
+    {
+        var _relativeFromNodeIndex = GetIndex(relativeFromNodeId);
+        var _relativeFromNode = Points[_relativeFromNodeIndex];
+
+        afterInsertion = Points[_relativeFromNodeIndex + 1];
+
+        insertionNode = new DataPoint
+        {
+            Name = _relativeFromNode.Name + "01",
+            Distance = distance,
+            RawDegrees = rawDegrees,
+            ID = GetNewId()
+        };
+
+        var _insertPosition = Geometry.GetNextPosition(Vector2.zero, distance, rawDegrees);
+        var _originalToPosition =
+            Geometry.GetNextPosition(Vector2.zero, afterInsertion.Distance, afterInsertion.RawDegrees);
+        var _returnDirection = _originalToPosition - _insertPosition;
+        afterInsertion.RawDegrees = Geometry.AngleBetween(Vector2.up, _returnDirection);
+        afterInsertion.Distance = _returnDirection.magnitude;
+
+        // simulate the curve to the the needed offset
+        var _lastLine = new MarkLine(_relativeFromNode);
+        _lastLine.InitBeginning();
+        
+        Drawer.ComputeLine(_lastLine, out var _testLine,insertionNode, afterInsertion);
+        
+        // replace set with new set that also contains insertion node
+        var _newSet = new DataPoint[Points.Length + 1];
+        var _offset = 0;
+        for (var i = 0; i < Points.Length; i++)
+        {
+            if (i == _relativeFromNodeIndex + 1)
+            {
+                _newSet[i] = insertionNode;
+
+                _offset = 1;
+            }
+
+            _newSet[i + _offset] = Points[i];
+        }
+        Points = _newSet;
+    }
+    
+
+    public void AddRelativeNodeBefore(int relativeToNodeId, float rawDegrees, int distance, out DataPoint insertionNode,
+        bool showDiscontinuity = false)
+    {
+        var _relativeToNodeIndex = GetIndex(relativeToNodeId);
+
+        var _fromNodeIndex = Mathf.Max(
+            PositionVirtualNode.PassedNodeIndex,
+            _relativeToNodeIndex - 1);
+        var _isInThePast = false;
+
+        var _originalRelativeToNode = Points[_relativeToNodeIndex];
+        var _newDegrees = 360 - rawDegrees;
+
+        Vector2 _insertPosition;
+        if (_fromNodeIndex <= _relativeToNodeIndex - 1)
+        {
+            // find end position relative to the node before selected ( meaning with the data from selected, because they refer to the state before the node )
+            _insertPosition = Geometry.GetNextPosition(Vector2.zero, _originalRelativeToNode.Distance, _originalRelativeToNode.Degrees);
+            _insertPosition = Geometry.GetNextPosition(_insertPosition, distance, _newDegrees);
+        }
+        else // if the relative is in the past ( aircraft passed the relative node while pending mod modification )
+        {
+            _isInThePast = true;
+            _insertPosition = Vector2.zero;
+            for (var i = _fromNodeIndex; i > _relativeToNodeIndex; i--)
+            {
+                var _node = Points[i];
+                _insertPosition = Geometry.GetPreviousPosition(_insertPosition, _node.Distance, _node.Degrees);
+            }
+            _insertPosition = Geometry.GetNextPosition(_insertPosition, distance, _newDegrees);
+        }
+
+        var _insertionAngle = Geometry.AngleBetween(_insertPosition, Vector2.up);
+        insertionNode = new DataPoint
+        {
+            Name = _originalRelativeToNode.Name + "01",
+            Distance = _insertPosition.magnitude,
+            RawDegrees =_insertionAngle,
+            ID = GetNewId()
+        };
+
+        var _returnNode = _originalRelativeToNode.Clone();
+
+        // update info of selected to be relative to the inserted instead of the previous which is now previous to inserted
+        // ** probably need to refer to the original in active set to show the old relative values TRK
+        _returnNode.RawDegrees = Geometry.ReverseParallelAngle(rawDegrees);
+        _returnNode.Distance = distance;
+        if (!_isInThePast && showDiscontinuity)
+        {
+            _returnNode.IndicateDiscontinuityBefore();
+        }
+        if (_isInThePast)
+        {
+            _returnNode.ID = GetNewId() + Points.Length;
+        }
+
+        // replace set with new set that also contains insertion node
+        var _newSet = new DataPoint[Points.Length + (_isInThePast ? 2 : 1)];
+        var _offset = 0;
+        for (var i = 0; i < Points.Length; i++)
+        {
+            if (i == _fromNodeIndex + 1)
+            {
+                _newSet[i] = insertionNode;
+
+                if (!_isInThePast)
+                {
+                    _newSet[i + 1] = _returnNode;
+                    _offset = 1;
+                    continue;
+                }
+
+                _newSet[i + 1] = _returnNode;
+                _newSet[i + 2] = Points[i];
+                _offset = 2;
+                continue;
+            }
+
+            _newSet[i + _offset] = Points[i];
+        }
+
+        Points = _newSet;
+    }
+
+    public void CreateLinearApproach(int toNodeId, int angle)
+    {
+        //execute shortcut node at [1] until toNode
+        ShortcutNodes(PositionVirtualNode.GetNodeTo.ID, toNodeId, out var _reducedPoint);
+
+        _reducedPoint.IndicateLinearApproach(angle);
+
+        // insert fake node as linear approach beginning - very far
+        AddRelativeNodeBefore(toNodeId, 360 - angle, 500, out var _veryFarNode);
+
+        // insert fake node as current destination : before very far,  in the place of original next node
+        AddRelativeNodeBefore(_veryFarNode.ID, angle, 500, out var _);
+
+        // hide all lines until linear approach
+        for(var i=0;i<Points.Length;i++)
+        {
+            if(Points[i].IsLinearApproach)
+            {
+                break;
+            }
+            Points[i].IndicateHiddenLine();
+        }
+    }
+
+    public DataPoint AddPositionNode(float neededOffsetDistance = 0)
+    {
+        const float DISTANCE_THRESHOLD = 0.002f;
+        
+        if(!GameManager.Instance.Aircraft.IsOnPath || GameManager.Instance.Aircraft.ComputedDistanceLeft < DISTANCE_THRESHOLD || PositionVirtualNode.ComputedDistancePassed < DISTANCE_THRESHOLD )
+        {
+            Debug.LogWarning("Skipped add position node");
+            return null;
+        }
+
+        var _activeNextNode = PositionVirtualNode.GetNodeTo;
+
+        var _activeDistancePassed = PositionVirtualNode.ComputedDistancePassed;
+
+        var _insertionNode = new DataPoint
+        {
+            Name = "_Position_",
+            Distance = _activeDistancePassed,
+            RawDegrees = _activeNextNode.RawDegrees,
+            ID = GetNewId()
+        };
+
+        var _activeNextNodeIndex = PositionVirtualNode.PassedNodeIndex + 1;
+        var _displayNextNode = Points[_activeNextNodeIndex];
+        var _nextPosition = Geometry.GetNextPosition(Vector2.zero, _displayNextNode.Distance, _displayNextNode.Degrees);
+        
+        var _currentPosition = Geometry.GetNextPosition(Vector2.zero, _activeDistancePassed, _activeNextNode.Degrees);
+
+        var _differencePosition = _nextPosition - _currentPosition;
+        var _updatedAngle = Geometry.AngleBetween(_differencePosition, Vector2.up);
+        
+        _displayNextNode.RawDegrees = _updatedAngle;
+        _displayNextNode.Distance = _differencePosition.magnitude;
+
+        // replace set with new set that also contains insertion node
+        var _newSet = new DataPoint[Points.Length + 1];
+        var _offset = 0;
+        for (var i = 0; i < Points.Length; i++)
+        {
+            if (i == _activeNextNodeIndex)
+            {
+                _newSet[i] = _insertionNode;
+                _offset = 1;
+            }
+
+            _newSet[i + _offset] = Points[i];
+        }
+
+        Points = _newSet;
+        return _insertionNode;
+    }
+}
+
+
+

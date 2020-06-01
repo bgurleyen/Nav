@@ -1,0 +1,75 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba3b8b30b7d3d124482f44bf0dbbbfaf, type: 3}
+  m_Name: DataSet 3
+  m_EditorClassIdentifier: 
+  Points:
+  - Name: NOW
+    RawDegrees: 0
+    Distance: 0
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - Name: NORTA
+    RawDegrees: 6
+    Distance: 31.9
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - Name: DLE-5
+    RawDegrees: 6
+    Distance: 19.1
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - Name: DLE
+    RawDegrees: 3
+    Distance: 5
+    RawSpeed: 0
+    RawAltitude: 
+    Details: X
+  - Name: LBE
+    RawDegrees: 352
+    Distance: 84.9
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - Name: 
+    RawDegrees: 186
+    Distance: 62.2
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - Name: NIE-7
+    RawDegrees: 186
+    Distance: 7
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - Name: DESIM
+    RawDegrees: 109
+    Distance: 3.2
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - Name: HWNB
+    RawDegrees: 93
+    Distance: 4.8
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - Name: RW09L
+    RawDegrees: 89
+    Distance: 4
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
