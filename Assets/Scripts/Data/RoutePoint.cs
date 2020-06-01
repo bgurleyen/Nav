@@ -2,7 +2,7 @@
 using UnityEngine;
 
 [Serializable]
-public class DataPoint
+public class RoutePoint
 {
     public int ID;
     public string Name = "";
@@ -38,9 +38,9 @@ public class DataPoint
     public int DisplaySpeed => Speed.GetDisplayValue(RawSpeed);
     public void SetSpeedComputed(int lastRegulation) => Speed.SetComputedValue(lastRegulation, (int)GetAcceptedAltitude);
 
-    internal DataPoint Clone()
+    internal RoutePoint Clone()
     {
-        return new DataPoint
+        return new RoutePoint
         {
             ID = ID,
             Name = Name,

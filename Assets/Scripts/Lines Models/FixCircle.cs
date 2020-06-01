@@ -3,9 +3,9 @@ using UnityEngine;
 
 public class FixCircle : Line
 {
-    public FixInfo LinkedInfo { get; private set; }
+    public FixedPointInfo LinkedInfo { get; private set; }
 
-    public FixCircle(DataPoint linkedPoint, FixInfo linkedInfo) : base(linkedPoint)
+    public FixCircle(RoutePoint linkedPoint, FixedPointInfo linkedInfo) : base(linkedPoint)
     {
         LinkedInfo = linkedInfo;
     }

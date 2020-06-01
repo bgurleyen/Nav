@@ -6,22 +6,22 @@ using UnityEngine;
 
 public class DataHandler
 {
-    internal static void BuildDataSet(DataSetScriptableObject dataSet, out DataSetScriptableObject dataSetBuilt)
+    internal static void BuildDataSet(RouteScriptableObject route, out RouteScriptableObject routeBuilt)
     {
-        var newSet = dataSet.Clone();
+        var newSet = route.Clone();
 
         BuildSetDetails(newSet);
 
-        dataSetBuilt = newSet;
+        routeBuilt = newSet;
     }
 
-    public static void BuildSetDetails(DataSetScriptableObject dataSet)
+    public static void BuildSetDetails(RouteScriptableObject route)
     {
-        BuildAltitudes(dataSet);
-        BuildSpeeds(dataSet);
+        BuildAltitudes(route);
+        BuildSpeeds(route);
     }
 
-    static DataSetScriptableObject BuildSpeeds(DataSetScriptableObject set, int startFrom = 270)
+    static RouteScriptableObject BuildSpeeds(RouteScriptableObject set, int startFrom = 270)
     {
         set.Points[0].RawSpeed = startFrom;
         var lastRegulation = startFrom;
@@ -42,9 +42,9 @@ public class DataHandler
         return set;
     }
 
-    static DataSetScriptableObject BuildAltitudes(DataSetScriptableObject set, int startFrom = 40000)
+    static RouteScriptableObject BuildAltitudes(RouteScriptableObject set, int startFrom = 40000)
     {
-        if (set.Points[0].AltitudeRegulation == DataPoint.AltitudeFlags.NotSet)
+        if (set.Points[0].AltitudeRegulation == RoutePoint.AltitudeFlags.NotSet)
         {
             set.Points[0].RawAltitude = startFrom.ToString();
         }
@@ -60,7 +60,7 @@ public class DataHandler
             // if it is not a current regulations interval started
             if (regulations == null)
             {
-                if (set.Points[i + 1].AltitudeRegulation == DataPoint.AltitudeFlags.Exact)
+                if (set.Points[i + 1].AltitudeRegulation == RoutePoint.AltitudeFlags.Exact)
                 {
                     continue;
                 }
@@ -84,7 +84,7 @@ public class DataHandler
                 distanceToPrevious += point.Distance;
             }
 
-            if (point.AltitudeRegulation != DataPoint.AltitudeFlags.NotSet)
+            if (point.AltitudeRegulation != RoutePoint.AltitudeFlags.NotSet)
             {
                 var lastRegulation = regulations[regulations.Count - 1];
                 var newRegulation = new RegulationNode
@@ -102,7 +102,7 @@ public class DataHandler
                 distanceToPrevious = 0;
 
                 // if other exact node reached, close and compute current regulations interval
-                if (set.Points[i].AltitudeRegulation == DataPoint.AltitudeFlags.Exact)
+                if (set.Points[i].AltitudeRegulation == RoutePoint.AltitudeFlags.Exact)
                 {
                     ComputeRegulationsInterval(regulations, set);
                 }
@@ -112,7 +112,7 @@ public class DataHandler
         return set;
     }
 
-    static void ComputeRegulationsInterval(List<RegulationNode> regulations, DataSetScriptableObject set)
+    static void ComputeRegulationsInterval(List<RegulationNode> regulations, RouteScriptableObject set)
     {
         var anchoredFrom = regulations[0];
         var anchoredTo = regulations[regulations.Count - 1];
@@ -133,20 +133,20 @@ public class DataHandler
 
             switch (flag)
             {
-                case DataPoint.AltitudeFlags.Below:
+                case RoutePoint.AltitudeFlags.Below:
                     if (AnchorForBelow(point))
                     {
                         anchored = true;
                     }
                     break;
 
-                case DataPoint.AltitudeFlags.Above:
+                case RoutePoint.AltitudeFlags.Above:
                     if (AnchorForAbove(point))
                     {
                         anchored = true;
                     }
                     break;
-                case DataPoint.AltitudeFlags.AboveBelow:
+                case RoutePoint.AltitudeFlags.AboveBelow:
                     if (AnchorForBelow(point)
                     || AnchorForAbove(point))
                     {
@@ -173,7 +173,7 @@ public class DataHandler
                 var validationCursor = cursor.prev;
 
                 if (validationCursor != null &&
-                    validationCursor.linkedPoint.AltitudeRegulation != DataPoint.AltitudeFlags.Exact)
+                    validationCursor.linkedPoint.AltitudeRegulation != RoutePoint.AltitudeFlags.Exact)
                 {
                     // previos anchor before the previos node
                     var validationAnchoredFrom = anchoredFrom;
@@ -237,13 +237,13 @@ public class DataHandler
                         validationCursor != null &&
                         validationCursor.prev != null &&
                         validationUpdated &&
-                        validationCursor.linkedPoint.AltitudeRegulation != DataPoint.AltitudeFlags.Exact);
+                        validationCursor.linkedPoint.AltitudeRegulation != RoutePoint.AltitudeFlags.Exact);
                 }
             }
         }
 
 
-        bool AnchorForBelow(DataPoint point)
+        bool AnchorForBelow(RoutePoint point)
         {
             if (point.GetAcceptedAltitude > point.Altitude.RestrictionBelow)
             {
@@ -254,7 +254,7 @@ public class DataHandler
             return false;
         }
 
-        bool AnchorForAbove(DataPoint point)
+        bool AnchorForAbove(RoutePoint point)
         {
             if (point.GetAcceptedAltitude < point.Altitude.RestrictionAbove)
             {
@@ -384,7 +384,7 @@ public class DataHandler
         public RegulationNode anchoredPrev;
         public RegulationNode anchoredNext;
 
-        public DataPoint linkedPoint;
+        public RoutePoint linkedPoint;
         public int IndexInList;
         public float distanceToPrevious;
 

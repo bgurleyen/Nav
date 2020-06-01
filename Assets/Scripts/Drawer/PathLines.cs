@@ -11,24 +11,24 @@ public class PathLines
     public List<FixRay> ComputedRays;
     public Vector2 CenteredPosition;
     
-    static FixSetScriptableObject FixSet => GameManager.Instance.FixSet;
+    static FixedPointsScriptableObject FixedPoints => GameManager.Instance.FixedPoints;
     
-    public void ComputeSet(DataSetScriptableObject dataSet, bool isMod)
+    public void ComputeSet(RouteScriptableObject route, bool isMod)
     {
-        if (dataSet == null)
+        if (route == null)
         {
             return;
         }
 
         if (isMod)
         {
-            ComputedLinesMod = new MarkLine[dataSet.Points.Length];
+            ComputedLinesMod = new MarkLine[route.Points.Length];
         }
         else
         {
             ComputedCircles = new List<FixCircle>();
             ComputedRays = new List<FixRay>();
-            ComputedLines = new MarkLine[dataSet.Points.Length];
+            ComputedLines = new MarkLine[route.Points.Length];
         }
 
         var _computedLines = isMod ? ComputedLinesMod : ComputedLines;
@@ -37,9 +37,9 @@ public class PathLines
         _lastLine.InitBeginning();
         var _currentIndex = 0;
 
-        while (_currentIndex < dataSet.Points.Length - 1)
+        while (_currentIndex < route.Points.Length - 1)
         {
-            if (!Drawer.GetNextLine(_lastLine, _currentIndex, dataSet.Points, out var _line, out _currentIndex))
+            if (!Drawer.GetNextLine(_lastLine, _currentIndex, route.Points, out var _line, out _currentIndex))
             {
                 continue;
             }
@@ -53,9 +53,9 @@ public class PathLines
                 CenteredPosition = _line.EndPosition;
             }
 
-            if (!isMod && FixSet != null)
+            if (!isMod && FixedPoints != null)
             {
-                var _fixEntry = FixSet.Entries.FirstOrDefault(x => x.Name == _line.LinkedPoint.Name);
+                var _fixEntry = FixedPoints.Entries.FirstOrDefault(x => x.Name == _line.LinkedPoint.Name);
                 if (_fixEntry != null)
                 {
                     for (var i = 0; i < _fixEntry.Infos.Length; i++)

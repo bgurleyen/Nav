@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ba3b8b30b7d3d124482f44bf0dbbbfaf, type: 3}
-  m_Name: DataSet Demo
+  m_Name: RouteData Demo
   m_EditorClassIdentifier: 
   Points:
   - ID: 0

@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
-[CustomPropertyDrawer(typeof(DataPoint))]
-public class DataPointPropertyDrawer : PropertyDrawer
+[CustomPropertyDrawer(typeof(RoutePoint))]
+public class RoutePointPropertyDrawer : PropertyDrawer
 {
     // Draw the property inside the given rect
     public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)

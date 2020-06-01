@@ -26,7 +26,7 @@ public class LegsNodeLine : MonoBehaviour
 
     NodeSelection selection;
 
-    public void DisplayNodeDetails(DataPoint node, NodeSelection linkedInfo)
+    public void DisplayNodeDetails(RoutePoint node, NodeSelection linkedInfo)
     {
         var _distance = linkedInfo.LinkedId == PositionVirtualNode.GetNodeTo.ID
             ? GameManager.Instance.Aircraft.ComputedDistanceLeft

@@ -11,7 +11,7 @@ public class LineDrawer : MonoBehaviour
 
     MarkLine cacheLine;
 
-    public void Display(MarkLine line, DataPoint dataPoint, int fromPoint = 0)
+    public void Display(MarkLine line, RoutePoint routePoint, int fromPoint = 0)
     {
         if (!line.LinkedPoint.IsAfterDiscontinuity && !line.LinkedPoint.IsHiddenLine)
         {
@@ -37,7 +37,7 @@ public class LineDrawer : MonoBehaviour
         {
             mark.localPosition = line.EndPosition.To2DXY().ToDisplay();
             label.transform.localPosition = line.EndPosition.To2DXY().ToDisplay();
-            label.Init(dataPoint.Name);
+            label.Init(routePoint.Name);
         }
     }
 

@@ -46,7 +46,7 @@ public class infoFMC : Singleton<infoFMC>
         int   Speed,VS,ff;
         double Distance;
        
-        DataSetScriptableObject activePoints = GameManager.Instance.ActiveSet;
+        RouteScriptableObject activePoints = GameManager.Instance.ActiveRoute;
        
   
         PrvAltitude = Calculator.CAltitude;

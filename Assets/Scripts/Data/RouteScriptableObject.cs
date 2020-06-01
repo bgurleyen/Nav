@@ -1,10 +1,10 @@
 ﻿using UnityEngine;
 using System.Linq;
 
-[CreateAssetMenu(fileName = "Data", menuName = "ScriptableObjects/DataSet")]
-public class DataSetScriptableObject : ScriptableObject
+[CreateAssetMenu(fileName = "RouteData", menuName = "ScriptableObjects/RouteData")]
+public class RouteScriptableObject : ScriptableObject
 {
-    public DataPoint[] Points;
+    public RoutePoint[] Points;
 
     public void InitIds()
     {
@@ -14,7 +14,7 @@ public class DataSetScriptableObject : ScriptableObject
         }
     }
 
-    public DataPoint GetPoint(int nodeId)
+    public RoutePoint GetPoint(int nodeId)
     {
         var _index = GetIndex(nodeId);
         if(Points.Length <= _index || _index < 0)
@@ -46,10 +46,10 @@ public class DataSetScriptableObject : ScriptableObject
         return _id;
     }
 
-    public DataSetScriptableObject Clone()
+    public RouteScriptableObject Clone()
     {
-        var _newSet = CreateInstance<DataSetScriptableObject>();// new DataSetScriptableObject();
-        _newSet.Points = new DataPoint[Points.Length];
+        var _newSet = CreateInstance<RouteScriptableObject>();// new DataSetScriptableObject();
+        _newSet.Points = new RoutePoint[Points.Length];
         for (var i = 0; i < Points.Length; i++)
         {
             _newSet.Points[i] = Points[i].Clone();
@@ -94,14 +94,14 @@ public class DataSetScriptableObject : ScriptableObject
         return false;
     }
 
-    public void ShortcutNodes(int firstNodeToDissolve, int toId, out DataPoint reducedPoint) // @#$ refactor for passed nodes ?
+    public void ShortcutNodes(int firstNodeToDissolve, int toId, out RoutePoint reducedPoint) // @#$ refactor for passed nodes ?
     {
         var _startIndex = GetIndex(firstNodeToDissolve);
         var _endIndex = GetIndex(toId);
 
         var _offset = _endIndex - _startIndex;
 
-        var _newSet = new DataPoint[Points.Length - _offset];
+        var _newSet = new RoutePoint[Points.Length - _offset];
 
         for (var i = 0; i < _startIndex; i++)
         {
@@ -144,7 +144,7 @@ public class DataSetScriptableObject : ScriptableObject
         }
     }
 
-    public void AddRelativeNodeOnDirection(int nodeId, int distance, out DataPoint insertionNode, out DataPoint afterInsertion) // @#$ todo refactor for passed nodes ?
+    public void AddRelativeNodeOnDirection(int nodeId, int distance, out RoutePoint insertionNode, out RoutePoint afterInsertion) // @#$ todo refactor for passed nodes ?
     {
         var _nodeIndex = GetIndex(nodeId);
         var _node = Points[_nodeIndex];
@@ -175,7 +175,7 @@ public class DataSetScriptableObject : ScriptableObject
             _distanceFromAfter = distance;
         }
 
-        insertionNode = new DataPoint
+        insertionNode = new RoutePoint
         {
             Name = _node.Name + "01",
             Distance = _distanceFromAfter,
@@ -186,7 +186,7 @@ public class DataSetScriptableObject : ScriptableObject
         afterInsertion.Distance = _distanceToBefore;
 
         // replace set with new set that also contains insertion node
-        var _newSet = new DataPoint[Points.Length + 1];
+        var _newSet = new RoutePoint[Points.Length + 1];
         var _offset = 0;
         for (var i = 0; i < Points.Length; i++)
         {
@@ -203,14 +203,14 @@ public class DataSetScriptableObject : ScriptableObject
     }
 
     void AddRelativeNodeAfter(int relativeFromNodeId, float rawDegrees, int distance,
-        out DataPoint insertionNode, out DataPoint afterInsertion, bool addCurveOffset = true)
+        out RoutePoint insertionNode, out RoutePoint afterInsertion, bool addCurveOffset = true)
     {
         var _relativeFromNodeIndex = GetIndex(relativeFromNodeId);
         var _relativeFromNode = Points[_relativeFromNodeIndex];
 
         afterInsertion = Points[_relativeFromNodeIndex + 1];
 
-        insertionNode = new DataPoint
+        insertionNode = new RoutePoint
         {
             Name = _relativeFromNode.Name + "01",
             Distance = distance,
@@ -232,7 +232,7 @@ public class DataSetScriptableObject : ScriptableObject
         Drawer.ComputeLine(_lastLine, out var _testLine,insertionNode, afterInsertion);
         
         // replace set with new set that also contains insertion node
-        var _newSet = new DataPoint[Points.Length + 1];
+        var _newSet = new RoutePoint[Points.Length + 1];
         var _offset = 0;
         for (var i = 0; i < Points.Length; i++)
         {
@@ -249,7 +249,7 @@ public class DataSetScriptableObject : ScriptableObject
     }
     
 
-    public void AddRelativeNodeBefore(int relativeToNodeId, float rawDegrees, int distance, out DataPoint insertionNode,
+    public void AddRelativeNodeBefore(int relativeToNodeId, float rawDegrees, int distance, out RoutePoint insertionNode,
         bool showDiscontinuity = false)
     {
         var _relativeToNodeIndex = GetIndex(relativeToNodeId);
@@ -282,7 +282,7 @@ public class DataSetScriptableObject : ScriptableObject
         }
 
         var _insertionAngle = Geometry.AngleBetween(_insertPosition, Vector2.up);
-        insertionNode = new DataPoint
+        insertionNode = new RoutePoint
         {
             Name = _originalRelativeToNode.Name + "01",
             Distance = _insertPosition.magnitude,
@@ -306,7 +306,7 @@ public class DataSetScriptableObject : ScriptableObject
         }
 
         // replace set with new set that also contains insertion node
-        var _newSet = new DataPoint[Points.Length + (_isInThePast ? 2 : 1)];
+        var _newSet = new RoutePoint[Points.Length + (_isInThePast ? 2 : 1)];
         var _offset = 0;
         for (var i = 0; i < Points.Length; i++)
         {
@@ -357,7 +357,7 @@ public class DataSetScriptableObject : ScriptableObject
         }
     }
 
-    public DataPoint AddPositionNode(float neededOffsetDistance = 0)
+    public RoutePoint AddPositionNode(float neededOffsetDistance = 0)
     {
         const float DISTANCE_THRESHOLD = 0.002f;
         
@@ -371,7 +371,7 @@ public class DataSetScriptableObject : ScriptableObject
 
         var _activeDistancePassed = PositionVirtualNode.ComputedDistancePassed;
 
-        var _insertionNode = new DataPoint
+        var _insertionNode = new RoutePoint
         {
             Name = "_Position_",
             Distance = _activeDistancePassed,
@@ -392,7 +392,7 @@ public class DataSetScriptableObject : ScriptableObject
         _displayNextNode.Distance = _differencePosition.magnitude;
 
         // replace set with new set that also contains insertion node
-        var _newSet = new DataPoint[Points.Length + 1];
+        var _newSet = new RoutePoint[Points.Length + 1];
         var _offset = 0;
         for (var i = 0; i < Points.Length; i++)
         {

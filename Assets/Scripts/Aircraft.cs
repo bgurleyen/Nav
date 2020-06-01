@@ -61,7 +61,7 @@ public class Aircraft
 
     public void EndFreeFlight()
     {
-        if (GameManager.Instance.ActiveSet.FindFreeFlightExitPosition(out var _intersectionVertex, out var _distanceUntilVertex))
+        if (GameManager.Instance.ActiveRoute.FindFreeFlightExitPosition(out var _intersectionVertex, out var _distanceUntilVertex))
         {
             IsFreeFlight = false;
 

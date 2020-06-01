@@ -165,15 +165,15 @@ public class Calculator : MonoBehaviour
         double DeltaAlt, Alt1, Alt0, d, D;
         int posY;
 
-        DataSetScriptableObject activePoints = GameManager.Instance.ActiveSet;
-        DataSetScriptableObject modPoints = GameManager.Instance.ModSet;
+        RouteScriptableObject activePoints = GameManager.Instance.ActiveRoute;
+        RouteScriptableObject modPoints = GameManager.Instance.ModRoute;
 
         bool isMod = GameManager.Instance.IsMod;
-        DataSetScriptableObject dataSet = isMod ? modPoints : activePoints;
+        RouteScriptableObject _route = isMod ? modPoints : activePoints;
 
 
-        var node0 = dataSet.Points[PositionVirtualNode.PassedNodeIndex];
-        var node1 = dataSet.Points[PositionVirtualNode.PassedNodeIndex + 1];
+        var node0 = _route.Points[PositionVirtualNode.PassedNodeIndex];
+        var node1 = _route.Points[PositionVirtualNode.PassedNodeIndex + 1];
 
         //Debug.Log(node.DisplayAltitude.ToString());
 

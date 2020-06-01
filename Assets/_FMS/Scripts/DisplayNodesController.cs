@@ -8,9 +8,9 @@
     public int TotalPagesCorrection = 0;
     
     static bool IsMod => GameManager.Instance.IsMod;
-    static DataSetScriptableObject ActiveSet => GameManager.Instance.ActiveSet;
-    static DataSetScriptableObject ModSet => GameManager.Instance.ModSet;
-    static DataSetScriptableObject VisibleDataSet => IsMod ? ModSet : ActiveSet;
+    static RouteScriptableObject ActiveRoute => GameManager.Instance.ActiveRoute;
+    static RouteScriptableObject ModRoute => GameManager.Instance.ModRoute;
+    static RouteScriptableObject VisibleRoute => IsMod ? ModRoute : ActiveRoute;
     static int StartingNodeIndex => GameManager.Instance.UnreachedNodeIndex;
 
     readonly int nodesPerPage;
@@ -24,15 +24,15 @@
     {
         discontinuities = 0;
         skipped = 0;
-        for (var i = StartingNodeIndex; i < VisibleDataSet.Points.Length; i++)
+        for (var i = StartingNodeIndex; i < VisibleRoute.Points.Length; i++)
         {
-            if (IsNodeSkippable(VisibleDataSet.Points[i]))
+            if (IsNodeSkippable(VisibleRoute.Points[i]))
             {
                 skipped++;
                 continue;
             }
 
-            if (VisibleDataSet.Points[i].IsAfterDiscontinuity)
+            if (VisibleRoute.Points[i].IsAfterDiscontinuity)
             {
                 discontinuities++;
             }
@@ -49,34 +49,34 @@
         var _hiddenOffset = 0;
         var _lastDiscontinuity = -1;
 
-        for (var i = 1; i < VisibleDataSet.Points.Length; i++) // may be opptimised - cached
+        for (var i = 1; i < VisibleRoute.Points.Length; i++) // may be opptimised - cached
         {
             if (i > _index + _hiddenOffset)
             {
                 break;
             }
 
-            if (VisibleDataSet.Points[i].IsAfterDiscontinuity)
+            if (VisibleRoute.Points[i].IsAfterDiscontinuity)
             {
                 _lastDiscontinuity = i;
             }
 
-            if (VisibleDataSet.Points[i - 1].IsAfterDiscontinuity)
+            if (VisibleRoute.Points[i - 1].IsAfterDiscontinuity)
             {
                 _discontinuityOffset++;
             }
 
             // only count hiddens after starting node since all are hidded and shortcuted for liniar approach
-            if (i >= StartingNodeIndex && IsNodeSkippable(VisibleDataSet.Points[i]))
+            if (i >= StartingNodeIndex && IsNodeSkippable(VisibleRoute.Points[i]))
             {
                 _hiddenOffset++;
             }
         }
 
         var _linkedIndex = _index - _discontinuityOffset + _hiddenOffset;
-        var _linkedId = VisibleDataSet.Points[_linkedIndex].ID;
+        var _linkedId = VisibleRoute.Points[_linkedIndex].ID;
 
-        var _isEmpty = VisibleDataSet.Points.Length <= _linkedIndex;
+        var _isEmpty = VisibleRoute.Points.Length <= _linkedIndex;
         var _isStartingPoint = _linkedIndex == StartingNodeIndex;
         var _isDiscontinuity = _lastDiscontinuity == _index;
 
@@ -89,7 +89,7 @@
         }; // not showing the first point as is NOW
     }
 
-    static bool IsNodeSkippable(DataPoint point)
+    static bool IsNodeSkippable(RoutePoint point)
     {
         return  (point.IsHiddenLine && !point.IsFirstAfterFreeFlight);
     }

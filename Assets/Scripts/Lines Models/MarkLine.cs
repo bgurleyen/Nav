@@ -13,7 +13,7 @@ public class MarkLine : Line
     
     Vector3 lastPoint = Vector3.zero;
 
-    public MarkLine(DataPoint linkedPoint): base(linkedPoint) { }
+    public MarkLine(RoutePoint linkedPoint): base(linkedPoint) { }
 
     public void InitBeginning()
     {
@@ -37,7 +37,7 @@ public class MarkLine : Line
         lastPoint = _point;
     }
 
-    public void Init(Vector3 from, Vector3 offsetedFrom, DataPoint nextPoint)
+    public void Init(Vector3 from, Vector3 offsetedFrom, RoutePoint nextPoint)
     {
         ComputedLength = -1;
         StartPosition = from;

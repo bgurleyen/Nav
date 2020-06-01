@@ -4,10 +4,10 @@ public class LegsScreen : MonoBehaviour
 {
     public LegsNodeLine[] nodes;
 
-    static DataSetScriptableObject ActiveSet => GameManager.Instance.ActiveSet;
-    static DataSetScriptableObject ModSet => GameManager.Instance.ModSet;
+    static RouteScriptableObject ActiveRoute => GameManager.Instance.ActiveRoute;
+    static RouteScriptableObject ModRoute => GameManager.Instance.ModRoute;
     static bool IsMod => GameManager.Instance.IsMod;
-    static DataSetScriptableObject VisibleDataSet => IsMod ? ModSet : ActiveSet;
+    static RouteScriptableObject VisibleRoute => IsMod ? ModRoute : ActiveRoute;
     static int StartingNodeIndex => GameManager.Instance.UnreachedNodeIndex;
     static MainScreen Main => MainScreen.Instance;
     int NodesPerPage => nodes.Length;
@@ -17,11 +17,11 @@ public class LegsScreen : MonoBehaviour
     NodeSelection selectionInfo;
     NodeSelection lastSelectionClicked;
 
-    DataPoint SelectedPoint => selectionInfo == null ? null : VisibleDataSet.GetPoint(selectionInfo.LinkedId);
-    DataPoint LastSelectedPoint => lastSelectionClicked == null ? null : VisibleDataSet.GetPoint(lastSelectionClicked.LinkedId);
+    RoutePoint SelectedPoint => selectionInfo == null ? null : VisibleRoute.GetPoint(selectionInfo.LinkedId);
+    RoutePoint LastSelectedPoint => lastSelectionClicked == null ? null : VisibleRoute.GetPoint(lastSelectionClicked.LinkedId);
     
     string scratchPadBuffer = "";
-    int TotalPages =>  Mathf.CeilToInt((VisibleDataSet.Points.Length - StartingNodeIndex + nodesController.TotalPagesCorrection) / (float)NodesPerPage); 
+    int TotalPages =>  Mathf.CeilToInt((VisibleRoute.Points.Length - StartingNodeIndex + nodesController.TotalPagesCorrection) / (float)NodesPerPage); 
 
     int currentPage = 0;
 
@@ -61,7 +61,7 @@ public class LegsScreen : MonoBehaviour
             }
             else
             {
-                nodes[i].DisplayNodeDetails(VisibleDataSet.GetPoint(linkedSelection.LinkedId), linkedSelection);
+                nodes[i].DisplayNodeDetails(VisibleRoute.GetPoint(linkedSelection.LinkedId), linkedSelection);
             }
         }
     }
@@ -99,8 +99,8 @@ public class LegsScreen : MonoBehaviour
         // if this is a shortcut command
         else
         {
-            var selectedIndex = VisibleDataSet.GetIndex(selectionInfo.LinkedId);
-            var clickedIndex = VisibleDataSet.GetIndex(clickedInfo.LinkedId);
+            var selectedIndex = VisibleRoute.GetIndex(selectionInfo.LinkedId);
+            var clickedIndex = VisibleRoute.GetIndex(clickedInfo.LinkedId);
 
             // when user clicks on the node below
             if (selectedIndex < clickedIndex)

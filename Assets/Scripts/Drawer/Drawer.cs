@@ -56,22 +56,22 @@ public class Drawer : Singleton<Drawer>
     // if we detect that during MOD the current node has passed we reExecute all the commands until that point
     int modReExecutedForIndex = -1;
 
-    static DataSetScriptableObject ActiveSet => GameManager.Instance.ActiveSet;
-    static DataSetScriptableObject ModSet => GameManager.Instance.ModSet;
-    static DataSetScriptableObject DisplayMod => GameManager.Instance.ModeSetWithPosition;
+    static RouteScriptableObject ActiveRoute => GameManager.Instance.ActiveRoute;
+    static RouteScriptableObject ModRoute => GameManager.Instance.ModRoute;
+    static RouteScriptableObject DisplayMod => GameManager.Instance.ModeSetWithPosition;
 
     
 
     public void ComputeActive()
     {
-        if(ActiveSet == null) { return; }
+        if(ActiveRoute == null) { return; }
 
-        GameManager.Instance.PathLines.ComputeSet(ActiveSet, false);
+        GameManager.Instance.PathLines.ComputeSet(ActiveRoute, false);
     }
 
     public void ComputeMod()
     {
-        if (ModSet == null) { modReExecutedForIndex = -1; return; }
+        if (ModRoute == null) { modReExecutedForIndex = -1; return; }
 
         // mod always has to include the last passed active node ( all the passed nodes ) 
         // otherwise it is invalid - will reapply all the commands
@@ -79,7 +79,7 @@ public class Drawer : Singleton<Drawer>
 
         if (_passedNodeIndex != modReExecutedForIndex)
         {
-            if (ActiveSet.Points[_passedNodeIndex].ID != ModSet.Points[_passedNodeIndex].ID)
+            if (ActiveRoute.Points[_passedNodeIndex].ID != ModRoute.Points[_passedNodeIndex].ID)
             {
                 GameManager.Instance.ReExecuteCachedCommands();
                 Debug.Log("Reapplied MOD");
@@ -88,7 +88,7 @@ public class Drawer : Singleton<Drawer>
             modReExecutedForIndex = _passedNodeIndex;
         }
 
-        GameManager.Instance.ModeSetWithPosition = ModSet.Clone(); // refactor
+        GameManager.Instance.ModeSetWithPosition = ModRoute.Clone(); // refactor
         DisplayMod.AddPositionNode();
 
         GameManager.Instance.PathLines.ComputeSet(DisplayMod, true);
@@ -158,7 +158,7 @@ public class Drawer : Singleton<Drawer>
         Extension.DespawnChildred<OtherAircrafIndicator>(dynamicHolderOtheriarcrafts, otherAircraftsPool);
     }
 
-    public static bool GetCircleFix(DataPoint linkedPoint, Vector3 from, FixInfo linkedInfo, out FixCircle circle)
+    public static bool GetCircleFix(RoutePoint linkedPoint, Vector3 from, FixedPointInfo linkedInfo, out FixCircle circle)
     {
         if (linkedInfo.NM != null)
         {
@@ -171,7 +171,7 @@ public class Drawer : Singleton<Drawer>
         return false;
     }
 
-    public static bool GetRayFix(DataPoint linkedPoint, Vector3 from, FixInfo linkedInfo, out FixRay ray)
+    public static bool GetRayFix(RoutePoint linkedPoint, Vector3 from, FixedPointInfo linkedInfo, out FixRay ray)
     {
         if (linkedInfo.RawDegrees != null)
         {
@@ -248,7 +248,7 @@ public class Drawer : Singleton<Drawer>
     {
         if (mod)
         {
-            if (GameManager.Instance.ModSet == null || GameManager.Instance.PathLines.ComputedLinesMod == null)
+            if (GameManager.Instance.ModRoute == null || GameManager.Instance.PathLines.ComputedLinesMod == null)
             {
                 return;
             }
@@ -321,7 +321,7 @@ public class Drawer : Singleton<Drawer>
         }
     }
 
-    public static bool GetNextLine(MarkLine lastLine, int fromDataPointIndex, DataPoint[] points, out MarkLine line,
+    public static bool GetNextLine(MarkLine lastLine, int fromDataPointIndex, RoutePoint[] points, out MarkLine line,
         out int toDataPointIndex)
     {
         // the line may be already begun if previous was a curve 
@@ -342,7 +342,7 @@ public class Drawer : Singleton<Drawer>
             _forceEndStraight = points[toDataPointIndex + 1].IsAfterDiscontinuity;
         }
 
-        DataPoint _notToCloseSecondPoint = null;
+        RoutePoint _notToCloseSecondPoint = null;
         
         // there are no more points to create a curve to ( in which case continue with straight line on current segment )
         if (toDataPointIndex != points.Length - 1)
@@ -357,8 +357,8 @@ public class Drawer : Singleton<Drawer>
         return ComputeLine(lastLine, out line, _nextPoint, _notToCloseSecondPoint, _forceEndStraight);
     }
     
-    public static bool ComputeLine(MarkLine lastLine, out MarkLine line, DataPoint nextPoint,
-        DataPoint notTooCloseSecondPoint = null, bool forceEndStraight = false)
+    public static bool ComputeLine(MarkLine lastLine, out MarkLine line, RoutePoint nextPoint,
+        RoutePoint notTooCloseSecondPoint = null, bool forceEndStraight = false)
     {
        
         float _angleBetween = 180;
@@ -405,14 +405,14 @@ public class Drawer : Singleton<Drawer>
         return true;
     }
 
-    static void GenerateLine(DataPoint nextPoint, Vector3 lastEndPosition, Vector3 lastEndOffset, out MarkLine line)
+    static void GenerateLine(RoutePoint nextPoint, Vector3 lastEndPosition, Vector3 lastEndOffset, out MarkLine line)
     {
         var _l = new MarkLine(nextPoint);
         _l.Init(lastEndPosition, lastEndOffset, nextPoint);
         line = _l;
     }
 
-    static bool GenerateCurve(float chosenRadius, DataPoint nextPoint, DataPoint secondPoint, float angleBetween, Vector3 lastEndPosition, Vector3 lastEndOffset, out MarkLine line)
+    static bool GenerateCurve(float chosenRadius, RoutePoint nextPoint, RoutePoint secondPoint, float angleBetween, Vector3 lastEndPosition, Vector3 lastEndOffset, out MarkLine line)
     {
         var _tangentToMiddle = Line.GetTangentToMiddle(chosenRadius, angleBetween);
 
@@ -427,7 +427,7 @@ public class Drawer : Singleton<Drawer>
         return false;
     }
 
-    static void GenerateDoubleCurve(float smallRadius, float bigRadius, DataPoint nextPoint, DataPoint secondPoint,
+    static void GenerateDoubleCurve(float smallRadius, float bigRadius, RoutePoint nextPoint, RoutePoint secondPoint,
         float angleBetween, Vector3 lastEndPosition, Vector3 lastEndOffset, out MarkLine line)
     {
         var l = new DoubleCurve(nextPoint);

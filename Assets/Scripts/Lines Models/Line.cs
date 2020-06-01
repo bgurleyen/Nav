@@ -6,14 +6,14 @@ using UnityEngine;
 public class Line 
 {
     public Vector3 EndPosition { get; protected set; }
-    public DataPoint LinkedPoint { get; private set; }
+    public RoutePoint LinkedPoint { get; private set; }
     public Vector3[] Vertexes;
    
     // frequency of points
     protected const float UnitLength = 0.6f;
 
 
-    protected Line(DataPoint linkedPoint)
+    protected Line(RoutePoint linkedPoint)
     {
         LinkedPoint = linkedPoint;
     }

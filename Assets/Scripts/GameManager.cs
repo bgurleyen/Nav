@@ -1,22 +1,23 @@
 ﻿using Gamelogic.Extensions;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class GameManager : Singleton<GameManager>
 {
     public delegate void OnOperationMadeDelegate();
     public event OnOperationMadeDelegate OnOperationMade;
 
-    [SerializeField] DataSetScriptableObject initialDataSet;
+    [SerializeField] RouteScriptableObject initialRoute;
 
     public Aircraft Aircraft = new Aircraft();
     public PathLines PathLines = new PathLines();
 
     [Header("Computed")]
-    public DataSetScriptableObject ActiveSet;
-    public DataSetScriptableObject ModSet;
-    public DataSetScriptableObject ModeSetWithPosition;
-    public FixSetScriptableObject FixSet;
+    public RouteScriptableObject ActiveRoute;
+    public RouteScriptableObject ModRoute;
+    public RouteScriptableObject ModeSetWithPosition;
+    public FixedPointsScriptableObject FixedPoints;
 
     public int UnreachedNodeIndex => Aircraft.UnreachedVertex.CurrentLine;
 
@@ -27,13 +28,13 @@ public class GameManager : Singleton<GameManager>
 
     void Start()
     {
-        FixSet = FixSetScriptableObject.CreateDemo();
+        FixedPoints = FixedPointsScriptableObject.CreateDemo();
 
-        ActiveSet = initialDataSet.Clone();
-        ActiveSet.InitIds();
+        ActiveRoute = initialRoute.Clone();
+        ActiveRoute.InitIds();
  
 
-        DataHandler.BuildSetDetails(ActiveSet);
+        DataHandler.BuildSetDetails(ActiveRoute);
 
         Drawer.Instance.ResetMode();
         Drawer.Instance.ComputeActive();
@@ -70,7 +71,7 @@ public class GameManager : Singleton<GameManager>
         if (IsMod) return;
         
         // if this is the first modification generate a new mod from current active
-        ModSet = ActiveSet.Clone();
+        ModRoute = ActiveRoute.Clone();
 
         cachedCommands = new List<ICommand>();
         IsMod = true;
@@ -98,9 +99,9 @@ public class GameManager : Singleton<GameManager>
         CheckModForOperation();
         cachedCommands.Add(command);
 
-        MainScreen.Instance.DisplayOperation("ERASE", $"{ModSet.GetPoint(command.FromNodeId).RawDegrees:000}°");
-        ModSet.ShortcutNodes(command.FromNodeId, command.ToNodeId, out var _);
-        DataHandler.BuildSetDetails(ModSet);
+        MainScreen.Instance.DisplayOperation("ERASE", $"{ModRoute.GetPoint(command.FromNodeId).RawDegrees:000}°");
+        ModRoute.ShortcutNodes(command.FromNodeId, command.ToNodeId, out var _);
+        DataHandler.BuildSetDetails(ModRoute);
 
         OnOperationMade?.Invoke();
     }
@@ -110,8 +111,8 @@ public class GameManager : Singleton<GameManager>
         CheckModForOperation();
         cachedCommands.Add(command);
 
-        ModSet.AddRelativeNodeOnDirection(command.FromNodeId, command.Distance, out var _, out var _);
-        DataHandler.BuildSetDetails(ModSet);
+        ModRoute.AddRelativeNodeOnDirection(command.FromNodeId, command.Distance, out var _, out var _);
+        DataHandler.BuildSetDetails(ModRoute);
         MainScreen.Instance.DisplayOperation("ERASE");
 
         OnOperationMade?.Invoke();
@@ -123,8 +124,8 @@ public class GameManager : Singleton<GameManager>
         CheckModForOperation();
         cachedCommands.Add(command);
 
-        ModSet.AddRelativeNodeBefore(command.FromNodeId, command.RawDegrees, command.Distance, out var _, true);
-        DataHandler.BuildSetDetails(ModSet);
+        ModRoute.AddRelativeNodeBefore(command.FromNodeId, command.RawDegrees, command.Distance, out var _, true);
+        DataHandler.BuildSetDetails(ModRoute);
         MainScreen.Instance.DisplayOperation("ERASE");
 
         OnOperationMade?.Invoke();
@@ -135,8 +136,8 @@ public class GameManager : Singleton<GameManager>
         CheckModForOperation();
         cachedCommands.Add(command);
 
-        ModSet.CreateLinearApproach(command.ToNodeId, command.Angle);
-        DataHandler.BuildSetDetails(ModSet);
+        ModRoute.CreateLinearApproach(command.ToNodeId, command.Angle);
+        DataHandler.BuildSetDetails(ModRoute);
         MainScreen.Instance.DisplayOperation("ERASE");
 
         OnOperationMade?.Invoke();
@@ -167,17 +168,17 @@ public class GameManager : Singleton<GameManager>
 
     public void ApplyMod()
     {
-        ModSet.ClearModifiedFlags();
+        ModRoute.ClearModifiedFlags();
 
-        ActiveSet = ModeSetWithPosition;
-        ModSet = null;
+        ActiveRoute = ModeSetWithPosition;
+        ModRoute = null;
         IsMod = false;
         MainScreen.Instance.DisplayOperation("0k");
     }
 
     public void EraseMod()
     {
-        ModSet = null;
+        ModRoute = null;
         IsMod = false;
         MainScreen.Instance.DisplayOperation("0k");
     }

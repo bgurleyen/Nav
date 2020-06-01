@@ -3,9 +3,9 @@ using UnityEngine;
 
 public class FixRay : Line
 {
-    public FixInfo LinkedInfo { get; private set; }
+    public FixedPointInfo LinkedInfo { get; private set; }
 
-    public FixRay(DataPoint linkedPoint, FixInfo linkedInfo) : base(linkedPoint)
+    public FixRay(RoutePoint linkedPoint, FixedPointInfo linkedInfo) : base(linkedPoint)
     {
         LinkedInfo = linkedInfo;
 
