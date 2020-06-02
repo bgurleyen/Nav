@@ -1,4 +1,5 @@
-﻿using Gamelogic.Extensions;
+﻿using System;
+using Gamelogic.Extensions;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -9,6 +10,10 @@ public class GameManager : Singleton<GameManager>
     public event OnOperationMadeDelegate OnOperationMade;
 
     [SerializeField] RouteScriptableObject initialRoute;
+
+    [SerializeField] LevelInfoScriptableObject[] levelsInfos;
+
+
 
     public Aircraft Aircraft = new Aircraft();
     public PathLines PathLines = new PathLines();

@@ -33,14 +33,14 @@ public class FixedPointsScriptableObject : ScriptableObject
 
 }
 
-[Serialisable]
+[Serializable]
 public class FixedPointEntry
 {
     public string Name;
     public FixedPointInfo[] Infos = new FixedPointInfo[3];
 }
 
-[Serialisable]
+[Serializable]
 public class FixedPointInfo
 {
     public int? RawDegrees;

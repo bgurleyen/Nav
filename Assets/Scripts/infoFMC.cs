@@ -7,6 +7,7 @@ using UnityEngine.UI;
 
 public class infoFMC : Singleton<infoFMC>
 {
+    public LevelInfoScriptableObject[] levelsInfoData;
 
     public Text Infotext,pages;
     int previousPrvIndex = 0;
@@ -85,7 +86,8 @@ public class infoFMC : Singleton<infoFMC>
         }
 
      
-        Fmc.Initref.GWT = "[ZFW]+Calculator.TotalFuel";
+        // Fmc.Initref.GWT = "[ZFW]+Calculator.TotalFuel";
+        Fmc.Initref.GWT = levelsInfoData[0].ZFW.ToString();
         Fmc.Initref.Destination = "[destination]";
         Fmc.Initref.RW = "[rw]";
         Fmc.Initref.Field = "[field]";

@@ -280,11 +280,14 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   __messageText: 
-  initialDataSet: {fileID: 11400000, guid: d58b5778af019184cbbb26304b282c64, type: 2}
-  ActiveSet: {fileID: 0}
-  ModSet: {fileID: 0}
+  initialRoute: {fileID: 11400000, guid: d58b5778af019184cbbb26304b282c64, type: 2}
+  levelsInfos:
+  - {fileID: 11400000, guid: 4be3cbe92c6ec2542a037e8c415f97a5, type: 2}
+  - {fileID: 11400000, guid: b1cfe821eaa7eb744a1cbbe763bf29fe, type: 2}
+  ActiveRoute: {fileID: 0}
+  ModRoute: {fileID: 0}
   ModeSetWithPosition: {fileID: 0}
-  FixSet: {fileID: 0}
+  FixedPoints: {fileID: 0}
 --- !u!4 &35611998
 Transform:
   m_ObjectHideFlags: 0
@@ -1562,6 +1565,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_AnchoredPosition.x
       value: 0.00012207031
+      objectReference: {fileID: 0}
+    - target: {fileID: 3256829732222753613, guid: 245bed0339e6baa4f9eaa85f099c3c56,
+        type: 3}
+      propertyPath: m_RaycastTarget
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 245bed0339e6baa4f9eaa85f099c3c56, type: 3}
@@ -7218,7 +7226,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0.57789093}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -2.5, y: -0.5}
+  m_AnchoredPosition: {x: -2.4999962, y: -0.5}
   m_SizeDelta: {x: -4.999998, y: -3}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &458603445115731997

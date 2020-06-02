@@ -1472,6 +1472,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   __messageText: 
+  levelsInfoData:
+  - {fileID: 11400000, guid: b1cfe821eaa7eb744a1cbbe763bf29fe, type: 2}
+  - {fileID: 11400000, guid: 4be3cbe92c6ec2542a037e8c415f97a5, type: 2}
   Infotext: {fileID: 915843712}
   pages: {fileID: 1614403356}
 --- !u!114 &702805328
