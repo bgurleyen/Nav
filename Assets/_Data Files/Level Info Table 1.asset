@@ -12,18 +12,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 87156d1d85bb4244793ffd45c46286cf, type: 3}
   m_Name: Level Info Table 1
   m_EditorClassIdentifier: 
-  LevelNumber: 0
-  Destination: 
-  Star: 
-  Transition: 
-  Runway: 
-  FieldInfo: 
-  FreqCourse: 
-  ZFW: 64
-  Fuel: 3
-  CrzAltitude: 99
-  CrzSpeed: 0
-  F30Speed: 0
-  DesEconSpeed: 3
-  DesEconMach: 0
-  GateIdx: 0
+  LevelNumber: 1
+  Destination: LFPG
+  Star: DINA4E
+  Transition: LOR1H
+  Runway: 08L
+  FieldInfo: 13829FT4215M
+  FreqCourse: 108.7/0.86
+  ZFW: 48
+  Fuel: 12
+  CrzAltitude: 36000
+  CrzSpeed: 273
+  F30Speed: 121
+  DesEconSpeed: 280
+  DesEconMach: 78
+  GateIdx: 11

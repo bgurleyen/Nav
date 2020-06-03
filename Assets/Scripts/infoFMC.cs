@@ -11,6 +11,7 @@ public class infoFMC : Singleton<infoFMC>
 
     public Text Infotext,pages;
     int previousPrvIndex = 0;
+    public int Level = 0;
 
     public class INITREF { public string GWT, Destination, RW, Field, FreqCourse,F15,F30,F40,Vref; }
     public class RTE { public string Destination, RW; }
@@ -35,6 +36,7 @@ public class infoFMC : Singleton<infoFMC>
         public ARR Arr = new ARR();
         public PROG Prog = new PROG();
     }
+    FMC Fmc = new FMC();
     private void Start()
     {
         InvokeRepeating("DisplayFields", 1f, 1f) ;
@@ -42,7 +44,7 @@ public class infoFMC : Singleton<infoFMC>
 
     public FMC FMCFields()
     {
-        FMC Fmc = new FMC();
+   
         double PrvAltitude,Altitude;
         int   Speed,VS,ff;
         double Distance;
@@ -58,7 +60,6 @@ public class infoFMC : Singleton<infoFMC>
         double[] fr_onpoint = new double[WPTCount];
         int[] GS_onpoint = new int[WPTCount];
         double[] totalDistLeft = new double[WPTCount];
-        totalDistLeft[prvWptIdx] = GameManager.Instance.Aircraft.ComputedDistanceLeft;;
         double RW_Alt = activePoints.Points[WPTCount-1].Altitude.ComputedValue;
         double fuelBurn,fuelRemaining = Calculator.totalFuel / 100;  
         float DirectDistance = (Vector2.Distance(GameManager.Instance.PathLines.GetNodePosition(WPTCount - 1), GameManager.Instance.Aircraft.Position));
@@ -76,46 +77,46 @@ public class infoFMC : Singleton<infoFMC>
             if (ff < 95) ff = 95; 
             fuelBurn = System.Math.Round((Distance / WE.GS * ff*2 / 100),3);
             fuelRemaining -= fuelBurn;
-            
+
             //Infotext.text +=  activePoints.Points[i].Name;+ " D:" + Distance + " S:" + WE.GS + " A:" + Altitude + " V:" + VS + "   ff:" + ff + "   fb:" + fb + "   fr:" + System.Math.Round(fr,2) + "\n";
-          
+
+            totalDistLeft[i] = (i==prvWptIdx + 1) ? GameManager.Instance.Aircraft.ComputedDistanceLeft : totalDistLeft[i - 1] + Distance;
             PrvAltitude = Altitude;
             fr_onpoint[i] = fuelRemaining;
             GS_onpoint[i] = WE.GS;
-            totalDistLeft[i] = totalDistLeft[i - 1] + Distance;
+       
         }
 
-     
-        // Fmc.Initref.GWT = "[ZFW]+Calculator.TotalFuel";
-        Fmc.Initref.GWT = levelsInfoData[0].ZFW.ToString();
-        Fmc.Initref.Destination = "[destination]";
-        Fmc.Initref.RW = "[rw]";
-        Fmc.Initref.Field = "[field]";
-        Fmc.Initref.FreqCourse = "[ils/crs]";
-        Fmc.Initref.F15 = "F15";
-        Fmc.Initref.F30 = "F30";
-        Fmc.Initref.F40 = "F40";
-        Fmc.Initref.Vref = "Vref";
+      
+        Fmc.Initref.GWT = ""+ (long)(levelsInfoData[Level].ZFW+Calculator.totalFuel/100);
+        Fmc.Initref.Destination = levelsInfoData[Level].Destination;
+        Fmc.Initref.RW = levelsInfoData[Level].Runway;
+        Fmc.Initref.Field = levelsInfoData[Level].FieldInfo;
+        Fmc.Initref.FreqCourse = levelsInfoData[Level].FreqCourse;
+        Fmc.Initref.F15 = "" + (levelsInfoData[Level].F30Speed - 10);
+        Fmc.Initref.F30 = levelsInfoData[Level].F30Speed.ToString();
+        Fmc.Initref.F40 = ""+ (levelsInfoData[Level].F30Speed+ 10);
+        Fmc.Initref.Vref = "" + levelsInfoData[Level].F30Speed ;
        
         
-        Fmc.Rte.Destination = "[destination]";
-        Fmc.Rte.RW = "[rw]";
+        Fmc.Rte.Destination = levelsInfoData[Level].Destination;
+        Fmc.Rte.RW = levelsInfoData[Level].Runway;
         Fmc.Des.RWAltitude = "" + RW_Alt;
-        Fmc.Des.WptAltFix = "[WPT/ALT]";
+        Fmc.Des.WptAltFix = activePoints.Points[levelsInfoData[Level].GateIdx].Name + "/" + (int)activePoints.Points[levelsInfoData[Level].GateIdx].Altitude.ComputedValue;
         Fmc.Des.FPA = "" + System.Math.Round(Mathf.Atan((float)(-Calculator.CVS / (Calculator.GS / 60 * 6076))) * Mathf.Rad2Deg, 2);
         Fmc.Des.VB = "" + System.Math.Round(Mathf.Atan((float)(Calculator.CAltitude - RW_Alt) / (DirectDistance * 6076)) * Mathf.Rad2Deg, 2);
         Fmc.Des.VS = "" + (int)((Calculator.CAltitude - RW_Alt) / (DirectDistance / Calculator.GS * 60));
         
         
-        Fmc.Crz.Destination = "[DEST]";
+        Fmc.Crz.Destination = levelsInfoData[Level].Destination;
         Fmc.Crz.FuelAtDestination = "" + System.Math.Round(fr_onpoint[WPTCount - 1], 2);
         Fmc.Crz.ActualWind = "" + Calculator.CWind;
     
         
-        Fmc.Arr.Destination = "[destination]";
-        Fmc.Arr.STAR = "[rw]";
-        Fmc.Arr.Transition = "[star]";
-        Fmc.Arr.RW = "[trans]";
+        Fmc.Arr.Destination = levelsInfoData[Level].Destination;
+        Fmc.Arr.STAR = levelsInfoData[Level].Runway;
+        Fmc.Arr.Transition = levelsInfoData[Level].Star;
+        Fmc.Arr.RW = levelsInfoData[Level].Transition;
      
         
         Fmc.Prog.PrvName = "" + activePoints.Points[prvWptIdx].Name; ;
@@ -136,7 +137,7 @@ public class infoFMC : Singleton<infoFMC>
         Fmc.Prog.SecondDTG = "" + (int)totalDistLeft[prvWptIdx + 2];
         Fmc.Prog.SecondETA = "" + GameTime.FormatFMCTime(GameTime.timer + (((float)totalDistLeft[prvWptIdx + 2] / GS_onpoint[prvWptIdx + 2]) * 3600));
         Fmc.Prog.SecondFUEL = "" + System.Math.Round(fr_onpoint[prvWptIdx + 2], 1);
-        Fmc.Prog.Destination = "[Destination]";
+        Fmc.Prog.Destination = levelsInfoData[Level].Destination;
         Fmc.Prog.DestDTG = "" + (int)totalDistLeft[WPTCount - 1];
         Fmc.Prog.DestETA = "" + GameTime.FormatFMCTime(GameTime.timer + (((float)totalDistLeft[WPTCount - 1] / GS_onpoint[WPTCount - 1]) * 3600));
         Fmc.Prog.DestFUEL = "" + System.Math.Round(fr_onpoint[WPTCount - 1], 1);
@@ -148,47 +149,47 @@ public class infoFMC : Singleton<infoFMC>
     void DisplayFields()
     {
         FMC Fmc = FMCFields();
-        pages.text = "INIT REF : " + Fmc.Initref.GWT +
-                                  Fmc.Initref.Destination +
-                                  Fmc.Initref.RW +
-                                  Fmc.Initref.Field +
-                                  Fmc.Initref.FreqCourse +
-                                  Fmc.Initref.F15 +
-                                  Fmc.Initref.F30 +
-                                  Fmc.Initref.F40 +
+        pages.text = "INIT REF : " + Fmc.Initref.GWT + "\n"+
+                                  Fmc.Initref.Destination + "\n" +
+                                  Fmc.Initref.RW + "\n" +
+                                  Fmc.Initref.Field + "\n" +
+                                  Fmc.Initref.FreqCourse + "\n" +
+                                  Fmc.Initref.F15 + "\n" +
+                                  Fmc.Initref.F30 + "\n" +
+                                  Fmc.Initref.F40 + "\n" +
                                   Fmc.Initref.Vref + "\n \n" +
-                 "RTE       :  " + Fmc.Rte.Destination +
+                 "RTE       :  " + Fmc.Rte.Destination + "\n" +
                                   Fmc.Rte.RW + "\n \n" +
-                 "DES      : --Descent Speed Mode-- " +
-                               " RW alt :" + Fmc.Des.RWAltitude +
-                               "--TGT SPEED--" +
-                                Fmc.Des.WptAltFix +
-                               " FPA   : " + Fmc.Des.FPA +
-                               "  VB   : " + Fmc.Des.VB +
+                 "DES      : --Descent Speed Mode-- " + "\n" +
+                               " RW alt :" + Fmc.Des.RWAltitude + "\n" +
+                               "--TGT SPEED--" + "\n" +
+                                Fmc.Des.WptAltFix + "\n" +
+                               " FPA   : " + Fmc.Des.FPA + "\n" +
+                               "  VB   : " + Fmc.Des.VB + "\n" +
                                "  VS   : " + Fmc.Des.VS + "\n \n" +
-                "CRZ      : --CRZ ALT-- " +
-                                Fmc.Crz.Destination +
-                                " --CRZ SPD-- " +
-                                "FuelATDESt   : " + Fmc.Crz.FuelAtDestination +
+                "CRZ      : --CRZ ALT-- " + "\n" +
+                                Fmc.Crz.Destination + "\n" +
+                                " --CRZ SPD-- " + "\n" +
+                                "FuelATDESt   : " + Fmc.Crz.FuelAtDestination + "\n" +
                                "Actual Wind  :" + Fmc.Crz.ActualWind + "\n \n" +
-                "ARR      :    " + Fmc.Arr.Destination +
-                                  Fmc.Arr.STAR +
-                                  Fmc.Arr.Transition +
+                "ARR      :    " + Fmc.Arr.Destination + "\n" +
+                                  Fmc.Arr.STAR + "\n" +
+                                  Fmc.Arr.Transition + "\n" +
                                   Fmc.Arr.RW + "\n \n" +
 
-               "PROG      :    " + Fmc.Prog.PrvName + ": X Alt:" + Fmc.Prog.PrvCrossAltitude +
-                                     "  Actual Time:" + Fmc.Prog.PrvActualTime +
+               "PROG      :    " + Fmc.Prog.PrvName + ": X Alt:" + Fmc.Prog.PrvCrossAltitude + "   " +
+                                     "  Actual Time:" + Fmc.Prog.PrvActualTime + "   " +
                                      "  Actual Fuel:" + Fmc.Prog.PrvActualFuel + "\n" +
-                  Fmc.Prog.NxtName + ": DTG : " + Fmc.Prog.NxtDTG +
-                                     "  ETA : " + Fmc.Prog.NxtETA +
+                  Fmc.Prog.NxtName + ": DTG : " + Fmc.Prog.NxtDTG + "   " +
+                                     "  ETA : " + Fmc.Prog.NxtETA + "   " +
                                      "  FUEL: " + Fmc.Prog.NxtFUEL + "\n" +
-               Fmc.Prog.SecondName + ": DTG : " + Fmc.Prog.SecondDTG +
-                                     "  ETA : " + Fmc.Prog.SecondETA +
+               Fmc.Prog.SecondName + ": DTG : " + Fmc.Prog.SecondDTG + "   " +
+                                     "  ETA : " + Fmc.Prog.SecondETA + "   " +
                                      "  FUEL: " + Fmc.Prog.SecondFUEL + "\n" +
-              Fmc.Prog.Destination + ": DTG : " + Fmc.Prog.DestDTG +
-                                     "  ETA : " + Fmc.Prog.DestETA +
+              Fmc.Prog.Destination + ": DTG : " + Fmc.Prog.DestDTG + "   " +
+                                     "  ETA : " + Fmc.Prog.DestETA + "   " +
                                      "  FUEL: " + Fmc.Prog.DestFUEL + "\n" +
-                                     "     wind     : " + Fmc.Prog.ActualWind +
+                                     "     wind     : " + Fmc.Prog.ActualWind +"   " +
                                      "     fuel qty : " + Fmc.Prog.FuelQty + "\n";
     }
 }

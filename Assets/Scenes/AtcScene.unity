@@ -1473,10 +1473,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   __messageText: 
   levelsInfoData:
-  - {fileID: 11400000, guid: b1cfe821eaa7eb744a1cbbe763bf29fe, type: 2}
   - {fileID: 11400000, guid: 4be3cbe92c6ec2542a037e8c415f97a5, type: 2}
+  - {fileID: 11400000, guid: b1cfe821eaa7eb744a1cbbe763bf29fe, type: 2}
   Infotext: {fileID: 915843712}
   pages: {fileID: 1614403356}
+  Level: 0
 --- !u!114 &702805328
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -3053,7 +3054,7 @@ MonoBehaviour:
       m_Calls: []
   m_FontData:
     m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 23
+    m_FontSize: 21
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 2
@@ -3186,7 +3187,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1637014061
 RectTransform:
   m_ObjectHideFlags: 0

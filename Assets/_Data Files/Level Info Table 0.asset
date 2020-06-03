@@ -10,20 +10,20 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 87156d1d85bb4244793ffd45c46286cf, type: 3}
-  m_Name: Level Info Table
+  m_Name: Level Info Table 0
   m_EditorClassIdentifier: 
   LevelNumber: 0
-  Destination: 
-  Star: 
-  Transition: 
-  Runway: 
-  FieldInfo: 
-  FreqCourse: 
-  ZFW: 2
-  Fuel: 3
-  CrzAltitude: 3
-  CrzSpeed: 0
-  F30Speed: 0
-  DesEconSpeed: 3
-  DesEconMach: 0
-  GateIdx: 0
+  Destination: EDDV
+  Star: HLZ4R
+  Transition: CE09L
+  Runway: 09L
+  FieldInfo: 12467FT3800M
+  FreqCourse: 108.3/91
+  ZFW: 49
+  Fuel: 11
+  CrzAltitude: 35000
+  CrzSpeed: 270
+  F30Speed: 120
+  DesEconSpeed: 270
+  DesEconMach: 79
+  GateIdx: 14

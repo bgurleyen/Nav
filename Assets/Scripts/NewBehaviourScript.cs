@@ -59,7 +59,6 @@ public class NewBehaviourScript : MonoBehaviour
         if (F[idx] != 0)
         {
 
-            //Fspeed.transform.localPosition = new Vector2(90, F[idx]);
             Fspeed.transform.localPosition = new Vector2(90, (upSpeedVal + F[idx]) * 2 - 441);
             Fspeed.GetComponent<UnityEngine.UI.Text>().text = "--" + FDisplay[idx];
         }
