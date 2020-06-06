@@ -69,7 +69,7 @@ public class infoFMC : Singleton<infoFMC>
             Altitude = (int)activePoints.Points[i].Altitude.ComputedValue;
             Speed =  activePoints.Points[i].Speed.ComputedValue;
             if (Speed < 0) Speed = 230; // Change Computed -1 speed
-    
+
             Distance = System.Math.Round(activePoints.Points[i].Distance,2);
             WE = Calculator.CalculateWindElements(Altitude, Speed, 0);
             VS = (int)((Altitude- PrvAltitude) /(Distance/WE.GS*60));

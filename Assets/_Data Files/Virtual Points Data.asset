@@ -9,13 +9,7 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 686a3e082b8fa1242ad16fff883efb61, type: 3}
-  m_Name: Other AC Data
+  m_Script: {fileID: 11500000, guid: 7eed825a8d01b2f47ae748b672c62d57, type: 3}
+  m_Name: Virtual Points Data
   m_EditorClassIdentifier: 
-  ACItems:
-  - Point: 0
-    Altitude: 0
-    Speed: 0
-  - Point: 0
-    Altitude: 0
-    Speed: 0
+  VirtualPointsItems: []

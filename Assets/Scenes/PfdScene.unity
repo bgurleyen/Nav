@@ -3013,6 +3013,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bb0a2d2c38c63964892b61a04241840a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  windTables:
+  - {fileID: 11400000, guid: 9c42954b9a31eae4cbc2f7456066cf17, type: 2}
+  - {fileID: 11400000, guid: 16facbb0be0dd9a46b26a1e3bf06ab41, type: 2}
   txtRSpeed: {fileID: 1515255884}
   txtRAltitude: {fileID: 162528495}
   txtRVS: {fileID: 456544523}

@@ -1449,9 +1449,21 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   __messageText: 
+  otherACLevel:
+  - otherACnr:
+    - {fileID: 11400000, guid: aefa8e84b0bde5748b49057a1e9ef062, type: 2}
+    - {fileID: 11400000, guid: bf2b25adc0d3ee44a9d5ca2c7aee40ce, type: 2}
+    - {fileID: 11400000, guid: 4147e65302b17114da0084a5882cbf7a, type: 2}
+  - otherACnr:
+    - {fileID: 11400000, guid: fb309a985fa09f94990c0d643882d2be, type: 2}
+    - {fileID: 11400000, guid: 2ed6f299415babb4bbe87c4448f0be87, type: 2}
+    - {fileID: 11400000, guid: 1fe93c19b87e65243af3f78101b9ea92, type: 2}
+  aTCs:
+  - {fileID: 11400000, guid: 6500ec8d4625a184fb5fdac3c274b627, type: 2}
+  - {fileID: 11400000, guid: 93708f962b9a1c74a9d6f6bfa5663558, type: 2}
   pt: {fileID: 410199593}
-  AC: {fileID: 0}
-  myAC: {fileID: 0}
+  AC: {fileID: 1658826141}
+  myAC: {fileID: 1585350094}
   GameSpeed: {fileID: 193313419}
   Atc1: {fileID: 1785371170}
   Atc2: {fileID: 345340441}
@@ -3091,7 +3103,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1616959392
 RectTransform:
   m_ObjectHideFlags: 0
@@ -3182,12 +3194,12 @@ GameObject:
   - component: {fileID: 1637014063}
   - component: {fileID: 1637014062}
   m_Layer: 5
-  m_Name: info background
+  m_Name: info bg
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1637014061
 RectTransform:
   m_ObjectHideFlags: 0

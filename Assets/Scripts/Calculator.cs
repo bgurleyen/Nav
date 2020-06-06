@@ -2,11 +2,13 @@
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+using Gamelogic.Extensions;
 
 public class Calculator : MonoBehaviour
 {
-    string result;
 
+    public  WindTableScriptableObject[] windTables;
+    string result;
     public Text txtRSpeed, txtRAltitude, txtRVS, txtRHeading;
     public Text txtCSpeed, txtCAltitude, txtCVS;
     public Text txtRSpeed_overTape, txtRAltitude_overTape;
@@ -159,6 +161,13 @@ public class Calculator : MonoBehaviour
         InvokeRepeating("DisplayWindElements", 0, 1f);
         Flap_Idx = 0;
         SetFlaps();
+    }
+
+    public static Calculator Instance;
+
+    void Awake()
+    {
+        Instance = this;
     }
     public void DrawVDI() 
     {
@@ -706,18 +715,34 @@ public class Calculator : MonoBehaviour
     {
         public int GS, Track,relativeWindD, WindM, WindD,TAS;
     }
-    public static WindElements CalculateWindElements(double Altitude , double IAS,int Heading)
+    public int GetWindDirection(double Altitude)
+    {
+        int BaseAlt = 8 - (int)System.Math.Truncate(Altitude / 5000);
+        return (int)Mathf.LerpAngle((float)windTables[0].WindInfoItems[BaseAlt].Degrees,
+                                           (float)windTables[0].WindInfoItems[BaseAlt - 1].Degrees,
+                                           (float)(Altitude % 5000) / 5000);
+    }
+    public int GetWindMagnitude(double Altitude)
+    {
+        int BaseAlt = 8 - (int)System.Math.Truncate(Altitude / 5000);
+        return (int)Mathf.LerpUnclamped(windTables[0].WindInfoItems[BaseAlt].Knots,
+                                            windTables[0].WindInfoItems[BaseAlt - 1].Knots, 
+                                            (float)(Altitude % 5000) / 5000);
+    }
+
+    public  static WindElements CalculateWindElements(double Altitude , double IAS,int Heading)
     {
         if (Altitude > 39900) Altitude = 39900;
+     
         WindElements WE = new WindElements();
-        //int[,] W = new int[9, 2] { {115, 50 },{ 250, 38 },{ 270, 41 },{ 265, 45 },
-                              //  { 275, 40 },{ 200, 38 },{ 235, 49 },{ 254, 46 },{ 230, 52 } };// Wind Matrix
-          int[,] W = new int[9, 2] { {270, 25 },{ 270, 25 },{ 270, 25 },{ 265, 35 },
-                                { 275, 25 },{ 270, 25 },{ 275, 425 },{ 274, 26 },{ 330, 12 } };// Wind Matrix
-    int BaseAlt = 8 - (int)System.Math.Truncate(Altitude / 5000);
-        WE.WindD = (int)Mathf.LerpAngle(W[BaseAlt, 0], W[BaseAlt - 1, 0], (float)(Altitude % 5000) / 5000);
-        WE.WindM = (int)Mathf.LerpUnclamped(W[BaseAlt, 1], W[BaseAlt - 1, 1], (float)(Altitude % 5000) / 5000);
+      
+        int BaseAlt = 8 - (int)System.Math.Truncate(Altitude / 5000);
+
+        WE.WindD = Calculator.Instance.GetWindDirection(Altitude);
+        WE.WindM = Calculator.Instance.GetWindMagnitude(Altitude);
+
         WE.relativeWindD = WE.WindD + Heading;
+        
         double HeadWind = Mathf.Cos(WE.relativeWindD * Mathf.Deg2Rad) * WE.WindM;
         double CrossWind = Mathf.Sin(WE.relativeWindD * Mathf.Deg2Rad) * WE.WindM;
     

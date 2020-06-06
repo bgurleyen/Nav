@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 87156d1d85bb4244793ffd45c46286cf, type: 3}
-  m_Name: Level Info Table 0
+  m_Name: Level Info Level 0
   m_EditorClassIdentifier: 
   LevelNumber: 0
   Destination: EDDV
