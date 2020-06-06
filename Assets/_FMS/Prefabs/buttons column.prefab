@@ -57,10 +57,10 @@ MonoBehaviour:
   m_Padding:
     m_Left: 0
     m_Right: 0
-    m_Top: 135
-    m_Bottom: 137
+    m_Top: 0
+    m_Bottom: 0
   m_ChildAlignment: 4
-  m_Spacing: 62.9
+  m_Spacing: 0
   m_ChildForceExpandWidth: 1
   m_ChildForceExpandHeight: 1
   m_ChildControlWidth: 1
@@ -74,11 +74,6 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 7885134270604057637}
     m_Modifications:
-    - target: {fileID: 4119317497551907036, guid: ff62a19621d6a6444b1c3175ba215c6b,
-        type: 3}
-      propertyPath: m_Name
-      value: 'Side Button '
-      objectReference: {fileID: 0}
     - target: {fileID: 1486881520014020783, guid: ff62a19621d6a6444b1c3175ba215c6b,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -184,6 +179,11 @@ PrefabInstance:
       propertyPath: m_Pivot.y
       value: 0.5
       objectReference: {fileID: 0}
+    - target: {fileID: 4119317497551907036, guid: ff62a19621d6a6444b1c3175ba215c6b,
+        type: 3}
+      propertyPath: m_Name
+      value: 'Side Button '
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: ff62a19621d6a6444b1c3175ba215c6b, type: 3}
 --- !u!224 &324165807645076609 stripped
@@ -199,11 +199,6 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 7885134270604057637}
     m_Modifications:
-    - target: {fileID: 4119317497551907036, guid: ff62a19621d6a6444b1c3175ba215c6b,
-        type: 3}
-      propertyPath: m_Name
-      value: Side Button (5)
-      objectReference: {fileID: 0}
     - target: {fileID: 1486881520014020783, guid: ff62a19621d6a6444b1c3175ba215c6b,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -309,6 +304,11 @@ PrefabInstance:
       propertyPath: m_Pivot.y
       value: 0.5
       objectReference: {fileID: 0}
+    - target: {fileID: 4119317497551907036, guid: ff62a19621d6a6444b1c3175ba215c6b,
+        type: 3}
+      propertyPath: m_Name
+      value: Side Button (5)
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: ff62a19621d6a6444b1c3175ba215c6b, type: 3}
 --- !u!224 &908192492786589342 stripped
@@ -324,11 +324,6 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 7885134270604057637}
     m_Modifications:
-    - target: {fileID: 4119317497551907036, guid: ff62a19621d6a6444b1c3175ba215c6b,
-        type: 3}
-      propertyPath: m_Name
-      value: Side Button (4)
-      objectReference: {fileID: 0}
     - target: {fileID: 1486881520014020783, guid: ff62a19621d6a6444b1c3175ba215c6b,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -434,6 +429,11 @@ PrefabInstance:
       propertyPath: m_Pivot.y
       value: 0.5
       objectReference: {fileID: 0}
+    - target: {fileID: 4119317497551907036, guid: ff62a19621d6a6444b1c3175ba215c6b,
+        type: 3}
+      propertyPath: m_Name
+      value: Side Button (4)
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: ff62a19621d6a6444b1c3175ba215c6b, type: 3}
 --- !u!224 &8436080089907966493 stripped
@@ -449,11 +449,6 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 7885134270604057637}
     m_Modifications:
-    - target: {fileID: 4119317497551907036, guid: ff62a19621d6a6444b1c3175ba215c6b,
-        type: 3}
-      propertyPath: m_Name
-      value: Side Button (2)
-      objectReference: {fileID: 0}
     - target: {fileID: 1486881520014020783, guid: ff62a19621d6a6444b1c3175ba215c6b,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -559,6 +554,11 @@ PrefabInstance:
       propertyPath: m_Pivot.y
       value: 0.5
       objectReference: {fileID: 0}
+    - target: {fileID: 4119317497551907036, guid: ff62a19621d6a6444b1c3175ba215c6b,
+        type: 3}
+      propertyPath: m_Name
+      value: Side Button (2)
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: ff62a19621d6a6444b1c3175ba215c6b, type: 3}
 --- !u!224 &8543682726522261818 stripped
@@ -574,11 +574,6 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 7885134270604057637}
     m_Modifications:
-    - target: {fileID: 4119317497551907036, guid: ff62a19621d6a6444b1c3175ba215c6b,
-        type: 3}
-      propertyPath: m_Name
-      value: Side Button (1)
-      objectReference: {fileID: 0}
     - target: {fileID: 1486881520014020783, guid: ff62a19621d6a6444b1c3175ba215c6b,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -684,6 +679,11 @@ PrefabInstance:
       propertyPath: m_Pivot.y
       value: 0.5
       objectReference: {fileID: 0}
+    - target: {fileID: 4119317497551907036, guid: ff62a19621d6a6444b1c3175ba215c6b,
+        type: 3}
+      propertyPath: m_Name
+      value: Side Button (1)
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: ff62a19621d6a6444b1c3175ba215c6b, type: 3}
 --- !u!224 &8707640278703004036 stripped
@@ -699,11 +699,6 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 7885134270604057637}
     m_Modifications:
-    - target: {fileID: 4119317497551907036, guid: ff62a19621d6a6444b1c3175ba215c6b,
-        type: 3}
-      propertyPath: m_Name
-      value: Side Button (3)
-      objectReference: {fileID: 0}
     - target: {fileID: 1486881520014020783, guid: ff62a19621d6a6444b1c3175ba215c6b,
         type: 3}
       propertyPath: m_LocalPosition.x
@@ -808,6 +803,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_Pivot.y
       value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4119317497551907036, guid: ff62a19621d6a6444b1c3175ba215c6b,
+        type: 3}
+      propertyPath: m_Name
+      value: Side Button (3)
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: ff62a19621d6a6444b1c3175ba215c6b, type: 3}

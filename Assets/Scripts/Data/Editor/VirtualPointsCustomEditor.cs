@@ -9,7 +9,7 @@ public class VirtualPointsCustomEditor : Editor
 
     void OnEnable()
     {
-        virtualPointItems = new ReorderableList(serializedObject.FindProperty("VirtualPointItems"))
+        virtualPointItems = new ReorderableList(serializedObject.FindProperty("VirtualPointsItems"))
         {
             draggable = false
         };

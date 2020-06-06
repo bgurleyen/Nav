@@ -103,7 +103,8 @@ public class Move : Singleton<Move>
         void Calculate_point(int K)
         {
             Vector2 PtPos;
-            if (K < 50) PtPos = GameManager.Instance.PathLines.ComputedLines[K].EndPosition;
+            // computedLines start from 1. (0 is an added empty line)
+            if (K < 50) PtPos = GameManager.Instance.PathLines.ComputedLines[K+1].EndPosition;
             else PtPos = VirtualPts[K-50];
 
             x2 = PtPos.x;

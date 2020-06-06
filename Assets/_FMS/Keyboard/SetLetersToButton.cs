@@ -5,19 +5,20 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using UnityEngine.Events;
 
-public class SetNumbersToButton : MonoBehaviour
+
+public class SetLetersToButton : MonoBehaviour
 {
 
     [ButtonInspector]
-    void Set1to0Data()
+    void SetAtoZData()
     {
+        var a = 'A';
         foreach (Transform item in transform)
         {
             Button b = item.GetComponent<Button>();
             Text t = item.GetComponentInChildren<Text>();
-            string s = b.gameObject.name;
-            t.text = s[s.Length - 1].ToString();
+            t.text = a.ToString();
+            a++;
         }
     }
 }
-

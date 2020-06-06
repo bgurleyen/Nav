@@ -11,10 +11,6 @@ public class GameManager : Singleton<GameManager>
 
     [SerializeField] RouteScriptableObject initialRoute;
 
-    [SerializeField] LevelInfoScriptableObject[] levelsInfos;
-
-
-
     public Aircraft Aircraft = new Aircraft();
     public PathLines PathLines = new PathLines();
 
