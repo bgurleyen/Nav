@@ -168,6 +168,7 @@ public class Aircraft
     {
         if (IsFreeFlight)
         {
+            IndicateTargetHeading(Calculator.RHeading);
             AdvanceFreeFlight();
         }
         else

@@ -1,14 +1,12 @@
-﻿using Gamelogic.Extensions;
+﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 
-public class DP_Compass : Singleton<DP_Compass>
+public class McpUI : MonoBehaviour
 {
-    public Animator cameraAnimator;
-
     public void OnMapMode(bool toggle)
     {
         if (!toggle) return;
-        cameraAnimator.SetTrigger("Map");
 
         Drawer.Instance.ShowMapMode();
     }
@@ -16,7 +14,6 @@ public class DP_Compass : Singleton<DP_Compass>
     public void OnCenterMode(bool toggle)
     {
         if (!toggle) return;
-        cameraAnimator.SetTrigger("Center");
 
         Drawer.Instance.ShowCenterMode();
     }
@@ -24,9 +21,22 @@ public class DP_Compass : Singleton<DP_Compass>
     public void OnPlanMode(bool toggle)
     {
         if (!toggle) return;
-        cameraAnimator.SetTrigger("Center");
 
         Drawer.Instance.ShowPlanMode();
     }
 
+
+    public void OnHS(bool toggle)
+    {
+        if (!toggle) return;
+        GameManager.Instance.SwitchFreeFlight(true);
+    }
+
+    public void OnLNav(bool toggle)
+    {
+        if (!toggle) return;
+        GameManager.Instance.SwitchFreeFlight(false);
+    }
+    
+    
 }

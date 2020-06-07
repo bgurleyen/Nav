@@ -1,8 +1,10 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Gamelogic.Extensions;
+using TMPro;
 
 public class Calculator : MonoBehaviour
 {
@@ -18,13 +20,12 @@ public class Calculator : MonoBehaviour
 
 
     public Text txtN1, txtFF, txtTotalFuel;// N1( / 100) , Fuel Flow ( X 100) , Pitch attitude ( / 100)
-    public Text VDI_Text;
+    public TMP_Text VDI_Text;
 
-    public Image VDI_Index;
+    public Transform VDI_Index;
 
     int RVS; //R : Required(Selected)
 
-    // @#$ why is CVS 0 ?
     public static int RSpeed = 220, RHeading, RAltitude, CVS;
     public static double CSpeed = 250, CAltitude = 40000;
     public int CHeading,Track;
@@ -139,10 +140,20 @@ public class Calculator : MonoBehaviour
 
     public static Calculator Instance;
     
-    public float GetBananaPosition => CVS == 0 ? 0 : (float)((CAltitude - RAltitude) / CVS * CSpeed / 60 * 6);
+    public float GetBananaPosition
+    {
+        get
+        {
+            if (CVS == 0)
+                return 0;
+            else
+                return (float) ((CAltitude - RAltitude) / CVS * CSpeed / 60 * 6);
+        }
+    }
 
     private void Start()
     {
+        
         RAltitude = (int)CAltitude;
         RSpeed = (int)CSpeed;
         RVS = CVS;
@@ -153,21 +164,46 @@ public class Calculator : MonoBehaviour
 
         txtCVS.text = "";
         DTG = 173.1;
-        // @#$ replace this
+        
         Invoke("VS_Equalize", 1f);
         Invoke("Speed_Equalize", 0.1f);
-        InvokeRepeating("InterpolateLvlChg", 0, 1f);
-        InvokeRepeating("InterpolateVS", 0, 1f);
-        InvokeRepeating("MatchAltitudes", 0, 0.1f);
-        InvokeRepeating("SetFMA", 0, 1f);
-        InvokeRepeating("FuelandMach", 0, 1f);
-        InvokeRepeating("SetN1FF", 0, 0.1f);
-        InvokeRepeating("ToggleEnable", 0, 0.1f);
-        InvokeRepeating("DrawVDI", 0, 1f);
-        InvokeRepeating("DisplayWindElements", 0, 1f);
+
+        StartCoroutine(ExecuteEachSecond());
+        StartCoroutine(ExecuteEachFrameSecond());
+
         Flap_Idx = 0;
         SetFlaps();
     }
+
+    
+    
+    IEnumerator ExecuteEachFrameSecond()
+    {
+        while (true)
+        {
+            MatchAltitudes();
+            SetN1FF();
+            ToggleEnable();
+
+            yield return  new WaitForSeconds(0.1f);
+        }
+    }
+
+    IEnumerator ExecuteEachSecond()
+    {
+        while (true)
+        {
+            InterpolateLvlChg();
+            InterpolateVS();
+            SetFMA();
+            FuelandMach();
+            DrawVDI();
+            DisplayWindElements();
+            
+            yield return  new WaitForSeconds(1);
+        }
+    }
+    
 
 
     void Awake()
@@ -646,9 +682,7 @@ public class Calculator : MonoBehaviour
         Script2.CheckAltitudeIndicator(RAltitude, (int)CAltitude);
     }
     public void Button_Long_Hold()
-
     {
-
         if (LongPressEventTrigger.held2)
         {
             Button_Click();
@@ -685,12 +719,13 @@ public class Calculator : MonoBehaviour
         }
 
     }
-    public void co_Change() 
+
+    public void co_Change()
     {
-       if (co.isOn) // on mach
+        if (co.isOn) // on mach
         {
             RMach = Speed2Mach(RSpeed);
-            txtRSpeed.text = ""+System.Math.Round(RMach,2);
+            txtRSpeed.text = "" + System.Math.Round(RMach, 2);
             txtRSpeed_overTape.text = txtRSpeed.text;
         }
         else
@@ -700,8 +735,8 @@ public class Calculator : MonoBehaviour
             txtRSpeed_overTape.text = txtRSpeed.text;
 
         }
-
     }
+
     public void DisplayWindElements()
     {
 

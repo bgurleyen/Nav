@@ -5,6 +5,8 @@ using Gamelogic.Extensions;
 
 public class Drawer : Singleton<Drawer>
 {
+    public Animator cameraAnimator;
+    [Space]
     [SerializeField] Transform dynamicHolder;
     [SerializeField] Transform dynamicHolderMod;
     [SerializeField] Transform dynamicHolderCircles;
@@ -102,18 +104,21 @@ public class Drawer : Singleton<Drawer>
 
     public void ShowMapMode()
     {
+        cameraAnimator.SetTrigger("Map");
         Mode = DrawerMode.Map;
         ShowCurrentMode();
     }
 
     public void ShowCenterMode()
     {
+        cameraAnimator.SetTrigger("Center");
         Mode = DrawerMode.Center;
         ShowCurrentMode();
     }
 
     public void ShowPlanMode()
     {
+        cameraAnimator.SetTrigger("Center");
         Mode = DrawerMode.Plan;
         ShowCurrentMode();
     }

@@ -78,23 +78,19 @@ public class GameManager : Singleton<GameManager>
         IsMod = true;
     }
 
-    public void ExecuteActivateFreeFlight()
+    public void SwitchFreeFlight(bool state)
     {
-        if (Aircraft.IsFreeFlight)
+        switch (state)
         {
-            Aircraft.EndFreeFlight();
-        }
-        else
-        {
-            Aircraft.StartFreeFlight();
+            case true:
+                Aircraft.StartFreeFlight();
+                break;
+            default:
+                Aircraft.EndFreeFlight();
+                break;
         }
     }
 
-    public void SteerFlight(float degrees)
-    {
-        Aircraft.IndicateTargetHeading( Aircraft.Heading + degrees);
-    }
-    
     public void ExecuteShortcutOnMod(ExecuteShortcutOnModeCommand command)
     {
         CheckModForOperation();
