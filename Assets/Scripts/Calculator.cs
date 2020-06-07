@@ -20,10 +20,11 @@ public class Calculator : MonoBehaviour
     public Text txtN1, txtFF, txtTotalFuel;// N1( / 100) , Fuel Flow ( X 100) , Pitch attitude ( / 100)
     public Text VDI_Text;
 
-    public Image VDI_Index, banana;
+    public Image VDI_Index;
 
     int RVS; //R : Required(Selected)
 
+    // @#$ why is CVS 0 ?
     public static int RSpeed = 220, RHeading, RAltitude, CVS;
     public static double CSpeed = 250, CAltitude = 40000;
     public int CHeading,Track;
@@ -135,9 +136,13 @@ public class Calculator : MonoBehaviour
         { { 160, -0,7940,530 }, { -1800, -200, 3240,95 } , { 130, 500,7510,496 }, { -1300,300, 3150,95 }},
         { { 160, -100,7300,508 }, { -1800, -200, 3140,95 } , { 130, 500,6920,488 }, { -1300, 300, 3060,95 }}}
     };
+
+    public static Calculator Instance;
+    
+    public float GetBananaPosition => CVS == 0 ? 0 : (float)((CAltitude - RAltitude) / CVS * CSpeed / 60 * 6);
+
     private void Start()
     {
-
         RAltitude = (int)CAltitude;
         RSpeed = (int)CSpeed;
         RVS = CVS;
@@ -148,6 +153,7 @@ public class Calculator : MonoBehaviour
 
         txtCVS.text = "";
         DTG = 173.1;
+        // @#$ replace this
         Invoke("VS_Equalize", 1f);
         Invoke("Speed_Equalize", 0.1f);
         InvokeRepeating("InterpolateLvlChg", 0, 1f);
@@ -163,7 +169,6 @@ public class Calculator : MonoBehaviour
         SetFlaps();
     }
 
-    public static Calculator Instance;
 
     void Awake()
     {
@@ -207,9 +212,6 @@ public class Calculator : MonoBehaviour
         VDI_Index.transform.localPosition = new Vector2(37, posY);
         if (DeltaAlt < 0) VDI_Text.transform.localPosition = new Vector2(-1, -120);
         else VDI_Text.transform.localPosition = new Vector2(-1, 120);
-
-        int bananaPos = (int)((CAltitude - RAltitude) / CVS * CSpeed / 60 * 6);
-        banana.transform.localPosition = new Vector3(-2438, -220 - bananaPos, 213);
     }
     public void SetFMA()
     {

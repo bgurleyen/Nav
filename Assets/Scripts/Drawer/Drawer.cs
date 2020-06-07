@@ -23,6 +23,7 @@ public class Drawer : Singleton<Drawer>
     [SerializeField] Transform compasPivot;
     [SerializeField] Transform mobilePlaneIndicatorPivot;
     [SerializeField] Transform freeFlightPivot;
+    [SerializeField] Transform bananaIndicatorPivot;
 
     [Header("modes visuals")]
     [SerializeField] GameObject[] mapHolder;
@@ -191,7 +192,8 @@ public class Drawer : Singleton<Drawer>
         DisplayFixCircles();
         DisplayFixRays();
         freeFlightPivot.gameObject.SetActive(GameManager.Instance.Aircraft.IsFreeFlight);
-
+        bananaIndicatorPivot.SetLocalY(Calculator.Instance.GetBananaPosition);
+        
 
         DisplayOtherTraffic();
         
