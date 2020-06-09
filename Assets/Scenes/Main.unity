@@ -4064,7 +4064,6 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b1cfe821eaa7eb744a1cbbe763bf29fe, type: 2}
   Infotext: {fileID: 915843712}
   pages: {fileID: 1614403356}
-  Level: 0
 --- !u!114 &307048009
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -5332,19 +5331,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e7992806e9c77fb4696fd5b38c0a2402, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  speedTape: {fileID: 304207562}
-  AltTape: {fileID: 841004984}
+  speedTape: {fileID: 304207564}
+  AltTape: {fileID: 841004986}
+  AttPic: {fileID: 1649240860}
+  Att: {fileID: 784862749}
+  TopIndex: {fileID: 1694517371}
+  maxFspeed: {fileID: 763059290}
+  SpeedIdx: {fileID: 2067701016}
+  AltIdx: {fileID: 1852143481}
+  upSpeed: {fileID: 2147439885}
+  Vref: {fileID: 894807735}
+  Fspeed: {fileID: 263906142}
   AltBasket: {fileID: 1841155704}
-  AttPic: {fileID: 1649240858}
-  Att: {fileID: 784862747}
-  TopIndex: {fileID: 1694517369}
-  upSpeed: {fileID: 2147439883}
-  Vref: {fileID: 894807733}
-  Fspeed: {fileID: 263906141}
-  Flaps: {fileID: 0}
-  maxFspeed: {fileID: 763059288}
-  SpeedIdx: {fileID: 2067701015}
-  AltIdx: {fileID: 1852143479}
 --- !u!1 &396767505
 GameObject:
   m_ObjectHideFlags: 0
@@ -6758,7 +6756,7 @@ MonoBehaviour:
   m_outlineColor:
     serializedVersion: 2
     rgba: 4278190080
-  m_fontSize: 29.95
+  m_fontSize: 28.25
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -10397,8 +10395,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4b017a554ac082b47baebfbddb23db78, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  __messageText: 
-  cameraAnimator: {fileID: 561176780}
 --- !u!1 &973863442
 GameObject:
   m_ObjectHideFlags: 0
@@ -13716,7 +13712,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.73945147, y: 0}
   m_AnchorMax: {x: 1, y: 0.89900005}
-  m_AnchoredPosition: {x: 0, y: 0.000002861023}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 0, y: 0.000005722046}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &1413385056
@@ -16707,7 +16703,7 @@ MonoBehaviour:
   m_outlineColor:
     serializedVersion: 2
     rgba: 4278190080
-  m_fontSize: 25.9
+  m_fontSize: 24.45
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -20532,7 +20528,7 @@ MonoBehaviour:
   m_outlineColor:
     serializedVersion: 2
     rgba: 4278190080
-  m_fontSize: 28.1
+  m_fontSize: 26.5
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -20668,7 +20664,7 @@ MonoBehaviour:
   m_outlineColor:
     serializedVersion: 2
     rgba: 4278190080
-  m_fontSize: 24.85
+  m_fontSize: 26.35
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -21026,7 +21022,7 @@ MonoBehaviour:
   m_outlineColor:
     serializedVersion: 2
     rgba: 4278190080
-  m_fontSize: 19.4
+  m_fontSize: 20.6
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1
@@ -22404,7 +22400,7 @@ MonoBehaviour:
   m_outlineColor:
     serializedVersion: 2
     rgba: 4278190080
-  m_fontSize: 29.95
+  m_fontSize: 28.25
   m_fontSizeBase: 36
   m_fontWeight: 400
   m_enableAutoSizing: 1

@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Gamelogic.Extensions;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,9 +10,9 @@ public class infoFMC : Singleton<infoFMC>
 {
     public LevelInfoScriptableObject[] levelsInfoData;
 
-    public Text Infotext,pages;
+    public Text Infotext,pages;    
     int previousPrvIndex = 0;
-    public int Level = 0;
+    int Level = Calculator.Level; 
 
     public class INITREF { public string GWT, Destination, RW, Field, FreqCourse,F15,F30,F40,Vref; }
     public class RTE { public string Destination, RW; }
@@ -53,7 +54,7 @@ public class infoFMC : Singleton<infoFMC>
        
   
         PrvAltitude = Calculator.CAltitude;
-         
+     
         Calculator.WindElements WE;
         int prvWptIdx = PositionVirtualNode.PassedNodeIndex;
         int WPTCount = activePoints.Points.Length ;

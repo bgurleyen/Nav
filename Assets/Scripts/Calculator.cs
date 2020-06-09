@@ -5,10 +5,12 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Gamelogic.Extensions;
 using TMPro;
+using System.Runtime.Remoting.Activation;
 
 public class Calculator : MonoBehaviour
 {
-
+    public static int Level =0;             // ***  Level
+        
     public  WindTableScriptableObject[] windTables;
     string result;
     public Text txtRSpeed, txtRAltitude, txtRVS, txtRHeading;
@@ -308,7 +310,7 @@ public class Calculator : MonoBehaviour
     }
     private void MatchAltitudes()
     {
-        NewBehaviourScript Script2 = FindObjectOfType<NewBehaviourScript>();
+        PFD_Animation Script2 = FindObjectOfType<PFD_Animation>();
         Script2.AltUpdate((int)CAltitude);
         Script2.CheckAltitudeIndicator(RAltitude, (int)CAltitude);
         if (CAltitude >= 10000) Qnh.text = "STD";
@@ -322,7 +324,7 @@ public class Calculator : MonoBehaviour
         float[] M210 = new float[8] { 1.45f, 0.65f, 1.05f, 0.75f, 0.9f, 1f, 0.75f, 1.2f };//Dec - Acc Times
         float[] M270 = new float[8] { 1.25f, 0.6f, 0.85f, 0.8f, 0.55f, 1.95f, 0.5f, 6f }; //Clean,SB,Lg,Both
 
-        NewBehaviourScript Script2 = FindObjectOfType<NewBehaviourScript>();
+        PFD_Animation Script2 = FindObjectOfType<PFD_Animation>();
 
         if (RRSpeed != CSpeed)
         {
@@ -459,7 +461,7 @@ public class Calculator : MonoBehaviour
     }
     private void SetAttPitch(int P)
     {
-        NewBehaviourScript Script2 = FindObjectOfType<NewBehaviourScript>();
+        PFD_Animation Script2 = FindObjectOfType<PFD_Animation>();
         Script2.AttUpdate((int)P);
     }
     private void SetN1FF()
@@ -534,7 +536,7 @@ public class Calculator : MonoBehaviour
 
         FlapNeedle.transform.localEulerAngles = new Vector3(0, 0, Fps[Flap_Idx]);
 
-        NewBehaviourScript Script2 = FindObjectOfType<NewBehaviourScript>();
+        PFD_Animation Script2 = FindObjectOfType<PFD_Animation>();
         Script2.Flaps_Indexchange(Flap_Idx);
     }
     public void LGToggle_Change()
@@ -629,7 +631,7 @@ public class Calculator : MonoBehaviour
     public void Button_Click()
 
     {
-        NewBehaviourScript Script2 = FindObjectOfType<NewBehaviourScript>();
+        PFD_Animation Script2 = FindObjectOfType<PFD_Animation>();
 
         result = EventSystem.current.currentSelectedGameObject.name; ;      //Speed
         if (co.isOn)                                    //Mach

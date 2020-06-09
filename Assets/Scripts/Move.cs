@@ -16,11 +16,13 @@ public class Move : Singleton<Move>
  
     public otherACsStruct[] otherACLevel ;
     public ATCInstructionsScriptableObject[] aTCs;
-    int Level=0;
+
+    int Level = Calculator.Level;
+
     public GameObject pt, AC,myAC;
     public Slider GameSpeed;
     int[] Route = new int[10];
-    int[] SpeedArray = new int[10];
+    int[] SpeedArray = new int[100];
     int[] Alt = new int[10];
     public Text Atc1,Atc2,Atc3;
     public string ATtc1; // maybe it's possible to use like this
@@ -232,7 +234,7 @@ public class Move : Singleton<Move>
                 OncekiAlt = (int)Calculator.CAltitude;
                 if (!Calculator.isHDG)                                                   // LNAV
                 {
-                   Calculate_point(Route[R]);
+                   //Calculate_point(Route[R]);
                    myAC.transform.localPosition = GameManager.Instance.Aircraft.Position;
                     if (h <= 40) R += 1;
                 }
@@ -290,7 +292,7 @@ public class Move : Singleton<Move>
                     ACpos = new Vector3(x + dx / h * SpeedCo*j, y + dy / h *SpeedCo*j,0);
                      myACAlt -= (OncekiAlt- (int)Calculator.CAltitude);
                 if (myACAlt < Calculator.RAltitude) myACAlt = (int)Calculator.RAltitude;
-                     ACAlt  -= (Altitude - otherACLevel[Level].otherACnr[ACnr].ACItems[i+1].Altitude) / (h / 10);
+                    // ACAlt  -= (Altitude - otherACLevel[Level].otherACnr[ACnr].ACItems[i+1].Altitude) / (h / 10); Change
                        if ((Vector3.Distance(myACpos, ACpos) < 50) && Mathf.Abs(myACAlt- ACAlt)<800)
                     {
                     Angle = (Vector2.Angle(AC.transform.localPosition, myAC.transform.localPosition)+1.57f);

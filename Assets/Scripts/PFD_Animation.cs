@@ -1,23 +1,24 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 
-public class NewBehaviourScript : MonoBehaviour
+public class PFD_Animation : MonoBehaviour
 {
 
-
-    public GameObject speedTape;
-    public GameObject AltTape;
+    public Image speedTape;
+    public Image AltTape;
+    public Image AttPic;
+    public Image Att;
+    public Image TopIndex;
+    public Image maxFspeed;
+    public Image SpeedIdx;
+    public Image AltIdx;
+    public Text upSpeed, Vref;
+    public Text Fspeed;
     public GameObject AltBasket;
-    public GameObject AttPic;
-    public GameObject Att;
-    public GameObject TopIndex;
-    public GameObject upSpeed, Vref;
-    public GameObject Fspeed;
-    public GameObject Flaps;
-    public GameObject maxFspeed;
-    public GameObject SpeedIdx;
-    public GameObject AltIdx;
+
+
     int upSpeedVal = 210;// Upspeed = Vref40+70
     int RSpeed = 220;
     double CSpeed = 250;
@@ -26,24 +27,9 @@ public class NewBehaviourScript : MonoBehaviour
 
     public void Start()
     {
-
-        speedTape = GameObject.Find("SpeedTape");
-        AltTape = GameObject.Find("AltTape");
-        AttPic = GameObject.Find("AttPic");
-        Att = GameObject.Find("Att");
-        TopIndex = GameObject.Find("TopIndex");
-        upSpeed = GameObject.Find("upSpeed");
-        Vref = GameObject.Find("Vref");
-        Flaps = GameObject.Find("Flaps");
-        Fspeed = GameObject.Find("FSpeed");
-        maxFspeed = GameObject.Find("maxFspeed");
-        SpeedIdx = GameObject.Find("SpeedIdx");
-        AltIdx = GameObject.Find("AltIdx");
-
         upSpeed.transform.localPosition = new Vector2(92, upSpeedVal * 2 - 445);
         Vref.transform.localPosition = new Vector2(92, (upSpeedVal - 70) * 2 - 443);
         SyncVariables();
-
     }
 
     public void SyncVariables()
