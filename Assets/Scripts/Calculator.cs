@@ -28,7 +28,7 @@ public class Calculator : MonoBehaviour
 
     int RVS; //R : Required(Selected)
 
-    public static int RSpeed = 220, RHeading, RAltitude, CVS;
+    public static int RSpeed = 220, RHeading, RAltitude, CVS; 
     public static double CSpeed = 250, CAltitude = 40000;
     public int CHeading,Track;
     double CMach,RMach, VNAV_VS;
