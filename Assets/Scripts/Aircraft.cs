@@ -164,6 +164,9 @@ public class Aircraft
                WalkedDistanceOnLine;
     }
 
+    /// <summary>
+    /// This is called on FixedUpdate from Gamemanager
+    /// </summary>
     public void Advance()
     {
         if (IsFreeFlight)

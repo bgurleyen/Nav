@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEngine.EventSystems;
@@ -11,12 +12,34 @@ public class SetNumbersToButton : MonoBehaviour
     [ButtonInspector]
     void Set1to0Data()
     {
+        int _i = 1;
         foreach (Transform item in transform)
         {
             Button b = item.GetComponent<Button>();
-            Text t = item.GetComponentInChildren<Text>();
-            string s = b.gameObject.name;
-            t.text = s[s.Length - 1].ToString();
+            
+            var t = item.GetComponentInChildren<TMP_Text>();
+            if (_i == 10)
+            {
+                b.name = $"Button .";
+                t.text = ".";
+            }
+            else if (_i == 11)
+            {
+                b.name = $"Button 0";
+                t.text = "0";
+            }
+            else if (_i == 12)
+            {
+                b.name = $"Button +-";
+                t.text = "+/-";
+            }
+            else
+            {
+                b.name = $"Button {_i}";
+                t.text = _i.ToString();
+            }
+
+            _i++;
         }
     }
 }
