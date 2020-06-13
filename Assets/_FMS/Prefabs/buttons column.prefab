@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7885134270604057637}
   - component: {fileID: 160551368352134234}
+  - component: {fileID: 8693296571322697933}
   m_Layer: 0
   m_Name: buttons column
   m_TagString: Untagged
@@ -67,6 +68,19 @@ MonoBehaviour:
   m_ChildControlHeight: 1
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
+--- !u!114 &8693296571322697933
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8972768872470448308}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: df76551366415e342b24efc71ca4af9c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  isLeft: 1
 --- !u!1001 &1215371329591868462
 PrefabInstance:
   m_ObjectHideFlags: 0

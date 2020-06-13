@@ -48,18 +48,28 @@ public class KeyboardButton : MonoBehaviour
                 case Keys.Clr:
                     FMC_Screens.Instance.CurrentScreen.OnClearPress();
                     break;
-                case Keys.Exec:
-                    FMC_Screens.Instance.CurrentScreen.OnExecPress();
-                    break;
             }
         }
+    }
+
+    public void OnExecPress()
+    {
+        FMC_Screens.Instance.CurrentScreen.OnExecPress();
+    }
+
+    public void OnPreviousPageClick()
+    {
+        FMC_Screens.Instance.CurrentScreen.DisplayPrevPage();
+    }
+    
+    public void OnNextPageClick()
+    {
+        FMC_Screens.Instance.CurrentScreen.DisplayNextPage();
     }
 }
 
 public static class Keys
 {
-    public const string Exec = "EXEC";
-    
     public const string Sign = "+/-";
     public const string Decimal = ".";
     public const string Slash = "/";
@@ -67,6 +77,4 @@ public static class Keys
     public const string Del = "DEL";
     public const string Clr = "CLR";
     public const string Sp = "SP";
-    
-
 }

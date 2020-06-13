@@ -1,10 +1,18 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class SideButton : MonoBehaviour
 {
-    public void OnClick(int index)
+    int index;
+
+    void Awake()
+    {
+        index = int.Parse(name);
+    }
+
+    public void OnClick()
     {
         if (IsLeft(index, out var _lineIndex, out var _isExtra))
         {
