@@ -15,7 +15,7 @@ public class SetNumbersToButton : MonoBehaviour
         Set1to0Data();
     }
 
-    // [ButtonInspector]
+    [ButtonInspector]
     void Set1to0Data()
     {
         int _i = 1;
@@ -27,7 +27,7 @@ public class SetNumbersToButton : MonoBehaviour
             if (_i == 10)
             {
                 b.name = $"Button .";
-                t.text = ".";
+                t.text = Keys.Decimal;
             }
             else if (_i == 11)
             {
@@ -37,7 +37,7 @@ public class SetNumbersToButton : MonoBehaviour
             else if (_i == 12)
             {
                 b.name = $"Button +-";
-                t.text = "+/-";
+                t.text = Keys.Sign;
             }
             else
             {

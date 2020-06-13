@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-public class LegsScreen : MonoBehaviour
+public class LegsScreen : ScreenBase
 {
     public LegsNodeLine[] nodes;
 
@@ -31,12 +31,24 @@ public class LegsScreen : MonoBehaviour
         GameManager.Instance.OnOperationMade += nodesController.ComputeCorrections;
     }
 
-    public void DisplayNextPage()
+    public override void Show()
+    {
+        base.Show();
+        InvokeRepeating(nameof(DisplayCurrentPage), 0, 0.1f);
+    }
+
+    public override void Hide()
+    {
+        base.Hide();
+        CancelInvoke(nameof(DisplayCurrentPage));
+    }
+
+    public override void DisplayNextPage()
     {
         currentPage = Mathf.Min(TotalPages - 1, currentPage + 1);
     }
 
-    public void DisplayPrevPage()
+    public override void DisplayPrevPage()
     {
         currentPage = Mathf.Max(0, currentPage - 1);
     }
@@ -48,33 +60,33 @@ public class LegsScreen : MonoBehaviour
 
         for (var i = 0; i < nodes.Length; i++)
         {
-            var linkedSelection = nodesController.GetNodeInfoAtLineIndex(i, currentPage);
+            var _linkedSelection = nodesController.GetNodeInfoAtLineIndex(i, currentPage);
 
-            if (linkedSelection.IsInvalid)
+            if (_linkedSelection.IsInvalid)
             {
                 return;
             }
 
-            if (linkedSelection.IsEmpty)
+            if (_linkedSelection.IsEmpty)
             {
                 nodes[i].ShowEmpty();
             }
             else
             {
-                nodes[i].DisplayNodeDetails(VisibleRoute.GetPoint(linkedSelection.LinkedId), linkedSelection);
+                nodes[i].DisplayNodeDetails(VisibleRoute.GetPoint(_linkedSelection.LinkedId), _linkedSelection);
             }
         }
     }
 
-    public void OnLineSelectLeft(int index)
+    public override void OnLineSelectLeft(int index)
     {
-        var clickedInfo = nodesController.GetNodeInfoAtLineIndex(index, currentPage);
-        lastSelectionClicked = clickedInfo;
+        var _clickedInfo = nodesController.GetNodeInfoAtLineIndex(index, currentPage);
+        lastSelectionClicked = _clickedInfo;
         // user clicks, none is previously selected
         if (SelectedPoint == null)
         {
             Debug.Log("=selection=");
-            selectionInfo = clickedInfo;
+            selectionInfo = _clickedInfo;
             SelectedPoint.IsSelected = true;
             Main.DisplayInfo(SelectedPoint.Name);
             scratchPadBuffer = "";
@@ -84,26 +96,26 @@ public class LegsScreen : MonoBehaviour
         SelectedPoint.IsSelected = false;
 
         // if this is a relative insert on direction command
-        if (!string.IsNullOrEmpty(scratchPadBuffer) && DataHandler.ParseRelativeNodeOnDirection(scratchPadBuffer, out var distanceOnDirection))
+        if (!string.IsNullOrEmpty(scratchPadBuffer) && DataHandler.ParseRelativeNodeOnDirection(scratchPadBuffer, out var _distanceOnDirection))
         {
             Debug.Log("=relative insert on direction=");
-            GameManager.Instance.ExecuteInsertRelativeOnDirectionOnMod(new ExecuteRelativeOnDirectionOnMod { FromNodeId = clickedInfo.LinkedId, Distance = distanceOnDirection });
+            GameManager.Instance.ExecuteInsertRelativeOnDirectionOnMod(new ExecuteRelativeOnDirectionOnMod { FromNodeId = _clickedInfo.LinkedId, Distance = _distanceOnDirection });
         }
 
         // if this is a relative insert command
-        if (!string.IsNullOrEmpty(scratchPadBuffer) && DataHandler.ParseRelativeNode(scratchPadBuffer, out var angle, out var distance))
+        if (!string.IsNullOrEmpty(scratchPadBuffer) && DataHandler.ParseRelativeNode(scratchPadBuffer, out var _angle, out var _distance))
         {
             Debug.Log("=relative insert=");
-            GameManager.Instance.ExecuteInsertRelativeOnMod(new InsertRelativeCommand { FromNodeId = clickedInfo.LinkedId, RawDegrees = angle, Distance = distance });
+            GameManager.Instance.ExecuteInsertRelativeOnMod(new InsertRelativeCommand { FromNodeId = _clickedInfo.LinkedId, RawDegrees = _angle, Distance = _distance });
         }
         // if this is a shortcut command
         else
         {
-            var selectedIndex = VisibleRoute.GetIndex(selectionInfo.LinkedId);
-            var clickedIndex = VisibleRoute.GetIndex(clickedInfo.LinkedId);
+            var _selectedIndex = VisibleRoute.GetIndex(selectionInfo.LinkedId);
+            var _clickedIndex = VisibleRoute.GetIndex(_clickedInfo.LinkedId);
 
             // when user clicks on the node below
-            if (selectedIndex < clickedIndex)
+            if (_selectedIndex < _clickedIndex)
             {
                 Debug.Log("error");
                 ClearCurrentOperation();
@@ -111,13 +123,13 @@ public class LegsScreen : MonoBehaviour
             }
 
             Debug.Log("=shortcut=");
-            GameManager.Instance.ExecuteShortcutOnMod(new ExecuteShortcutOnModeCommand { FromNodeId = clickedInfo.LinkedId, ToNodeId = selectionInfo.LinkedId });
+            GameManager.Instance.ExecuteShortcutOnMod(new ExecuteShortcutOnModeCommand { FromNodeId = _clickedInfo.LinkedId, ToNodeId = selectionInfo.LinkedId });
         }
 
         ClearCurrentOperation();
     }
 
-    public void OnExecPress()
+    public override void OnExecPress()
     {
         if (IsMod)
         {
@@ -127,23 +139,23 @@ public class LegsScreen : MonoBehaviour
         ClearSelectionHistory();
     }
 
-    public void OnErasePress()
+    public override void OnClearPress()
     {
         GameManager.Instance.EraseMod();
         ClearCurrentOperation();
     }
 
-    public void OnRightCornerPress()
+    public override void OnRightCornerPress()
     {
         if (!IsMod)
         {
             return;
         }
 
-        if (LastSelectedPoint != null && LastSelectedPoint.IsModified && DataHandler.ParseLiniarApproach(scratchPadBuffer, out var angle) )
+        if (LastSelectedPoint != null && LastSelectedPoint.IsModified && DataHandler.ParseLiniarApproach(scratchPadBuffer, out var _angle) )
         {
-            Debug.Log("=liniar approach= on " + LastSelectedPoint.Name + " with: "+angle );
-            GameManager.Instance.ExecuteLinearApproachOnMod(new ExecuteAddLinearApproachCommand { ToNodeId = lastSelectionClicked.LinkedId, Angle = angle });
+            Debug.Log("=linear approach= on " + LastSelectedPoint.Name + " with: "+_angle );
+            GameManager.Instance.ExecuteLinearApproachOnMod(new ExecuteAddLinearApproachCommand { ToNodeId = lastSelectionClicked.LinkedId, Angle = _angle });
         }
     }
 
@@ -158,7 +170,7 @@ public class LegsScreen : MonoBehaviour
     }
 
 
-    public void OnNumberPressed(int number)
+    public override void OnNumberPressed(int number)
     {
         if (SelectedPoint == null && lastSelectionClicked == null)
         {
@@ -168,7 +180,7 @@ public class LegsScreen : MonoBehaviour
         OnCharacterInput((char)(number + 48));
     }
 
-    public void OnDecimalPressed()
+    public override void OnDecimalPressed()
     {
         if (SelectedPoint == null)
         {
@@ -178,7 +190,7 @@ public class LegsScreen : MonoBehaviour
         OnCharacterInput('.');
     }
 
-    public void OnSlashPressed()
+    public override void OnSlashPressed()
     {
         if (SelectedPoint == null)
         {
@@ -188,7 +200,7 @@ public class LegsScreen : MonoBehaviour
         OnCharacterInput('/');
     }
 
-    public void OnSignPressed()
+    public override void OnSignPressed()
     {
         if (SelectedPoint == null)
         {
@@ -198,7 +210,7 @@ public class LegsScreen : MonoBehaviour
         OnCharacterInput('-');
     }
 
-    public void OnDeletePress()
+    public override void OnDeletePress()
     {
         if (scratchPadBuffer.Length == 0) return;
 
@@ -206,7 +218,7 @@ public class LegsScreen : MonoBehaviour
         Main.UpdateScratchPad(scratchPadBuffer);
     }
 
-    void OnCharacterInput(char character)
+    public override void OnCharacterInput(char character)
     {
         if (character == '-' && scratchPadBuffer.Length > 0 && scratchPadBuffer[scratchPadBuffer.Length - 1] == '-')
         {

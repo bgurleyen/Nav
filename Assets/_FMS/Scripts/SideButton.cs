@@ -6,31 +6,31 @@ public class SideButton : MonoBehaviour
 {
     public void OnClick(int index)
     {
-        if (IsLeft(index, out var lineIndex, out bool isExtra))
+        if (IsLeft(index, out var _lineIndex, out var _isExtra))
         {
-            if (!isExtra)
+            if (!_isExtra)
             {
-                FMC_Screens.Instance.OnNodeButtonLeft(lineIndex);
+                FMC_Screens.Instance.CurrentScreen.OnLineSelectLeft(_lineIndex);
             }
             else
             {
-                FMC_Screens.Instance.OnExtraButtonLeft();
+                FMC_Screens.Instance.CurrentScreen.OnLeftCornerPress();
             }
         }
         else
         {
-            if (!isExtra)
+            if (!_isExtra)
             {
-                FMC_Screens.Instance.OnNodeButtonRight(lineIndex);
+                FMC_Screens.Instance.CurrentScreen.OnLineSelectRight(_lineIndex);
             }
             else
             {
-                FMC_Screens.Instance.OnExtraButtonRight();
+                FMC_Screens.Instance.CurrentScreen.OnRightCornerPress();
             }
         }
     }
 
-    bool IsLeft(int index, out int lineIndex, out bool isExtra)
+    static bool IsLeft(int index, out int lineIndex, out bool isExtra)
     {
         lineIndex = Mathf.Abs(index) - 1;
         isExtra = lineIndex == 5;

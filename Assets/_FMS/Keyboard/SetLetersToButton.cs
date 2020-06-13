@@ -16,7 +16,7 @@ public class SetLetersToButton : MonoBehaviour
         SetAtoZData();
     }
 
-    // [ButtonInspector]
+    [ButtonInspector]
     void SetAtoZData()
     {
         var a = 'A';
@@ -27,22 +27,22 @@ public class SetLetersToButton : MonoBehaviour
 
             if (a == 'Z' + 1)
             {
-                _t.text = "SP";
+                _t.text = Keys.Sp;
                 _b.name = "Button SP";
             }
             else if(a == 'Z' + 2)
             {
-                _t.text = "DEL";
+                _t.text = Keys.Del;
                 _b.name = "Button DEL";
             }
             else if(a == 'Z' + 3)
             {
-                _t.text = "/";
+                _t.text = Keys.Slash;
                 _b.name = "Button /";
             }
             else if(a == 'Z' + 4)
             {
-                _t.text = "CLR";
+                _t.text = Keys.Clr;
                 _b.name = "Button CLR";
             }
             else
