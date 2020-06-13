@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -6,10 +7,15 @@ using UnityEngine.UI;
 using UnityEngine.EventSystems;
 using UnityEngine.Events;
 
+[ExecuteInEditMode]
 public class SetNumbersToButton : MonoBehaviour
 {
+    void Awake()
+    {
+        Set1to0Data();
+    }
 
-    [ButtonInspector]
+    // [ButtonInspector]
     void Set1to0Data()
     {
         int _i = 1;

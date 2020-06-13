@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
@@ -7,10 +8,15 @@ using UnityEngine.EventSystems;
 using UnityEngine.Events;
 
 
+[ExecuteInEditMode]
 public class SetLetersToButton : MonoBehaviour
 {
+    void Awake()
+    {
+        SetAtoZData();
+    }
 
-    [ButtonInspector]
+    // [ButtonInspector]
     void SetAtoZData()
     {
         var a = 'A';
