@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Other AC 1 Level 0
   m_EditorClassIdentifier: 
   ACItems:
-  - Point: 5
+  - Point: 56
     Altitude: 9000
     Speed: 250
   - Point: 6
@@ -52,6 +52,6 @@ MonoBehaviour:
   - Point: 6
     Altitude: 1000
     Speed: 140
-  - Point: -1
+  - Point: 1
     Altitude: 0
     Speed: 0

@@ -40,6 +40,6 @@ MonoBehaviour:
   - Point: 16
     Altitude: 1000
     Speed: 140
-  - Point: -1
+  - Point: 1
     Altitude: 0
     Speed: 0

@@ -134,10 +134,10 @@ public class infoFMC : Singleton<infoFMC>
         Fmc.Prog.NxtDTG = "" + (int)totalDistLeft[prvWptIdx + 1];
         Fmc.Prog.NxtETA = "" + GameTime.FormatFMCTime(GameTime.timer + (((float)totalDistLeft[prvWptIdx + 1] / GS_onpoint[prvWptIdx + 1]) * 3600));
         Fmc.Prog.NxtFUEL = "" + System.Math.Round(fr_onpoint[prvWptIdx + 1], 1);
-        Fmc.Prog.SecondName = "" + activePoints.Points[prvWptIdx + 2].Name; ;
-        Fmc.Prog.SecondDTG = "" + (int)totalDistLeft[prvWptIdx + 2];
-        Fmc.Prog.SecondETA = "" + GameTime.FormatFMCTime(GameTime.timer + (((float)totalDistLeft[prvWptIdx + 2] / GS_onpoint[prvWptIdx + 2]) * 3600));
-        Fmc.Prog.SecondFUEL = "" + System.Math.Round(fr_onpoint[prvWptIdx + 2], 1);
+        Fmc.Prog.SecondName = prvWptIdx+2 < activePoints.Points.Length ?  "" + activePoints.Points[prvWptIdx + 2].Name : "" ; 
+        Fmc.Prog.SecondDTG = prvWptIdx + 2 < activePoints.Points.Length ? "" + (int)totalDistLeft[prvWptIdx + 2]: "";
+        Fmc.Prog.SecondETA = prvWptIdx + 2 < activePoints.Points.Length ? "" + GameTime.FormatFMCTime(GameTime.timer + (((float)totalDistLeft[prvWptIdx + 2] / GS_onpoint[prvWptIdx + 2]) * 3600)): "";
+        Fmc.Prog.SecondFUEL = prvWptIdx + 2 < activePoints.Points.Length ? "" + System.Math.Round(fr_onpoint[prvWptIdx + 2], 1): "";
         Fmc.Prog.Destination = levelsInfoData[Level].Destination;
         Fmc.Prog.DestDTG = "" + (int)totalDistLeft[WPTCount - 1];
         Fmc.Prog.DestETA = "" + GameTime.FormatFMCTime(GameTime.timer + (((float)totalDistLeft[WPTCount - 1] / GS_onpoint[WPTCount - 1]) * 3600));
