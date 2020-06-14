@@ -152,7 +152,7 @@ public class LegsScreen : ScreenBase
             return;
         }
 
-        if (LastSelectedPoint != null && LastSelectedPoint.IsModified && DataHandler.ParseLiniarApproach(scratchPadBuffer, out var _angle) )
+        if (LastSelectedPoint != null && LastSelectedPoint.IsModified && DataHandler.ParseLinearApproach(scratchPadBuffer, out var _angle) )
         {
             Debug.Log("=linear approach= on " + LastSelectedPoint.Name + " with: "+_angle );
             GameManager.Instance.ExecuteLinearApproachOnMod(new ExecuteAddLinearApproachCommand { ToNodeId = lastSelectionClicked.LinkedId, Angle = _angle });

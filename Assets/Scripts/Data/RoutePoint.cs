@@ -69,7 +69,7 @@ public class RoutePoint
         Details = "D";
     }
 
-    public void IndicateLinearApproach(int angle)
+    public void IndicateDirectApproach(int angle)
     {
         Details = "L";
         LinearApproachAngle = angle;

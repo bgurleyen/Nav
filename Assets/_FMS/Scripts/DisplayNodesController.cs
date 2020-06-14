@@ -49,7 +49,7 @@
         var _hiddenOffset = 0;
         var _lastDiscontinuity = -1;
 
-        for (var i = 1; i < VisibleRoute.Points.Length; i++) // may be opptimised - cached
+        for (var i = 1; i < VisibleRoute.Points.Length; i++) // may be optimised - cached
         {
             if (i > _index + _hiddenOffset)
             {
@@ -66,7 +66,7 @@
                 _discontinuityOffset++;
             }
 
-            // only count hiddens after starting node since all are hidded and shortcuted for liniar approach
+            // only count hiddens after starting node since all are hidded and shortcuted for linear approach
             if (i >= StartingNodeIndex && IsNodeSkippable(VisibleRoute.Points[i]))
             {
                 _hiddenOffset++;
@@ -91,7 +91,7 @@
 
     static bool IsNodeSkippable(RoutePoint point)
     {
-        return  (point.IsHiddenLine && !point.IsFirstAfterFreeFlight);
+        return  point.IsHiddenLine && !point.IsFirstAfterFreeFlight;
     }
 }
 

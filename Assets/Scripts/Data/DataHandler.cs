@@ -8,11 +8,11 @@ public class DataHandler
 {
     internal static void BuildDataSet(RouteScriptableObject route, out RouteScriptableObject routeBuilt)
     {
-        var newSet = route.Clone();
+        var _newSet = route.Clone();
 
-        BuildSetDetails(newSet);
+        BuildSetDetails(_newSet);
 
-        routeBuilt = newSet;
+        routeBuilt = _newSet;
     }
 
     public static void BuildSetDetails(RouteScriptableObject route)
@@ -24,19 +24,19 @@ public class DataHandler
     static RouteScriptableObject BuildSpeeds(RouteScriptableObject set, int startFrom = 270)
     {
         set.Points[0].RawSpeed = startFrom;
-        var lastRegulation = startFrom;
+        var _lastRegulation = startFrom;
 
-        for (int i = 0; i < set.Points.Length; i++)
+        for (var i = 0; i < set.Points.Length; i++)
         {
-            var point = set.Points[i];
+            var _point = set.Points[i];
 
-            if(point.IsSpeedRegulated)
+            if(_point.IsSpeedRegulated)
             {
-                lastRegulation = point.RawSpeed;
+                _lastRegulation = _point.RawSpeed;
             }
             else
             {
-                point.SetSpeedComputed(lastRegulation);
+                _point.SetSpeedComputed(_lastRegulation);
             }
         }
         return set;
@@ -49,16 +49,16 @@ public class DataHandler
             set.Points[0].RawAltitude = startFrom.ToString();
         }
 
-        List<RegulationNode> regulations = null;
-        var distanceToPrevious = 0f;
+        List<AltitudeRegulationNode> _regulations = null;
+        var _distanceToPrevious = 0f;
 
         // the list is of the nodes of a linked tree
-        for (int i = 0; i < set.Points.Length - 1; i++)
+        for (var i = 0; i < set.Points.Length - 1; i++)
         {
-            var point = set.Points[i];
+            var _point = set.Points[i];
 
             // if it is not a current regulations interval started
-            if (regulations == null)
+            if (_regulations == null)
             {
                 if (set.Points[i + 1].AltitudeRegulation == RoutePoint.AltitudeFlags.Exact)
                 {
@@ -66,45 +66,43 @@ public class DataHandler
                 }
 
                 // start new regulations interval
-                regulations = new List<RegulationNode>
+                _regulations = new List<AltitudeRegulationNode>
                 {
-                    new RegulationNode
+                    new AltitudeRegulationNode
                     {
                         IndexInList = i,
-                        linkedPoint = set.Points[i],
-                        next = null,
-                        prev = null
+                        LinkedPoint = set.Points[i],
+                        Next = null,
+                        Prev = null
                     }
                 };
-                distanceToPrevious = point.Distance;
+                _distanceToPrevious = _point.Distance;
                 continue;
             }
-            else
-            {
-                distanceToPrevious += point.Distance;
-            }
 
-            if (point.AltitudeRegulation != RoutePoint.AltitudeFlags.NotSet)
+            _distanceToPrevious += _point.Distance;
+
+            if (_point.AltitudeRegulation != RoutePoint.AltitudeFlags.NotSet)
             {
-                var lastRegulation = regulations[regulations.Count - 1];
-                var newRegulation = new RegulationNode
+                var _lastRegulation = _regulations[_regulations.Count - 1];
+                var _newRegulation = new AltitudeRegulationNode
                 {
-                    IndexInList = regulations.Count,
+                    IndexInList = _regulations.Count,
                     PointIndexInSet = i,
-                    linkedPoint = point,
-                    next = null,
-                    prev = lastRegulation,
-                    distanceToPrevious = distanceToPrevious
+                    LinkedPoint = _point,
+                    Next = null,
+                    Prev = _lastRegulation,
+                    DistanceToPrevious = _distanceToPrevious
                 };
 
-                lastRegulation.next = newRegulation;
-                regulations.Add(newRegulation);
-                distanceToPrevious = 0;
+                _lastRegulation.Next = _newRegulation;
+                _regulations.Add(_newRegulation);
+                _distanceToPrevious = 0;
 
                 // if other exact node reached, close and compute current regulations interval
                 if (set.Points[i].AltitudeRegulation == RoutePoint.AltitudeFlags.Exact)
                 {
-                    ComputeRegulationsInterval(regulations, set);
+                    ComputeRegulationsInterval(_regulations, set);
                 }
             }
         }
@@ -112,132 +110,132 @@ public class DataHandler
         return set;
     }
 
-    static void ComputeRegulationsInterval(List<RegulationNode> regulations, RouteScriptableObject set)
+    static void ComputeRegulationsInterval(List<AltitudeRegulationNode> regulations, RouteScriptableObject set)
     {
-        var anchoredFrom = regulations[0];
-        var anchoredTo = regulations[regulations.Count - 1];
-        anchoredFrom.anchoredNext = anchoredTo;
+        var _anchoredFrom = regulations[0];
+        var _anchoredTo = regulations[regulations.Count - 1];
+        _anchoredFrom.AnchoredNext = _anchoredTo;
 
         // initial compute straight line
-        ComputeStraightInterval(anchoredFrom, anchoredTo);
+        ComputeStraightInterval(_anchoredFrom, _anchoredTo);
 
         // check each regulation
-        var cursor = anchoredFrom; // from the first after start
-        while (cursor.next != null) // until the last
+        var _cursor = _anchoredFrom; // from the first after start
+        while (_cursor.Next != null) // until the last
         {
-            cursor = cursor.next;
-            var point = cursor.linkedPoint;
-            var flag = point.AltitudeRegulation;
+            _cursor = _cursor.Next;
+            var _point = _cursor.LinkedPoint;
+            var _flag = _point.AltitudeRegulation;
 
-            bool anchored = false;
+            var _anchored = false;
 
-            switch (flag)
+            switch (_flag)
             {
                 case RoutePoint.AltitudeFlags.Below:
-                    if (AnchorForBelow(point))
+                    if (AnchorForBelow(_point))
                     {
-                        anchored = true;
+                        _anchored = true;
                     }
                     break;
 
                 case RoutePoint.AltitudeFlags.Above:
-                    if (AnchorForAbove(point))
+                    if (AnchorForAbove(_point))
                     {
-                        anchored = true;
+                        _anchored = true;
                     }
                     break;
                 case RoutePoint.AltitudeFlags.AboveBelow:
-                    if (AnchorForBelow(point)
-                    || AnchorForAbove(point))
+                    if (AnchorForBelow(_point)
+                    || AnchorForAbove(_point))
                     {
-                        anchored = true;
+                        _anchored = true;
                     }
 
                     break;
             }
 
-            if (anchored)
+            if (_anchored)
             {
                 // cursor will became a new anchor
-                anchoredFrom.anchoredNext = cursor;
-                cursor.anchoredPrev = anchoredFrom;
-                cursor.anchoredNext = anchoredTo;
-                anchoredTo.anchoredPrev = cursor;
+                _anchoredFrom.AnchoredNext = _cursor;
+                _cursor.AnchoredPrev = _anchoredFrom;
+                _cursor.AnchoredNext = _anchoredTo;
+                _anchoredTo.AnchoredPrev = _cursor;
 
-                ComputeStraightInterval(anchoredFrom, cursor);
-                ComputeStraightInterval(cursor, anchoredTo); // may not be needed - it's direct
+                ComputeStraightInterval(_anchoredFrom, _cursor);
+                ComputeStraightInterval(_cursor, _anchoredTo); // may not be needed - it's direct
 
-                anchoredFrom = cursor;
+                _anchoredFrom = _cursor;
 
                 // ==  validate backwards ==
-                var validationCursor = cursor.prev;
+                var _validationCursor = _cursor.Prev;
 
-                if (validationCursor != null &&
-                    validationCursor.linkedPoint.AltitudeRegulation != RoutePoint.AltitudeFlags.Exact)
+                if (_validationCursor != null &&
+                    _validationCursor.LinkedPoint.AltitudeRegulation != RoutePoint.AltitudeFlags.Exact)
                 {
                     // previos anchor before the previos node
-                    var validationAnchoredFrom = anchoredFrom;
-                    var validationAnchoredTo = anchoredTo;
+                    var _validationAnchoredFrom = _anchoredFrom;
+                    var _validationAnchoredTo = _anchoredTo;
 
-                    bool validationUpdated;
+                    bool _validationUpdated;
                     do
                     {
                         // shift validation interval to previous
-                        validationAnchoredFrom = validationAnchoredFrom.anchoredPrev == validationCursor
-                            ? validationAnchoredFrom.anchoredPrev.anchoredPrev
-                            : validationAnchoredFrom.anchoredPrev;
+                        _validationAnchoredFrom = _validationAnchoredFrom.AnchoredPrev == _validationCursor
+                            ? _validationAnchoredFrom.AnchoredPrev.AnchoredPrev
+                            : _validationAnchoredFrom.AnchoredPrev;
 
-                        validationAnchoredTo = validationAnchoredTo.anchoredPrev;
+                        _validationAnchoredTo = _validationAnchoredTo.AnchoredPrev;
 
 
-                        validationUpdated = false;
+                        _validationUpdated = false;
 
-                        var computedToCheck = validationCursor.linkedPoint.GetAcceptedAltitude;
-                        var computedWasAnchored = validationCursor.linkedPoint.Altitude.IsAnchored;
+                        var _computedToCheck = _validationCursor.LinkedPoint.GetAcceptedAltitude;
+                        var _computedWasAnchored = _validationCursor.LinkedPoint.Altitude.IsAnchored;
 
-                        ComputeStraightInterval(validationAnchoredFrom, validationAnchoredTo);
+                        ComputeStraightInterval(_validationAnchoredFrom, _validationAnchoredTo);
 
-                        var validationAnchored = AnchorForBelow(validationCursor.linkedPoint) ||
-                                                 AnchorForAbove(validationCursor.linkedPoint);
+                        var _validationAnchored = AnchorForBelow(_validationCursor.LinkedPoint) ||
+                                                 AnchorForAbove(_validationCursor.LinkedPoint);
 
-                        var validationValueModified = computedToCheck != validationCursor.linkedPoint.GetAcceptedAltitude;
-                        var validationAnchorModified = computedWasAnchored != validationAnchored;
+                        var _validationValueModified = _computedToCheck != _validationCursor.LinkedPoint.GetAcceptedAltitude;
+                        var _validationAnchorModified = _computedWasAnchored != _validationAnchored;
 
-                        validationUpdated = validationValueModified || validationAnchorModified;
+                        _validationUpdated = _validationValueModified || _validationAnchorModified;
 
                         // if validation cursor was not already an anchor insert it as an anchor
-                        if (validationAnchored && !computedWasAnchored)
+                        if (_validationAnchored && !_computedWasAnchored)
                         {
-                            validationAnchoredFrom.anchoredNext = validationCursor;
-                            validationCursor.anchoredPrev = validationAnchoredFrom;
-                            validationCursor.anchoredNext = validationAnchoredTo;
-                            validationAnchoredTo.anchoredPrev = validationCursor;
+                            _validationAnchoredFrom.AnchoredNext = _validationCursor;
+                            _validationCursor.AnchoredPrev = _validationAnchoredFrom;
+                            _validationCursor.AnchoredNext = _validationAnchoredTo;
+                            _validationAnchoredTo.AnchoredPrev = _validationCursor;
                         }
 
                         // if validation is still an anchor, but other kind or was not an anchor 
-                        if (validationAnchored && validationUpdated)
+                        if (_validationAnchored && _validationUpdated)
                         {
-                            ComputeStraightInterval(validationAnchoredFrom, validationCursor);
-                            ComputeStraightInterval(validationCursor, validationAnchoredTo); // may not be needed - it's direct
+                            ComputeStraightInterval(_validationAnchoredFrom, _validationCursor);
+                            ComputeStraightInterval(_validationCursor, _validationAnchoredTo); // may not be needed - it's direct
                         }
 
                         // if validation cursor stopped being an achor remove the anchor node
-                        if (!validationAnchored && computedWasAnchored)
+                        if (!_validationAnchored && _computedWasAnchored)
                         {
-                            anchoredFrom.anchoredNext = anchoredTo;
-                            anchoredTo.anchoredPrev = anchoredFrom;
+                            _anchoredFrom.AnchoredNext = _anchoredTo;
+                            _anchoredTo.AnchoredPrev = _anchoredFrom;
                         }
 
                         // go to the prev node ( anchored or not )
-                        validationCursor = validationCursor.prev;
+                        _validationCursor = _validationCursor.Prev;
 
 
                     }
                     while (
-                        validationCursor != null &&
-                        validationCursor.prev != null &&
-                        validationUpdated &&
-                        validationCursor.linkedPoint.AltitudeRegulation != RoutePoint.AltitudeFlags.Exact);
+                        _validationCursor != null &&
+                        _validationCursor.Prev != null &&
+                        _validationUpdated &&
+                        _validationCursor.LinkedPoint.AltitudeRegulation != RoutePoint.AltitudeFlags.Exact);
                 }
             }
         }
@@ -265,42 +263,42 @@ public class DataHandler
             return false;
         }
 
-        void ComputeStraightInterval(RegulationNode from, RegulationNode to)
+        void ComputeStraightInterval(AltitudeRegulationNode from, AltitudeRegulationNode to)
         {
-            var totalDistance = 0f;
-            var node = from;
-            while (node != to)
+            var _totalDistance = 0f;
+            var _node = from;
+            while (_node != to)
             {
-                node = node.next;
-                totalDistance += node.distanceToPrevious;
+                _node = _node.Next;
+                _totalDistance += _node.DistanceToPrevious;
             }
 
-            var totalDiff = to.linkedPoint.GetAcceptedAltitude - from.linkedPoint.GetAcceptedAltitude;
-            var lossForMile = totalDiff / totalDistance;
+            var _totalDiff = to.LinkedPoint.GetAcceptedAltitude - from.LinkedPoint.GetAcceptedAltitude;
+            var _lossForMile = _totalDiff / _totalDistance;
 
-            for (int i = from.IndexInList + 1; i <= to.IndexInList; i++)
+            for (var i = from.IndexInList + 1; i <= to.IndexInList; i++)
             {
-                var regulation = regulations[i];
-                var dif = regulation.distanceToPrevious * lossForMile;
-                regulation.linkedPoint.Altitude.SetComputedValue(set.Points[i - 1].GetAcceptedAltitude + dif, false);
+                var _regulation = regulations[i];
+                var _dif = _regulation.DistanceToPrevious * _lossForMile;
+                _regulation.LinkedPoint.Altitude.SetComputedValue(set.Points[i - 1].GetAcceptedAltitude + _dif, false);
             }
         }
 
         // fil in altitudes for points between regulations
-        anchoredFrom = regulations[0];
-        while (anchoredFrom.next != null)
+        _anchoredFrom = regulations[0];
+        while (_anchoredFrom.Next != null)
         {
-            var totalDistance = anchoredFrom.next.distanceToPrevious;
-            var totalDiff = anchoredFrom.next.linkedPoint.GetAcceptedAltitude - anchoredFrom.linkedPoint.GetAcceptedAltitude;
-            var lossForMile = totalDiff / totalDistance;
+            var _totalDistance = _anchoredFrom.Next.DistanceToPrevious;
+            var _totalDiff = _anchoredFrom.Next.LinkedPoint.GetAcceptedAltitude - _anchoredFrom.LinkedPoint.GetAcceptedAltitude;
+            var _lossForMile = _totalDiff / _totalDistance;
 
-            for (int i = anchoredFrom.PointIndexInSet + 1; i <= anchoredFrom.next.PointIndexInSet; i++)
+            for (int i = _anchoredFrom.PointIndexInSet + 1; i <= _anchoredFrom.Next.PointIndexInSet; i++)
             {
 
-                var dif = set.Points[i].Distance * lossForMile;
-                set.Points[i].Altitude.SetComputedValue(set.Points[i - 1].GetAcceptedAltitude + dif, false);
+                var _dif = set.Points[i].Distance * _lossForMile;
+                set.Points[i].Altitude.SetComputedValue(set.Points[i - 1].GetAcceptedAltitude + _dif, false);
             }
-            anchoredFrom = anchoredFrom.next;
+            _anchoredFrom = _anchoredFrom.Next;
         }
 
     }
@@ -311,26 +309,26 @@ public class DataHandler
         above = -1;
         below = -1;
         exact = -1;
-        Regex re = new Regex(@"(\d+)([a-zA-Z]*)");
-        var result = re.Matches(input);
+        var _re = new Regex(@"(\d+)([a-zA-Z]*)");
+        var _result = _re.Matches(input);
 
-        for (int i = 0; i < result.Count; i++)
+        for (var i = 0; i < _result.Count; i++)
         {
-            var set = result[i];
-            var number = int.Parse(set.Groups[1].Value);
-            var indicator = set.Groups[2].Value;
+            var _set = _result[i];
+            var _number = int.Parse(_set.Groups[1].Value);
+            var _indicator = _set.Groups[2].Value;
 
-            if (indicator.ToUpper() == "B")
+            switch (_indicator.ToUpper())
             {
-                below = number;
-            }
-            else if (indicator.ToUpper() == "A")
-            {
-                above = number;
-            }
-            else
-            {
-                exact = number;
+                case "B":
+                    below = _number;
+                    break;
+                case "A":
+                    above = _number;
+                    break;
+                default:
+                    exact = _number;
+                    break;
             }
         }
     }
@@ -343,16 +341,16 @@ public class DataHandler
 
         if (input.Length <= 4 || input[3] != '/') return false;
 
-        var rex = new Regex(@"(\-?)(\d+)\/(\d+)");
+        var _rex = new Regex(@"(\-?)(\d+)\/(\d+)");
 
-        var result = rex.Match(input);
-        if (!string.IsNullOrEmpty(result.Groups[1].Value))
+        var _result = _rex.Match(input);
+        if (!string.IsNullOrEmpty(_result.Groups[1].Value))
         {
             return false;
         }
 
-        angle = Mathf.Clamp(int.Parse(result.Groups[2].Value), 0, 360);
-        distance = int.Parse(result.Groups[3].Value);
+        angle = Mathf.Clamp(int.Parse(_result.Groups[2].Value), 0, 360);
+        distance = int.Parse(_result.Groups[3].Value);
 
         return true;
     }
@@ -367,7 +365,13 @@ public class DataHandler
         return int.TryParse(input, out distance); 
     }
 
-    public static bool ParseLiniarApproach(string input, out int angle)
+    /// <summary>
+    /// 060
+    /// </summary>
+    /// <param name="input"></param>
+    /// <param name="angle"></param>
+    /// <returns></returns>
+    public static bool ParseLinearApproach(string input, out int angle)
     {
         angle = 0;
 
@@ -376,17 +380,17 @@ public class DataHandler
         return int.TryParse(input, out angle); 
     }
 
-    class RegulationNode
+    class AltitudeRegulationNode
     {
-        public RegulationNode prev;
-        public RegulationNode next;
+        public AltitudeRegulationNode Prev;
+        public AltitudeRegulationNode Next;
 
-        public RegulationNode anchoredPrev;
-        public RegulationNode anchoredNext;
+        public AltitudeRegulationNode AnchoredPrev;
+        public AltitudeRegulationNode AnchoredNext;
 
-        public RoutePoint linkedPoint;
+        public RoutePoint LinkedPoint;
         public int IndexInList;
-        public float distanceToPrevious;
+        public float DistanceToPrevious;
 
         public int PointIndexInSet;
     }

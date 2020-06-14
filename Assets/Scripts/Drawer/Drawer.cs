@@ -213,7 +213,7 @@ public class Drawer : Singleton<Drawer>
                 compasPivot.SetLocalRotationZ(GameManager.Instance.Aircraft.Heading);
                 if (GameManager.Instance.Aircraft.IsFreeFlight)
                 {
-                    freeFlightPivot.SetLocalRotationZ(GameManager.Instance.Aircraft.Heading -GameManager.Instance.Aircraft.TargetHeading );
+                    freeFlightPivot.SetLocalRotationZ(GameManager.Instance.Aircraft.Heading - Calculator.RHeading );
                 }
                 break;
             case DrawerMode.Plan:

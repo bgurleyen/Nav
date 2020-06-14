@@ -83,10 +83,10 @@ public class GameManager : Singleton<GameManager>
         switch (state)
         {
             case true:
-                Aircraft.StartFreeFlight();
+                Aircraft.StartHeadingMode();
                 break;
             default:
-                Aircraft.EndFreeFlight();
+                Aircraft.StartLNavMode();
                 break;
         }
     }
@@ -171,6 +171,12 @@ public class GameManager : Singleton<GameManager>
         ModRoute = null;
         IsMod = false;
         MainScreen.Instance.DisplayOperation("0k");
+
+        if (ActiveRoute.ActiveDirectApproach)
+        {
+            Calculator.RHeading = (int)Aircraft.TargetHeading;
+            McpUI.Instance.TriggerOnHS();
+        }
     }
 
     public void EraseMod()

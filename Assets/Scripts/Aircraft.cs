@@ -53,13 +53,13 @@ public class Aircraft
     public bool IsFreeFlight;
     public bool IsOnPath = true;
 
-    public void StartFreeFlight()
+    public void StartHeadingMode()
     {
         IsFreeFlight = true;
         IsOnPath = false;
     }
 
-    public void EndFreeFlight()
+    public void StartLNavMode()
     {
         if (GameManager.Instance.ActiveRoute.FindFreeFlightExitPosition(out var _intersectionVertex, out var _distanceUntilVertex))
         {
@@ -123,6 +123,7 @@ public class Aircraft
         if (!IsFreeFlight && !IsOnPath)
         {
             IsOnPath = true;
+            GameManager.Instance.ActiveRoute.OnPathRejoined();
         }
         
         // move to the corner

@@ -1,9 +1,22 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using Gamelogic.Extensions;
 using UnityEngine;
+using UnityEngine.UI;
 
-public class McpUI : MonoBehaviour
+public class McpUI : Singleton<McpUI>
 {
+    [SerializeField] Toggle hsToggle;
+    [SerializeField] Toggle lNavToggle;
+    [SerializeField] Text headingText;
+
+    void Awake()
+    {
+        hsToggle.onValueChanged.AddListener(OnHS);
+        lNavToggle.onValueChanged.AddListener(OnLNav);
+    }
+
     public void OnMapMode(bool toggle)
     {
         if (!toggle) return;
@@ -26,17 +39,27 @@ public class McpUI : MonoBehaviour
     }
 
 
-    public void OnHS(bool toggle)
+    static void OnHS(bool toggle)
     {
         if (!toggle) return;
         GameManager.Instance.SwitchFreeFlight(true);
     }
 
-    public void OnLNav(bool toggle)
+    static void OnLNav(bool toggle)
     {
         if (!toggle) return;
         GameManager.Instance.SwitchFreeFlight(false);
     }
-    
-    
+
+
+    public void TriggerOnHS()
+    {
+        headingText.text = Calculator.RHeading.ToString();
+        hsToggle.isOn = true;
+    }
+
+    public void TriggerOnLNav()
+    {
+        lNavToggle.isOn = true;
+    }
 }

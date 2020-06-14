@@ -4,6 +4,8 @@ using System.Linq;
 [CreateAssetMenu(fileName = "RouteData", menuName = "ScriptableObjects/RouteData")]
 public class RouteScriptableObject : ScriptableObject
 {
+    public bool ActiveDirectApproach { get; private set; }
+    
     public RoutePoint[] Points;
 
     public void InitIds()
@@ -49,6 +51,7 @@ public class RouteScriptableObject : ScriptableObject
     public RouteScriptableObject Clone()
     {
         var _newSet = CreateInstance<RouteScriptableObject>();// new DataSetScriptableObject();
+        _newSet.ActiveDirectApproach = ActiveDirectApproach;
         _newSet.Points = new RoutePoint[Points.Length];
         for (var i = 0; i < Points.Length; i++)
         {
@@ -58,6 +61,10 @@ public class RouteScriptableObject : ScriptableObject
         return _newSet;
     }
 
+    public void OnPathRejoined()
+    {
+        ActiveDirectApproach = false;
+    }
   
     public bool FindFreeFlightExitPosition(out PathVertexIndex intersectionTargetVertex, out float distanceUntilVertex)
     {
@@ -72,10 +79,16 @@ public class RouteScriptableObject : ScriptableObject
             // on could take the positions from PathLines
             _segmentB = Geometry.GetNextPosition(_segmentA, Points[i].Distance, Points[i].Degrees);
 
+            if (Points[i].IsHiddenLine)
+            {
+                continue;
+            }
+            
             if (Geometry.FindLineSegmentIntersection(_planePosition, _planeDirection.x, _planeDirection.y,
                     _segmentA, _segmentB, out var _intersection)
                 && GameManager.Instance.PathLines.FindClosestVertexToDistanceOnLineActive(
-                    (_intersection - _segmentA).magnitude, i, out var _targetVertexIndex, out var _targetVertexPosition))
+                    (_intersection - _segmentA).magnitude, i, out var _targetVertexIndex,
+                    out var _targetVertexPosition))
             {
                 intersectionTargetVertex = new PathVertexIndex
                 {
@@ -338,23 +351,27 @@ public class RouteScriptableObject : ScriptableObject
         //execute shortcut node at [1] until toNode
         ShortcutNodes(PositionVirtualNode.GetNodeTo.ID, toNodeId, out var _reducedPoint);
 
-        _reducedPoint.IndicateLinearApproach(angle);
+        _reducedPoint.IndicateDirectApproach(angle);
 
         // insert fake node as linear approach beginning - very far
-        AddRelativeNodeBefore(toNodeId, 360 - angle, 500, out var _veryFarNode);
+        AddRelativeNodeBefore(toNodeId,  angle, -500, out var _veryFarNode);
 
         // insert fake node as current destination : before very far,  in the place of original next node
-        AddRelativeNodeBefore(_veryFarNode.ID, angle, 500, out var _);
+        // AddRelativeNodeBefore(_veryFarNode.ID, angle, 500, out var _);
 
         // hide all lines until linear approach
-        for(var i=0;i<Points.Length;i++)
+        for (var i = 0; i < Points.Length; i++)
         {
-            if(Points[i].IsLinearApproach)
+            if (Points[i].IsLinearApproach)
             {
                 break;
             }
+
             Points[i].IndicateHiddenLine();
         }
+
+        ActiveDirectApproach = true;
+
     }
 
     public RoutePoint AddPositionNode(float neededOffsetDistance = 0)
@@ -376,8 +393,13 @@ public class RouteScriptableObject : ScriptableObject
             Name = "_Position_",
             Distance = _activeDistancePassed,
             RawDegrees = _activeNextNode.RawDegrees,
-            ID = GetNewId()
+            ID = GetNewId(),
         };
+
+        if (ActiveDirectApproach)
+        {
+            _insertionNode.IndicateHiddenLine();
+        }
 
         var _activeNextNodeIndex = PositionVirtualNode.PassedNodeIndex + 1;
         var _displayNextNode = Points[_activeNextNodeIndex];
