@@ -52,8 +52,9 @@ public class McpUI : Singleton<McpUI>
     }
 
 
-    public void TriggerOnHS()
+    public void TriggerOnHS(int heading)
     {
+        Calculator.RHeading = heading;
         headingText.text = Calculator.RHeading.ToString();
         hsToggle.isOn = true;
     }
