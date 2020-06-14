@@ -7,7 +7,7 @@ public class LineDrawer : MonoBehaviour
     public LabelText label;
 
     public LineRenderer drawer;
-    public bool showGuides = false;
+    public bool showGuides;
 
     MarkLine cacheLine;
 
@@ -33,7 +33,7 @@ public class LineDrawer : MonoBehaviour
             drawer.positionCount = 0;
         }
 
-        if (!line.LinkedPoint.IsAfterDiscontinuity && (!line.LinkedPoint.IsHiddenLine || line.LinkedPoint.IsFirstAfterFreeFlight))
+        if (!line.LinkedPoint.IsAfterDiscontinuity && !line.LinkedPoint.IsSkippable)
         {
             mark.localPosition = line.EndPosition.To2DXY().ToDisplay();
             label.transform.localPosition = line.EndPosition.To2DXY().ToDisplay();

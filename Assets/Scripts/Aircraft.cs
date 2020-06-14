@@ -23,7 +23,12 @@ public class Aircraft
             }
             else
             {
-                return (GameManager.Instance.PathLines.GetNodePosition(PositionVirtualNode.PassedNodeIndex + 1) -
+                var _nextViableNodeIndex = PositionVirtualNode.PassedNodeIndex + 1;
+                while (GameManager.Instance.ActiveRoute.Points[_nextViableNodeIndex].IsSkippable)
+                {
+                    _nextViableNodeIndex++;
+                }
+                return (GameManager.Instance.PathLines.GetNodePosition(_nextViableNodeIndex) -
                         Position).magnitude;
             }
         }

@@ -94,9 +94,11 @@ public class PathLines
     /// <returns></returns>
     public bool GetFirstDestination(out PathVertexIndex vertexIndex)
     {
+        oldPositionVertex = Vector3.zero;
         return GetNextDestination(1, 0, out vertexIndex);
     }
 
+    Vector3 oldPositionVertex = Vector3.zero;
     /// <summary>
     /// 
     /// </summary>
@@ -108,10 +110,10 @@ public class PathLines
     {
         if (GetNextComputedVertex(ComputedLines, currentLine, currentPoint, out var _nextPoint, out var _nextLine))
         {
-            var _oldVertex = ComputedLines[currentLine].Vertexes[currentPoint];
             var _vertex = ComputedLines[_nextLine].Vertexes[_nextPoint];
-            var _heading = Geometry.GetHeadingOfDirection(_vertex - _oldVertex);
-
+            var _heading = Geometry.GetHeadingOfDirection(_vertex - oldPositionVertex);
+            oldPositionVertex = _vertex;
+            
             vertexIndex = new PathVertexIndex
             {
                 CurrentLine = _nextLine,

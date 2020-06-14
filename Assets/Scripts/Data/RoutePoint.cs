@@ -13,7 +13,6 @@ public class RoutePoint
     public string Details = "";
 
 
-    public Vector2 CartesianPosition;
     public int LinearApproachAngle { get; set; }
     public AltitudeData Altitude { get; private set; } = new AltitudeData();
     public SpeedData Speed { get; private set; } = new SpeedData();
@@ -21,13 +20,13 @@ public class RoutePoint
     public bool IsCurrent { get; internal set; }
     public bool IsSelected { get; internal set; }
     public bool IsModified { get; internal set; }
-    public bool IsFirstAfterFreeFlight { get; set; }
 
     public float Degrees => 360 - RawDegrees;
     public bool IsAfterDiscontinuity => Details.Contains("D");
     public bool IsCenter => Details.Contains("C");
     public bool IsLinearApproach => Details.Contains("L");
     public bool IsHiddenLine => Details.Contains("H");
+    public bool IsPositionNode => Details.Contains("P");
 
     public AltitudeFlags AltitudeRegulation => Altitude.GetFlag(RawAltitude);
     public string DisplayAltitude => Altitude.GetDisplayValue(RawAltitude);
@@ -54,9 +53,10 @@ public class RoutePoint
             IsModified = IsModified,
             Altitude = Altitude ?? Altitude.Clone(),
             Speed = Speed ?? Speed.Clone(),
-            CartesianPosition =  CartesianPosition
         };
     }
+
+    public bool IsSkippable => IsHiddenLine || IsPositionNode;
 
     // todo remove specific flags
     public void ClearDetails()
@@ -116,15 +116,15 @@ public class RoutePoint
             }
         }
 
-        public int GetLiniarValue(int rawSpeed, int acceptedAltitude)
+        public int GetLinearValue(int rawSpeed, int acceptedAltitude)
         {
-            var displayed = GetDisplayValue(rawSpeed);
+            var _displayed = GetDisplayValue(rawSpeed);
             if(acceptedAltitude>10000)
             {
-                return displayed;
+                return _displayed;
             }
 
-            return Mathf.Min(displayed, 240);
+            return Mathf.Min(_displayed, 240);
         }
     }
 

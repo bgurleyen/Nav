@@ -6,7 +6,7 @@
     }
 
     public int TotalPagesCorrection = 0;
-    
+
     static bool IsMod => GameManager.Instance.IsMod;
     static RouteScriptableObject ActiveRoute => GameManager.Instance.ActiveRoute;
     static RouteScriptableObject ModRoute => GameManager.Instance.ModRoute;
@@ -26,7 +26,7 @@
         skipped = 0;
         for (var i = StartingNodeIndex; i < VisibleRoute.Points.Length; i++)
         {
-            if (IsNodeSkippable(VisibleRoute.Points[i]))
+            if (VisibleRoute.Points[i].IsSkippable)
             {
                 skipped++;
                 continue;
@@ -66,8 +66,8 @@
                 _discontinuityOffset++;
             }
 
-            // only count hiddens after starting node since all are hidded and shortcuted for linear approach
-            if (i >= StartingNodeIndex && IsNodeSkippable(VisibleRoute.Points[i]))
+            // only count hiddens after starting node since all are hidden and shortcuted for linear approach
+            if (i >= StartingNodeIndex && VisibleRoute.Points[i].IsSkippable)
             {
                 _hiddenOffset++;
             }
@@ -89,10 +89,7 @@
         }; // not showing the first point as is NOW
     }
 
-    static bool IsNodeSkippable(RoutePoint point)
-    {
-        return  point.IsHiddenLine && !point.IsFirstAfterFreeFlight;
-    }
+    
 }
 
 public class NodeSelection

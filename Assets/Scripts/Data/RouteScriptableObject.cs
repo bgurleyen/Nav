@@ -393,6 +393,7 @@ public class RouteScriptableObject : ScriptableObject
             Name = "_Position_",
             Distance = _activeDistancePassed,
             RawDegrees = _activeNextNode.RawDegrees,
+            Details = "P",
             ID = GetNewId(),
         };
 
