@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class Aircraft
 {
-    const float DeltaTime = 0.0001f;
+    const float DeltaTime = 0.00003f;
     const float MaxTurningSpeed = 1f;
 
     public Vector2 Position { get; private set; }

@@ -270,7 +270,6 @@ public class Move : Singleton<Move>
             V = Pt < 50 ? (Vector2)GameManager.Instance.PathLines.ComputedLines[Pt].EndPosition : //TempPtsPos[Pt] :
                            new Vector2(virtualPoints[Level].VirtualPointsItems[Pt - 51].x+34,  // VirtualPtsPos[Pt-50]; // ; TOTO review
                                        virtualPoints[Level].VirtualPointsItems[Pt - 51].y+87);
-            if (Pt>=50)  Debug.Log(VirtualPtsPos[Pt - 50] + "         " + virtualPoints[Level].VirtualPointsItems[Pt - 51].x + "," + virtualPoints[Level].VirtualPointsItems[Pt - 51].y);
             return V;
         }
 
