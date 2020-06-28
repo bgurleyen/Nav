@@ -21,8 +21,7 @@ public class LegsNodeLine : MonoBehaviour
 
     [Header("footer")]
     public TMP_Text fLeft;
-    public TMP_Text fRight1;
-    public TMP_Text fRight2;
+    public TMP_Text fRight;
 
     NodeSelection selection;
 
@@ -44,8 +43,15 @@ public class LegsNodeLine : MonoBehaviour
             hMiddle.text = node.IsAfterDiscontinuity ? "" : $"{_distance:F1}NM";
 
             fLeft.text = node.Name;
-            fRight1.text = node.DisplaySpeed.ToString();
-            fRight2.text = node.DisplayAltitude.ToString();// todo show ping if is regulation
+            var _speedColor = node.GetSpeedIsRestricted(out var _speedDisplayValue)
+                ? "#FF00C7"
+                : "#EBE0C9";
+            var _altitudeColor  = node.GetAltitudeIsRestricted(out var _altDisplayValue) 
+                ? "#FF00C7"
+                : "#EBE0C9";
+            
+            fRight.text =
+                $"<color={_speedColor}>{_speedDisplayValue} / <color={_altitudeColor}>{_altDisplayValue}";
         }
 
         if (node.IsModified)
@@ -70,8 +76,7 @@ public class LegsNodeLine : MonoBehaviour
         hFull.text = "";
 
         fLeft.text = "□□□□□";
-        fRight1.text = "";
-        fRight2.text = "";
+        fRight.text = "";
     }
 
     internal void ShowEmpty()
@@ -81,8 +86,7 @@ public class LegsNodeLine : MonoBehaviour
         hFull.text = "";
 
         fLeft.text = "";
-        fRight1.text = "";
-        fRight2.text = "";
+        fRight.text = "";
 
     }
 }

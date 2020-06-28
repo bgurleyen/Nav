@@ -22,10 +22,8 @@ public class MainScreen : Singleton<MainScreen>
     [SerializeField] TMP_Text scratchPadText;
 
 
-    public bool IsErase => lastFLeft.text == EraseTitle;
-
-    const string EraseTitle = "<ERASE";
-    string nodeNameTemp = "";
+    public string LastLineLeft => lastFLeft.text;
+   
 
     public void UpdatePageInfo(int currentPage, int totalPages, bool isMod)
     {
@@ -33,16 +31,16 @@ public class MainScreen : Singleton<MainScreen>
         title.text = isMod ? "MOD" : "LEGS";
     }
 
-    public void DisplayInfo(string nodeName)
-    {
-        nodeNameTemp = nodeName;
-        scratchPadText.text = nodeName;
-        lastFLeft.text = $"ok";
-    }
+    // public void DisplayInfo(string nodeName)
+    // {
+    //     nodeNameTemp = nodeName;
+    //     scratchPadText.text = nodeName;
+    //     lastFLeft.text = $"ok";
+    // }
 
     public void UpdateScratchPad(string buffer, bool withStatus = true)
     {
-        scratchPadText.text = nodeNameTemp + buffer;
+        scratchPadText.text = buffer;
         if (withStatus)
         {
             lastFLeft.text = "ok";
@@ -54,6 +52,5 @@ public class MainScreen : Singleton<MainScreen>
         lastFLeft.text = $"<{value}";
         lastFRight.text = $"{details}";
         scratchPadText.text = "";
-        nodeNameTemp = "";
     }
 }

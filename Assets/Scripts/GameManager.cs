@@ -20,6 +20,8 @@ public class GameManager : Singleton<GameManager>
     public RouteScriptableObject ModeSetWithPosition;
     public FixedPointsScriptableObject FixedPoints;
 
+    public RouteScriptableObject InitialRoute => initialRoute;
+
     public int UnreachedNodeIndex => Aircraft.UnreachedVertex.CurrentLine;
 
     public bool IsMod { get; private set; }
@@ -45,6 +47,8 @@ public class GameManager : Singleton<GameManager>
 
         Aircraft.ResetOnActiveSet(270, 21600);
     }
+    
+    
 
     void FixedUpdate()
     {

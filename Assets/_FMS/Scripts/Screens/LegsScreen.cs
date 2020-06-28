@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System.Linq;
+using UnityEngine;
 
 public class LegsScreen : ScreenBase
 {
@@ -13,15 +14,26 @@ public class LegsScreen : ScreenBase
     int NodesPerPage => nodes.Length;
 
     DisplayNodesController nodesController;
-    
+
     NodeSelection selectionInfo;
     NodeSelection lastSelectionClicked;
 
     RoutePoint SelectedPoint => selectionInfo == null ? null : VisibleRoute.GetPoint(selectionInfo.LinkedId);
-    RoutePoint LastSelectedPoint => lastSelectionClicked == null ? null : VisibleRoute.GetPoint(lastSelectionClicked.LinkedId);
-    
+
+    RoutePoint LastSelectedPoint =>
+        lastSelectionClicked == null ? null : VisibleRoute.GetPoint(lastSelectionClicked.LinkedId);
+
+
+    const string EraseTitle = "<ERASE";
+
+    static bool IsErase => Main.LastLineLeft == EraseTitle;
+
+    string nodeNameTemp = "";
     string scratchPadBuffer = "";
-    int TotalPages =>  Mathf.CeilToInt((VisibleRoute.Points.Length - StartingNodeIndex + nodesController.TotalPagesCorrection) / (float)NodesPerPage); 
+
+    int TotalPages =>
+        Mathf.CeilToInt((VisibleRoute.Points.Length - StartingNodeIndex + nodesController.TotalPagesCorrection) /
+                        (float) NodesPerPage);
 
     int currentPage = 0;
 
@@ -55,7 +67,7 @@ public class LegsScreen : ScreenBase
 
     public void DisplayCurrentPage()
     {
-        Main.UpdatePageInfo(currentPage,TotalPages, IsMod);
+        Main.UpdatePageInfo(currentPage, TotalPages, IsMod);
 
         for (var i = 0; i < nodes.Length; i++)
         {
@@ -87,7 +99,8 @@ public class LegsScreen : ScreenBase
             Debug.Log("=selection=");
             selectionInfo = _clickedInfo;
             SelectedPoint.IsSelected = true;
-            Main.DisplayInfo(SelectedPoint.Name);
+            nodeNameTemp = SelectedPoint.Name;
+            Main.UpdateScratchPad(nodeNameTemp);
             scratchPadBuffer = "";
             return;
         }
@@ -95,17 +108,21 @@ public class LegsScreen : ScreenBase
         SelectedPoint.IsSelected = false;
 
         // if this is a relative insert on direction command
-        if (!string.IsNullOrEmpty(scratchPadBuffer) && DataHandler.ParseRelativeNodeOnDirection(scratchPadBuffer, out var _distanceOnDirection))
+        if (!string.IsNullOrEmpty(scratchPadBuffer) &&
+            DataHandler.ParseRelativeNodeOnDirection(scratchPadBuffer, out var _distanceOnDirection))
         {
             Debug.Log("=relative insert on direction=");
-            GameManager.Instance.ExecuteInsertRelativeOnDirectionOnMod(new ExecuteRelativeOnDirectionOnMod { FromNodeId = _clickedInfo.LinkedId, Distance = _distanceOnDirection });
+            GameManager.Instance.ExecuteInsertRelativeOnDirectionOnMod(new ExecuteRelativeOnDirectionOnMod
+                {FromNodeId = _clickedInfo.LinkedId, Distance = _distanceOnDirection});
         }
 
         // if this is a relative insert command
-        if (!string.IsNullOrEmpty(scratchPadBuffer) && DataHandler.ParseRelativeNode(scratchPadBuffer, out var _angle, out var _distance))
+        if (!string.IsNullOrEmpty(scratchPadBuffer) &&
+            DataHandler.ParseRelativeNode(scratchPadBuffer, out var _angle, out var _distance))
         {
             Debug.Log("=relative insert=");
-            GameManager.Instance.ExecuteInsertRelativeOnMod(new InsertRelativeCommand { FromNodeId = _clickedInfo.LinkedId, RawDegrees = _angle, Distance = _distance });
+            GameManager.Instance.ExecuteInsertRelativeOnMod(new InsertRelativeCommand
+                {FromNodeId = _clickedInfo.LinkedId, RawDegrees = _angle, Distance = _distance});
         }
         // if this is a shortcut command
         else
@@ -122,7 +139,8 @@ public class LegsScreen : ScreenBase
             }
 
             Debug.Log("=shortcut=");
-            GameManager.Instance.ExecuteShortcutOnMod(new ExecuteShortcutOnModeCommand { FromNodeId = _clickedInfo.LinkedId, ToNodeId = selectionInfo.LinkedId });
+            GameManager.Instance.ExecuteShortcutOnMod(new ExecuteShortcutOnModeCommand
+                {FromNodeId = _clickedInfo.LinkedId, ToNodeId = selectionInfo.LinkedId});
         }
 
         ClearCurrentOperation();
@@ -134,6 +152,7 @@ public class LegsScreen : ScreenBase
         {
             GameManager.Instance.ApplyMod();
         }
+
         ClearCurrentOperation();
         ClearSelectionHistory();
     }
@@ -146,30 +165,22 @@ public class LegsScreen : ScreenBase
             return;
         }
 
-        if (LastSelectedPoint != null && LastSelectedPoint.IsModified && DataHandler.ParseLinearApproach(scratchPadBuffer, out var _angle) )
+        if (LastSelectedPoint != null && LastSelectedPoint.IsModified &&
+            DataHandler.ParseLinearApproach(scratchPadBuffer, out var _angle))
         {
-            Debug.Log("=linear approach= on " + LastSelectedPoint.Name + " with: "+_angle );
-            GameManager.Instance.ExecuteLinearApproachOnMod(new ExecuteAddLinearApproachCommand { ToNodeId = lastSelectionClicked.LinkedId, Angle = _angle });
+            Debug.Log("=linear approach= on " + LastSelectedPoint.Name + " with: " + _angle);
+            GameManager.Instance.ExecuteLinearApproachOnMod(new ExecuteAddLinearApproachCommand
+                {ToNodeId = lastSelectionClicked.LinkedId, Angle = _angle});
         }
     }
 
     public override void OnLeftCornerPress()
     {
-        if (Main.IsErase)
+        if (IsErase)
         {
             GameManager.Instance.EraseMod();
             ClearCurrentOperation();
         }
-    }
-
-    void ClearCurrentOperation()
-    {
-        scratchPadBuffer = "";
-        selectionInfo = null;
-    }
-    void ClearSelectionHistory()
-    {
-        lastSelectionClicked = null;
     }
 
 
@@ -180,7 +191,7 @@ public class LegsScreen : ScreenBase
             return;
         }
 
-        OnCharacterInput((char)(number + 48));
+        OnCharacterInput((char) (number + 48));
     }
 
     public override void OnDecimalPressed()
@@ -215,12 +226,22 @@ public class LegsScreen : ScreenBase
 
     public override void OnClearPress()
     {
-        if (scratchPadBuffer.Length == 0) return;
+        if (scratchPadBuffer.Length > 0)
+        {
+            scratchPadBuffer = scratchPadBuffer.Remove(scratchPadBuffer.Length - 1);
+        }
+        else if (nodeNameTemp.Length > 0)
+        {
+            nodeNameTemp = nodeNameTemp.Remove(nodeNameTemp.Length - 1);
+        }
 
-        scratchPadBuffer = scratchPadBuffer.Remove(scratchPadBuffer.Length - 1);
-        Main.UpdateScratchPad(scratchPadBuffer);
+        Main.UpdateScratchPad(nodeNameTemp + scratchPadBuffer);
     }
-    
+
+    /// <summary>
+    /// Can do:
+    ///  - delete restriction for altitude & speed
+    /// </summary>
     public override void OnDeletePress()
     {
     }
@@ -231,10 +252,44 @@ public class LegsScreen : ScreenBase
         {
             scratchPadBuffer = scratchPadBuffer.Remove(scratchPadBuffer.Length - 1);
         }
+        else if (scratchPadBuffer.Length == 0) // if we edit the node name we can select one in case it exists
+        {
+            var _node = VisibleRoute.Points.FirstOrDefault(x => x.Name == $"{nodeNameTemp}{character}");
+            if (_node != null)
+            {
+                nodeNameTemp += character;
+                if (SelectedPoint != null)
+                {
+                    SelectedPoint.IsSelected = false;
+                }
+
+                selectionInfo = new NodeSelection
+                {
+                    IsEmpty = false,
+                    LinkedId = _node.ID,
+                    IsAddedDiscontinuity = false,
+                    IsStartingPoint = false
+                };
+                SelectedPoint.IsSelected = true;
+            }
+        }
         else
         {
             scratchPadBuffer += character;
         }
-        Main.UpdateScratchPad(scratchPadBuffer, selectionInfo != null);
+
+        Main.UpdateScratchPad(nodeNameTemp + scratchPadBuffer, selectionInfo != null);
+    }
+
+
+    void ClearCurrentOperation()
+    {
+        scratchPadBuffer = "";
+        selectionInfo = null;
+    }
+
+    void ClearSelectionHistory()
+    {
+        lastSelectionClicked = null;
     }
 }

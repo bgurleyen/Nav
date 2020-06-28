@@ -29,13 +29,24 @@ public class RoutePoint
     public bool IsPositionNode => Details.Contains("P");
 
     public AltitudeFlags AltitudeRegulation => Altitude.GetFlag(RawAltitude);
-    public string DisplayAltitude => Altitude.GetDisplayValue(RawAltitude);
+    public string DisplayAltitude => Altitude.GetDisplayValue(RawAltitude, out var _);
     public int DisplayDegrees => (int)Degrees;
     public float GetAcceptedAltitude => Altitude.GetAcceptedValue();
 
     public bool IsSpeedRegulated => Speed.IsSpeedRegulated(RawSpeed);
-    public int DisplaySpeed => Speed.GetDisplayValue(RawSpeed);
     public void SetSpeedComputed(int lastRegulation) => Speed.SetComputedValue(lastRegulation, (int)GetAcceptedAltitude);
+
+    public bool GetAltitudeIsRestricted(out string displayValue)
+    {
+        displayValue = Altitude.GetDisplayValue(RawAltitude, out var _isRestricted);
+        return _isRestricted;
+    }
+
+    public bool GetSpeedIsRestricted(out string displayValue)
+    {
+        displayValue = Speed.GetDisplayValue(RawSpeed, out var _isRestricted).ToString();
+        return _isRestricted;
+    }
 
     internal RoutePoint Clone()
     {
@@ -99,9 +110,11 @@ public class RoutePoint
             };
         }
 
-        internal int GetDisplayValue(int rawSpeed)
+        internal int GetDisplayValue(int rawSpeed, out bool isRestricted)
         {
-            return IsSpeedRegulated(rawSpeed) ? rawSpeed : ComputedValue;
+            isRestricted = IsSpeedRegulated(rawSpeed);
+
+            return isRestricted ? rawSpeed : ComputedValue;
         }
 
         public void SetComputedValue(int lastRegulation, int acceptedAltitude)
@@ -118,7 +131,7 @@ public class RoutePoint
 
         public int GetLinearValue(int rawSpeed, int acceptedAltitude)
         {
-            var _displayed = GetDisplayValue(rawSpeed);
+            var _displayed = GetDisplayValue(rawSpeed, out var _);
             if(acceptedAltitude>10000)
             {
                 return _displayed;
@@ -176,9 +189,13 @@ public class RoutePoint
 
         }
 
-        public string GetDisplayValue(string rawAltitude)  => GetFlag(rawAltitude) == AltitudeFlags.NotSet 
-            ? ((int) ComputedValue).ToString() 
-            : parsedAltitude;
+        public string GetDisplayValue(string rawAltitude, out bool isRestricted)
+        {
+            isRestricted = GetFlag(rawAltitude) != AltitudeFlags.NotSet;
+            return !isRestricted
+                ? ((int) ComputedValue).ToString()
+                : parsedAltitude;
+        }
 
         public void SetComputedValue(float altitude, bool anchored)
         {
@@ -188,8 +205,8 @@ public class RoutePoint
 
         internal float GetAcceptedValue()
         {
-            var flag = GetFlag(parsedAltitude);
-            switch(flag)
+            var _flag = GetFlag(parsedAltitude);
+            switch(_flag)
             {
                 case AltitudeFlags.Exact:
                     return RestrictionExact;
