@@ -79,7 +79,7 @@ public class RouteScriptableObject : ScriptableObject
             // on could take the positions from PathLines
             _segmentB = Geometry.GetNextPosition(_segmentA, Points[i].Distance, Points[i].Degrees);
 
-            if (Points[i].IsHiddenLine)
+            if (Points[i].IsHiddenLine || Points[i].IsAfterDiscontinuity)
             {
                 continue;
             }

@@ -21,16 +21,14 @@ public class Aircraft
             {
                 return GetWalkedDistanceLeftOnLine();
             }
-            else
+
+            var _nextViableNodeIndex = PositionVirtualNode.PassedNodeIndex + 1;
+            while (GameManager.Instance.ActiveRoute.Points[_nextViableNodeIndex].IsSkippable)
             {
-                var _nextViableNodeIndex = PositionVirtualNode.PassedNodeIndex + 1;
-                while (GameManager.Instance.ActiveRoute.Points[_nextViableNodeIndex].IsSkippable)
-                {
-                    _nextViableNodeIndex++;
-                }
-                return (GameManager.Instance.PathLines.GetNodePosition(_nextViableNodeIndex) -
-                        Position).magnitude;
+                _nextViableNodeIndex++;
             }
+            return (GameManager.Instance.PathLines.GetNodePosition(_nextViableNodeIndex) -
+                    Position).magnitude;
         }
     }
 
@@ -146,6 +144,10 @@ public class Aircraft
         if (_newUnreachedVertex.CurrentLine != UnreachedVertex.CurrentLine)
         {
             WalkedDistanceOnLine = 0;
+            if (GameManager.Instance.ActiveRoute.Points[_newUnreachedVertex.CurrentLine].IsAfterDiscontinuity)
+            {
+                GameManager.Instance.SwitchThroughHeading();
+            }
         }
 
         UnreachedVertex = _newUnreachedVertex;
@@ -157,21 +159,20 @@ public class Aircraft
         ExecuteLerpMove(_leftToAdvance);
     }
 
-    
     void AdvanceFreeFlight()
     {
         ExecuteStepHeadingCorrection();
         ExecuteStepMove();
     }
 
-    public float GetWalkedDistanceLeftOnLine()
+    float GetWalkedDistanceLeftOnLine()
     {
         return GameManager.Instance.PathLines.ComputedLines[UnreachedVertex.CurrentLine].ComputedLength -
                WalkedDistanceOnLine;
     }
 
     /// <summary>
-    /// This is called on FixedUpdate from Gamemanager
+    /// This is called on FixedUpdate from GameManager
     /// </summary>
     public void Advance()
     {

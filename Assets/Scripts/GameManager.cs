@@ -178,10 +178,7 @@ public class GameManager : Singleton<GameManager>
 
         if (ActiveRoute.ActiveDirectApproach)
         {
-            Calculator.RHeading = (int) Aircraft.TargetHeading;
-            SwitchFreeFlight(true);
-            SwitchFreeFlight(false);
-            McpUI.Instance.RefreshHS();
+            SwitchThroughHeading();
         }
     }
 
@@ -195,5 +192,14 @@ public class GameManager : Singleton<GameManager>
     public void QueueEraseMode()
     {
         queueEraseMode = true;
+    }
+
+
+    public void SwitchThroughHeading()
+    {
+        Calculator.RHeading = (int) Aircraft.TargetHeading;
+        SwitchFreeFlight(true);
+        SwitchFreeFlight(false);
+        McpUI.Instance.RefreshHS();
     }
 }
