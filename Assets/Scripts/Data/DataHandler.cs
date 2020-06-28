@@ -333,52 +333,11 @@ public class DataHandler
         }
     }
 
-    // ex: 080/34
-    public static bool ParseRelativeNode(string input, out int angle, out int distance)
-    {
-        angle = 0;
-        distance = 0;
+    
 
-        if (input.Length <= 4 || input[3] != '/') return false;
+  
 
-        var _rex = new Regex(@"(\-?)(\d+)\/(\d+)");
-
-        var _result = _rex.Match(input);
-        if (!string.IsNullOrEmpty(_result.Groups[1].Value))
-        {
-            return false;
-        }
-
-        angle = Mathf.Clamp(int.Parse(_result.Groups[2].Value), 0, 360);
-        distance = int.Parse(_result.Groups[3].Value);
-
-        return true;
-    }
-
-    public static bool ParseRelativeNodeOnDirection(string input, out int distance)
-    {
-        distance = 0;
-
-        if (input.Length <= 1|| input[0] != '/') return false;
-        input = input.Remove(0, 1);
-
-        return int.TryParse(input, out distance); 
-    }
-
-    /// <summary>
-    /// 060
-    /// </summary>
-    /// <param name="input"></param>
-    /// <param name="angle"></param>
-    /// <returns></returns>
-    public static bool ParseLinearApproach(string input, out int angle)
-    {
-        angle = 0;
-
-        if (input.Length != 3) return false;
-
-        return int.TryParse(input, out angle); 
-    }
+   
 
     class AltitudeRegulationNode
     {

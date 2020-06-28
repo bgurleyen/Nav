@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public class LegsScreen : ScreenBase
@@ -18,7 +19,7 @@ public class LegsScreen : ScreenBase
     NodeSelection selectionInfo;
     NodeSelection lastSelectionClicked;
 
-    RoutePoint SelectedPoint => selectionInfo == null ? null : VisibleRoute.GetPoint(selectionInfo.LinkedId);
+    RoutePoint GetSelectedPoint => selectionInfo == null ? null : VisibleRoute.GetPoint(selectionInfo.LinkedId);
 
     RoutePoint LastSelectedPoint =>
         lastSelectionClicked == null ? null : VisibleRoute.GetPoint(lastSelectionClicked.LinkedId);
@@ -28,7 +29,7 @@ public class LegsScreen : ScreenBase
 
     static bool IsErase => Main.LastLineLeft == EraseTitle;
 
-    string nodeNameTemp = "";
+    ScratchPadInfo scratchPadInfo;
     string scratchPadBuffer = "";
 
     int TotalPages =>
@@ -94,37 +95,31 @@ public class LegsScreen : ScreenBase
         var _clickedInfo = nodesController.GetNodeInfoAtLineIndex(index, currentPage);
         lastSelectionClicked = _clickedInfo;
         // user clicks, none is previously selected
-        if (SelectedPoint == null)
+        if (GetSelectedPoint == null)
         {
-            Debug.Log("=selection=");
+            Debug.Log("=selection text=");
             selectionInfo = _clickedInfo;
-            SelectedPoint.IsSelected = true;
-            nodeNameTemp = SelectedPoint.Name;
-            Main.UpdateScratchPad(nodeNameTemp);
-            scratchPadBuffer = "";
+            scratchPadBuffer = GetSelectedPoint.Name;
+            GetSelectedPoint.IsSelected = true;
+            Main.UpdateScratchPad(scratchPadBuffer);
             return;
         }
 
-        SelectedPoint.IsSelected = false;
+        GetSelectedPoint.IsSelected = false;
 
-        // if this is a relative insert on direction command
         if (!string.IsNullOrEmpty(scratchPadBuffer) &&
-            DataHandler.ParseRelativeNodeOnDirection(scratchPadBuffer, out var _distanceOnDirection))
+            scratchPadInfo.IsRelativeNodeOnDirection(out var _distanceOnDirection))
         {
-            Debug.Log("=relative insert on direction=");
             GameManager.Instance.ExecuteInsertRelativeOnDirectionOnMod(new ExecuteRelativeOnDirectionOnMod
                 {FromNodeId = _clickedInfo.LinkedId, Distance = _distanceOnDirection});
         }
-
-        // if this is a relative insert command
-        if (!string.IsNullOrEmpty(scratchPadBuffer) &&
-            DataHandler.ParseRelativeNode(scratchPadBuffer, out var _angle, out var _distance))
+        else if (!string.IsNullOrEmpty(scratchPadBuffer) &&
+                 scratchPadInfo.IsRelativeNode(out var _angle, out var _distance))
         {
-            Debug.Log("=relative insert=");
+            // if this is a relative insert command
             GameManager.Instance.ExecuteInsertRelativeOnMod(new InsertRelativeCommand
                 {FromNodeId = _clickedInfo.LinkedId, RawDegrees = _angle, Distance = _distance});
         }
-        // if this is a shortcut command
         else
         {
             var _selectedIndex = VisibleRoute.GetIndex(selectionInfo.LinkedId);
@@ -138,6 +133,7 @@ public class LegsScreen : ScreenBase
                 return;
             }
 
+            // if this is a shortcut command
             Debug.Log("=shortcut=");
             GameManager.Instance.ExecuteShortcutOnMod(new ExecuteShortcutOnModeCommand
                 {FromNodeId = _clickedInfo.LinkedId, ToNodeId = selectionInfo.LinkedId});
@@ -166,7 +162,7 @@ public class LegsScreen : ScreenBase
         }
 
         if (LastSelectedPoint != null && LastSelectedPoint.IsModified &&
-            DataHandler.ParseLinearApproach(scratchPadBuffer, out var _angle))
+            scratchPadInfo.IsLinearApproach(out var _angle))
         {
             Debug.Log("=linear approach= on " + LastSelectedPoint.Name + " with: " + _angle);
             GameManager.Instance.ExecuteLinearApproachOnMod(new ExecuteAddLinearApproachCommand
@@ -186,7 +182,7 @@ public class LegsScreen : ScreenBase
 
     public override void OnNumberPressed(int number)
     {
-        if (SelectedPoint == null && lastSelectionClicked == null)
+        if (GetSelectedPoint == null && lastSelectionClicked == null)
         {
             return;
         }
@@ -196,7 +192,7 @@ public class LegsScreen : ScreenBase
 
     public override void OnDecimalPressed()
     {
-        if (SelectedPoint == null)
+        if (GetSelectedPoint == null)
         {
             return;
         }
@@ -206,7 +202,7 @@ public class LegsScreen : ScreenBase
 
     public override void OnSlashPressed()
     {
-        if (SelectedPoint == null)
+        if (GetSelectedPoint == null)
         {
             return;
         }
@@ -216,7 +212,7 @@ public class LegsScreen : ScreenBase
 
     public override void OnSignPressed()
     {
-        if (SelectedPoint == null)
+        if (GetSelectedPoint == null)
         {
             return;
         }
@@ -230,12 +226,8 @@ public class LegsScreen : ScreenBase
         {
             scratchPadBuffer = scratchPadBuffer.Remove(scratchPadBuffer.Length - 1);
         }
-        else if (nodeNameTemp.Length > 0)
-        {
-            nodeNameTemp = nodeNameTemp.Remove(nodeNameTemp.Length - 1);
-        }
 
-        Main.UpdateScratchPad(nodeNameTemp + scratchPadBuffer);
+        Main.UpdateScratchPad(scratchPadBuffer);
     }
 
     /// <summary>
@@ -252,33 +244,149 @@ public class LegsScreen : ScreenBase
         {
             scratchPadBuffer = scratchPadBuffer.Remove(scratchPadBuffer.Length - 1);
         }
-        // else if (scratchPadBuffer.Length == 0) // if we edit the node name we can select one in case it exists
-        // {
-        //     var _node = VisibleRoute.Points.FirstOrDefault(x => x.Name == $"{nodeNameTemp}{character}");
-        //     if (_node != null)
-        //     {
-        //         nodeNameTemp += character;
-        //         if (SelectedPoint != null)
-        //         {
-        //             SelectedPoint.IsSelected = false;
-        //         }
-        //
-        //         selectionInfo = new NodeSelection
-        //         {
-        //             IsEmpty = false,
-        //             LinkedId = _node.ID,
-        //             IsAddedDiscontinuity = false,
-        //             IsStartingPoint = false
-        //         };
-        //         SelectedPoint.IsSelected = true;
-        //     }
-        // }
         else
         {
             scratchPadBuffer += character;
         }
 
-        Main.UpdateScratchPad(nodeNameTemp + scratchPadBuffer, selectionInfo != null);
+        CheckSelectionOnTextChanged(true);
+
+        Main.UpdateScratchPad(scratchPadBuffer, selectionInfo != null);
+    }
+
+    struct ScratchPadInfo
+    {
+        public bool IsValid;
+        public RoutePoint Node;
+        public int? Angle;
+        public int? Distance;
+        public string Regulation;
+
+        public bool IsRelativeNode(out int angle, out int distance)
+        {
+            distance = 0;
+            angle = 0;
+            if (!IsValid || Regulation != null
+                         || Node == null || Angle == null || Distance == null)
+            {
+                return false;
+            }
+
+            Debug.Log("=relative insert=");
+            distance = Distance.Value;
+            angle = Angle.Value;
+            return true;
+        }
+        public bool IsRelativeNodeOnDirection(out int distance)
+        {
+            distance = 0;
+            if (!IsValid || Angle != null || Regulation != null
+                || Node == null || Distance == null)
+            {
+                return false;
+            }
+
+            Debug.Log("=relative insert on direction=");
+            distance = Distance.Value;
+            return true;
+        }
+
+        public bool IsLinearApproach(out int angle)
+        {
+            angle = 0;
+            if (!IsValid || Node != null || Distance != null || Regulation != null
+                || Angle == null)
+            {
+                return false;
+            }
+
+            angle = Angle.Value;
+            return true;
+        }
+    }
+
+
+    void CheckSelectionOnTextChanged(bool handleSelection)
+    {
+        if (handleSelection && GetSelectedPoint != null)
+        {
+            GetSelectedPoint.IsSelected = false;
+        }
+
+        scratchPadInfo = new ScratchPadInfo
+            {IsValid = true, Angle = null, Distance = null, Regulation = null, Node = null};
+        if (scratchPadBuffer.Contains('/'))
+        {
+            var _indexOfSlash = scratchPadBuffer.IndexOf('/');
+            var _allLeft = scratchPadBuffer.Substring(0, _indexOfSlash);
+            // ABC/-11 or ABC060/-11
+            scratchPadInfo.Node = VisibleRoute.Points.FirstOrDefault(x => x.Name == _allLeft);
+            if (scratchPadInfo.Node == null)
+            {
+                // ABC060/-11    ~~   Can be relative with angle and direction
+                if (int.TryParse(_allLeft.Substring(_allLeft.Length - 3, 3), out var _angle))
+                {
+                    scratchPadInfo.Angle = _angle;
+                    var _withoutAngle = _allLeft.Substring(0, _allLeft.Length - 3);
+                    scratchPadInfo.Node = VisibleRoute.Points.FirstOrDefault(x => x.Name == _withoutAngle);
+                }
+                else
+                {
+                    scratchPadInfo.IsValid = false;
+                }
+            }
+
+            // make sure the distance is ok 
+            if (scratchPadInfo.Node != null)
+            {
+                var _allRight =
+                    scratchPadBuffer.Substring(_indexOfSlash + 1, scratchPadBuffer.Length - (_indexOfSlash + 1));
+                if (int.TryParse(_allRight, out var _distance))
+                {
+                    scratchPadInfo.Distance = _distance;
+                }
+                else
+                {
+                    scratchPadInfo.IsValid = false;
+                }
+            }
+        }
+        else
+        {
+            if (scratchPadBuffer.Length == 3 && int.TryParse(scratchPadBuffer, out var _angle))
+            {
+                // Is linear approach
+                scratchPadInfo.Angle = _angle;
+            }
+            else
+            {
+                scratchPadInfo.Node = VisibleRoute.Points.FirstOrDefault(x => x.Name == scratchPadBuffer);
+                if (scratchPadInfo.Node == null)
+                {
+                    scratchPadInfo.IsValid = false;
+                }
+            }
+        }
+
+        if (scratchPadInfo.IsValid)
+        {
+            if (handleSelection && scratchPadInfo.Node != null)
+            {
+                selectionInfo = new NodeSelection
+                {
+                    IsEmpty = false,
+                    LinkedId = scratchPadInfo.Node.ID,
+                    IsAddedDiscontinuity = false,
+                    IsStartingPoint = false
+                };
+
+                GetSelectedPoint.IsSelected = true;
+            }
+        }
+        else
+        {
+            Debug.Log("Invalid Scratchpad Entry!");
+        }
     }
 
 
