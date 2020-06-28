@@ -55,8 +55,7 @@ public class LegsScreen : ScreenBase
 
     public void DisplayCurrentPage()
     {
-        Main.pageNumber.text = $"{currentPage + 1}/{TotalPages}";
-        Main.title.text = IsMod ? "MOD" : "LEGS";
+        Main.UpdatePageInfo(currentPage,TotalPages, IsMod);
 
         for (var i = 0; i < nodes.Length; i++)
         {
@@ -139,11 +138,6 @@ public class LegsScreen : ScreenBase
         ClearSelectionHistory();
     }
 
-    public override void OnClearPress()
-    {
-        GameManager.Instance.EraseMod();
-        ClearCurrentOperation();
-    }
 
     public override void OnRightCornerPress()
     {
@@ -156,6 +150,15 @@ public class LegsScreen : ScreenBase
         {
             Debug.Log("=linear approach= on " + LastSelectedPoint.Name + " with: "+_angle );
             GameManager.Instance.ExecuteLinearApproachOnMod(new ExecuteAddLinearApproachCommand { ToNodeId = lastSelectionClicked.LinkedId, Angle = _angle });
+        }
+    }
+
+    public override void OnLeftCornerPress()
+    {
+        if (Main.IsErase)
+        {
+            GameManager.Instance.EraseMod();
+            ClearCurrentOperation();
         }
     }
 
@@ -210,12 +213,16 @@ public class LegsScreen : ScreenBase
         OnCharacterInput('-');
     }
 
-    public override void OnDeletePress()
+    public override void OnClearPress()
     {
         if (scratchPadBuffer.Length == 0) return;
 
         scratchPadBuffer = scratchPadBuffer.Remove(scratchPadBuffer.Length - 1);
         Main.UpdateScratchPad(scratchPadBuffer);
+    }
+    
+    public override void OnDeletePress()
+    {
     }
 
     public override void OnCharacterInput(char character)

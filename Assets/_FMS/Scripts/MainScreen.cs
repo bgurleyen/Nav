@@ -7,22 +7,31 @@ using UnityEngine;
 public class MainScreen : Singleton<MainScreen>
 {
     [Header("top header")]
-    public TMP_Text leftInfo;
-    public TMP_Text title;
-    public TMP_Text pageNumber;
+    [SerializeField] TMP_Text leftInfo;
+    [SerializeField] TMP_Text title;
+    [SerializeField] TMP_Text pageNumber;
 
 
     [Header("last button line")]
-    public TMP_Text lastHLeft;
-    public TMP_Text lastHRight;
-    public TMP_Text lastFLeft;
-    public TMP_Text lastFRight;
+    [SerializeField] TMP_Text lastHLeft;
+    [SerializeField] TMP_Text lastHRight;
+    [SerializeField] TMP_Text lastFLeft;
+    [SerializeField] TMP_Text lastFRight;
 
     [Header("scratch pad")]
-    public TMP_Text scratchPadText;
+    [SerializeField] TMP_Text scratchPadText;
 
 
+    public bool IsErase => lastFLeft.text == EraseTitle;
+
+    const string EraseTitle = "<ERASE";
     string nodeNameTemp = "";
+
+    public void UpdatePageInfo(int currentPage, int totalPages, bool isMod)
+    {
+        pageNumber.text = $"{currentPage + 1}/{totalPages}";
+        title.text = isMod ? "MOD" : "LEGS";
+    }
 
     public void DisplayInfo(string nodeName)
     {
@@ -47,7 +56,4 @@ public class MainScreen : Singleton<MainScreen>
         scratchPadText.text = "";
         nodeNameTemp = "";
     }
-
-
-
 }
