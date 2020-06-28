@@ -1,11 +1,8 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
-using Gamelogic.Extensions;
 using TMPro;
-using System.Runtime.Remoting.Activation;
 
 public class Calculator : MonoBehaviour
 {
@@ -13,7 +10,7 @@ public class Calculator : MonoBehaviour
         
     public  WindTableScriptableObject[] windTables;
     string result;
-    public Text txtRSpeed, txtRAltitude, txtRVS, txtRHeading;
+    public Text txtRSpeed, txtRAltitude, txtRVS;
     public Text txtCSpeed, txtCAltitude, txtCVS;
     public Text txtRSpeed_overTape, txtRAltitude_overTape;
     public Text txtDTG;//DTG: Distance to go
@@ -671,14 +668,13 @@ public class Calculator : MonoBehaviour
         {
             RHeading += 1;
             if (RHeading > 359) RHeading = 0;
-            txtRHeading.text = RHeading.ToString();
         }
         if (result == "LHeading")
         {
             RHeading -= 1;
             if (RHeading < 0) RHeading = 359;
-            txtRHeading.text = RHeading.ToString();
         }
+        McpUI.Instance.RefreshHS();
         CHeading = RHeading;
         Script2.SpeedIndexUpdate_Click();
         Script2.CheckAltitudeIndicator(RAltitude, (int)CAltitude);

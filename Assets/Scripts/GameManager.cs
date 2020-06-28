@@ -178,7 +178,10 @@ public class GameManager : Singleton<GameManager>
 
         if (ActiveRoute.ActiveDirectApproach)
         {
-            McpUI.Instance.TriggerOnHS((int)Aircraft.TargetHeading);
+            Calculator.RHeading = (int) Aircraft.TargetHeading;
+            SwitchFreeFlight(true);
+            SwitchFreeFlight(false);
+            McpUI.Instance.RefreshHS();
         }
     }
 

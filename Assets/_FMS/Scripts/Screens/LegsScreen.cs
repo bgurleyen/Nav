@@ -252,27 +252,27 @@ public class LegsScreen : ScreenBase
         {
             scratchPadBuffer = scratchPadBuffer.Remove(scratchPadBuffer.Length - 1);
         }
-        else if (scratchPadBuffer.Length == 0) // if we edit the node name we can select one in case it exists
-        {
-            var _node = VisibleRoute.Points.FirstOrDefault(x => x.Name == $"{nodeNameTemp}{character}");
-            if (_node != null)
-            {
-                nodeNameTemp += character;
-                if (SelectedPoint != null)
-                {
-                    SelectedPoint.IsSelected = false;
-                }
-
-                selectionInfo = new NodeSelection
-                {
-                    IsEmpty = false,
-                    LinkedId = _node.ID,
-                    IsAddedDiscontinuity = false,
-                    IsStartingPoint = false
-                };
-                SelectedPoint.IsSelected = true;
-            }
-        }
+        // else if (scratchPadBuffer.Length == 0) // if we edit the node name we can select one in case it exists
+        // {
+        //     var _node = VisibleRoute.Points.FirstOrDefault(x => x.Name == $"{nodeNameTemp}{character}");
+        //     if (_node != null)
+        //     {
+        //         nodeNameTemp += character;
+        //         if (SelectedPoint != null)
+        //         {
+        //             SelectedPoint.IsSelected = false;
+        //         }
+        //
+        //         selectionInfo = new NodeSelection
+        //         {
+        //             IsEmpty = false,
+        //             LinkedId = _node.ID,
+        //             IsAddedDiscontinuity = false,
+        //             IsStartingPoint = false
+        //         };
+        //         SelectedPoint.IsSelected = true;
+        //     }
+        // }
         else
         {
             scratchPadBuffer += character;
