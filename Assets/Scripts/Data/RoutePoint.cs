@@ -13,6 +13,7 @@ public class RoutePoint
     public string Details = "";
 
 
+    public Vector2 CartesianPosition { get; set; }
     public int LinearApproachAngle { get; set; }
     public AltitudeData Altitude { get; private set; } = new AltitudeData();
     public SpeedData Speed { get; private set; } = new SpeedData();

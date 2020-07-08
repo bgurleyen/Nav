@@ -409,6 +409,9 @@ public class Drawer : Singleton<Drawer>
                 _lastEndOffset, out line);
         }
 
+        // store cartesian position
+        nextPoint.CartesianPosition = line.EndPosition;
+        
         return true;
     }
 
