@@ -95,12 +95,21 @@ public class LegsScreen : ScreenBase
     {
         var _clickedInfo = nodesController.GetNodeInfoAtLineIndex(index, currentPage);
 
-        if (scratchPadInfo.IsAddAltitudeRegulation(out var _regulation))
+        if (scratchPadInfo.IsAltitudeRegulation(out var _regulation))
         {
             GameManager.Instance.ExecuteAddAltitudeRegulation(new AddAltitudeRegulationCommand
             {
                 NodeId = _clickedInfo.LinkedId,
                 Regulation = _regulation
+            });
+        }
+
+        if (scratchPadInfo.IsSpeedRegulation(out var _speedRegulation))
+        {
+            GameManager.Instance.ExecuteAddSpeedRegulation(new AddSpeedRegulationCommand
+            {
+                NodeId = _clickedInfo.LinkedId,
+                Regulation = _speedRegulation
             });
         }
     }
@@ -234,18 +243,31 @@ public class LegsScreen : ScreenBase
         public RoutePoint Node;
         public int? Angle;
         public int? Distance;
-        public string Regulation;
+        public string AltRegulation;
+        public int? SpeedRegulation;
 
-        public bool IsAddAltitudeRegulation(out string regulation)
+        public bool IsSpeedRegulation(out int regulation)
         {
-            regulation = "";
+            regulation = -1;
             if (!IsValid || Node != null || Angle != null || Distance != null
-                || Regulation == null)
+                || SpeedRegulation == null)
             {
                 return false;
             }
 
-            regulation = Regulation;
+            regulation = SpeedRegulation.Value;
+            return true;
+        }
+        public bool IsAltitudeRegulation(out string regulation)
+        {
+            regulation = "";
+            if (!IsValid || Node != null || Angle != null || Distance != null
+                || AltRegulation == null)
+            {
+                return false;
+            }
+
+            regulation = AltRegulation;
             return true;
         }
 
@@ -253,7 +275,7 @@ public class LegsScreen : ScreenBase
         {
             distance = 0;
             angle = 0;
-            if (!IsValid || Regulation != null
+            if (!IsValid || AltRegulation != null || SpeedRegulation != null
                          || Node == null || Angle == null || Distance == null)
             {
                 return false;
@@ -268,7 +290,7 @@ public class LegsScreen : ScreenBase
         public bool IsRelativeNodeOnDirection(out int distance)
         {
             distance = 0;
-            if (!IsValid || Angle != null || Regulation != null
+            if (!IsValid || Angle != null || AltRegulation != null || SpeedRegulation != null
                 || Node == null || Distance == null)
             {
                 return false;
@@ -282,7 +304,7 @@ public class LegsScreen : ScreenBase
         public bool IsLinearApproach(out int angle)
         {
             angle = 0;
-            if (!IsValid || Node != null || Distance != null || Regulation != null
+            if (!IsValid || Node != null || Distance != null || AltRegulation != null || SpeedRegulation != null
                 || Angle == null)
             {
                 return false;
@@ -301,10 +323,11 @@ public class LegsScreen : ScreenBase
             IsValid = true,
             Angle = null,
             Distance = null,
-            Regulation = null,
+            AltRegulation = null,
+            SpeedRegulation = null,
             Node = null
         };
-        
+
         if (GetSelectedPoint != null || lastSelectionClicked != null)
         {
             if (handleSelection && GetSelectedPoint != null)
@@ -389,14 +412,43 @@ public class LegsScreen : ScreenBase
         else
         {
             // look for regulations
-            if (scratchPadBuffer[0] == '/' && scratchPadBuffer.Length>1)
+            if (scratchPadBuffer[0] == '/' && scratchPadBuffer.Length > 1)
             {
-                // should be altitude regulation
+                // should be altitude only regulation
                 var _value = scratchPadBuffer.Substring(1, scratchPadBuffer.Length - 1);
-                
+
                 if (DataHandler.ParseAltRegulation(_value, out _, out _, out _))
                 {
-                    scratchPadInfo.Regulation = _value;
+                    scratchPadInfo.AltRegulation = _value;
+                    scratchPadInfo.SpeedRegulation = null;
+                }
+                else
+                {
+                    scratchPadInfo.IsValid = false;
+                }
+            }
+            else if (scratchPadBuffer[scratchPadBuffer.Length - 1] == '/' && scratchPadBuffer.Length > 1)
+            {
+                // should be speed only regulation
+                var _value = scratchPadBuffer.Substring(0, scratchPadBuffer.Length - 1);
+                if (int.TryParse(_value, out var _regulation))
+                {
+                    scratchPadInfo.AltRegulation = null;
+                    scratchPadInfo.SpeedRegulation = _regulation;
+                }
+            }
+            else if (scratchPadBuffer.Contains('/') && scratchPadBuffer.Length > 3)
+            {
+                // may be speed & alt regulation
+                var _slashIndex = scratchPadBuffer.IndexOf('/');
+                var _speed = scratchPadBuffer.Substring(0, _slashIndex);
+                var _altRegulation =
+                    scratchPadBuffer.Substring(_slashIndex + 1, scratchPadBuffer.Length - (_slashIndex + 1));
+                if (int.TryParse(_speed, out var _speedRegulation) &&
+                    DataHandler.ParseAltRegulation(_altRegulation, out _, out _, out _))
+                {
+                    scratchPadInfo.AltRegulation = _altRegulation;
+                    scratchPadInfo.SpeedRegulation = _speedRegulation;
                 }
                 else
                 {
@@ -405,7 +457,6 @@ public class LegsScreen : ScreenBase
             }
         }
     }
-
 
     void ClearCurrentOperation()
     {

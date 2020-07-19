@@ -95,6 +95,18 @@ public class GameManager : Singleton<GameManager>
         }
     }
 
+    public void ExecuteAddSpeedRegulation(AddSpeedRegulationCommand command)
+    {
+        CheckModForOperation();
+        cachedCommands.Add(command);
+        
+        MainScreen.Instance.DisplayOperation("ERASE");
+        ModRoute.GetPoint(command.NodeId).RawSpeed = command.Regulation;
+        DataHandler.BuildSetDetails(ModRoute);
+
+        OnOperationMade?.Invoke();
+    }
+    
     public void ExecuteAddAltitudeRegulation(AddAltitudeRegulationCommand command)
     {
         CheckModForOperation();

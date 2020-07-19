@@ -11,6 +11,13 @@ public struct AddAltitudeRegulationCommand : ICommand
     public string Regulation;
 }
 
+
+public struct AddSpeedRegulationCommand : ICommand
+{
+    public int NodeId;
+    public int Regulation;
+}
+
 public struct InsertRelativeCommand : ICommand
 {
     public int FromNodeId;
