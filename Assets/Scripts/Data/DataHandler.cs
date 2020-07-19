@@ -1,27 +1,15 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using UnityEngine;
 
 public class DataHandler
 {
-    internal static void BuildDataSet(RouteScriptableObject route, out RouteScriptableObject routeBuilt)
-    {
-        var _newSet = route.Clone();
-
-        BuildSetDetails(_newSet);
-
-        routeBuilt = _newSet;
-    }
-
     public static void BuildSetDetails(RouteScriptableObject route)
     {
         BuildAltitudes(route);
         BuildSpeeds(route);
     }
 
-    static RouteScriptableObject BuildSpeeds(RouteScriptableObject set, int startFrom = 270)
+    static void BuildSpeeds(RouteScriptableObject set, int startFrom = 270)
     {
         set.Points[0].RawSpeed = startFrom;
         var _lastRegulation = startFrom;
@@ -39,10 +27,9 @@ public class DataHandler
                 _point.SetSpeedComputed(_lastRegulation);
             }
         }
-        return set;
     }
 
-    static RouteScriptableObject BuildAltitudes(RouteScriptableObject set, int startFrom = 40000)
+    static void BuildAltitudes(RouteScriptableObject set, int startFrom = 40000)
     {
         if (set.Points[0].AltitudeRegulation == RoutePoint.AltitudeFlags.NotSet)
         {
@@ -106,8 +93,6 @@ public class DataHandler
                 }
             }
         }
-
-        return set;
     }
 
     static void ComputeRegulationsInterval(List<AltitudeRegulationNode> regulations, RouteScriptableObject set)
@@ -304,13 +289,19 @@ public class DataHandler
     }
 
     // ex: 180A3444B
-    public static void ParseAltRegulation(string input, out int above, out int below, out int exact)
+    public static bool ParseAltRegulation(string input, out int above, out int below, out int exact)
     {
         above = -1;
         below = -1;
         exact = -1;
-        var _re = new Regex(@"(\d+)([a-zA-Z]*)");
+        var _re = new Regex(@"(\d+)([a-zA-Z]{0,1})");
         var _result = _re.Matches(input);
+
+        if (_result.Count == 0)
+        {
+            // @#$ also exclude leftovers 234AA234B : second A needs to flag error
+            return false;
+        }
 
         for (var i = 0; i < _result.Count; i++)
         {
@@ -331,6 +322,8 @@ public class DataHandler
                     break;
             }
         }
+
+        return true;
     }
 
     

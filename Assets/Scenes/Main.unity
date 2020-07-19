@@ -540,7 +540,6 @@ MonoBehaviour:
   txtRSpeed: {fileID: 1515255884}
   txtRAltitude: {fileID: 162528495}
   txtRVS: {fileID: 456544523}
-  txtRHeading: {fileID: 926853338}
   txtCSpeed: {fileID: 128045324}
   txtCAltitude: {fileID: 941522770}
   txtCVS: {fileID: 947186259}
@@ -31465,7 +31464,7 @@ GameObject:
   - component: {fileID: 7732885018749441726}
   - component: {fileID: 7732885018749441728}
   m_Layer: 0
-  m_Name: holder
+  m_Name: Main Screen - holder
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0

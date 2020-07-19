@@ -5,6 +5,12 @@ using UnityEngine;
 public interface ICommand { }
 
 
+public struct AddAltitudeRegulationCommand : ICommand
+{
+    public int NodeId;
+    public string Regulation;
+}
+
 public struct InsertRelativeCommand : ICommand
 {
     public int FromNodeId;

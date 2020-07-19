@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using UnityEngine;
 
 public class LegsScreen : ScreenBase
@@ -87,6 +88,20 @@ public class LegsScreen : ScreenBase
             {
                 nodes[i].DisplayNodeDetails(VisibleRoute.GetPoint(_linkedSelection.LinkedId), _linkedSelection);
             }
+        }
+    }
+
+    public override void OnLineSelectRight(int index)
+    {
+        var _clickedInfo = nodesController.GetNodeInfoAtLineIndex(index, currentPage);
+
+        if (scratchPadInfo.IsAddAltitudeRegulation(out var _regulation))
+        {
+            GameManager.Instance.ExecuteAddAltitudeRegulation(new AddAltitudeRegulationCommand
+            {
+                NodeId = _clickedInfo.LinkedId,
+                Regulation = _regulation
+            });
         }
     }
 
@@ -179,47 +194,6 @@ public class LegsScreen : ScreenBase
         }
     }
 
-
-    public override void OnNumberPressed(int number)
-    {
-        if (GetSelectedPoint == null && lastSelectionClicked == null)
-        {
-            return;
-        }
-
-        OnCharacterInput((char) (number + 48));
-    }
-
-    public override void OnDecimalPressed()
-    {
-        if (GetSelectedPoint == null)
-        {
-            return;
-        }
-
-        OnCharacterInput('.');
-    }
-
-    public override void OnSlashPressed()
-    {
-        if (GetSelectedPoint == null)
-        {
-            return;
-        }
-
-        OnCharacterInput('/');
-    }
-
-    public override void OnSignPressed()
-    {
-        if (GetSelectedPoint == null)
-        {
-            return;
-        }
-
-        OnCharacterInput('-');
-    }
-
     public override void OnClearPress()
     {
         if (scratchPadBuffer.Length > 0)
@@ -249,7 +223,7 @@ public class LegsScreen : ScreenBase
             scratchPadBuffer += character;
         }
 
-        CheckSelectionOnTextChanged(true);
+        InterpretScratchpadOnTextChanged(true);
 
         Main.UpdateScratchPad(scratchPadBuffer, selectionInfo != null);
     }
@@ -261,6 +235,19 @@ public class LegsScreen : ScreenBase
         public int? Angle;
         public int? Distance;
         public string Regulation;
+
+        public bool IsAddAltitudeRegulation(out string regulation)
+        {
+            regulation = "";
+            if (!IsValid || Node != null || Angle != null || Distance != null
+                || Regulation == null)
+            {
+                return false;
+            }
+
+            regulation = Regulation;
+            return true;
+        }
 
         public bool IsRelativeNode(out int angle, out int distance)
         {
@@ -277,6 +264,7 @@ public class LegsScreen : ScreenBase
             angle = Angle.Value;
             return true;
         }
+
         public bool IsRelativeNodeOnDirection(out int distance)
         {
             distance = 0;
@@ -306,86 +294,115 @@ public class LegsScreen : ScreenBase
     }
 
 
-    void CheckSelectionOnTextChanged(bool handleSelection)
+    void InterpretScratchpadOnTextChanged(bool handleSelection)
     {
-        if (handleSelection && GetSelectedPoint != null)
-        {
-            GetSelectedPoint.IsSelected = false;
-        }
-
         scratchPadInfo = new ScratchPadInfo
-            {IsValid = true, Angle = null, Distance = null, Regulation = null, Node = null};
-        if (scratchPadBuffer.Contains('/'))
         {
-            var _indexOfSlash = scratchPadBuffer.IndexOf('/');
-            var _allLeft = scratchPadBuffer.Substring(0, _indexOfSlash);
-            // ABC/-11 or ABC060/-11
-            scratchPadInfo.Node = VisibleRoute.Points.FirstOrDefault(x => x.Name == _allLeft);
-            if (scratchPadInfo.Node == null)
+            IsValid = true,
+            Angle = null,
+            Distance = null,
+            Regulation = null,
+            Node = null
+        };
+        
+        if (GetSelectedPoint != null || lastSelectionClicked != null)
+        {
+            if (handleSelection && GetSelectedPoint != null)
             {
-                // ABC060/-11    ~~   Can be relative with angle and direction
-                if (int.TryParse(_allLeft.Substring(_allLeft.Length - 3, 3), out var _angle))
-                {
-                    scratchPadInfo.Angle = _angle;
-                    var _withoutAngle = _allLeft.Substring(0, _allLeft.Length - 3);
-                    scratchPadInfo.Node = VisibleRoute.Points.FirstOrDefault(x => x.Name == _withoutAngle);
-                }
-                else
-                {
-                    scratchPadInfo.IsValid = false;
-                }
+                GetSelectedPoint.IsSelected = false;
             }
 
-            // make sure the distance is ok 
-            if (scratchPadInfo.Node != null)
+            if (scratchPadBuffer.Contains('/'))
             {
-                var _allRight =
-                    scratchPadBuffer.Substring(_indexOfSlash + 1, scratchPadBuffer.Length - (_indexOfSlash + 1));
-                if (int.TryParse(_allRight, out var _distance))
+                var _indexOfSlash = scratchPadBuffer.IndexOf('/');
+                var _allLeft = scratchPadBuffer.Substring(0, _indexOfSlash);
+                // ABC/-11 or ABC060/-11
+                scratchPadInfo.Node = VisibleRoute.Points.FirstOrDefault(x => x.Name == _allLeft);
+                if (scratchPadInfo.Node == null)
                 {
-                    scratchPadInfo.Distance = _distance;
+                    // ABC060/-11    ~~   Can be relative with angle and direction
+                    if (int.TryParse(_allLeft.Substring(_allLeft.Length - 3, 3), out var _angle))
+                    {
+                        scratchPadInfo.Angle = _angle;
+                        var _withoutAngle = _allLeft.Substring(0, _allLeft.Length - 3);
+                        scratchPadInfo.Node = VisibleRoute.Points.FirstOrDefault(x => x.Name == _withoutAngle);
+                    }
+                    else
+                    {
+                        scratchPadInfo.IsValid = false;
+                    }
                 }
-                else
+
+                // make sure the distance is ok 
+                if (scratchPadInfo.Node != null)
                 {
-                    scratchPadInfo.IsValid = false;
+                    var _allRight =
+                        scratchPadBuffer.Substring(_indexOfSlash + 1, scratchPadBuffer.Length - (_indexOfSlash + 1));
+                    if (int.TryParse(_allRight, out var _distance))
+                    {
+                        scratchPadInfo.Distance = _distance;
+                    }
+                    else
+                    {
+                        scratchPadInfo.IsValid = false;
+                    }
                 }
-            }
-        }
-        else
-        {
-            if (scratchPadBuffer.Length == 3 && int.TryParse(scratchPadBuffer, out var _angle))
-            {
-                // Is linear approach
-                scratchPadInfo.Angle = _angle;
             }
             else
             {
-                scratchPadInfo.Node = VisibleRoute.Points.FirstOrDefault(x => x.Name == scratchPadBuffer);
-                if (scratchPadInfo.Node == null)
+                if (scratchPadBuffer.Length == 3 && int.TryParse(scratchPadBuffer, out var _angle))
+                {
+                    // Is linear approach
+                    scratchPadInfo.Angle = _angle;
+                }
+                else
+                {
+                    scratchPadInfo.Node = VisibleRoute.Points.FirstOrDefault(x => x.Name == scratchPadBuffer);
+                    if (scratchPadInfo.Node == null)
+                    {
+                        scratchPadInfo.IsValid = false;
+                    }
+                }
+            }
+
+            if (scratchPadInfo.IsValid)
+            {
+                if (handleSelection && scratchPadInfo.Node != null)
+                {
+                    selectionInfo = new NodeSelection
+                    {
+                        IsEmpty = false,
+                        LinkedId = scratchPadInfo.Node.ID,
+                        IsAddedDiscontinuity = false,
+                        IsStartingPoint = false
+                    };
+
+                    GetSelectedPoint.IsSelected = true;
+                }
+            }
+            else
+            {
+                Debug.Log("Invalid Scratchpad Entry!");
+            }
+        }
+
+        else
+        {
+            // look for regulations
+            if (scratchPadBuffer[0] == '/' && scratchPadBuffer.Length>1)
+            {
+                // should be altitude regulation
+                var _value = scratchPadBuffer.Substring(1, scratchPadBuffer.Length - 1);
+                
+                if (DataHandler.ParseAltRegulation(_value, out _, out _, out _))
+                {
+                    scratchPadInfo.Regulation = _value;
+                }
+                else
                 {
                     scratchPadInfo.IsValid = false;
                 }
             }
-        }
-
-        if (scratchPadInfo.IsValid)
-        {
-            if (handleSelection && scratchPadInfo.Node != null)
-            {
-                selectionInfo = new NodeSelection
-                {
-                    IsEmpty = false,
-                    LinkedId = scratchPadInfo.Node.ID,
-                    IsAddedDiscontinuity = false,
-                    IsStartingPoint = false
-                };
-
-                GetSelectedPoint.IsSelected = true;
-            }
-        }
-        else
-        {
-            Debug.Log("Invalid Scratchpad Entry!");
         }
     }
 

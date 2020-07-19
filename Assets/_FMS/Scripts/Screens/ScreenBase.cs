@@ -26,17 +26,17 @@ public class ScreenBase : MonoBehaviour
 
     public virtual void OnLeftCornerPress() { }
 
-    public virtual void OnDecimalPressed() { }
+    public virtual void OnDecimalPressed() { OnCharacterInput('.');}
 
-    public virtual void OnSlashPressed() { }
+    public virtual void OnSlashPressed() { OnCharacterInput('/');}
 
-    public virtual void OnSignPressed() { }
+    public virtual void OnSignPressed() { OnCharacterInput('-');}
 
+    public virtual void OnNumberPressed(int number) { OnCharacterInput((char) (number + 48));}
+    
     public virtual void OnDeletePress() { }
     
     public virtual void OnClearPress() { }
-
-    public virtual void OnNumberPressed(int number) { }
 
     public virtual void OnCharacterInput(char character) { }
 }
