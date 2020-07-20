@@ -16,10 +16,10 @@ MonoBehaviour:
   - Point: 56
     Altitude: 9000
     Speed: 250
-  - Point: 6
+  - Point: 53
     Altitude: 9000
     Speed: 230
-  - Point: 7
+  - Point: 51
     Altitude: 6000
     Speed: 230
   - Point: 8
@@ -32,24 +32,24 @@ MonoBehaviour:
     Altitude: 3000
     Speed: 200
   - Point: 52
-    Altitude: 1000
+    Altitude: 3000
     Speed: 200
   - Point: 11
-    Altitude: 1000
+    Altitude: 3000
     Speed: 180
   - Point: 12
-    Altitude: 1000
+    Altitude: 2500
     Speed: 180
   - Point: 13
-    Altitude: 1000
+    Altitude: 2400
     Speed: 160
   - Point: 14
-    Altitude: 1000
+    Altitude: 2300
     Speed: 150
   - Point: 15
-    Altitude: 1000
+    Altitude: 2200
     Speed: 140
-  - Point: 6
+  - Point: 16
     Altitude: 1000
     Speed: 140
   - Point: 1

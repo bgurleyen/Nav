@@ -19,17 +19,19 @@ public class PFD_Animation : MonoBehaviour
     public GameObject AltBasket;
 
 
-    int upSpeedVal = 210;// Upspeed = Vref40+70
+    int upSpeedVal = 205;// Upspeed = Vref40+70
     int RSpeed = 220;
     double CSpeed = 250;
     float AttInc;
     int maxFlapSpeedPos;
+    public static int LimitSpeed;
 
     public void Start()
     {
         upSpeed.transform.localPosition = new Vector2(92, upSpeedVal * 2 - 445);
         Vref.transform.localPosition = new Vector2(92, (upSpeedVal - 70) * 2 - 443);
         SyncVariables();
+        AltUpdate(10000);//Init at 10k to update to initial Alt.
     }
 
     public void SyncVariables()
@@ -48,7 +50,7 @@ public class PFD_Animation : MonoBehaviour
         {
 
             Fspeed.transform.localPosition = new Vector2(90, (upSpeedVal + F[idx]) * 2 - 441);
-            Fspeed.GetComponent<UnityEngine.UI.Text>().text = "--" + FDisplay[idx];
+            Fspeed.GetComponent<UnityEngine.UI.Text>().text = "─" + FDisplay[idx];
         }
         else Fspeed.GetComponent<UnityEngine.UI.Text>().text = "";
         maxFlapSpeedPos = max[idx]; // red limit band
@@ -57,15 +59,16 @@ public class PFD_Animation : MonoBehaviour
     {
         RSpeed = Calculator.RSpeed;
         CSpeed = Calculator.CSpeed;
+        int MachLimSpeed = (int)Calculator.Mach2Speed(0.82);
         speedTape.transform.localPosition = new Vector2(-150, (float)-CSpeed * 2 + 440);
         CheckSpeedIndicator();
-        int LGLim = Calculator.LGDown ? 291 : 429; 
-        int MachLim = 258+(40000-(int)Calculator.CAltitude)/200*2;
-        int RedLimitBand = Mathf.Min(maxFlapSpeedPos, LGLim,MachLim);
-        //int LimitSpeed = 220 + (int)((RedLimitBand-190) / 2);
-        maxFspeed.transform.localPosition = new Vector2(26,  RedLimitBand );
+        int LGLim = Calculator.LGDown ? 291 : 429;
+        int MachLim = 243 + (MachLimSpeed - 245) * 2;
 
-        
+        int RedLimitBand = Mathf.Min(maxFlapSpeedPos, LGLim, MachLim);
+        LimitSpeed = 220 + (int)((RedLimitBand - 190) / 2);
+        maxFspeed.transform.localPosition = new Vector2(26, RedLimitBand);
+        Calculator.Check_LimitSpeed();
     }
     public void SpeedIndexUpdate_Click()
     {
@@ -130,14 +133,14 @@ public class PFD_Animation : MonoBehaviour
     {
         Att.transform.Rotate(0, 0, -1);
         TopIndex.transform.Rotate(0, 0, -1);
-     }   
+    }
     public void AttUpdate(int Att)
     {
         Att = Att / 5 * 5;
-        AttInc = AttPic.transform.localPosition.y*-20;
-        if (Att>AttInc) AttInc += 20f; 
+        AttInc = AttPic.transform.localPosition.y * -20;
+        if (Att > AttInc) AttInc += 20f;
         if (Att < AttInc) AttInc -= 20f;
-        if (Att != AttInc) AttPic.transform.localPosition = new Vector2(0,(AttInc/-20));
+        if (Att != AttInc) AttPic.transform.localPosition = new Vector2(0, (AttInc / -20));
     }
 }
 

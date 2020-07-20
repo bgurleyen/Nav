@@ -232,13 +232,15 @@ public class Drawer : Singleton<Drawer>
     private void DisplayOtherTraffic()
     {
         var _positions = Move.Instance.ACPositions;
+        var _texts = Move.Instance.ACTexts;
+        
         foreach (var _key in _positions.Keys)
         {
            // Debug.Log(_positions[_key]);
             var _drawer = otherAircraftsPool.Spawn(Vector3.zero, Quaternion.identity, dynamicHolderOtheriarcrafts)
                 .GetComponent<OtherAircrafIndicator>();
             _drawer.name = _key;
-            _drawer.Init("+", Color.green);
+            _drawer.Init(_texts[_key], Color.yellow);
             _drawer.transform.localPosition = _positions[_key].ToDisplay();
         }
 

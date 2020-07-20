@@ -10,7 +10,7 @@ public class Move : Singleton<Move>
 {
 
     int Level = Calculator.Level;
-    int GameSpeed = 1;
+    float GameSpeed = 1;
 
     [System.Serializable]
     public struct otherACsStruct
@@ -37,6 +37,7 @@ public class Move : Singleton<Move>
 
 
     public Dictionary<string, Vector2> ACPositions = new Dictionary<string, Vector2>();
+    public Dictionary<string, string> ACTexts = new Dictionary<string, string>();
 
 
 
@@ -231,7 +232,7 @@ public class Move : Singleton<Move>
         int i = 1, SpeedCo;
         string s;
         Vector2 PtPos;
-        int Point=0, Speed=0,AltitudeR;
+        int Point, Speed,AltitudeR;
         float AltitudeC = otherACLevel[Level].otherACnr[ACnr].ACItems[0].Altitude;
         Vector2 finalPosition = PositionOfPoint(otherACLevel[Level].otherACnr[ACnr].ACItems[0].Point);  //intial pos and alt
         void CollisionCheck()
@@ -282,7 +283,7 @@ public class Move : Singleton<Move>
 
 
             Point = otherACLevel[Level].otherACnr[ACnr].ACItems[i].Point;
-            AltitudeR = otherACLevel[Level].otherACnr[ACnr].ACItems[i + 1].Altitude;
+            AltitudeR = otherACLevel[Level].otherACnr[ACnr].ACItems[i].Altitude;
             Speed = otherACLevel[Level].otherACnr[ACnr].ACItems[i].Speed;
 
             PtPos = PositionOfPoint(Point);
@@ -291,6 +292,7 @@ public class Move : Singleton<Move>
             if (!ACPositions.ContainsKey(_aircraftKey))
             {
                 ACPositions.Add(_aircraftKey, Vector2.zero);
+                ACTexts.Add(_aircraftKey,"");
             }
 
 
@@ -306,9 +308,9 @@ public class Move : Singleton<Move>
             dy = PtPos.y - y;
             h = Mathf.Sqrt(dx * dx + dy * dy);
 
-            if (EscapeX == 0)
+           if (EscapeX == 0)
             {
-                AltitudeC -= ((AltitudeC - AltitudeR)) / (h / 10);
+                AltitudeC -= ((AltitudeC - AltitudeR)) / h * SpeedCo/10;
                 finalPosition = new Vector2(x + dx / h * SpeedCo / 10, y + dy / h * SpeedCo / 10); //Advance
             }
             else
@@ -320,17 +322,20 @@ public class Move : Singleton<Move>
             AC.transform.localPosition = finalPosition;
             ACPositions[_aircraftKey] = finalPosition;
 
-            if (AltitudeR - Calculator.CAltitude < 0) s = ""; else s = "+";
+            s = (AltitudeC - Calculator.CAltitude < 0) ? "-":"+";
+            if (Mathf.Abs(AltitudeC - (float)Calculator.CAltitude) < 1000) s += "0";
             if (Mathf.Abs((AltitudeC - (int)Calculator.CAltitude)) < 6000)
             {
-                AC.GetComponent<UnityEngine.UI.Text>().text = s + (int)((AltitudeC - Calculator.CAltitude) / 100);
+                s += (int)(Mathf.Abs(AltitudeC - (float)Calculator.CAltitude) / 100);
+                AC.GetComponent<UnityEngine.UI.Text>().text = s;
             }
+            ACTexts[_aircraftKey] = s;
             if ((h <= 1))
             {
                 i += 1;
                 AltitudeC = AltitudeR;
             }
-          //  if (EscapeX == 0) CollisionCheck();
+            if (EscapeX == 0) CollisionCheck();
         }
         AC.GetComponent<UnityEngine.UI.Text>().text = "";
 

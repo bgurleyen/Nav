@@ -4,11 +4,14 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 
+
+//GW :56.4,ZFW:45,Fuel:12,CI:0,CG:23.3
+
 public class Calculator : MonoBehaviour
 {
-    public static int Level =0;             // ***  Level
-        
-    public  WindTableScriptableObject[] windTables;
+    public static int Level = 0;             // ***  Level
+
+    public WindTableScriptableObject[] windTables;
     string result;
     public Text txtRSpeed, txtRAltitude, txtRVS;
     public Text txtCSpeed, txtCAltitude, txtCVS;
@@ -17,30 +20,30 @@ public class Calculator : MonoBehaviour
     public Text txtMeter;//Meter Display
     public Text Qnh, txtMach;
 
-
     public Text txtN1, txtFF, txtTotalFuel;// N1( / 100) , Fuel Flow ( X 100) , Pitch attitude ( / 100)
     public TMP_Text VDI_Text;
 
     public Transform VDI_Index;
 
-    int RVS; //R : Required(Selected)
 
-    public static int RSpeed = 220, RHeading, RAltitude, CVS; 
-    public static double CSpeed = 250, CAltitude = 40000;
-    public int CHeading,Track;
-    double CMach,RMach, VNAV_VS;
-    public static double  TAS, GS;
+    public static double CSpeed = 225, CAltitude = 5000; // Currenr Altitude*************************
+    //                            ***              *****
+    int RVS;
+    public static int RSpeed = (int)CSpeed, RHeading, RAltitude, CVS;
+    public int CHeading, Track;
+    double CMach, RMach, VNAV_VS;
+    public static double TAS, GS;
 
     public Toggle VNAV_Toggle, LNAV_Toggle, LC_Toggle, HS_Toggle, AH_Toggle, VS_Toggle;
     public Toggle LGToggle, SBToggle, co;//Landing Gear ,Speed Brake;
     public static bool LGDown = false;
     public Button FUP_Button, FDown_Button;
-    int Flap_Idx, increasedSpeed;
+    int Flap_Idx, increasedSpeed, excessSpeedCo = 500, excessSpeedCo2 = 10;
     double DTG;
-    public  Text windTxt;
+    public Text windTxt;
     public static string CWind;
     public Text FMA1, FMA2, FMA3;
-    public Image FlapNeedle,windArrow;
+    public Image FlapNeedle, windArrow;
     public GameObject Progres;
     int N1, FF, dispN1 = 77;
     double dispFF = 270;
@@ -55,30 +58,29 @@ public class Calculator : MonoBehaviour
     //LG:(on-off)--> Illustrate Landing Gear movement - Changes approach idle
     //SB:(on-off)--> Illustrate Speed Brake movement - no other effect
     //Flaps: (1-5-10-15-25-30-40)
-    //
 
-
-    //**************************************************************
     //**************************************************************
 
     static double[,,] M = new double[9, 4, 4] { //speed,pitch,n1,ff
-        { {247, 300,8910,226 }, { -2500, 0, 4800,95 } , { 216, 500,8540,200 }, { -1900, 200, 4620,95 } },
-        { { 268, 250,8740,266 }, { -3000, -100, 4650,95 } , { 233, 300,8100,220 }, { -2100, 100, 4450,95 } },
-        { { 290, 200,8670,316 }, { -3400, -250, 4610,95 } , { 254, 250,8080,256 }, { -2200, -100, 4380,95 } },
-        { { 280, 200,8010,282 }, { -2000, -100, 3990,95 } , { 220, 400,7520,221 }, { -1300, 200, 3670,95 } },
-        { { 280, 200,7820,282 }, { -1800, -100, 3820,95 } , { 220, 400,7180,224 }, { -1200, 200, 3500,95 } },
-        { { 280, 200,7510,279 }, { -1700, -100, 3670,95 } , { 220, 400,6710,221 }, { -1100, 200, 3370,95 } },
-        { { 240, 300,6620,236 }, { -1300, 100, 3350,95 } , { 220, 400,6440,222 }, {-1100, 200, 3250,95 } },
-        { { 240, 400,6420,245 }, { -1300, 0, 3240,95 } , { 220, 500,6080,221 }, { -1200, 100, 3150,95 } },
-        { { 240, 260,5890,226 }, { -1300, 0, 3140,95 } , { 220, 360,3740,220 }, { -1200, 100, 3060,95 } },
+        { {240, 300,9090,240 } , { -1700, 100, 4780,95 } , { 200, 600,8690,212 } , { -1500, 300, 4620,95 } },
+        { { 280, 200,9200,306 } , { -2200, -100, 4640,95 } , { 220, 400,8060,220 } , { -1400, 300, 4320,95 } },
+        { { 280, 200,8340,282 } , { -2100, -100, 4540,95 } , { 220, 400,7770,222 } , { -1300, 300, 4060,95 } },
+        { { 280, 200,8010,282 } , { -1900, -100, 4000,95 } , { 220, 400,7520,221 } , { -1300, 300, 3710,95 } },
+        //noflaps identical
+        { { 280, 200,7820,282 } , { -1800, -100, 3850,95 } , { 220, 400,7180,224 } , { -1200, 200, 3530,95 } },
+        { { 280, 200,7510,279 } , { -1700, -100, 3700,95 } , { 220, 400,6710,221 } , { -1100, 300, 3420,95 } },
+        { { 280, 300,7100,276 } , { -1600, -100, 3570,95 } , { 220, 400,6440,222 } , {-1100, 300, 3300,95 } },
+        { { 280, 200,6800,275 } , { -1500, 0, 3460,95 } , { 220, 500,6080,221 } , { -1100, 200, 3200,95 } },
+        { { 280, 200,6530,274 } , { -1400, 0, 3340,95 } , { 220, 450,5550,220 } , { -1200, 100, 3120,95 } },
     };// Main Matrix
+
     double[,,,] Mf = new double[9, 5, 4, 4] {{
         //noflaps
-        { { 280, 200,7820,282 }, { -1800, -100, 3820,95 } , { 220, 400,7180,224 }, { -1200, 200, 3500,95 } },
-        { { 280, 200,7510,279 }, { -1700, -100, 3670,95 } , { 220, 400,6710,221 }, { -1100, 200, 3370,95 } },
-        { { 240, 300,6620,236 }, { -1300, 100, 3350,95 } , { 220, 400,6440,222 }, {-1100, 200, 3250,95 } },
-        { { 240, 400,6420,245 }, { -1300, 0, 3240,95 } , { 220, 500,6080,221 }, { -1200, 100, 3150,95 } },
-        { { 240, 260,5890,226 }, { -1300, 0, 3140,95 } , { 220, 360,3740,220 }, { -1200, 100, 3060,95 } }},
+        { { 280, 200,7820,282 } , { -1800, -100, 3850,95 } , { 220, 400,7180,224 } , { -1200, 200, 3530,95 } },
+        { { 280, 200,7510,279 } , { -1700, -100, 3700,95 } , { 220, 400,6710,221 } , { -1100, 300, 3420,95 } },
+        { { 280, 300,7100,276 } , { -1600, -100, 3570,95 } , { 220, 400,6440,222 } , {-1100, 300, 3300,95 } },
+        { { 280, 200,6800,275 } , { -1500, 0, 3460,95 } , { 220, 500,6080,221 } , { -1100, 200, 3200,95 } },
+        { { 280, 200,6530,274 } , { -1400, 0, 3340,95 } , { 220, 450,5550,220 } , { -1200, 100, 3120,95 } },},
         //f1
         {
         { { 240, 200,7110,251 }, { -1300, 100, 3670,95 } , { 180, 600,6600,236 }, { -1100, 400, 3370,95 } },
@@ -126,7 +128,7 @@ public class Calculator : MonoBehaviour
         { { 170, -100,8150,469 }, { -1700, -200, 3670,95 } , { 130, 600,7940,447 }, { -1100, 500, 3370,95 } },
         { { 170, -100,8150,469 }, { -1700, -200, 3670,95 } , { 130, 600,7940,447 }, { -1100, 500, 3370,95 } },
         { { 170, -100,7950,476 }, { -1700, -200, 3350,95 } , { 130, 600,7800,455 }, {-1100, 400, 3250,95 }},
-        { { 170, -100,7440,450 }, { -1700, -200, 3240,95 } , { 130, 600,6880,425 }, { -1100,400, 3150,95 }},
+        { { 170, -100,7660,475 }, { -1700, -200, 3240,95 } , { 130, 600,7170,464 }, { -1100,400, 3150,95 }},
         { { 170, -100,6950,453 }, { -1700, -200, 3140,95 } , { 130, 600,6760,455 }, { -1100, 400, 3060,95 }}},
         //f40
         {
@@ -137,45 +139,53 @@ public class Calculator : MonoBehaviour
         { { 160, -100,7300,508 }, { -1800, -200, 3140,95 } , { 130, 500,6920,488 }, { -1300, 300, 3060,95 }}}
     };
 
+    static float[] Pressure = new float[9]
+    { 0.1852f, 0.2352f, 0.2968f, 0.3709f, 0.4594f, 0.5642f, 0.6856f, 0.8320f, 1f }; //40000 to 0
+    static float[] SoundSpeed = new float[9]
+        { 575.34f, 576.22f, 589.2f, 601.77f, 614.1f, 626.27f, 638.17f, 649.13f, 663f }; //40000 to 0
+
     public static Calculator Instance;
-    
-    public float GetBananaPosition
+    public float GetBananaPosition//Edit
     {
         get
         {
             if (CVS == 0)
                 return 0;
             else
-                return (float) ((CAltitude - RAltitude) / CVS * CSpeed / 60 * 6);
+                return (float)((CAltitude - RAltitude) / CVS * CSpeed / 60 * 6);
         }
     }
-
+    void Awake()
+    {
+        Instance = this;
+    }
     private void Start()
     {
-        
+
         RAltitude = (int)CAltitude;
         RSpeed = (int)CSpeed;
         RVS = CVS;
-        txtRAltitude.text = "" + RAltitude; txtRAltitude_overTape.text = txtRAltitude.text;
-        txtCAltitude.text = "" + (int)CAltitude; txtMeter.text = "" + (int)(CAltitude / 3.28084) + "M";
+        txtRAltitude.text = "" + RAltitude;
+        txtRAltitude_overTape.text = txtRAltitude.text;
+        txtCAltitude.text = "" + (int)CAltitude;
+        txtMeter.text = "" + (int)(CAltitude / 3.28084) + "M";
         txtCSpeed.text = "" + CSpeed;
-        txtRSpeed.text = "" + RSpeed; txtRSpeed_overTape.text = txtRSpeed.text;
+        txtRSpeed.text = "" + RSpeed;
+        txtRSpeed_overTape.text = txtRSpeed.text;
 
         txtCVS.text = "";
         DTG = 173.1;
-        
+
         Invoke("VS_Equalize", 1f);
         Invoke("Speed_Equalize", 0.1f);
 
+
         StartCoroutine(ExecuteEachSecond());
         StartCoroutine(ExecuteEachFrameSecond());
-
+        StartCoroutine(Altitude_Equalize());
         Flap_Idx = 0;
         SetFlaps();
     }
-
-    
-    
     IEnumerator ExecuteEachFrameSecond()
     {
         while (true)
@@ -184,10 +194,10 @@ public class Calculator : MonoBehaviour
             SetN1FF();
             ToggleEnable();
 
-            yield return  new WaitForSeconds(0.1f);
+
+            yield return new WaitForSeconds(0.1f);
         }
     }
-
     IEnumerator ExecuteEachSecond()
     {
         while (true)
@@ -196,20 +206,207 @@ public class Calculator : MonoBehaviour
             InterpolateVS();
             SetFMA();
             FuelandMach();
-            DrawVDI();
-            DisplayWindElements();
-            
-            yield return  new WaitForSeconds(1);
+            // DrawVDI();
+            // DisplayWindElements();
+
+            yield return new WaitForSeconds(1);
         }
     }
-    
-
-
-    void Awake()
+    public void InterpolateVS()
     {
-        Instance = this;
+        double Altitude = CAltitude > 39900 ? 39900 : CAltitude;
+        double vv1, vv2, vv3, vv4; // 4 interpolations for VS
+        double[] a = new double[4];
+
+        increasedSpeed = 0;
+
+        if (VS_Toggle.isOn || AH_Toggle.isOn || VNAV_Toggle.isOn)
+        {
+            int F = 8 - Mathf.FloorToInt((float)Altitude / 5000);
+
+            int i = 0;//Calculate limit VS
+            double s1 = (M[F, 1, i] - M[F, 3, i]) / (M[F, 0, 0] - M[F, 2, 0]) * (RSpeed - M[F, 2, 0]) + M[F, 3, i];
+            double s2 = (M[F - 1, 1, i] - M[F - 1, 3, i]) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (RSpeed - M[F - 1, 2, 0]) + M[F - 1, 3, i];
+            double limitVS = (s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2;
+            if (CVS > limitVS)
+            {    // Normal VS mode
+                for (i = 1; i < 4; i++)
+                {
+                    vv1 = (M[F, 0, i] - M[F, 1, i]) / -M[F, 1, 0] * (CVS - M[F, 1, 0]) + M[F, 1, i];
+                    vv2 = (M[F, 2, i] - M[F, 3, i]) / -M[F, 3, 0] * (CVS - M[F, 3, 0]) + M[F, 3, i];
+                    vv3 = (M[F - 1, 0, i] - M[F - 1, 1, i]) / -M[F - 1, 1, 0] * (CVS - M[F - 1, 1, 0]) + M[F - 1, 1, i];
+                    vv4 = (M[F - 1, 2, i] - M[F - 1, 3, i]) / -M[F - 1, 3, 0] * (CVS - M[F - 1, 3, 0]) + M[F - 1, 3, i];
+                    s1 = (vv1 - vv2) / (M[F, 0, 0] - M[F, 2, 0]) * (CSpeed - M[F, 2, 0]) + vv2;
+                    s2 = (vv3 - vv4) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (CSpeed - M[F - 1, 2, 0]) + vv4;
+                    a[i - 1] = (s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2;
+                }
+            }
+            else
+            {  // Increased Speed due to excess vertical speed VS mode 
+                for (i = 1; i < 4; i++)
+                {
+                    s1 = (M[F, 1, i] - M[F, 3, i]) / (M[F, 0, 0] - M[F, 2, 0]) * (RSpeed - M[F, 2, 0]) + M[F, 3, i];
+                    s2 = (M[F - 1, 1, i] - M[F - 1, 3, i]) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (RSpeed - M[F - 1, 2, 0]) + M[F - 1, 3, i];
+                    a[i - 1] = (s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2;
+                }
+                i = 0; // Find speed for Current VS on idle
+                vv1 = (M[F, 0, i] - M[F, 2, i]) / (M[F, 1, 0] - M[F, 3, 0]) * (CVS - M[F, 3, 0]) + M[F, 2, i];
+                vv2 = (M[F - 1, 0, i] - M[F - 1, 2, i]) / (M[F - 1, 1, 0] - M[F - 1, 3, 0]) * (CVS - M[F - 1, 3, 0]) + M[F - 1, 2, i];
+                increasedSpeed = (int)((vv1 - vv2) / -5000f * (Altitude - (8 - F + 1) * 5000) + vv2);
+            }
+            if (RSpeed < CSpeed - 5)
+            {
+                a[1] = M[8 - (int)(Altitude / 5000), 1, 2];
+                a[2] = M[8 - (int)(Altitude / 5000), 1, 3];
+            }
+            if (RSpeed > CSpeed + 5)
+            {
+                a[1] = 9650;
+                a[2] = 621;
+            }
+            N1 = (int)a[1];
+            FF = (int)a[2];
+            SetAttPitch((int)a[0]);
+
+        }
     }
-    public void DrawVDI() 
+    private void InterpolateLvlChg()
+    {
+        double Altitude = CAltitude > 39900 ? 39900 : CAltitude;
+        double s1, s2;             // 2 interpolation for Speed    
+        double[] a = new double[4];                  // Final interpolation for Altitude
+
+        if (LC_Toggle.isOn)
+        {
+            int F = 8 - Mathf.FloorToInt(((int)Altitude / 5000));
+            for (int i = 0; i < 4; i++)
+            {
+
+                s1 = (M[F, 1, i] - M[F, 3, i]) / (M[F, 0, 0] - M[F, 2, 0]) * (CSpeed - M[F, 2, 0]) + M[F, 3, i];
+                s2 = (M[F - 1, 1, i] - M[F - 1, 3, i]) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (CSpeed - M[F - 1, 2, 0]) + M[F - 1, 3, i];
+                a[i] = (s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2;
+            }
+
+            N1 = (int)a[2];
+            FF = (int)a[3];
+
+            RVS = (int)CSpeed - RSpeed > 10 ? -300 :
+                   RSpeed - (int)CSpeed > 0 ? (int)a[0] - excessSpeedCo : (int)a[0]; // surat yuksekse ?
+            excessSpeedCo += 100 - excessSpeedCo2;
+            excessSpeedCo2 += 5;
+            if (excessSpeedCo2 > 90) excessSpeedCo2 = 90;
+            if ((int)CSpeed == RSpeed)
+            {
+                excessSpeedCo = 100;
+                excessSpeedCo2 = 10;
+            }
+
+            // if ((co.isOn ) && (RSpeed >= CSpeed))
+            // {
+            //     float M069 = 1900f + (40000f - (float)CAltitude) / 25f;
+            //     float M079 = 2500f + (40000f - (float)CAltitude) / 10f;
+            //     RVS = -(int)Mathf.LerpUnclamped(M069, M079, ((float)CMach - 0.69f) * 10f);
+            //     if (LGToggle.isOn) RVS *= 2;
+            //     if (SBToggle.isOn) RVS -= 1000;
+            //     RVS = RVS / 100 * 100;
+            // }
+        }
+    }
+
+    public void VS_Equalize()
+    {
+
+        if ((CVS != 0) || (RVS != 0))
+        {
+
+            if (RAltitude != CAltitude)
+            {
+                if (RVS < CVS) CVS -= 10;
+                if (CVS < RVS) CVS += 10;
+                if (Mathf.Abs(RVS - CVS) < 10) CVS = RVS;
+                if ((Mathf.Abs(RVS) > 1000) && (Mathf.Abs(RAltitude - (int)CAltitude) < Mathf.Abs(CVS / 2f) - 600))
+                {
+                    RVS = RVS / Mathf.Abs(RVS) * 1000;
+                }
+            }
+        }
+        txtCVS.text = (Mathf.Abs(CVS) > 300) ? "" + CVS / 100 * 100 : "";
+        txtCVS.transform.localPosition = CVS > 0 ? new Vector2(200, 90) : new Vector2(200, -100);
+
+        Invoke("VS_Equalize", (float)(12.75 - CSpeed * 0.025) / 100);
+
+    }
+    IEnumerator Altitude_Equalize()
+    {
+        while (true)
+        {
+            if (CVS != 0)
+            {
+                CAltitude += (float)CVS / 60;
+                if (Mathf.Abs(RAltitude - (int)CAltitude) < 10)
+                {
+                    CAltitude = RAltitude;
+                    txtRAltitude.text = "" + RAltitude; txtRAltitude_overTape.text = txtRAltitude.text;
+                    CVS = 0;
+                    RVS = 0;
+                    AH_Toggle.isOn = true;
+                }
+                txtCAltitude.text = "" + (int)(CAltitude / 10) * 10;
+                txtMeter.text = "" + (int)(CAltitude / 3.28084 / 10) * 10 + "M";
+            }
+            yield return new WaitForSeconds(1f);
+        }
+    }
+    private void Speed_Equalize()
+    {
+        int RRSpeed;
+        float speedbandspeed = 1f;
+        if (RSpeed > increasedSpeed) RRSpeed = RSpeed; else RRSpeed = increasedSpeed;
+
+        float[] M210 = new float[8] { 1.55f, 0.8f, 1.15f, 0.85f, 1.0f, 1.1f, 0.85f, 1.3f };//Dec - Acc Times
+        float[] M270 = new float[8] { 1.35f, 0.7f, 0.95f, 0.9f, 0.65f, 2.05f, 0.6f, 6.1f }; //Clean,SB,Lg,Both
+
+        PFD_Animation Script2 = FindObjectOfType<PFD_Animation>();
+
+        if (RRSpeed != CSpeed)
+        {
+            if (RRSpeed < CSpeed) CSpeed -= speedbandspeed;
+            else CSpeed += speedbandspeed;
+
+            txtCSpeed.text = "" + (int)CSpeed;
+
+        }
+        DTG -= (double)CSpeed / 3600;
+        txtDTG.text = "" + (int)DTG;
+        Script2.SpeedTapeUpdate();
+        Script2.SpeedIndexUpdate_Click();
+
+        int x = 0;
+        if (SBToggle.isOn) x += 2;
+        if (LGToggle.isOn) x += 4;
+        if (RSpeed > CSpeed) x += 1;
+
+        float T = Mathf.LerpUnclamped(M210[x], M270[x], (float)(CSpeed - 210) / 60);
+
+        if (co.isOn)
+        {
+            if (RRSpeed > CSpeed) T += (float)CVS / 600 + (float)Flap_Idx / 100 + 8f - (float)N1 / 2000;
+            else T -= (float)CVS / 1000 + (float)Flap_Idx / 40 + 1;
+        }
+        else
+        {
+            if (RRSpeed > CSpeed) T += (float)CVS / 3000 + (float)Flap_Idx / 100 + 8f - (float)N1 / 1250;
+            else T -= (float)CVS / 1000 + (float)Flap_Idx / 40;
+        }
+        if (T < 0.2) T = 0.3f;
+        Invoke("Speed_Equalize", T * speedbandspeed);
+    }
+    private void SetAttPitch(int P)
+    {
+        PFD_Animation Script2 = FindObjectOfType<PFD_Animation>();
+        Script2.AttUpdate((int)P);
+    }
+    public void DrawVDI()
     {
         double DeltaAlt, Alt1, Alt0, d, D;
         int posY;
@@ -270,41 +467,6 @@ public class Calculator : MonoBehaviour
 
 
     }
-    public void VS_Equalize()
-    {
-
-        if ((CVS != 0) || (RVS != 0))
-        {
-
-            if (RAltitude != CAltitude)
-            {
-                if (RVS < CVS) CVS -= 10;
-                if (CVS < RVS) CVS += 10;
-                if (Mathf.Abs(RVS - CVS) < 10) CVS = RVS;
-                if ((Mathf.Abs(RVS) > 1000) && (Mathf.Abs(RAltitude - (int)CAltitude) < Mathf.Abs(CVS / 2f) - 600))
-                {
-                    RVS = RVS / Mathf.Abs(RVS) * 1000;
-                }
-
-                CAltitude += (float)CVS / 600;
-                if (Mathf.Abs(RAltitude - (int)CAltitude) < 10)
-                {
-                    CAltitude = RAltitude;
-                    txtRAltitude.text = "" + RAltitude; txtRAltitude_overTape.text = txtRAltitude.text;
-                    CVS = 0;
-                    RVS = 0;
-                    AH_Toggle.isOn = true;
-                }
-                txtCAltitude.text = "" + (int)(CAltitude / 10) * 10;
-                txtMeter.text = "" + (int)(CAltitude / 3.28084 / 10) * 10 + "M";
-            }
-        }
-        if (Mathf.Abs(CVS) > 300) txtCVS.text = "" + CVS / 100 * 100; else txtCVS.text = "";
-        if (CVS > 0) txtCVS.transform.localPosition = new Vector2(200, 90);
-        else txtCVS.transform.localPosition = new Vector2(200, -100);
-        Invoke("VS_Equalize", (float)(12.75 - CSpeed * 0.025) / 100);
-
-    }
     private void MatchAltitudes()
     {
         PFD_Animation Script2 = FindObjectOfType<PFD_Animation>();
@@ -313,153 +475,21 @@ public class Calculator : MonoBehaviour
         if (CAltitude >= 10000) Qnh.text = "STD";
         else Qnh.text = "1013";
     }
-    private void Speed_Equalize()
+    public static int FuelFlowFor(double Altitude, double VS, double Speed)
     {
-        int RRSpeed;
-        float speedbandspeed = 1f;
-        if (RSpeed > increasedSpeed) RRSpeed = RSpeed; else RRSpeed = increasedSpeed;
-        float[] M210 = new float[8] { 1.45f, 0.65f, 1.05f, 0.75f, 0.9f, 1f, 0.75f, 1.2f };//Dec - Acc Times
-        float[] M270 = new float[8] { 1.25f, 0.6f, 0.85f, 0.8f, 0.55f, 1.95f, 0.5f, 6f }; //Clean,SB,Lg,Both
-
-        PFD_Animation Script2 = FindObjectOfType<PFD_Animation>();
-
-        if (RRSpeed != CSpeed)
-        {
-            if (RRSpeed < CSpeed) CSpeed -= speedbandspeed;
-            else CSpeed += speedbandspeed;
-
-            txtCSpeed.text = "" + (int)CSpeed;
-
-        }
-        DTG -= (double)CSpeed / 3600;
-        txtDTG.text = "" + (int)DTG;
-        Script2.SpeedTapeUpdate();
-        Script2.SpeedIndexUpdate_Click();
-        int x = 0;
-        if (SBToggle.isOn) x += 2;
-        if (LGToggle.isOn) x += 4;
-        if (RSpeed > CSpeed) x += 1;
-
-        float T = Mathf.LerpUnclamped(M210[x], M270[x], (float)(CSpeed - 210) / 60);
-        if (RRSpeed > CSpeed) T += (float)CVS / 5000 + (float)Flap_Idx / 100; else T -= (float)CVS / 2000 + (float)Flap_Idx / 40;
-        if (T < 0.1) T = 0.1f;
-        Invoke("Speed_Equalize", T * speedbandspeed);
-    }
-    public void InterpolateVS()
-    {
-        double Altitude = CAltitude > 39900 ? 39900 : CAltitude;
-        double vv1, vv2, vv3, vv4; // 4 interpolation for VS
-        double s1, s2;             // 2 interpolation for Speed// Final interpolation for Altitude
-        double limitVS;
-        double[] a = new double[4];                  
-        increasedSpeed = 0;
-        if (VS_Toggle.isOn || AH_Toggle.isOn || VNAV_Toggle.isOn)
-        {
-            int F = 8 - Mathf.FloorToInt((float)Altitude / 5000);
-
-            int i = 0;//Calculate limit VS
-            s1 = (M[F, 1, i] - M[F, 3, i]) / (M[F, 0, 0] - M[F, 2, 0]) * (RSpeed - M[F, 2, 0]) + M[F, 3, i];
-            s2 = (M[F - 1, 1, i] - M[F - 1, 3, i]) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (RSpeed - M[F - 1, 2, 0]) + M[F - 1, 3, i];
-            limitVS = (s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2;
-            if (CVS > limitVS)
-            {    // Normal VS mode
-                for (i = 1; i < 4; i++)
-                {
-                    vv1 = (M[F, 0, i] - M[F, 1, i]) / -M[F, 1, 0] * (CVS - M[F, 1, 0]) + M[F, 1, i];
-                    vv2 = (M[F, 2, i] - M[F, 3, i]) / -M[F, 3, 0] * (CVS - M[F, 3, 0]) + M[F, 3, i];
-                    vv3 = (M[F - 1, 0, i] - M[F - 1, 1, i]) / -M[F - 1, 1, 0] * (CVS - M[F - 1, 1, 0]) + M[F - 1, 1, i];
-                    vv4 = (M[F - 1, 2, i] - M[F - 1, 3, i]) / -M[F - 1, 3, 0] * (CVS - M[F - 1, 3, 0]) + M[F - 1, 3, i];
-                    s1 = (vv1 - vv2) / (M[F, 0, 0] - M[F, 2, 0]) * (CSpeed - M[F, 2, 0]) + vv2;
-                    s2 = (vv3 - vv4) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (CSpeed - M[F - 1, 2, 0]) + vv4;
-                    a[i - 1] = (s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2;
-
-                }
-
-            }
-            else
-            {  // Increased Speed due to excess vertical speed VS mode 
-                for (i = 1; i < 4; i++)
-                {
-                    s1 = (M[F, 1, i] - M[F, 3, i]) / (M[F, 0, 0] - M[F, 2, 0]) * (RSpeed - M[F, 2, 0]) + M[F, 3, i];
-                    s2 = (M[F - 1, 1, i] - M[F - 1, 3, i]) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (RSpeed - M[F - 1, 2, 0]) + M[F - 1, 3, i];
-                    a[i - 1] = (s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2;
-                }
-                i = 0; // Find speed for Current VS on idle
-                vv1 = (M[F, 0, i] - M[F, 2, i]) / (M[F, 1, 0] - M[F, 3, 0]) * (CVS - M[F, 3, 0]) + M[F, 2, i];
-                vv2 = (M[F - 1, 0, i] - M[F - 1, 2, i]) / (M[F - 1, 1, 0] - M[F - 1, 3, 0]) * (CVS - M[F - 1, 3, 0]) + M[F - 1, 2, i];
-                increasedSpeed = (int)((vv1 - vv2) / -5000f * (Altitude - (8 - F + 1) * 5000) + vv2);
-                //if (CSpeed < increasedSpeed) CSpeed += 2;
-            }
-            if (RSpeed < CSpeed - 5)
-            {
-                a[1] = M[8 - (int)(Altitude / 5000), 1, 2];
-                a[2] = M[8 - (int)(Altitude / 5000), 1, 3];
-            }
-            if (RSpeed > CSpeed + 5)
-            {
-                a[1] = 9650;
-                a[2] = 621;
-            }
-            N1 = (int)a[1];
-            FF = (int)a[2];
-            SetAttPitch((int)a[0]);
-
-        }
-    }
-    public static int FuelFlowFor(double Altitude, double VS , double Speed)
-    {
-     
-        int i;
-        double vv1, vv2, vv3, vv4;                   // 4 interpolation for VS
-        double s1, s2;                               // 2 interpolation for Speed, final one is for Alt
-        double ff;
-
         if (Altitude > 39900) Altitude = 39900;
-        if (Altitude <0 ) Altitude =0;
+        if (Altitude < 0) Altitude = 0;
 
         int F = 8 - Mathf.FloorToInt((float)Altitude / 5000);
+        int i = 3;// for fuel flow only
 
-          i = 3;// for fuel flow only
-
-                    vv1 = (M[F, 0, i] - M[F, 1, i]) / -M[F, 1, 0] * (VS - M[F, 1, 0]) + M[F, 1, i];
-                    vv2 = (M[F, 2, i] - M[F, 3, i]) / -M[F, 3, 0] * (VS - M[F, 3, 0]) + M[F, 3, i];
-                    vv3 = (M[F - 1, 0, i] - M[F - 1, 1, i]) / -M[F - 1, 1, 0] * (VS - M[F - 1, 1, 0]) + M[F - 1, 1, i];
-                    vv4 = (M[F - 1, 2, i] - M[F - 1, 3, i]) / -M[F - 1, 3, 0] * (VS - M[F - 1, 3, 0]) + M[F - 1, 3, i];
-                    s1 = (vv1 - vv2) / (M[F, 0, 0] - M[F, 2, 0]) * (Speed - M[F, 2, 0]) + vv2;
-                    s2 = (vv3 - vv4) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (Speed - M[F - 1, 2, 0]) + vv4;
-                    ff = (s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2;
-
-              
-            return (int )ff;
-     }
-    private void InterpolateLvlChg()
-    {
-        double Altitude = CAltitude > 39900 ? 39900 : CAltitude;
-        int F, i;
-        double s1, s2;             // 2 interpolation for Speed    
-        double[] a = new double[4];                  // Final interpolation for Altitude
-        if (LC_Toggle.isOn)
-        {
-
-            F = 8 - Mathf.FloorToInt(((int)Altitude / 5000));
-            for (i = 0; i < 4; i++)
-            {
-
-                s1 = (M[F, 1, i] - M[F, 3, i]) / (M[F, 0, 0] - M[F, 2, 0]) * (CSpeed - M[F, 2, 0]) + M[F, 3, i];
-                s2 = (M[F - 1, 1, i] - M[F - 1, 3, i]) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (CSpeed - M[F - 1, 2, 0]) + M[F - 1, 3, i];
-                a[i] = (s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2;
-            }
-
-            N1 = (int)a[2];
-            FF = (int)a[3];
-            SetAttPitch((int)a[1]);
-            if (((int)CSpeed - RSpeed) > 10) RVS = -300; else RVS = (int)a[0];
-        }
-    }
-    private void SetAttPitch(int P)
-    {
-        PFD_Animation Script2 = FindObjectOfType<PFD_Animation>();
-        Script2.AttUpdate((int)P);
+        double vv1 = (M[F, 0, i] - M[F, 1, i]) / -M[F, 1, 0] * (VS - M[F, 1, 0]) + M[F, 1, i];
+        double vv2 = (M[F, 2, i] - M[F, 3, i]) / -M[F, 3, 0] * (VS - M[F, 3, 0]) + M[F, 3, i];
+        double vv3 = (M[F - 1, 0, i] - M[F - 1, 1, i]) / -M[F - 1, 1, 0] * (VS - M[F - 1, 1, 0]) + M[F - 1, 1, i];
+        double vv4 = (M[F - 1, 2, i] - M[F - 1, 3, i]) / -M[F - 1, 3, 0] * (VS - M[F - 1, 3, 0]) + M[F - 1, 3, i];
+        double s1 = (vv1 - vv2) / (M[F, 0, 0] - M[F, 2, 0]) * (Speed - M[F, 2, 0]) + vv2;
+        double s2 = (vv3 - vv4) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (Speed - M[F - 1, 2, 0]) + vv4;
+        return (int)((s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2);
     }
     private void SetN1FF()
     {
@@ -469,19 +499,29 @@ public class Calculator : MonoBehaviour
         Progres.transform.localPosition = new Vector2((int)(dispN1 * 1.86 - 100), 0);
         txtN1.text = "" + dispN1;
 
-        int lastdigitFF = FF - FF / 10 * 10;
         fark = FF / 10 * 10 - (int)dispFF;
+        int lastdigit = FF - FF / 10 * 10;
         if (fark != 0) dispFF += fark / Mathf.Abs(fark) * 10;
-        txtFF.text = "" + (dispFF) / 100 + lastdigitFF;
-    }
-    private double Speed2Mach(double Speed)
-    {
-        return (Speed * (CAltitude / 1000 * 0.02 + 1) / (660 - 12 * CAltitude / 5000));     //Mach
+        txtFF.text = "" + ((dispFF + lastdigit) / 100).ToString("0.00");
 
     }
-    private double Mach2Speed(double Mach)
+    public static double Speed2Mach(double Speed)
     {
-        return (Mach / (CAltitude / 1000 * 0.02 + 1) * (660 - 12 * CAltitude / 5000));     //Mach
+        double Altitude = CAltitude > 39900 ? 39900 : CAltitude;
+
+        int F = 8 - Mathf.FloorToInt((float)Altitude / 5000);
+        float p = Mathf.Lerp(Pressure[F], Pressure[F - 1], (float)(Altitude % 5000) / 5000);
+
+        return Mathf.Sqrt(Mathf.Pow(1 / p * (Mathf.Pow((float)Speed * (float)Speed / 2187771 + 1, 3.5f) - 1) + 1, 0.2857f) - 1) * Mathf.Sqrt(5);
+    }
+    public static double Mach2Speed(double Mach)
+    {
+        double Altitude = CAltitude > 39900 ? 39900 : CAltitude;
+        int F = 8 - Mathf.FloorToInt((float)Altitude / 5000);
+        float p = Mathf.Lerp(Pressure[F], Pressure[F - 1], (float)(Altitude % 5000) / 5000);
+        float SS = Mathf.Lerp(SoundSpeed[F], SoundSpeed[F - 1], (float)(Altitude % 5000) / 5000);
+        float TAS_ = (float)Mach * SS;
+        return Mathf.Sqrt(Mathf.Pow(p * (Mathf.Pow(TAS_ * TAS_ / 1653125 + 1, 3.5f) - 1) + 1, 0.2857f) - 1) * Mathf.Sqrt(5) * 661.4787;
 
     }
     private void FuelandMach()
@@ -490,7 +530,7 @@ public class Calculator : MonoBehaviour
         txtTotalFuel.text = "" + System.Math.Round(totalFuel / 100, 2);
 
         CMach = Speed2Mach(CSpeed);
-        txtMach.text = CMach>0.4 ? "." + System.Math.Round(CMach, 2) * 100: "GS "+GS;
+        txtMach.text = CMach > 0.4 ? "." + System.Math.Round(CMach, 2) * 100 : "GS " + GS;
 
         if (co.isOn)
         {
@@ -538,17 +578,17 @@ public class Calculator : MonoBehaviour
     }
     public void LGToggle_Change()
     {
-        double[,] MVS = new double[9, 2] { { -2500, -1900 }, { -3000, -2100 }, { -3400, -2200 }, { -2000, -1300 }, { -1800, -1200 }, { -1700, -1100 }, { -500, -500 }, { -500, -500 }, { -500, -500 } };
+        double[,] MVS = new double[9, 2] { { -2100, -1500 }, { -2700, -1500 }, { -2700, -1400 }, { -2600, -1300 }, { -2500, -1300 }, { -2300, -1200 }, { -1800, -600 }, { -1600, -500 }, { -1500, -300 } };
         double[,,] Wlg = new double[4, 2, 2] {
                                              { { 4300, 110 }, { 4170, 113 } },
                                              { { 4150, 125 }, { 4120, 128 } },
                                              { { 4100, 142 }, { 4070, 145 } },
                                              { { 4070, 158 }, { 4050, 165 } } };
-        double[,,] WOlg = new double[4, 2, 2] {
-                                             { { 3670, 95 }, { 3370, 95 } },
-                                             { { 3350, 95 }, { 3250, 95 } },
-                                             { { 3240, 95 }, { 3150, 95 } },
-                                             { { 3170, 95 }, { 3090, 95 } }};
+        double[,,] WOlg = new double[4, 2, 2] {                                                 //IDLE
+                                             { { 3700, 95 }, { 3420, 95 } },
+                                             { { 3370, 95 }, { 3300, 95 } },
+                                             { { 3460, 95 }, { 3200, 95 } },
+                                             { { 3340, 95 }, { 3120, 95 } }};
         int i;
         LGDown = LGToggle.isOn;
         if (LGToggle.isOn)
@@ -557,10 +597,10 @@ public class Calculator : MonoBehaviour
             {
                 M[i, 1, 0] += MVS[i, 0];
                 M[i, 3, 0] += MVS[i, 1];
-                M[i, 0, 2] += 3000; //Duz ucus N1 10/30 arttir
-                M[i, 2, 2] += 1000;
-                M[i, 0, 3] += 230; //Duz ucus ff 2.3/1.6 arttir
-                M[i, 2, 3] += 160;
+                M[i, 0, 2] += 1500;  //Duz ucus 
+                M[i, 2, 2] += 1350;
+                M[i, 0, 3] += 320;
+                M[i, 2, 3] += 200;
             }
             for (i = 5; i < 9; i++)  //With LG
             {
@@ -577,24 +617,24 @@ public class Calculator : MonoBehaviour
             {
                 M[i, 1, 0] -= MVS[i, 0];
                 M[i, 3, 0] -= MVS[i, 1];
-                M[i, 0, 2] -= 3000; //Duz ucus N1 10/30 azalt
-                M[i, 2, 2] -= 1000;
-                M[i, 0, 3] -= 230; //Duz ucus ff 2.3/1.6 azalt
-                M[i, 2, 3] -= 160;
+                M[i, 0, 2] -= 1500; //Duz ucus 
+                M[i, 2, 2] -= 1350;
+                M[i, 0, 3] -= 320;
+                M[i, 2, 3] -= 200;
 
             }
             for (i = 5; i < 9; i++)   //Without LG
             {
-                M[i, 1, 2] = WOlg[i - 5, 0, 0];//LVLCG N1 approach mode 
+                M[i, 1, 2] = WOlg[i - 5, 0, 0];//LVLCG N1 not in approach mode 
                 M[i, 3, 2] = WOlg[i - 5, 1, 0];
-                M[i, 1, 3] = WOlg[i - 5, 0, 1];//LVLCG ff approach mode 
+                M[i, 1, 3] = WOlg[i - 5, 0, 1];//LVLCG ff not in approach mode 
                 M[i, 3, 3] = WOlg[i - 5, 1, 1];
             }
         }
     }
     public void SBToggle_Change()
     {
-        double[,] Msb = new double[9, 2] { { -1100, -700 }, { -1000, -700 }, { -1400, -1000 }, { -800, -500 }, { -900, -500 }, { -800, -500 }, { -500, -500 }, { -500, -500 }, { -500, -500 } };
+        double[,] Msb = new double[9, 2] { { -900, -600 }, { -900, -600 }, { -900, -500 }, { -900, -500 }, { -900, -400 }, { -900, -400 }, { -900, -400 }, { -900, -500 }, { -900, -400 } };
         //Sil
         DTG -= 1;
         int i;
@@ -604,10 +644,10 @@ public class Calculator : MonoBehaviour
             {
                 M[i, 1, 0] += Msb[i, 0];
                 M[i, 3, 0] += Msb[i, 1];
-                M[i, 0, 2] += 2000; //Duz ucus N1 5/20 arttir
-                M[i, 2, 2] += 500;
-                M[i, 0, 3] += 80; //Duz ucus ff 0.8/0.6 arttir
-                M[i, 2, 3] += 60;
+                M[i, 0, 2] += 750; //Duz ucus
+                M[i, 2, 2] += 450;
+                M[i, 0, 3] += 115;
+                M[i, 2, 3] += 80;
 
             }
         }
@@ -617,14 +657,33 @@ public class Calculator : MonoBehaviour
             {
                 M[i, 1, 0] -= Msb[i, 0];
                 M[i, 3, 0] -= Msb[i, 1];
-                M[i, 0, 2] -= 2000; //Duz ucus N1 5/20 azalt
-                M[i, 2, 2] -= 500;
-                M[i, 0, 3] -= 80; //Duz ucus ff 0.8/0.6 azalt
-                M[i, 2, 3] -= 60;
+                M[i, 0, 2] -= 750; //Duz ucus
+                M[i, 2, 2] -= 450;
+                M[i, 0, 3] -= 115;
+                M[i, 2, 3] -= 80;
             }
 
         }
+
     }
+    public static void Check_LimitSpeed()
+    {
+        if (Calculator.Instance.co.isOn)                                    //Mach
+        {
+            if (Calculator.Instance.RMach < 0.6) Calculator.Instance.RMach = 0.6;
+            if (Calculator.Instance.RMach > Speed2Mach(PFD_Animation.LimitSpeed)) Calculator.Instance.RMach = Speed2Mach(PFD_Animation.LimitSpeed);
+            RSpeed = (int)Mach2Speed(Calculator.Instance.RMach);
+            Calculator.Instance.txtRSpeed.text = "" + System.Math.Round(Calculator.Instance.RMach, 2);
+        }
+        else
+        {                                               //IAS 
+            if (RSpeed < 110) RSpeed = 110;
+            if (RSpeed > PFD_Animation.LimitSpeed) RSpeed = PFD_Animation.LimitSpeed;
+            Calculator.Instance.txtRSpeed.text = "" + RSpeed;
+        }
+
+    }
+
     public void Button_Click()
 
     {
@@ -635,23 +694,17 @@ public class Calculator : MonoBehaviour
         {
             if (result == "Sup") RMach += 0.01;
             if (result == "Sdown") RMach -= 0.01;
-            if (RMach < 0.6) RMach = 0.6;
-            if (RMach > 0.82) RMach = 0.82;
-            RSpeed = (int)Mach2Speed(RMach);
-            txtRSpeed.text = "" + System.Math.Round(RMach,2);
         }
         else
         {                                               //IAS 
-            if (result == "Sup") RSpeed += 1;          
+            if (result == "Sup") RSpeed += 1;
             if (result == "Sdown") RSpeed -= 1;
-            if (RSpeed < 110) RSpeed = 110;
-            if (RSpeed > 340) RSpeed = 340;
-            txtRSpeed.text = "" + RSpeed;
         }
+        Check_LimitSpeed();
         txtRSpeed_overTape.text = txtRSpeed.text;
 
-        if (result == "Aup") RAltitude += 100;                              //Altitude
-        if (result == "Adown") RAltitude -= 100;
+        if (result == "Aup") RAltitude += 1000;                              //Altitude
+        if (result == "Adown") RAltitude -= 1000;
         if (RAltitude < 0) RAltitude = 0;
         if (RAltitude > 43000) RAltitude = 43000;
         txtRAltitude.text = "" + RAltitude; txtRAltitude_overTape.text = txtRAltitude.text;
@@ -717,38 +770,49 @@ public class Calculator : MonoBehaviour
         }
 
     }
-
     public void co_Change()
     {
+        double[,] MVS = new double[5, 2] { { -800, -280 }, { -680, -520 }, { -500, -400 }, { -430, -140 }, { -420, -240 } };
         if (co.isOn) // on mach
         {
             RMach = Speed2Mach(RSpeed);
             txtRSpeed.text = "" + System.Math.Round(RMach, 2);
             txtRSpeed_overTape.text = txtRSpeed.text;
+            for (int i = 0; i < 4; i++)
+            {
+                M[i, 1, 0] += MVS[i, 0];
+                M[i, 3, 0] += MVS[i, 1];
+
+            }
         }
         else
         {
-            RSpeed = (int) Mach2Speed(RMach);
+            RSpeed = (int)Mach2Speed(RMach);
             txtRSpeed.text = "" + RSpeed;
             txtRSpeed_overTape.text = txtRSpeed.text;
+            for (int i = 0; i < 4; i++)
+            {
+                M[i, 1, 0] -= MVS[i, 0];
+                M[i, 3, 0] -= MVS[i, 1];
+
+            }
 
         }
     }
-
     public void DisplayWindElements()
     {
 
-        WindElements WE = CalculateWindElements(CAltitude,CSpeed,RHeading); // Change to current Heading
-        windArrow.transform.localEulerAngles= new Vector3(0,0,180-WE.relativeWindD);
+        WindElements WE = CalculateWindElements(CAltitude, CSpeed, RHeading); // Change to current Heading
+        windArrow.transform.localEulerAngles = new Vector3(0, 0, 180 - WE.relativeWindD);
         int Track = WE.Track;
         windTxt.text = "GS" + WE.GS + "   TAS" + WE.TAS + "\n" + WE.WindD + "° / " + WE.WindM;
         CWind = WE.WindD + "° / " + WE.WindM;
         GS = WE.GS;
-       // Debug.Log(WE.GS + "   " + Track);
+        // Debug.Log(WE.GS + "   " + Track);
     }
     public class WindElements
     {
-        public int GS, Track,relativeWindD, WindM, WindD,TAS;
+        public int GS, Track, relativeWindD, WindM, WindD, TAS;
     }
     public int GetWindDirection(double Altitude)
     {
@@ -761,32 +825,30 @@ public class Calculator : MonoBehaviour
     {
         int BaseAlt = 8 - (int)System.Math.Truncate(Altitude / 5000);
         return (int)Mathf.LerpUnclamped(windTables[0].WindInfoItems[BaseAlt].Knots,
-                                            windTables[0].WindInfoItems[BaseAlt - 1].Knots, 
+                                            windTables[0].WindInfoItems[BaseAlt - 1].Knots,
                                             (float)(Altitude % 5000) / 5000);
     }
-
-    public  static WindElements CalculateWindElements(double Altitude , double IAS,int Heading)
+    public static WindElements CalculateWindElements(double Altitude, double IAS, int Heading)
     {
         if (Altitude > 39900) Altitude = 39900;
-     
+
         WindElements WE = new WindElements();
-      
+
         int BaseAlt = 8 - (int)System.Math.Truncate(Altitude / 5000);
 
         WE.WindD = Calculator.Instance.GetWindDirection(Altitude);
         WE.WindM = Calculator.Instance.GetWindMagnitude(Altitude);
 
         WE.relativeWindD = WE.WindD + Heading;
-        
+
         double HeadWind = Mathf.Cos(WE.relativeWindD * Mathf.Deg2Rad) * WE.WindM;
         double CrossWind = Mathf.Sin(WE.relativeWindD * Mathf.Deg2Rad) * WE.WindM;
-    
-        WE.TAS =(int) (IAS + (Altitude / 1000 * 0.02 * IAS));        
-        
-         WE.GS = (int)(WE.TAS - HeadWind);
-         WE.Track = Heading - (int)(Mathf.Atan((float)(CrossWind / WE.GS)) * Mathf.Rad2Deg);
+
+        WE.TAS = (int)(IAS + (Altitude / 1000 * 0.02 * IAS));
+
+        WE.GS = (int)(WE.TAS - HeadWind);
+        WE.Track = Heading - (int)(Mathf.Atan((float)(CrossWind / WE.GS)) * Mathf.Rad2Deg);
 
         return WE;
     }
-
 }

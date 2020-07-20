@@ -15,31 +15,31 @@ MonoBehaviour:
   ACItems:
   - Point: 54
     Altitude: 7000
-    Speed: 250
-  - Point: 11
+    Speed: 0
+  - Point: 55
     Altitude: 6000
-    Speed: 230
-  - Point: 2
+    Speed: 250
+  - Point: 4
     Altitude: 5000
-    Speed: 220
-  - Point: 11
+    Speed: 230
+  - Point: 5
     Altitude: 4000
     Speed: 220
-  - Point: 12
+  - Point: 8
+    Altitude: 3000
+    Speed: 220
+  - Point: 10
     Altitude: 3000
     Speed: 180
-  - Point: 13
-    Altitude: 1000
-    Speed: 180
   - Point: 14
-    Altitude: 1000
-    Speed: 160
+    Altitude: 2000
+    Speed: 180
   - Point: 15
-    Altitude: 1000
-    Speed: 150
+    Altitude: 1500
+    Speed: 160
   - Point: 16
     Altitude: 1000
-    Speed: 140
+    Speed: 150
   - Point: 1
     Altitude: 0
-    Speed: 0
+    Speed: 140
