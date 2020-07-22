@@ -26,7 +26,7 @@ public class Calculator : MonoBehaviour
     public Transform VDI_Index;
 
 
-    public static double CSpeed = 225, CAltitude = 5000; // Currenr Altitude*************************
+    public static double CSpeed = 225, CAltitude = 35000; // Currenr Altitude*************************
     //                            ***              *****
     int RVS;
     public static int RSpeed = (int)CSpeed, RHeading, RAltitude, CVS;
@@ -43,7 +43,7 @@ public class Calculator : MonoBehaviour
     public Text windTxt;
     public static string CWind;
     public Text FMA1, FMA2, FMA3;
-    public Image FlapNeedle, windArrow;
+    public Image FlapNeedle, windArrow,VSline,SpeedTrend;
     public GameObject Progres;
     int N1, FF, dispN1 = 77;
     double dispFF = 270;
@@ -149,10 +149,11 @@ public class Calculator : MonoBehaviour
     {
         get
         {
+            float oneNM = -Drawer.Instance.Zoom;
             if (CVS == 0)
                 return 0;
             else
-                return (float)((CAltitude - RAltitude) / CVS * CSpeed / 60 * 6);
+                return (float)((CAltitude - RAltitude) / CVS * GS / 60 *oneNM);
         }
     }
     void Awake()
@@ -206,8 +207,8 @@ public class Calculator : MonoBehaviour
             InterpolateVS();
             SetFMA();
             FuelandMach();
-            // DrawVDI();
-            // DisplayWindElements();
+            DrawVDI();
+            DisplayWindElements();
 
             yield return new WaitForSeconds(1);
         }
@@ -315,7 +316,16 @@ public class Calculator : MonoBehaviour
 
     public void VS_Equalize()
     {
-
+        void DrawVSline()
+        {
+            float[] VSlineY = new float[7] { 0, 50.9f, 64.4f, 66.0f, 67.7f, 69.0f, 70.5f };
+            int aCVS = Mathf.Abs(CVS);
+            float rotation = aCVS < 6000 ? Mathf.LerpUnclamped(VSlineY[aCVS / 1000], VSlineY[aCVS / 1000 + 1], (float)(aCVS % 1000) / 1000) * -Mathf.Sign(CVS) : 70.5f * -Mathf.Sign(CVS);
+            float lenght = rotation != 0 ? 500 / Mathf.Cos(rotation * Mathf.Deg2Rad) : 500;
+            VSline.transform.localEulerAngles = new Vector3(0, 0, rotation);
+            VSline.rectTransform.sizeDelta = new Vector2(lenght, VSline.sprite.rect.height);
+            txtCVS.transform.localPosition = CVS > 0 ? new Vector2(200, 90) : new Vector2(200, -100);
+        }
         if ((CVS != 0) || (RVS != 0))
         {
 
@@ -331,7 +341,8 @@ public class Calculator : MonoBehaviour
             }
         }
         txtCVS.text = (Mathf.Abs(CVS) > 300) ? "" + CVS / 100 * 100 : "";
-        txtCVS.transform.localPosition = CVS > 0 ? new Vector2(200, 90) : new Vector2(200, -100);
+
+        DrawVSline();
 
         Invoke("VS_Equalize", (float)(12.75 - CSpeed * 0.025) / 100);
 
@@ -359,6 +370,11 @@ public class Calculator : MonoBehaviour
     }
     private void Speed_Equalize()
     {
+        void DrawSpeedTrend(float Time)
+        {
+            int TrendDirection = RSpeed < CSpeed ? -1 : (RSpeed == CSpeed ? 0 : 1);
+            SpeedTrend.transform.localScale = new Vector3(1, TrendDirection * 10 / Time, 1);
+        }
         int RRSpeed;
         float speedbandspeed = 1f;
         if (RSpeed > increasedSpeed) RRSpeed = RSpeed; else RRSpeed = increasedSpeed;
@@ -399,6 +415,7 @@ public class Calculator : MonoBehaviour
             else T -= (float)CVS / 1000 + (float)Flap_Idx / 40;
         }
         if (T < 0.2) T = 0.3f;
+        DrawSpeedTrend(T);
         Invoke("Speed_Equalize", T * speedbandspeed);
     }
     private void SetAttPitch(int P)
@@ -409,7 +426,7 @@ public class Calculator : MonoBehaviour
     public void DrawVDI()
     {
         double DeltaAlt, Alt1, Alt0, d, D;
-        int posY;
+        float posY;
 
         RouteScriptableObject activePoints = GameManager.Instance.ActiveRoute;
         RouteScriptableObject modPoints = GameManager.Instance.ModRoute;
@@ -433,17 +450,17 @@ public class Calculator : MonoBehaviour
         VDI_Text.text = (((DeltaAlt) > 50) || ((DeltaAlt) < -50)) ? "" + (int)DeltaAlt : "";
         if (VNAV_Toggle.isOn)
         {
-            VNAV_VS = -((CAltitude - Alt1) * CSpeed) / (60 * d) - DeltaAlt * 2;
+            VNAV_VS = -((CAltitude - Alt1) * GS) / (60 * d) - DeltaAlt * 2;
             RVS = (DeltaAlt < -50) ? -100 : (int)VNAV_VS;
         }
 
-        posY = -(int)(DeltaAlt / 5);
+        posY = -((float)DeltaAlt / 5);
         if (posY > 100) posY = 100;
         if (posY < -100) posY = -100;
 
-        VDI_Index.transform.localPosition = new Vector2(37, posY);
-        if (DeltaAlt < 0) VDI_Text.transform.localPosition = new Vector2(-1, -120);
-        else VDI_Text.transform.localPosition = new Vector2(-1, 120);
+        VDI_Index.transform.localPosition = new Vector2(0.3f, posY/125);
+        if (DeltaAlt < 0) VDI_Text.transform.localPosition = new Vector2(0.1f, -1);
+        else VDI_Text.transform.localPosition = new Vector2(0.1f, 1);
     }
     public void SetFMA()
     {
@@ -683,7 +700,6 @@ public class Calculator : MonoBehaviour
         }
 
     }
-
     public void Button_Click()
 
     {
