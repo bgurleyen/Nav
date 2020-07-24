@@ -23,7 +23,9 @@ public class MainScreen : Singleton<MainScreen>
 
 
     public string LastLineLeft => lastFLeft.text;
-   
+
+    public TMP_Text ScratchPadText => scratchPadText;
+
 
     public void UpdatePageInfo(int currentPage, int totalPages, bool isMod)
     {
@@ -47,10 +49,16 @@ public class MainScreen : Singleton<MainScreen>
         }
     }
 
-    public void DisplayOperation(string value = "ERASE", string details = "RTE DATA")
+    public void DisplayOperation(string value = Keywords.ERASE, string details = "RTE DATA")
     {
         lastFLeft.text = $"<{value}";
         lastFRight.text = $"{details}";
         scratchPadText.text = "";
+    }
+    
+    public static class Keywords
+    {
+        public const string DELETE = "DELETE";
+        public const string ERASE = "ERASE";
     }
 }

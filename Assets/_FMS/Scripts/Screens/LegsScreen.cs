@@ -30,7 +30,7 @@ public class LegsScreen : ScreenBase
 
     static bool IsErase => Main.LastLineLeft == EraseTitle;
 
-    ScratchPadInfo scratchPadInfo;
+    ScratchPadInterpreter scratchPadInterpreter;
     string scratchPadBuffer = "";
 
     int TotalPages =>
@@ -95,7 +95,15 @@ public class LegsScreen : ScreenBase
     {
         var _clickedInfo = nodesController.GetNodeInfoAtLineIndex(index, currentPage);
 
-        if (scratchPadInfo.IsAltitudeRegulation(out var _regulation))
+        if (ScratchPadInterpreter.IsDeletePending(scratchPadBuffer))
+        {
+            GameManager.Instance.ExecuteDeleteRestrictions(new DeleteRestrictionsCommand
+            {
+                NodeId = _clickedInfo.LinkedId
+            });
+        }
+
+        if (scratchPadInterpreter.IsAltitudeRegulation(out var _regulation))
         {
             GameManager.Instance.ExecuteAddAltitudeRegulation(new AddAltitudeRegulationCommand
             {
@@ -104,7 +112,7 @@ public class LegsScreen : ScreenBase
             });
         }
 
-        if (scratchPadInfo.IsSpeedRegulation(out var _speedRegulation))
+        if (scratchPadInterpreter.IsSpeedRegulation(out var _speedRegulation))
         {
             GameManager.Instance.ExecuteAddSpeedRegulation(new AddSpeedRegulationCommand
             {
@@ -132,13 +140,13 @@ public class LegsScreen : ScreenBase
         GetSelectedPoint.IsSelected = false;
 
         if (!string.IsNullOrEmpty(scratchPadBuffer) &&
-            scratchPadInfo.IsRelativeNodeOnDirection(out var _distanceOnDirection))
+            scratchPadInterpreter.IsRelativeNodeOnDirection(out var _distanceOnDirection))
         {
             GameManager.Instance.ExecuteInsertRelativeOnDirectionOnMod(new ExecuteRelativeOnDirectionOnMod
                 {FromNodeId = _clickedInfo.LinkedId, Distance = _distanceOnDirection});
         }
         else if (!string.IsNullOrEmpty(scratchPadBuffer) &&
-                 scratchPadInfo.IsRelativeNode(out var _angle, out var _distance))
+                 scratchPadInterpreter.IsRelativeNode(out var _angle, out var _distance))
         {
             // if this is a relative insert command
             GameManager.Instance.ExecuteInsertRelativeOnMod(new InsertRelativeCommand
@@ -186,7 +194,7 @@ public class LegsScreen : ScreenBase
         }
 
         if (LastSelectedPoint != null && LastSelectedPoint.IsModified &&
-            scratchPadInfo.IsLinearApproach(out var _angle))
+            scratchPadInterpreter.IsLinearApproach(out var _angle))
         {
             Debug.Log("=linear approach= on " + LastSelectedPoint.Name + " with: " + _angle);
             GameManager.Instance.ExecuteLinearApproachOnMod(new ExecuteAddLinearApproachCommand
@@ -219,6 +227,8 @@ public class LegsScreen : ScreenBase
     /// </summary>
     public override void OnDeletePress()
     {
+        scratchPadBuffer = MainScreen.Keywords.DELETE;
+        Main.UpdateScratchPad(scratchPadBuffer);
     }
 
     public override void OnCharacterInput(char character)
@@ -237,7 +247,7 @@ public class LegsScreen : ScreenBase
         Main.UpdateScratchPad(scratchPadBuffer, selectionInfo != null);
     }
 
-    struct ScratchPadInfo
+    struct ScratchPadInterpreter
     {
         public bool IsValid;
         public RoutePoint Node;
@@ -313,12 +323,18 @@ public class LegsScreen : ScreenBase
             angle = Angle.Value;
             return true;
         }
+
+
+        public static bool IsDeletePending(string buffer)
+        {
+            return buffer == MainScreen.Keywords.DELETE;
+        }
     }
 
 
     void InterpretScratchpadOnTextChanged(bool handleSelection)
     {
-        scratchPadInfo = new ScratchPadInfo
+        scratchPadInterpreter = new ScratchPadInterpreter
         {
             IsValid = true,
             Angle = null,
@@ -340,34 +356,34 @@ public class LegsScreen : ScreenBase
                 var _indexOfSlash = scratchPadBuffer.IndexOf('/');
                 var _allLeft = scratchPadBuffer.Substring(0, _indexOfSlash);
                 // ABC/-11 or ABC060/-11
-                scratchPadInfo.Node = VisibleRoute.Points.FirstOrDefault(x => x.Name == _allLeft);
-                if (scratchPadInfo.Node == null)
+                scratchPadInterpreter.Node = VisibleRoute.Points.FirstOrDefault(x => x.Name == _allLeft);
+                if (scratchPadInterpreter.Node == null)
                 {
                     // ABC060/-11    ~~   Can be relative with angle and direction
                     if (int.TryParse(_allLeft.Substring(_allLeft.Length - 3, 3), out var _angle))
                     {
-                        scratchPadInfo.Angle = _angle;
+                        scratchPadInterpreter.Angle = _angle;
                         var _withoutAngle = _allLeft.Substring(0, _allLeft.Length - 3);
-                        scratchPadInfo.Node = VisibleRoute.Points.FirstOrDefault(x => x.Name == _withoutAngle);
+                        scratchPadInterpreter.Node = VisibleRoute.Points.FirstOrDefault(x => x.Name == _withoutAngle);
                     }
                     else
                     {
-                        scratchPadInfo.IsValid = false;
+                        scratchPadInterpreter.IsValid = false;
                     }
                 }
 
                 // make sure the distance is ok 
-                if (scratchPadInfo.Node != null)
+                if (scratchPadInterpreter.Node != null)
                 {
                     var _allRight =
                         scratchPadBuffer.Substring(_indexOfSlash + 1, scratchPadBuffer.Length - (_indexOfSlash + 1));
                     if (int.TryParse(_allRight, out var _distance))
                     {
-                        scratchPadInfo.Distance = _distance;
+                        scratchPadInterpreter.Distance = _distance;
                     }
                     else
                     {
-                        scratchPadInfo.IsValid = false;
+                        scratchPadInterpreter.IsValid = false;
                     }
                 }
             }
@@ -376,26 +392,26 @@ public class LegsScreen : ScreenBase
                 if (scratchPadBuffer.Length == 3 && int.TryParse(scratchPadBuffer, out var _angle))
                 {
                     // Is linear approach
-                    scratchPadInfo.Angle = _angle;
+                    scratchPadInterpreter.Angle = _angle;
                 }
                 else
                 {
-                    scratchPadInfo.Node = VisibleRoute.Points.FirstOrDefault(x => x.Name == scratchPadBuffer);
-                    if (scratchPadInfo.Node == null)
+                    scratchPadInterpreter.Node = VisibleRoute.Points.FirstOrDefault(x => x.Name == scratchPadBuffer);
+                    if (scratchPadInterpreter.Node == null)
                     {
-                        scratchPadInfo.IsValid = false;
+                        scratchPadInterpreter.IsValid = false;
                     }
                 }
             }
 
-            if (scratchPadInfo.IsValid)
+            if (scratchPadInterpreter.IsValid)
             {
-                if (handleSelection && scratchPadInfo.Node != null)
+                if (handleSelection && scratchPadInterpreter.Node != null)
                 {
                     selectionInfo = new NodeSelection
                     {
                         IsEmpty = false,
-                        LinkedId = scratchPadInfo.Node.ID,
+                        LinkedId = scratchPadInterpreter.Node.ID,
                         IsAddedDiscontinuity = false,
                         IsStartingPoint = false
                     };
@@ -419,12 +435,12 @@ public class LegsScreen : ScreenBase
 
                 if (DataHandler.ParseAltRegulation(_value, out _, out _, out _))
                 {
-                    scratchPadInfo.AltRegulation = _value;
-                    scratchPadInfo.SpeedRegulation = null;
+                    scratchPadInterpreter.AltRegulation = _value;
+                    scratchPadInterpreter.SpeedRegulation = null;
                 }
                 else
                 {
-                    scratchPadInfo.IsValid = false;
+                    scratchPadInterpreter.IsValid = false;
                 }
             }
             else if (scratchPadBuffer[scratchPadBuffer.Length - 1] == '/' && scratchPadBuffer.Length > 1)
@@ -433,8 +449,8 @@ public class LegsScreen : ScreenBase
                 var _value = scratchPadBuffer.Substring(0, scratchPadBuffer.Length - 1);
                 if (int.TryParse(_value, out var _regulation))
                 {
-                    scratchPadInfo.AltRegulation = null;
-                    scratchPadInfo.SpeedRegulation = _regulation;
+                    scratchPadInterpreter.AltRegulation = null;
+                    scratchPadInterpreter.SpeedRegulation = _regulation;
                 }
             }
             else if (scratchPadBuffer.Contains('/') && scratchPadBuffer.Length > 3)
@@ -447,12 +463,12 @@ public class LegsScreen : ScreenBase
                 if (int.TryParse(_speed, out var _speedRegulation) &&
                     DataHandler.ParseAltRegulation(_altRegulation, out _, out _, out _))
                 {
-                    scratchPadInfo.AltRegulation = _altRegulation;
-                    scratchPadInfo.SpeedRegulation = _speedRegulation;
+                    scratchPadInterpreter.AltRegulation = _altRegulation;
+                    scratchPadInterpreter.SpeedRegulation = _speedRegulation;
                 }
                 else
                 {
-                    scratchPadInfo.IsValid = false;
+                    scratchPadInterpreter.IsValid = false;
                 }
             }
         }

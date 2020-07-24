@@ -4,6 +4,10 @@ using UnityEngine;
 
 public interface ICommand { }
 
+public struct DeleteRestrictionsCommand : ICommand
+{
+    public int NodeId;
+}
 
 public struct AddAltitudeRegulationCommand : ICommand
 {

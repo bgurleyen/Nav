@@ -95,6 +95,18 @@ public class GameManager : Singleton<GameManager>
         }
     }
 
+    public void ExecuteDeleteRestrictions(DeleteRestrictionsCommand command)
+    {
+        CheckModForOperation();
+        cachedCommands.Add(command);
+        
+        MainScreen.Instance.DisplayOperation("ERASE");
+
+        var _node = ModRoute.GetPoint(command.NodeId);
+        _node.RawAltitude = "";
+        _node.RawSpeed = 0;
+    }
+
     public void ExecuteAddSpeedRegulation(AddSpeedRegulationCommand command)
     {
         CheckModForOperation();
