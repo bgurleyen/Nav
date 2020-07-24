@@ -69,7 +69,7 @@ public class LegsScreen : ScreenBase
 
     public void DisplayCurrentPage()
     {
-        Main.UpdatePageInfo(currentPage, TotalPages, IsMod);
+        Main.UpdatePageInfo(currentPage, TotalPages, IsMod, "LEGS");
 
         for (var i = 0; i < nodes.Length; i++)
         {
@@ -221,10 +221,6 @@ public class LegsScreen : ScreenBase
         Main.UpdateScratchPad(scratchPadBuffer);
     }
 
-    /// <summary>
-    /// Can do:
-    ///  - delete restriction for altitude & speed
-    /// </summary>
     public override void OnDeletePress()
     {
         scratchPadBuffer = MainScreen.Keywords.DELETE;

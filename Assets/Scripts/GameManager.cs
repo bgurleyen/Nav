@@ -206,6 +206,7 @@ public class GameManager : Singleton<GameManager>
     public void ApplyMod()
     {
         ModRoute.ClearModifiedFlags();
+        ModeSetWithPosition.ClearModifiedFlags();
 
         ActiveRoute = ModeSetWithPosition;
         ModRoute = null;

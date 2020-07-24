@@ -1,13 +1,20 @@
-﻿using Gamelogic.Extensions;
+﻿using System;
+using Gamelogic.Extensions;
 using System.Collections;
 using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public class MainScreen : Singleton<MainScreen>
 {
+    [SerializeField] Color modified;
+    [SerializeField] Color idle;
+    
     [Header("top header")]
-    [SerializeField] TMP_Text leftInfo;
+    [SerializeField] TMP_Text leftInfo1;
+    [SerializeField] Image leftInfo1Background;
+    [SerializeField] TMP_Text leftInfo2;
     [SerializeField] TMP_Text title;
     [SerializeField] TMP_Text pageNumber;
 
@@ -24,13 +31,18 @@ public class MainScreen : Singleton<MainScreen>
 
     public string LastLineLeft => lastFLeft.text;
 
+    public Color ModifiedColor => modified;
+    public Color IdleColor => idle;
+
     public TMP_Text ScratchPadText => scratchPadText;
 
 
-    public void UpdatePageInfo(int currentPage, int totalPages, bool isMod)
+    public void UpdatePageInfo(int currentPage, int totalPages, bool isMod, string pageTitle)
     {
         pageNumber.text = $"{currentPage + 1}/{totalPages}";
-        title.text = isMod ? "MOD" : "LEGS";
+        leftInfo1.text = isMod ? "MOD" : "ACT";
+        leftInfo1Background.color = isMod ? ModifiedColor : IdleColor;
+        title.text = pageTitle;
     }
 
     // public void DisplayInfo(string nodeName)

@@ -4,8 +4,6 @@ using UnityEngine.UI;
 
 public class LegsNodeLine : MonoBehaviour
 {
-    public Color idle;
-    public Color modified;
     public Color current;
     public Image fLeftBackground;
 
@@ -53,7 +51,7 @@ public class LegsNodeLine : MonoBehaviour
 
         if (node.IsModified)
         {
-            fLeftBackground.color = modified;
+            fLeftBackground.color = MainScreen.Instance.ModifiedColor;
         }
         else if (node.IsCurrent)
         {
@@ -61,7 +59,7 @@ public class LegsNodeLine : MonoBehaviour
         }
         else
         {
-            fLeftBackground.color = idle;
+            fLeftBackground.color = MainScreen.Instance.IdleColor;
         }
     }
 
