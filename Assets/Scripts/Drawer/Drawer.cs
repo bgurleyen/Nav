@@ -6,34 +6,31 @@ using Gamelogic.Extensions;
 public class Drawer : Singleton<Drawer>
 {
     public Animator cameraAnimator;
-    [Space]
-    [SerializeField] Transform dynamicHolder;
+    [Space] [SerializeField] Transform dynamicHolder;
     [SerializeField] Transform dynamicHolderMod;
     [SerializeField] Transform dynamicHolderCircles;
     [SerializeField] Transform dynamicHolderRays;
     [SerializeField] Transform dynamicHolderOtheriarcrafts;
 
-    [Space]
-    [SerializeField] LeanGameObjectPool linesPool;
+    [Space] [SerializeField] LeanGameObjectPool linesPool;
     [SerializeField] LeanGameObjectPool linesPoolMod;
     [SerializeField] LeanGameObjectPool circlePool;
     [SerializeField] LeanGameObjectPool rayPool;
     [SerializeField] LeanGameObjectPool otherAircraftsPool;
 
-    [Space]
-    [SerializeField] Transform pivot;
+    [Space] [SerializeField] Transform pivot;
     [SerializeField] Transform compasPivot;
     [SerializeField] Transform mobilePlaneIndicatorPivot;
     [SerializeField] Transform freeFlightPivot;
     [SerializeField] Transform bananaIndicatorPivot;
 
-    [Header("modes visuals")]
-    [SerializeField] GameObject[] mapHolder;
+    [Header("modes visuals")] [SerializeField]
+    GameObject[] mapHolder;
+
     [SerializeField] GameObject[] centerHolder;
     [SerializeField] GameObject[] planHolder;
 
-    [Header("Adjust")]
-    [SerializeField] float mapReferenceLength80 = 1.6f;
+    [Header("Adjust")] [SerializeField] float mapReferenceLength80 = 1.6f;
     [SerializeField] float planReferenceLength80 = 1.6f;
 
     public DrawerMode Mode { get; private set; } = DrawerMode.Suspeded;
@@ -45,7 +42,9 @@ public class Drawer : Singleton<Drawer>
     float zoomMultiplier = 1f;
 
     public const float RelaxedRadius = 17;
+
     const float FtToNm = 0.000164579f;
+
     // turn radius
     const float IAS = 240;
     const float Altitude = 1000;
@@ -63,18 +62,24 @@ public class Drawer : Singleton<Drawer>
     static RouteScriptableObject ModRoute => GameManager.Instance.ModRoute;
     static RouteScriptableObject DisplayMod => GameManager.Instance.ModeSetWithPosition;
 
-    
 
     public void ComputeActive()
     {
-        if(ActiveRoute == null) { return; }
+        if (ActiveRoute == null)
+        {
+            return;
+        }
 
         GameManager.Instance.PathLines.ComputeSet(ActiveRoute, false);
     }
 
     public void ComputeMod()
     {
-        if (ModRoute == null) { modReExecutedForIndex = -1; return; }
+        if (ModRoute == null)
+        {
+            modReExecutedForIndex = -1;
+            return;
+        }
 
         // mod always has to include the last passed active node ( all the passed nodes ) 
         // otherwise it is invalid - will reapply all the commands
@@ -129,14 +134,17 @@ public class Drawer : Singleton<Drawer>
         {
             x.SetActive(Mode == DrawerMode.Map);
         }
+
         foreach (var x in centerHolder)
         {
             x.SetActive(Mode == DrawerMode.Center);
         }
+
         foreach (var x in planHolder)
         {
             x.SetActive(Mode == DrawerMode.Plan);
         }
+
         Clear();
         Display();
     }
@@ -164,7 +172,8 @@ public class Drawer : Singleton<Drawer>
         Extension.DespawnChildred<OtherAircrafIndicator>(dynamicHolderOtheriarcrafts, otherAircraftsPool);
     }
 
-    public static bool GetCircleFix(RoutePoint linkedPoint, Vector3 from, FixedPointInfo linkedInfo, out FixCircle circle)
+    public static bool GetCircleFix(RoutePoint linkedPoint, Vector3 from, FixedPointInfo linkedInfo,
+        out FixCircle circle)
     {
         if (linkedInfo.NM != null)
         {
@@ -190,7 +199,7 @@ public class Drawer : Singleton<Drawer>
         return false;
     }
 
-    public  void Display()
+    public void Display()
     {
         DisplaySet(false);
         DisplaySet(true);
@@ -198,12 +207,10 @@ public class Drawer : Singleton<Drawer>
         DisplayFixRays();
         freeFlightPivot.gameObject.SetActive(GameManager.Instance.Aircraft.IsFreeFlight);
         bananaIndicatorPivot.SetLocalY(Calculator.Instance.GetBananaPosition);
-        
+
 
         DisplayOtherTraffic();
-        
-        
-            
+
 
         switch (Mode)
         {
@@ -213,8 +220,9 @@ public class Drawer : Singleton<Drawer>
                 compasPivot.SetLocalRotationZ(GameManager.Instance.Aircraft.Heading);
                 if (GameManager.Instance.Aircraft.IsFreeFlight)
                 {
-                    freeFlightPivot.SetLocalRotationZ(GameManager.Instance.Aircraft.Heading - Calculator.RHeading );
+                    freeFlightPivot.SetLocalRotationZ(GameManager.Instance.Aircraft.Heading - Calculator.RHeading);
                 }
+
                 break;
             case DrawerMode.Plan:
                 //rotate compass
@@ -233,10 +241,10 @@ public class Drawer : Singleton<Drawer>
     {
         var _positions = Move.Instance.ACPositions;
         var _texts = Move.Instance.ACTexts;
-        
+
         foreach (var _key in _positions.Keys)
         {
-           // Debug.Log(_positions[_key]);
+            // Debug.Log(_positions[_key]);
             var _drawer = otherAircraftsPool.Spawn(Vector3.zero, Quaternion.identity, dynamicHolderOtheriarcrafts)
                 .GetComponent<OtherAircrafIndicator>();
             _drawer.name = _key;
@@ -249,8 +257,7 @@ public class Drawer : Singleton<Drawer>
             .GetComponent<OtherAircrafIndicator>();
         _onjective.name = "My objective";
         _onjective.Init("*", Color.red);
-        _onjective.transform.localPosition = new Vector2(100,100).ToDisplay();
-
+        _onjective.transform.localPosition = new Vector2(100, 100).ToDisplay();
     }
 
     void DisplaySet(bool mod)
@@ -263,7 +270,9 @@ public class Drawer : Singleton<Drawer>
             }
         }
 
-        var _lines = mod ? GameManager.Instance.PathLines.ComputedLinesMod : GameManager.Instance.PathLines.ComputedLines;
+        var _lines = mod
+            ? GameManager.Instance.PathLines.ComputedLinesMod
+            : GameManager.Instance.PathLines.ComputedLines;
         var _pool = mod ? linesPoolMod : linesPool;
         var _holder = mod ? dynamicHolderMod : dynamicHolder;
 
@@ -291,11 +300,11 @@ public class Drawer : Singleton<Drawer>
                 }
                 else
                 {
-                    Debug.Log(_activePoint.Name+" " +(_activePoint.CartesianPosition - _point.CartesianPosition).magnitude);
+                    Debug.Log(_activePoint.Name + " " +
+                              (_activePoint.CartesianPosition - _point.CartesianPosition).magnitude);
                 }
-                
             }
-            
+
             _drawer.Display(_line, _point, _hiddenLabel);
         }
     }
@@ -368,7 +377,7 @@ public class Drawer : Singleton<Drawer>
         }
 
         RoutePoint _notToCloseSecondPoint = null;
-        
+
         // there are no more points to create a curve to ( in which case continue with straight line on current segment )
         if (toDataPointIndex != points.Length - 1)
         {
@@ -381,11 +390,10 @@ public class Drawer : Singleton<Drawer>
 
         return ComputeLine(lastLine, out line, _nextPoint, _notToCloseSecondPoint, _forceEndStraight);
     }
-    
+
     public static bool ComputeLine(MarkLine lastLine, out MarkLine line, RoutePoint nextPoint,
         RoutePoint notTooCloseSecondPoint = null, bool forceEndStraight = false)
     {
-       
         float _angleBetween = 180;
 
         // there are no more points to create a curve to ( in which case continue with straight line on current segment )
@@ -395,8 +403,8 @@ public class Drawer : Singleton<Drawer>
         }
 
         var _isStraight = lastLine.LinkedPoint != null &&
-                         (lastLine.LinkedPoint.IsAfterDiscontinuity || lastLine.LinkedPoint.IsHiddenLine)
-                         || forceEndStraight;
+                          (lastLine.LinkedPoint.IsAfterDiscontinuity || lastLine.LinkedPoint.IsHiddenLine)
+                          || forceEndStraight;
 
         var _lastEndOffset = lastLine.LinkedPoint != null && _isStraight
             ? lastLine.EndPosition
@@ -410,26 +418,24 @@ public class Drawer : Singleton<Drawer>
         else
         {
             // try relaxed turn
-            if (GenerateCurve(RelaxedRadius, nextPoint, notTooCloseSecondPoint, _angleBetween, lastLine.EndPosition, _lastEndOffset,
+            if (!GenerateCurve(RelaxedRadius, nextPoint, notTooCloseSecondPoint, _angleBetween, lastLine.EndPosition,
+                _lastEndOffset,
                 out line))
             {
-                return true;
+                if (!GenerateCurve(GetMinRadius, nextPoint, notTooCloseSecondPoint, _angleBetween, lastLine.EndPosition,
+                    _lastEndOffset,
+                    out line))
+                {
+                    GenerateDoubleCurve(GetMinRadius, RelaxedRadius, nextPoint, notTooCloseSecondPoint, _angleBetween,
+                        lastLine.EndPosition,
+                        _lastEndOffset, out line);
+                }
             }
-
-            // try only min curve
-            if (GenerateCurve(GetMinRadius, nextPoint, notTooCloseSecondPoint, _angleBetween, lastLine.EndPosition, _lastEndOffset,
-                out line))
-            {
-                return true;
-            }
-
-            GenerateDoubleCurve(GetMinRadius, RelaxedRadius, nextPoint, notTooCloseSecondPoint, _angleBetween, lastLine.EndPosition,
-                _lastEndOffset, out line);
         }
 
         // store cartesian position
         nextPoint.CartesianPosition = line.EndPosition;
-        
+
         return true;
     }
 
@@ -440,17 +446,20 @@ public class Drawer : Singleton<Drawer>
         line = _l;
     }
 
-    static bool GenerateCurve(float chosenRadius, RoutePoint nextPoint, RoutePoint secondPoint, float angleBetween, Vector3 lastEndPosition, Vector3 lastEndOffset, out MarkLine line)
+    static bool GenerateCurve(float chosenRadius, RoutePoint nextPoint, RoutePoint secondPoint, float angleBetween,
+        Vector3 lastEndPosition, Vector3 lastEndOffset, out MarkLine line)
     {
         var _tangentToMiddle = Line.GetTangentToMiddle(chosenRadius, angleBetween);
 
-        if (_tangentToMiddle <= nextPoint.Distance && _tangentToMiddle <= secondPoint.Distance && _tangentToMiddle <= chosenRadius)
+        if (_tangentToMiddle <= nextPoint.Distance && _tangentToMiddle <= secondPoint.Distance &&
+            _tangentToMiddle <= chosenRadius)
         {
             var l = new Curve(nextPoint);
             l.Init(lastEndPosition, lastEndOffset, nextPoint, secondPoint, _tangentToMiddle, chosenRadius);
             line = l;
             return true;
         }
+
         line = null;
         return false;
     }
@@ -469,19 +478,19 @@ public class Drawer : Singleton<Drawer>
         Gizmos.color = Color.green;
         var _up = pivot.up;
         Gizmos.DrawSphere(_up * mapReferenceLength80, 0.05f);
-        
+
         Gizmos.color = Color.blue;
         Gizmos.DrawWireSphere(_up * planReferenceLength80, 0.065f);
 
         Gizmos.color = Color.cyan;
-        Gizmos.DrawWireSphere(_up * planReferenceLength80/2f, 0.025f);
+        Gizmos.DrawWireSphere(_up * planReferenceLength80 / 2f, 0.025f);
 
 
         if (GameManager.Instance.PathLines.ComputedLines == null)
         {
             return;
         }
+
         Gizmos.DrawSphere(GameManager.Instance.Aircraft.Position.ToDisplay(), 0.05f);
     }
-
 }

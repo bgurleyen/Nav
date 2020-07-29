@@ -67,6 +67,7 @@ public class RoutePoint
             IsModified = IsModified,
             Altitude = Altitude ?? Altitude.Clone(),
             Speed = Speed ?? Speed.Clone(),
+            CartesianPosition = CartesianPosition
         };
     }
 
