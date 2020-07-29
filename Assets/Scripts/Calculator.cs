@@ -698,7 +698,7 @@ public class Calculator : MonoBehaviour
             if (RSpeed > PFD_Animation.LimitSpeed) RSpeed = PFD_Animation.LimitSpeed;
             Calculator.Instance.txtRSpeed.text = "" + RSpeed;
         }
-
+        Calculator.Instance.txtRSpeed_overTape.text = Calculator.Instance.txtRSpeed.text;
     }
     public void Button_Click()
 
