@@ -20,10 +20,12 @@ public class LegsScreen : ScreenBase
     NodeSelection selectionInfo;
     NodeSelection lastSelectionClicked;
 
-    RoutePoint GetSelectedPoint => selectionInfo == null ? null : VisibleRoute.GetPoint(selectionInfo.LinkedId);
+    RoutePoint GetSelectedPoint => selectionInfo == null ? null : 
+        VisibleRoute.GetPoint(selectionInfo.LinkedId, out var _node) ? _node : null;
 
     RoutePoint LastSelectedPoint =>
-        lastSelectionClicked == null ? null : VisibleRoute.GetPoint(lastSelectionClicked.LinkedId);
+        lastSelectionClicked == null ? null :
+        VisibleRoute.GetPoint(lastSelectionClicked.LinkedId, out var _node) ? _node : null;
 
 
     const string EraseTitle = "<ERASE";
@@ -75,18 +77,14 @@ public class LegsScreen : ScreenBase
         {
             var _linkedSelection = nodesController.GetNodeInfoAtLineIndex(i, currentPage);
 
-            if (_linkedSelection.IsInvalid)
-            {
-                return;
-            }
-
-            if (_linkedSelection.IsEmpty)
+            if (_linkedSelection.IsInvalid || _linkedSelection.IsEmpty)
             {
                 nodes[i].ShowEmpty();
             }
             else
             {
-                nodes[i].DisplayNodeDetails(VisibleRoute.GetPoint(_linkedSelection.LinkedId), _linkedSelection);
+                VisibleRoute.GetPoint(_linkedSelection.LinkedId, out var _node);
+                nodes[i].DisplayNodeDetails(_node, _linkedSelection);
             }
         }
     }

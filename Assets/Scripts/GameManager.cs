@@ -102,7 +102,7 @@ public class GameManager : Singleton<GameManager>
         
         MainScreen.Instance.DisplayOperation("ERASE");
 
-        var _node = ModRoute.GetPoint(command.NodeId);
+        ModRoute.GetPoint(command.NodeId, out var _node);
         _node.RawAltitude = "";
         _node.RawSpeed = 0;
     }
@@ -113,7 +113,8 @@ public class GameManager : Singleton<GameManager>
         cachedCommands.Add(command);
         
         MainScreen.Instance.DisplayOperation("ERASE");
-        ModRoute.GetPoint(command.NodeId).RawSpeed = command.Regulation;
+        ModRoute.GetPoint(command.NodeId, out var _node);
+        _node.RawSpeed = command.Regulation;
         DataHandler.BuildSetDetails(ModRoute);
 
         OnOperationMade?.Invoke();
@@ -125,7 +126,8 @@ public class GameManager : Singleton<GameManager>
         cachedCommands.Add(command);
         
         MainScreen.Instance.DisplayOperation("ERASE");
-        ModRoute.GetPoint(command.NodeId).RawAltitude = command.Regulation;
+        ModRoute.GetPoint(command.NodeId, out var _node);
+        _node.RawAltitude = command.Regulation;
         DataHandler.BuildSetDetails(ModRoute);
 
         OnOperationMade?.Invoke();
@@ -136,7 +138,8 @@ public class GameManager : Singleton<GameManager>
         CheckModForOperation();
         cachedCommands.Add(command);
 
-        MainScreen.Instance.DisplayOperation("ERASE", $"{ModRoute.GetPoint(command.FromNodeId).RawDegrees:000}°");
+        ModRoute.GetPoint(command.FromNodeId, out var _node);
+        MainScreen.Instance.DisplayOperation("ERASE", $"{_node.RawDegrees:000}°");
         ModRoute.ShortcutNodes(command.FromNodeId, command.ToNodeId, out var _);
         DataHandler.BuildSetDetails(ModRoute);
 

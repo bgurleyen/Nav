@@ -18,14 +18,22 @@ public class RouteScriptableObject : ScriptableObject
         }
     }
 
-    public RoutePoint GetPoint(int nodeId)
+    public bool GetPoint(int nodeId, out RoutePoint point)
     {
         var _index = GetIndex(nodeId);
-        if(Points.Length <= _index || _index < 0)
+        return GetPointAt(_index, out point);
+    }
+
+    public bool GetPointAt(int index, out RoutePoint point)
+    {
+        if (Points.Length <= index || index < 0)
         {
-            Debug.Log($"error: {_index}");
+            point = null;
+            return false;
         }
-        return Points[GetIndex(nodeId)];
+
+        point = Points[index];
+        return true;
     }
 
     public int GetIndex(int nodeId)

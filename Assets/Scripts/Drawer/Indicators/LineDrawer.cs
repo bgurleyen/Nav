@@ -3,15 +3,15 @@ using UnityEngine;
 
 public class LineDrawer : MonoBehaviour
 {
-    public Transform mark;
-    public LabelText label;
+    [SerializeField] Transform mark;
+    [SerializeField] LabelText label;
 
-    public LineRenderer drawer;
-    public bool showGuides;
+    [SerializeField] LineRenderer drawer;
+    [SerializeField] bool showGuides;
 
     MarkLine cacheLine;
 
-    public void Display(MarkLine line, RoutePoint routePoint, int fromPoint = 0)
+    public void Display(MarkLine line, RoutePoint routePoint, bool hiddenLabel, int fromPoint = 0)
     {
         if (!line.LinkedPoint.IsAfterDiscontinuity && !line.LinkedPoint.IsHiddenLine)
         {
@@ -33,11 +33,16 @@ public class LineDrawer : MonoBehaviour
             drawer.positionCount = 0;
         }
 
-        if (!line.LinkedPoint.IsAfterDiscontinuity && !line.LinkedPoint.IsSkippable)
+        if (!line.LinkedPoint.IsAfterDiscontinuity && !line.LinkedPoint.IsSkippable && !hiddenLabel)
         {
             mark.localPosition = line.EndPosition.To2DXY().ToDisplay();
             label.transform.localPosition = line.EndPosition.To2DXY().ToDisplay();
             label.Init(routePoint.Name);
+            label.gameObject.SetActive(true);
+        }
+        else
+        {
+            label.gameObject.SetActive(false);
         }
     }
 

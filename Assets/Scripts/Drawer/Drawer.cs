@@ -280,7 +280,23 @@ public class Drawer : Singleton<Drawer>
 
             var _drawer = _pool.Spawn(Vector3.zero, Quaternion.identity, _holder).GetComponent<LineDrawer>();
             _drawer.name = _line.GetName + " " + _point.Name;
-            _drawer.Display(_line, _point);
+
+            var _hiddenLabel = false;
+            if (mod && GameManager.Instance.ActiveRoute.GetPoint(_point.ID, out var _activePoint))
+            {
+                // @#$ error at cartesian position
+                if (RoutePoint.HaveSamePosition(_activePoint, _point))
+                {
+                    _hiddenLabel = true;
+                }
+                else
+                {
+                    Debug.Log(_activePoint.Name+" " +(_activePoint.CartesianPosition - _point.CartesianPosition).magnitude);
+                }
+                
+            }
+            
+            _drawer.Display(_line, _point, _hiddenLabel);
         }
     }
 

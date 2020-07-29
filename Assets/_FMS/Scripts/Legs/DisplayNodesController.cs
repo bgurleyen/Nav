@@ -74,9 +74,9 @@
         }
 
         var _linkedIndex = _index - _discontinuityOffset + _hiddenOffset;
-        var _linkedId = VisibleRoute.Points[_linkedIndex].ID;
+        var _isEmpty = !VisibleRoute.GetPointAt(_linkedIndex, out var _point);
+        var _linkedId = _isEmpty ? -1: _point.ID;
 
-        var _isEmpty = VisibleRoute.Points.Length <= _linkedIndex;
         var _isStartingPoint = _linkedIndex == StartingNodeIndex;
         var _isDiscontinuity = _lastDiscontinuity == _index;
 
@@ -88,8 +88,6 @@
             IsStartingPoint = _isStartingPoint
         }; // not showing the first point as is NOW
     }
-
-    
 }
 
 public class NodeSelection
