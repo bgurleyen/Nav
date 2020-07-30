@@ -26,7 +26,7 @@ public class Calculator : MonoBehaviour
     public Transform VDI_Index;
 
 
-    public static double CSpeed = 225, CAltitude = 35000; // Currenr Altitude*************************
+    public static double CSpeed = 225, CAltitude = 30000; // Currenr Altitude*************************
     //                            ***              *****
     int RVS;
     public static int RSpeed = (int)CSpeed, RHeading, RAltitude, CVS;
@@ -38,7 +38,8 @@ public class Calculator : MonoBehaviour
     public Toggle LGToggle, SBToggle, co;//Landing Gear ,Speed Brake;
     public static bool LGDown = false;
     public Button FUP_Button, FDown_Button;
-    int Flap_Idx, increasedSpeed, excessSpeedCo = 500, excessSpeedCo2 = 10;
+    int Flap_Idx, increasedSpeed, excessSpeedCo = 0, excessSpeedCo2 = 10;
+    float SpeedTime;
     double DTG;
     public Text windTxt;
     public static string CWind;
@@ -291,26 +292,11 @@ public class Calculator : MonoBehaviour
             N1 = (int)a[2];
             FF = (int)a[3];
 
-            RVS = (int)CSpeed - RSpeed > 10 ? -300 :
-                   RSpeed - (int)CSpeed > 0 ? (int)a[0] - excessSpeedCo : (int)a[0]; // surat yuksekse ?
-            excessSpeedCo += 100 - excessSpeedCo2;
-            excessSpeedCo2 += 5;
-            if (excessSpeedCo2 > 90) excessSpeedCo2 = 90;
-            if ((int)CSpeed == RSpeed)
-            {
-                excessSpeedCo = 100;
-                excessSpeedCo2 = 10;
-            }
+            if (SpeedTime > 1) excessSpeedCo += 100;
+            if ((int)CSpeed == RSpeed) excessSpeedCo = 0;
+                RVS = (int)CSpeed - RSpeed > 10 ? -300 :
+                    RSpeed - (int)CSpeed > 0 ? (int)a[0] -excessSpeedCo : (int)a[0]; // surat yuksekse 
 
-            // if ((co.isOn ) && (RSpeed >= CSpeed))
-            // {
-            //     float M069 = 1900f + (40000f - (float)CAltitude) / 25f;
-            //     float M079 = 2500f + (40000f - (float)CAltitude) / 10f;
-            //     RVS = -(int)Mathf.LerpUnclamped(M069, M079, ((float)CMach - 0.69f) * 10f);
-            //     if (LGToggle.isOn) RVS *= 2;
-            //     if (SBToggle.isOn) RVS -= 1000;
-            //     RVS = RVS / 100 * 100;
-            // }
         }
     }
 
@@ -379,8 +365,6 @@ public class Calculator : MonoBehaviour
         float speedbandspeed = 1f;
         if (RSpeed > increasedSpeed) RRSpeed = RSpeed; else RRSpeed = increasedSpeed;
 
-        float[] M210 = new float[8] { 1.55f, 0.8f, 1.15f, 0.85f, 1.0f, 1.1f, 0.85f, 1.3f };//Dec - Acc Times
-        float[] M270 = new float[8] { 1.35f, 0.7f, 0.95f, 0.9f, 0.65f, 2.05f, 0.6f, 6.1f }; //Clean,SB,Lg,Both
 
         PFD_Animation Script2 = FindObjectOfType<PFD_Animation>();
 
@@ -396,27 +380,14 @@ public class Calculator : MonoBehaviour
         txtDTG.text = "" + (int)DTG;
         Script2.SpeedTapeUpdate();
         Script2.SpeedIndexUpdate_Click();
-
-        int x = 0;
-        if (SBToggle.isOn) x += 2;
-        if (LGToggle.isOn) x += 4;
-        if (RSpeed > CSpeed) x += 1;
-
-        float T = Mathf.LerpUnclamped(M210[x], M270[x], (float)(CSpeed - 210) / 60);
-
-        if (co.isOn)
-        {
-            if (RRSpeed > CSpeed) T += (float)CVS / 600 + (float)Flap_Idx / 100 + 8f - (float)N1 / 2000;
-            else T -= (float)CVS / 1000 + (float)Flap_Idx / 40 + 1;
-        }
-        else
-        {
-            if (RRSpeed > CSpeed) T += (float)CVS / 3000 + (float)Flap_Idx / 100 + 8f - (float)N1 / 1250;
-            else T -= (float)CVS / 1000 + (float)Flap_Idx / 40;
-        }
-        if (T < 0.2) T = 0.3f;
-        DrawSpeedTrend(T);
-        Invoke("Speed_Equalize", T * speedbandspeed);
+  
+        int DeltaN1 = N1-N1For(CAltitude,CVS,CSpeed);
+        SpeedTime = (DeltaN1==0) ? 1 : (DeltaN1 > 0) ? 2000 / Mathf.Abs((float) DeltaN1): 5380 / Mathf.Abs((float)DeltaN1);
+        if (SpeedTime > 5) SpeedTime = 5;
+        if (SpeedTime < 0.3) SpeedTime = 0.3f;
+        DrawSpeedTrend(SpeedTime);
+        Debug.Log("DN :    " + DeltaN1 + " z : " + 10* SpeedTime);
+        Invoke("Speed_Equalize", SpeedTime * speedbandspeed);
     }
     private void SetAttPitch(int P)
     {
@@ -508,6 +479,22 @@ public class Calculator : MonoBehaviour
         double s2 = (vv3 - vv4) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (Speed - M[F - 1, 2, 0]) + vv4;
         return (int)((s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2);
     }
+    public int N1For(double Altitude, double VS, double Speed)
+    {
+        if (Altitude > 39900) Altitude = 39900;
+        if (Altitude < 0) Altitude = 0;
+
+        int F = 8 - Mathf.FloorToInt((float)Altitude / 5000);
+        int i = 2;// for N1 only
+
+        double vv1 = (M[F, 0, i] - M[F, 1, i]) / -M[F, 1, 0] * (VS - M[F, 1, 0]) + M[F, 1, i];
+        double vv2 = (M[F, 2, i] - M[F, 3, i]) / -M[F, 3, 0] * (VS - M[F, 3, 0]) + M[F, 3, i];
+        double vv3 = (M[F - 1, 0, i] - M[F - 1, 1, i]) / -M[F - 1, 1, 0] * (VS - M[F - 1, 1, 0]) + M[F - 1, 1, i];
+        double vv4 = (M[F - 1, 2, i] - M[F - 1, 3, i]) / -M[F - 1, 3, 0] * (VS - M[F - 1, 3, 0]) + M[F - 1, 3, i];
+        double s1 = (vv1 - vv2) / (M[F, 0, 0] - M[F, 2, 0]) * (Speed - M[F, 2, 0]) + vv2;
+        double s2 = (vv3 - vv4) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (Speed - M[F - 1, 2, 0]) + vv4;
+        return (int)((s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2);
+    }
     private void SetN1FF()
     {
         if (N1 > 10000) N1 = 10000;
@@ -552,9 +539,9 @@ public class Calculator : MonoBehaviour
         if (co.isOn)
         {
             RSpeed = (int)Mach2Speed(RMach);
-            if (CAltitude < 22720) co.isOn = false;
+            if (CAltitude < 26400) co.isOn = false;
         }
-        if (CAltitude < 22720) co.enabled = false; else co.enabled = true;
+        if (CAltitude < 26400) co.enabled = false; else co.enabled = true;
 
     }
     public void FUP_Click()
