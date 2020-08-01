@@ -163,7 +163,7 @@ public class Calculator : MonoBehaviour
     }
     private void Start()
     {
-
+        Debug.Log(CrossOverAltitude(350,0.9));
         RAltitude = (int)CAltitude;
         RSpeed = (int)CSpeed;
         RVS = CVS;
@@ -386,7 +386,7 @@ public class Calculator : MonoBehaviour
         if (SpeedTime > 5) SpeedTime = 5;
         if (SpeedTime < 0.3) SpeedTime = 0.3f;
         DrawSpeedTrend(SpeedTime);
-        Debug.Log("DN :    " + DeltaN1 + " z : " + 10* SpeedTime);
+      
         Invoke("Speed_Equalize", SpeedTime * speedbandspeed);
     }
     private void SetAttPitch(int P)
@@ -527,6 +527,11 @@ public class Calculator : MonoBehaviour
         float TAS_ = (float)Mach * SS;
         return Mathf.Sqrt(Mathf.Pow(p * (Mathf.Pow(TAS_ * TAS_ / 1653125 + 1, 3.5f) - 1) + 1, 0.2857f) - 1) * Mathf.Sqrt(5) * 661.4787;
 
+    }
+    public static double CrossOverAltitude(double Speed,double Mach)
+    {
+        float ro =(Mathf.Pow(1 + 0.2f * Mathf.Pow((float)Speed / 661.48f, 2), 3.5f) - 1) / (Mathf.Pow((float)(1 + 0.2 * Mach * Mach), 3.5f) - 1);
+        return Mathf.Floor( 145442.16f * (1 - Mathf.Pow(ro, 0.1902631f)));
     }
     private void FuelandMach()
     {
