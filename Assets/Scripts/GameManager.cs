@@ -22,7 +22,7 @@ public class GameManager : Singleton<GameManager>
 
     public RouteScriptableObject InitialRoute => initialRoute;
 
-    public int UnreachedNodeIndex => Aircraft.UnreachedVertex.CurrentLine;
+    public int UnreachedNodeIndex => Aircraft.UnreachedVertex.CurrentNodeIndex;
 
     public bool IsMod { get; private set; }
     bool queueEraseMode;
@@ -212,6 +212,9 @@ public class GameManager : Singleton<GameManager>
         ModeSetWithPosition.ClearModifiedFlags();
 
         ActiveRoute = ModeSetWithPosition;
+        
+        Aircraft.OnAppliedMod();
+        
         ModRoute = null;
         IsMod = false;
         MainScreen.Instance.DisplayOperation("0k");
@@ -220,6 +223,7 @@ public class GameManager : Singleton<GameManager>
         {
             SwitchThroughHeading();
         }
+        
     }
 
     public void EraseMod()

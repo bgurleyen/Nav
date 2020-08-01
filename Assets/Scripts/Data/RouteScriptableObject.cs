@@ -9,6 +9,7 @@ public class RouteScriptableObject : ScriptableObject
     public RoutePoint[] Points;
 
     static Aircraft Aircraft => GameManager.Instance.Aircraft;
+    public RoutePoint LastAddedPositionNode { get; private set; }
     
     public void InitIds()
     {
@@ -102,7 +103,7 @@ public class RouteScriptableObject : ScriptableObject
             {
                 intersectionTargetVertex = new PathVertexIndex
                 {
-                    CurrentLine = i,
+                    CurrentNodeIndex = i,
                     HeadingBefore = Geometry.GetHeadingOfDirection(_segmentB - _segmentA),
                     UnreachedPoint = _targetVertexIndex,
                     VertexPosition = _targetVertexPosition
@@ -387,14 +388,16 @@ public class RouteScriptableObject : ScriptableObject
     public RoutePoint AddPositionNode(float neededOffsetDistance = 0)
     {
         const float DISTANCE_THRESHOLD = 0.002f;
-        
-        if(Aircraft.ComputedDistanceLeft < DISTANCE_THRESHOLD || PositionVirtualNode.ComputedDistancePassed < DISTANCE_THRESHOLD )
+
+        if (Aircraft.ComputedDistanceLeft < DISTANCE_THRESHOLD ||
+            PositionVirtualNode.ComputedDistancePassed < DISTANCE_THRESHOLD)
         {
             Debug.LogWarning("Skipped add position node");
             return null;
         }
 
-        RoutePoint _insertionNode;
+        var _activeNextNodeIndex = PositionVirtualNode.PassedNodeIndex + 1;
+        var _routeNextNode = Points[_activeNextNodeIndex];
 
         if (Aircraft.IsOnPath)
         {
@@ -404,7 +407,7 @@ public class RouteScriptableObject : ScriptableObject
 
             var _activeDistancePassed = PositionVirtualNode.ComputedDistancePassed;
 
-            _insertionNode = new RoutePoint
+            LastAddedPositionNode = new RoutePoint
             {
                 Name = "_Position_",
                 Distance = _activeDistancePassed,
@@ -412,6 +415,11 @@ public class RouteScriptableObject : ScriptableObject
                 Details = "P",
                 ID = GetNewId(),
             };
+
+            var _differencePosition = _routeNextNode.Distance - _activeDistancePassed;
+            _routeNextNode.RawDegrees = _routeNextNode.RawDegrees;
+            _routeNextNode.Distance = _differencePosition;
+
         }
         else
         {
@@ -422,7 +430,7 @@ public class RouteScriptableObject : ScriptableObject
 
             var _differenceToPosition = Aircraft.Position - _routePreviousNode.CartesianPosition;
             var _updatedToAngle = Geometry.AngleBetween(_differenceToPosition, Vector2.up);
-            _insertionNode = new RoutePoint
+            LastAddedPositionNode = new RoutePoint
             {
                 Name = "_Position_",
                 Distance = (Aircraft.Position - _routePreviousNode.CartesianPosition).magnitude,
@@ -430,23 +438,20 @@ public class RouteScriptableObject : ScriptableObject
                 Details = "P",
                 ID = GetNewId(),
             };
+
+            var _differencePosition = _routeNextNode.CartesianPosition - Aircraft.Position;
+            var _updatedAngle = Geometry.AngleBetween(_differencePosition, Vector2.up);
+            _routeNextNode.RawDegrees = _updatedAngle;
+            _routeNextNode.Distance = _differencePosition.magnitude;
+
+
         }
 
         if (ActiveDirectApproach)
         {
-            _insertionNode.IndicateHiddenLine();
+            LastAddedPositionNode.IndicateHiddenLine();
         }
 
-        var _activeNextNodeIndex = PositionVirtualNode.PassedNodeIndex + 1;
-        var _routeNextNode = Points[_activeNextNodeIndex];
-        var _nextPosition = Geometry.GetNextPosition(Vector2.zero, _routeNextNode.Distance, _routeNextNode.Degrees);
-        
-
-        var _differencePosition = _nextPosition - Aircraft.Position;
-        var _updatedAngle = Geometry.AngleBetween(_differencePosition, Vector2.up);
-        
-        _routeNextNode.RawDegrees = _updatedAngle;
-        _routeNextNode.Distance = _differencePosition.magnitude;
 
         // replace set with new set that also contains insertion node
         var _newSet = new RoutePoint[Points.Length + 1];
@@ -455,7 +460,7 @@ public class RouteScriptableObject : ScriptableObject
         {
             if (i == _activeNextNodeIndex)
             {
-                _newSet[i] = _insertionNode;
+                _newSet[i] = LastAddedPositionNode;
                 _offset = 1;
             }
 
@@ -463,7 +468,9 @@ public class RouteScriptableObject : ScriptableObject
         }
 
         Points = _newSet;
-        return _insertionNode;
+
+
+        return LastAddedPositionNode;
     }
 }
 

@@ -2,6 +2,7 @@
 using System.Linq;
 using Gamelogic.Extensions;
 using UnityEngine;
+using UnityEngine.Profiling.Experimental;
 
 public class PathLines
 {
@@ -44,7 +45,10 @@ public class PathLines
                 continue;
             }
 
-            if (_line == null) continue;
+            if (_line == null)
+            {
+                continue;
+            }
             _computedLines[_currentIndex] = _line;
             _lastLine = _line;
 
@@ -98,17 +102,35 @@ public class PathLines
         return GetNextDestination(1, 0, out vertexIndex);
     }
 
+    public bool GetFirstDestinationFromNode(RoutePoint node, out PathVertexIndex vertexIndex)
+    {
+        oldPositionVertex = Vector3.zero;
+
+        var _currentNodeIndex = GameManager.Instance.ActiveRoute.GetIndex(node.ID);
+        var _heading = node.Degrees; // Not sure if matters, but it's not correct
+
+        vertexIndex = new PathVertexIndex
+        {
+            CurrentNodeIndex = _currentNodeIndex + 1,
+            UnreachedPoint = 0,
+            HeadingBefore = _heading,
+            VertexPosition = node.CartesianPosition
+        };
+
+        return true;
+    }
+
     Vector3 oldPositionVertex = Vector3.zero;
     /// <summary>
     /// 
     /// </summary>
-    /// <param name="currentLine">First line [0] is with no vertexes, [1] starts form (0,0)</param>
-    /// <param name="currentPoint"></param>
+    /// <param name="currentLineIndex">First line [0] is with no vertexes, [1] starts form (0,0)</param>
+    /// <param name="currentPointIndex"></param>
     /// <param name="vertexIndex"></param>
     /// <returns></returns>
-    public bool GetNextDestination(int currentLine, int currentPoint, out PathVertexIndex vertexIndex)
+    public bool GetNextDestination(int currentLineIndex, int currentPointIndex, out PathVertexIndex vertexIndex)
     {
-        if (GetNextComputedVertex(ComputedLines, currentLine, currentPoint, out var _nextPoint, out var _nextLine))
+        if (GetNextComputedVertex(ComputedLines, currentLineIndex, currentPointIndex, out var _nextPoint, out var _nextLine))
         {
             var _vertex = ComputedLines[_nextLine].Vertexes[_nextPoint];
             var _heading = Geometry.GetHeadingOfDirection(_vertex - oldPositionVertex);
@@ -116,7 +138,7 @@ public class PathLines
             
             vertexIndex = new PathVertexIndex
             {
-                CurrentLine = _nextLine,
+                CurrentNodeIndex = _nextLine,
                 UnreachedPoint = _nextPoint,
                 HeadingBefore = _heading,
                 VertexPosition = _vertex.To2DXY()
@@ -174,7 +196,7 @@ public class PathLines
 
 public struct PathVertexIndex
 {
-    public int CurrentLine;
+    public int CurrentNodeIndex;
     public int UnreachedPoint;
     public float HeadingBefore;
     public Vector2 VertexPosition;

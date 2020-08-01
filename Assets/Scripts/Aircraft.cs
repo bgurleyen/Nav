@@ -104,7 +104,7 @@ public class Aircraft
         }
     }
 
-    public void IndicateTargetHeading(float heading)
+    void IndicateTargetHeading(float heading)
     {
         TargetHeading = heading;
     }
@@ -134,17 +134,17 @@ public class Aircraft
         var _leftToAdvance = FrameDistance - _distanceLeft;
 
         // advance to next point
-        if (!GameManager.Instance.PathLines.GetNextDestination(UnreachedVertex.CurrentLine,
+        if (!GameManager.Instance.PathLines.GetNextDestination(UnreachedVertex.CurrentNodeIndex,
             UnreachedVertex.UnreachedPoint, out var _newUnreachedVertex))
         {
             throw new Exception("No destination could be found");
         }
 
         // reset walked distance if the line has increased
-        if (_newUnreachedVertex.CurrentLine != UnreachedVertex.CurrentLine)
+        if (_newUnreachedVertex.CurrentNodeIndex != UnreachedVertex.CurrentNodeIndex)
         {
             WalkedDistanceOnLine = 0;
-            if (GameManager.Instance.ActiveRoute.Points[_newUnreachedVertex.CurrentLine].IsAfterDiscontinuity)
+            if (GameManager.Instance.ActiveRoute.Points[_newUnreachedVertex.CurrentNodeIndex].IsAfterDiscontinuity)
             {
                 GameManager.Instance.SwitchThroughHeading();
             }
@@ -159,6 +159,21 @@ public class Aircraft
         ExecuteLerpMove(_leftToAdvance);
     }
 
+
+    public void OnAppliedMod()
+    {
+        // update path relation as just left from the just added position
+        if (!IsOnPath)
+        {
+            var _lastAddedPositionNode = GameManager.Instance.ActiveRoute.LastAddedPositionNode;
+            
+            if (GameManager.Instance.PathLines.GetFirstDestinationFromNode(_lastAddedPositionNode, out var _newUnreachedVertex) )
+            {
+                UnreachedVertex = _newUnreachedVertex;
+            }
+        }
+    }
+
     void AdvanceFreeFlight()
     {
         ExecuteStepHeadingCorrection();
@@ -167,7 +182,7 @@ public class Aircraft
 
     float GetWalkedDistanceLeftOnLine()
     {
-        return GameManager.Instance.PathLines.ComputedLines[UnreachedVertex.CurrentLine].ComputedLength -
+        return GameManager.Instance.PathLines.ComputedLines[UnreachedVertex.CurrentNodeIndex].ComputedLength -
                WalkedDistanceOnLine;
     }
 

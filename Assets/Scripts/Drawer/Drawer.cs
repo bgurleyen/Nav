@@ -97,6 +97,7 @@ public class Drawer : Singleton<Drawer>
         }
 
         GameManager.Instance.ModeSetWithPosition = ModRoute.Clone(); // refactor
+        
         DisplayMod.AddPositionNode();
 
         GameManager.Instance.PathLines.ComputeSet(DisplayMod, true);
