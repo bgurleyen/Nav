@@ -21,6 +21,8 @@ public class RoutePoint
     public bool IsCurrent { get; internal set; }
     public bool IsSelected { get; internal set; }
     public bool IsModified { get; internal set; }
+    public bool IsSpeedModified { get; internal set; }
+    public bool IsAltitudeModified { get; internal set; }
 
     public float Degrees => 360 - RawDegrees;
     public bool IsAfterDiscontinuity => Details.Contains("D");

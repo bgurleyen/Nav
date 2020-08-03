@@ -61,7 +61,7 @@ public class MainScreen : Singleton<MainScreen>
         }
     }
 
-    public void DisplayOperation(string value = Keywords.ERASE, string details = "RTE DATA")
+    public void DisplayOperation(string value = Keywords.ERASE, string details = "")
     {
         lastFLeft.text = $"<{value}";
         lastFRight.text = $"{details}";

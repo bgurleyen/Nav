@@ -4,9 +4,6 @@ using UnityEngine.UI;
 
 public class LegsNodeLine : MonoBehaviour
 {
-    public Color current;
-    public Image fLeftBackground;
-
     [Header("header")]
     public TMP_Text hLeft;
     public TMP_Text hMiddle;
@@ -14,9 +11,9 @@ public class LegsNodeLine : MonoBehaviour
     [Header("header full")]
     public TMP_Text hFull;
 
-    [Header("footer")]
-    public TMP_Text fLeft;
-    public TMP_Text fRight;
+    [Header("footer")] 
+    public BgText fLeft;
+    public BgText fRight;
 
     NodeSelection selection;
 
@@ -37,29 +34,49 @@ public class LegsNodeLine : MonoBehaviour
             hLeft.text = node.IsAfterDiscontinuity ? "" : $"{node.RawDegrees:000}°";
             hMiddle.text = node.IsAfterDiscontinuity ? "" : $"{_distance:F1}NM";
 
-            fLeft.text = node.Name;
-            var _speedColor = node.GetSpeedIsRestricted(out var _speedDisplayValue)
-                ? "#FF00C7"
-                : "#EBE0C9";
-            var _altitudeColor  = node.GetAltitudeIsRestricted(out var _altDisplayValue) 
-                ? "#FF00C7"
-                : "#EBE0C9";
-            
-            fRight.text =
-                $"<color={_speedColor}>{_speedDisplayValue} / <color={_altitudeColor}>{_altDisplayValue}";
-        }
+            if (node.IsModified)
+            {
+                fLeft.SetAsModified(node.Name);
+            }
+            else if (node.IsCurrent)
+            {
+                fLeft.SetAsMagenta(node.Name);
+            }
+            else
+            {
+                fLeft.SetAsDefault(node.Name);
+            }
 
-        if (node.IsModified)
-        {
-            fLeftBackground.color = MainScreen.Instance.ModifiedColor;
-        }
-        else if (node.IsCurrent)
-        {
-            fLeftBackground.color = current;
-        }
-        else
-        {
-            fLeftBackground.color = MainScreen.Instance.IdleColor;
+            var _isFirstRestrictionTemp = true; //@#$ actually find if this is the first restriction
+
+            var _isSpeedRestriction = node.GetSpeedIsRestricted(out var _speedDisplayValue);
+            var _isAltRestriction = node.GetAltitudeIsRestricted(out var _altDisplayValue);
+            // var _speedColor = 
+            //     ? "#FF00C7"
+            //     : "#EBE0C9";
+            // var _altitudeColor  = 
+            //     ? "#FF00C7"
+            //     : "#EBE0C9";
+
+            var _speedState = node.IsSpeedModified
+                ? BgText.TextState.ModSelection
+                : _isSpeedRestriction
+                    ? _isFirstRestrictionTemp
+                        ? BgText.TextState.Magenta
+                        : BgText.TextState.TallText
+                    : BgText.TextState.Default;
+
+            var _altState = node.IsSpeedModified
+                ? BgText.TextState.ModSelection
+                : _isAltRestriction
+                    ? _isFirstRestrictionTemp
+                        ? BgText.TextState.Magenta
+                        : BgText.TextState.TallText
+                    : BgText.TextState.Default;
+
+            fRight.SetText("/",
+                new BgText.TextBuilder {State = _speedState, Text = _speedDisplayValue},
+                new BgText.TextBuilder {State = _altState, Text = _altDisplayValue});
         }
     }
 
@@ -70,8 +87,8 @@ public class LegsNodeLine : MonoBehaviour
         hMiddle.text = "";
         hFull.text = "";
 
-        fLeft.text = "□□□□□";
-        fRight.text = "";
+        fLeft.SetAsDefault( "□□□□□");
+        fRight.Clear();
     }
 
     internal void ShowEmpty()
@@ -80,8 +97,8 @@ public class LegsNodeLine : MonoBehaviour
         hMiddle.text = "";
         hFull.text = "";
 
-        fLeft.text = "";
-        fRight.text = "";
+        fLeft.Clear();
+        fRight.Clear();
 
     }
 }
