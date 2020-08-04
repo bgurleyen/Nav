@@ -22,7 +22,7 @@ public class GameManager : Singleton<GameManager>
 
     public RouteScriptableObject InitialRoute => initialRoute;
 
-    public int UnreachedNodeIndex => Aircraft.UnreachedVertex.CurrentNodeIndex;
+    public int UnreachedNodeIndex => Aircraft.PathLocalization.CurrentNodeIndex;
 
     public bool IsMod { get; private set; }
     bool queueEraseMode;
@@ -115,6 +115,7 @@ public class GameManager : Singleton<GameManager>
         MainScreen.Instance.DisplayOperation("ERASE");
         ModRoute.GetPoint(command.NodeId, out var _node);
         _node.RawSpeed = command.Regulation;
+        _node.IsSpeedModified = true;
         DataHandler.BuildSetDetails(ModRoute);
 
         OnOperationMade?.Invoke();
@@ -127,7 +128,9 @@ public class GameManager : Singleton<GameManager>
         
         MainScreen.Instance.DisplayOperation("ERASE");
         ModRoute.GetPoint(command.NodeId, out var _node);
+        //maybe move this to route class to also do some tests?
         _node.RawAltitude = command.Regulation;
+        _node.IsAltitudeModified = true;
         DataHandler.BuildSetDetails(ModRoute);
 
         OnOperationMade?.Invoke();

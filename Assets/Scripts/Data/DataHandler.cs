@@ -6,6 +6,8 @@ public class DataHandler
     public static void BuildSetDetails(RouteScriptableObject route)
     {
         BuildAltitudes(route);
+
+        
         BuildSpeeds(route);
     }
 
@@ -25,6 +27,17 @@ public class DataHandler
             else
             {
                 _point.SetSpeedComputed(_lastRegulation);
+            }
+        }
+        
+        set.FirstSpeedRegulationNodeId = -1;
+        for (var i = 1; i < set.Points.Length; i++)
+        {
+            var _point = set.Points[i];
+            if (_point.IsSpeedRegulated )
+            {
+                set.FirstSpeedRegulationNodeId = _point.ID;
+                return;
             }
         }
     }
@@ -91,6 +104,16 @@ public class DataHandler
                 {
                     ComputeRegulationsInterval(_regulations, set);
                 }
+            }
+        }
+        set.FirstAltRegulationNodeId = -1;
+        for (var i = 1; i < set.Points.Length; i++)
+        {
+            var _point = set.Points[i];
+            if (_point.AltitudeRegulation != RoutePoint.AltitudeFlags.NotSet)
+            {
+                set.FirstAltRegulationNodeId = _point.ID;
+                return;
             }
         }
     }

@@ -47,7 +47,6 @@ public class LegsNodeLine : MonoBehaviour
                 fLeft.SetAsDefault(node.Name);
             }
 
-            var _isFirstRestrictionTemp = true; //@#$ actually find if this is the first restriction
 
             var _isSpeedRestriction = node.GetSpeedIsRestricted(out var _speedDisplayValue);
             var _isAltRestriction = node.GetAltitudeIsRestricted(out var _altDisplayValue);
@@ -61,20 +60,20 @@ public class LegsNodeLine : MonoBehaviour
             var _speedState = node.IsSpeedModified
                 ? BgText.TextState.ModSelection
                 : _isSpeedRestriction
-                    ? _isFirstRestrictionTemp
+                    ? node.ID == LegsScreen.VisibleRoute.FirstSpeedRegulationNodeId
                         ? BgText.TextState.Magenta
                         : BgText.TextState.TallText
-                    : BgText.TextState.Default;
+                    : BgText.TextState.SmallText;
 
-            var _altState = node.IsSpeedModified
+            var _altState = node.IsAltitudeModified
                 ? BgText.TextState.ModSelection
                 : _isAltRestriction
-                    ? _isFirstRestrictionTemp
+                    ? node.ID == LegsScreen.VisibleRoute.FirstAltRegulationNodeId
                         ? BgText.TextState.Magenta
                         : BgText.TextState.TallText
-                    : BgText.TextState.Default;
+                    : BgText.TextState.SmallText;
 
-            fRight.SetText("/",
+            fRight.SetText(true,"/",
                 new BgText.TextBuilder {State = _speedState, Text = _speedDisplayValue},
                 new BgText.TextBuilder {State = _altState, Text = _altDisplayValue});
         }

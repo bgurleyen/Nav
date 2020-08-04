@@ -20,23 +20,23 @@ public class BgText : MonoBehaviour
     
     public void SetAsModified(string text)
     {
-        SetText(null, new TextBuilder{ State = TextState.ModSelection, Text = text});
+        SetText(false, null, new TextBuilder{ State = TextState.ModSelection, Text = text});
     }
 
     public void SetAsDefault(string text)
     {
         
-        SetText(null, new TextBuilder{ State = TextState.Default, Text = text});
+        SetText(false, null, new TextBuilder{ State = TextState.Default, Text = text});
     }
 
     public void SetAsMagenta(string text)
     {
-        SetText(null, new TextBuilder{ State = TextState.Magenta, Text = text});
+        SetText(false, null, new TextBuilder{ State = TextState.Magenta, Text = text});
     }
 
-    public void SetText(string separator, params TextBuilder[] parts)
+    public void SetText(bool monospace, string separator, params TextBuilder[] parts)
     {
-        label.text = string.Empty;
+        label.text = monospace ? "<mspace=0.52em>" : "";
         for (var i = 0; i < parts.Length; i++)
         {
             if (i != 0 && !string.IsNullOrEmpty(separator))
@@ -46,8 +46,8 @@ public class BgText : MonoBehaviour
             var _part = parts[i];
             switch (_part.State)
             {
-                case TextState.Default:
-                    label.text += _part.Text;
+                case TextState.SmallText:
+                    label.text += $"<size=35>{_part.Text}</size>";
                     break;
                 case TextState.ModSelection:
                     label.text += $"<mark=#{ColorUtility.ToHtmlStringRGBA(modifiedBackground)}>{_part.Text}</mark>";
@@ -55,8 +55,13 @@ public class BgText : MonoBehaviour
                 case TextState.Magenta:
                     label.text += $"<color=#{ColorUtility.ToHtmlStringRGB(magentaColor)}>{_part.Text}</color>";
                     break;
+                case TextState.Default:
+                case TextState.TallText:
+                    label.text += _part.Text;
+                    break;
             }
         }
+        //<size=46><font="HelveticaNeue-Bold SDF"><line-height=49> </line-height></font></size>
     }
     
     
@@ -69,6 +74,7 @@ public class BgText : MonoBehaviour
     public enum TextState
     {
         Default, ModSelection, Magenta,
-        TallText
+        TallText,
+        SmallText
     }
 }

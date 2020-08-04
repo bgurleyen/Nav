@@ -6,11 +6,11 @@ using UnityEngine;
 public class LegsScreen : ScreenBase
 {
     public LegsNodeLine[] nodes;
+    public static RouteScriptableObject VisibleRoute => IsMod ? ModRoute : ActiveRoute;
 
     static RouteScriptableObject ActiveRoute => GameManager.Instance.ActiveRoute;
     static RouteScriptableObject ModRoute => GameManager.Instance.ModRoute;
     static bool IsMod => GameManager.Instance.IsMod;
-    static RouteScriptableObject VisibleRoute => IsMod ? ModRoute : ActiveRoute;
     static int StartingNodeIndex => GameManager.Instance.UnreachedNodeIndex;
     static MainScreen Main => MainScreen.Instance;
     int NodesPerPage => nodes.Length;

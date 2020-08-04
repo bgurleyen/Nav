@@ -5,6 +5,8 @@ using System.Linq;
 public class RouteScriptableObject : ScriptableObject
 {
     public bool ActiveDirectApproach { get; private set; }
+    public int FirstSpeedRegulationNodeId { get; set; }
+    public int FirstAltRegulationNodeId { get; set; }
     
     public RoutePoint[] Points;
 
@@ -63,6 +65,8 @@ public class RouteScriptableObject : ScriptableObject
     {
         var _newSet = CreateInstance<RouteScriptableObject>();// new DataSetScriptableObject();
         _newSet.ActiveDirectApproach = ActiveDirectApproach;
+        _newSet.FirstAltRegulationNodeId = FirstAltRegulationNodeId;
+        _newSet.FirstSpeedRegulationNodeId = FirstSpeedRegulationNodeId;
         _newSet.Points = new RoutePoint[Points.Length];
         for (var i = 0; i < Points.Length; i++)
         {
@@ -165,6 +169,8 @@ public class RouteScriptableObject : ScriptableObject
         for (var i = 0; i < Points.Length; i++)
         {
             Points[i].IsModified = false;
+            Points[i].IsSpeedModified = false;
+            Points[i].IsAltitudeModified = false;
         }
     }
 

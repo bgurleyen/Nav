@@ -18,7 +18,10 @@ public class RoutePoint
     public AltitudeData Altitude { get; private set; } = new AltitudeData();
     public SpeedData Speed { get; private set; } = new SpeedData();
 
-    public bool IsCurrent { get; internal set; }
+    // @#$ refactor this
+    public bool IsCurrent =>
+        GameManager.Instance.ActiveRoute.GetPointAt(GameManager.Instance.Aircraft.PathLocalization.CurrentNodeIndex,
+            out var _node) && _node.ID == ID;
     public bool IsSelected { get; internal set; }
     public bool IsModified { get; internal set; }
     public bool IsSpeedModified { get; internal set; }
@@ -64,7 +67,7 @@ public class RoutePoint
             Distance = Distance,
             RawSpeed = RawSpeed,
             RawAltitude = RawAltitude,
-            IsCurrent = IsCurrent,
+            // IsCurrent = IsCurrent,
             IsSelected = IsSelected,
             IsModified = IsModified,
             Altitude = Altitude ?? Altitude.Clone(),

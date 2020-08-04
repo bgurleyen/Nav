@@ -12,8 +12,7 @@ public class MainScreen : Singleton<MainScreen>
     [SerializeField] Color idle;
     
     [Header("top header")]
-    [SerializeField] TMP_Text leftInfo1;
-    [SerializeField] Image leftInfo1Background;
+    [SerializeField] BgText leftInfo1;
     [SerializeField] TMP_Text leftInfo2;
     [SerializeField] TMP_Text title;
     [SerializeField] TMP_Text pageNumber;
@@ -40,8 +39,14 @@ public class MainScreen : Singleton<MainScreen>
     public void UpdatePageInfo(int currentPage, int totalPages, bool isMod, string pageTitle)
     {
         pageNumber.text = $"{currentPage + 1}/{totalPages}";
-        leftInfo1.text = isMod ? "MOD" : "ACT";
-        leftInfo1Background.color = isMod ? ModifiedColor : IdleColor;
+        if (isMod)
+        {
+            leftInfo1.SetAsModified("MOD");
+        }
+        else
+        {
+            leftInfo1.SetAsDefault("ACT");
+        }
         title.text = pageTitle;
     }
 
