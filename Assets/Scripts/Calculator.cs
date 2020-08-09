@@ -163,7 +163,6 @@ public class Calculator : MonoBehaviour
     }
     private void Start()
     {
-        Debug.Log(CrossOverAltitude(350,0.9));
         RAltitude = (int)CAltitude;
         RSpeed = (int)CSpeed;
         RVS = CVS;
@@ -509,18 +508,18 @@ public class Calculator : MonoBehaviour
         txtFF.text = "" + ((dispFF + lastdigit) / 100).ToString("0.00");
 
     }
-    public static double Speed2Mach(double Speed)
+    public static double Speed2Mach(double Speed,double Altitude)
     {
-        double Altitude = CAltitude > 39900 ? 39900 : CAltitude;
+        Altitude = Altitude > 39900 ? 39900 : Altitude;
 
         int F = 8 - Mathf.FloorToInt((float)Altitude / 5000);
         float p = Mathf.Lerp(Pressure[F], Pressure[F - 1], (float)(Altitude % 5000) / 5000);
 
         return Mathf.Sqrt(Mathf.Pow(1 / p * (Mathf.Pow((float)Speed * (float)Speed / 2187771 + 1, 3.5f) - 1) + 1, 0.2857f) - 1) * Mathf.Sqrt(5);
     }
-    public static double Mach2Speed(double Mach)
+    public static double Mach2Speed(double Mach,double Altitude)
     {
-        double Altitude = CAltitude > 39900 ? 39900 : CAltitude;
+        Altitude = Altitude > 39900 ? 39900 : Altitude;
         int F = 8 - Mathf.FloorToInt((float)Altitude / 5000);
         float p = Mathf.Lerp(Pressure[F], Pressure[F - 1], (float)(Altitude % 5000) / 5000);
         float SS = Mathf.Lerp(SoundSpeed[F], SoundSpeed[F - 1], (float)(Altitude % 5000) / 5000);
@@ -538,12 +537,12 @@ public class Calculator : MonoBehaviour
         totalFuel -= (double)FF * 2 / 3600;                                                     //Fuel
         txtTotalFuel.text = "" + System.Math.Round(totalFuel / 100, 2);
 
-        CMach = Speed2Mach(CSpeed);
+        CMach = Speed2Mach(CSpeed,CAltitude);
         txtMach.text = CMach > 0.4 ? "." + System.Math.Round(CMach, 2) * 100 : "GS " + GS;
 
         if (co.isOn)
         {
-            RSpeed = (int)Mach2Speed(RMach);
+            RSpeed = (int)Mach2Speed(RMach,CAltitude);
             if (CAltitude < 26400) co.isOn = false;
         }
         if (CAltitude < 26400) co.enabled = false; else co.enabled = true;
@@ -680,8 +679,8 @@ public class Calculator : MonoBehaviour
         if (Calculator.Instance.co.isOn)                                    //Mach
         {
             if (Calculator.Instance.RMach < 0.6) Calculator.Instance.RMach = 0.6;
-            if (Calculator.Instance.RMach > Speed2Mach(PFD_Animation.LimitSpeed)) Calculator.Instance.RMach = Speed2Mach(PFD_Animation.LimitSpeed);
-            RSpeed = (int)Mach2Speed(Calculator.Instance.RMach);
+            if (Calculator.Instance.RMach > Speed2Mach(PFD_Animation.LimitSpeed,CAltitude)) Calculator.Instance.RMach = Speed2Mach(PFD_Animation.LimitSpeed,CAltitude);
+            RSpeed = (int)Mach2Speed(Calculator.Instance.RMach, CAltitude);
             Calculator.Instance.txtRSpeed.text = "" + System.Math.Round(Calculator.Instance.RMach, 2);
         }
         else
@@ -783,7 +782,7 @@ public class Calculator : MonoBehaviour
         double[,] MVS = new double[5, 2] { { -800, -280 }, { -680, -520 }, { -500, -400 }, { -430, -140 }, { -420, -240 } };
         if (co.isOn) // on mach
         {
-            RMach = Speed2Mach(RSpeed);
+            RMach = Speed2Mach(RSpeed,CAltitude);
             txtRSpeed.text = "" + System.Math.Round(RMach, 2);
             txtRSpeed_overTape.text = txtRSpeed.text;
             for (int i = 0; i < 4; i++)
@@ -795,7 +794,7 @@ public class Calculator : MonoBehaviour
         }
         else
         {
-            RSpeed = (int)Mach2Speed(RMach);
+            RSpeed = (int)Mach2Speed(RMach, CAltitude);
             txtRSpeed.text = "" + RSpeed;
             txtRSpeed_overTape.text = txtRSpeed.text;
             for (int i = 0; i < 4; i++)

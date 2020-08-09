@@ -59,7 +59,7 @@ public class PFD_Animation : MonoBehaviour
     {
         RSpeed = Calculator.RSpeed;
         CSpeed = Calculator.CSpeed;
-        int MachLimSpeed = (int)Calculator.Mach2Speed(0.82);
+        int MachLimSpeed = (int)Calculator.Mach2Speed(0.82,Calculator.CAltitude);
         speedTape.transform.localPosition = new Vector2(-150, (float)-CSpeed * 2 + 440);
         CheckSpeedIndicator();
         int LGLim = Calculator.LGDown ? 291 : 429;
