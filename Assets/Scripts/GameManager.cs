@@ -140,11 +140,16 @@ public class GameManager : Singleton<GameManager>
         cachedCommands.Add(command);
 
         ModRoute.GetPoint(command.FromNodeId, out var _node);
-        MainScreen.Instance.DisplayOperation("ERASE", $"{_node.RawDegrees:000}°");
+        MainScreen.Instance.DisplayOperation("ERASE", ToDegreesDisplay(_node.RawDegrees));
         ModRoute.ShortcutNodes(command.FromNodeId, command.ToNodeId, out var _);
         DataHandler.BuildSetDetails(ModRoute);
 
         OnOperationMade?.Invoke();
+    }
+
+    static string ToDegreesDisplay(float value)
+    {
+        return $"{value:000}°";
     }
 
     public void ExecuteInsertRelativeOnDirectionOnMod(ExecuteRelativeOnDirectionOnMod command)
@@ -179,7 +184,7 @@ public class GameManager : Singleton<GameManager>
 
         ModRoute.CreateLinearApproach(command.ToNodeId, command.Angle);
         DataHandler.BuildSetDetails(ModRoute);
-        MainScreen.Instance.DisplayOperation(MainScreen.Keywords.ERASE);
+        MainScreen.Instance.DisplayOperation(MainScreen.Keywords.ERASE, ToDegreesDisplay(command.Angle), true );
 
         OnOperationMade?.Invoke();
     }

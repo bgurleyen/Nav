@@ -430,7 +430,6 @@ public class RouteScriptableObject : ScriptableObject
         
             _routeNextNode.RawDegrees = _updatedAngle;
             _routeNextNode.Distance = _differencePosition.magnitude;
-
         }
         else
         {

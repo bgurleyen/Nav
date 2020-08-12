@@ -16,7 +16,11 @@ public class BgText : MonoBehaviour
     {
         label.text = "";
     }
-    
+
+    public void SetAsTall(string text)
+    {
+        SetText(false, null, new TextBuilder{ State = TextState.TallText, Text = text});
+    }
     
     public void SetAsModified(string text)
     {
@@ -25,7 +29,6 @@ public class BgText : MonoBehaviour
 
     public void SetAsDefault(string text)
     {
-        
         SetText(false, null, new TextBuilder{ State = TextState.Default, Text = text});
     }
 
@@ -46,8 +49,8 @@ public class BgText : MonoBehaviour
             var _part = parts[i];
             switch (_part.State)
             {
-                case TextState.SmallText:
-                    label.text += $"<size=35>{_part.Text}</size>";
+                case TextState.TallText:
+                    label.text += _part.Text;
                     break;
                 case TextState.ModSelection:
                     label.text += $"<mark=#{ColorUtility.ToHtmlStringRGBA(modifiedBackground)}>{_part.Text}</mark>";
@@ -56,8 +59,8 @@ public class BgText : MonoBehaviour
                     label.text += $"<color=#{ColorUtility.ToHtmlStringRGB(magentaColor)}>{_part.Text}</color>";
                     break;
                 case TextState.Default:
-                case TextState.TallText:
-                    label.text += _part.Text;
+                case TextState.SmallText:
+                    label.text += $"<size=35>{_part.Text}</size>";
                     break;
             }
         }

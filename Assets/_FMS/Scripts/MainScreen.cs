@@ -18,10 +18,11 @@ public class MainScreen : Singleton<MainScreen>
     [SerializeField] TMP_Text lastHLeft;
     [SerializeField] TMP_Text lastHRight;
     [SerializeField] TMP_Text lastFLeft;
-    [SerializeField] TMP_Text lastFRight;
+    [SerializeField] BgText lastFRight;
+    
 
     [Header("scratch pad")]
-    [SerializeField] TMP_Text scratchPadText;
+    [SerializeField] BgText scratchPadText;
 
 
     public string LastLineLeft => lastFLeft.text;
@@ -42,18 +43,27 @@ public class MainScreen : Singleton<MainScreen>
 
     public void UpdateScratchPad(string buffer, bool withStatus = true)
     {
-        scratchPadText.text = buffer;
+        scratchPadText.SetAsDefault(buffer);
         if (withStatus)
         {
             lastFLeft.text = "ok";
         }
     }
 
-    public void DisplayOperation(string value , string details = "")
+    public void DisplayOperation(string value , string details = "", bool tallDetails= false)
     {
         lastFLeft.text = $"<{value}";
-        lastFRight.text = $"{details}";
-        scratchPadText.text = "";
+        switch (tallDetails)
+        {
+            case true:
+                lastFRight.SetAsTall(details);
+                break;
+            default:
+                lastFRight.SetAsDefault(details);
+                break;
+        }
+
+        scratchPadText.Clear();
     }
     
     public static class Keywords

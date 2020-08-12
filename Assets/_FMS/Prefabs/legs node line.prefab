@@ -915,6 +915,31 @@ PrefabInstance:
       propertyPath: m_Name
       value: f left
       objectReference: {fileID: 0}
+    - target: {fileID: 6936978817473298699, guid: d65278865393d5c4b88630892d46c97c,
+        type: 3}
+      propertyPath: m_text
+      value: NORTA
+      objectReference: {fileID: 0}
+    - target: {fileID: 6936978817473298699, guid: d65278865393d5c4b88630892d46c97c,
+        type: 3}
+      propertyPath: m_textInfo.characterCount
+      value: 5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6936978817473298699, guid: d65278865393d5c4b88630892d46c97c,
+        type: 3}
+      propertyPath: m_textInfo.wordCount
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6936978817473298699, guid: d65278865393d5c4b88630892d46c97c,
+        type: 3}
+      propertyPath: m_textInfo.lineCount
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6936978817473298699, guid: d65278865393d5c4b88630892d46c97c,
+        type: 3}
+      propertyPath: m_textInfo.pageCount
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d65278865393d5c4b88630892d46c97c, type: 3}
 --- !u!224 &7627215725755384643 stripped
