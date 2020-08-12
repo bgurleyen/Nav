@@ -425,7 +425,6 @@ public class RouteScriptableObject : ScriptableObject
             var _differencePosition = _routeNextNode.Distance - _activeDistancePassed;
             _routeNextNode.RawDegrees = _routeNextNode.RawDegrees;
             _routeNextNode.Distance = _differencePosition;
-
         }
         else
         {

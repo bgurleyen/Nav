@@ -1,10 +1,6 @@
-﻿using System;
-using Gamelogic.Extensions;
-using System.Collections;
-using System.Collections.Generic;
+﻿using Gamelogic.Extensions;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class MainScreen : Singleton<MainScreen>
 {
@@ -30,12 +26,6 @@ public class MainScreen : Singleton<MainScreen>
 
     public string LastLineLeft => lastFLeft.text;
 
-    public Color ModifiedColor => modified;
-    public Color IdleColor => idle;
-
-    public TMP_Text ScratchPadText => scratchPadText;
-
-
     public void UpdatePageInfo(int currentPage, int totalPages, bool isMod, string pageTitle)
     {
         pageNumber.text = $"{currentPage + 1}/{totalPages}";
@@ -50,13 +40,6 @@ public class MainScreen : Singleton<MainScreen>
         title.text = pageTitle;
     }
 
-    // public void DisplayInfo(string nodeName)
-    // {
-    //     nodeNameTemp = nodeName;
-    //     scratchPadText.text = nodeName;
-    //     lastFLeft.text = $"ok";
-    // }
-
     public void UpdateScratchPad(string buffer, bool withStatus = true)
     {
         scratchPadText.text = buffer;
@@ -66,7 +49,7 @@ public class MainScreen : Singleton<MainScreen>
         }
     }
 
-    public void DisplayOperation(string value = Keywords.ERASE, string details = "")
+    public void DisplayOperation(string value , string details = "")
     {
         lastFLeft.text = $"<{value}";
         lastFRight.text = $"{details}";

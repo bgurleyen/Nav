@@ -20,8 +20,6 @@ public class GameManager : Singleton<GameManager>
     public RouteScriptableObject ModeSetWithPosition;
     public FixedPointsScriptableObject FixedPoints;
 
-    public RouteScriptableObject InitialRoute => initialRoute;
-
     public int UnreachedNodeIndex => Aircraft.PathLocalization.CurrentNodeIndex;
 
     public bool IsMod { get; private set; }
@@ -167,9 +165,9 @@ public class GameManager : Singleton<GameManager>
         CheckModForOperation();
         cachedCommands.Add(command);
 
-        ModRoute.AddRelativeNodeBefore(command.FromNodeId, command.RawDegrees, command.Distance, out var _, true);
+        ModRoute.AddRelativeNodeBefore(command.FromNodeId, command.RawDegrees, command.Distance, out _, true);
         DataHandler.BuildSetDetails(ModRoute);
-        MainScreen.Instance.DisplayOperation("ERASE");
+        MainScreen.Instance.DisplayOperation(MainScreen.Keywords.ERASE);
 
         OnOperationMade?.Invoke();
     }
@@ -181,7 +179,7 @@ public class GameManager : Singleton<GameManager>
 
         ModRoute.CreateLinearApproach(command.ToNodeId, command.Angle);
         DataHandler.BuildSetDetails(ModRoute);
-        MainScreen.Instance.DisplayOperation("ERASE");
+        MainScreen.Instance.DisplayOperation(MainScreen.Keywords.ERASE);
 
         OnOperationMade?.Invoke();
     }
@@ -189,7 +187,7 @@ public class GameManager : Singleton<GameManager>
     public void ReExecuteCachedCommands()
     {
         EraseMod();
-        var _cachedCommands = this.cachedCommands;
+        var _cachedCommands = cachedCommands;
 
         for (var i = 0; i < _cachedCommands.Count; i++)
         {

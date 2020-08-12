@@ -5,27 +5,28 @@ using UnityEngine;
 
 public class LegsScreen : ScreenBase
 {
-    public LegsNodeLine[] nodes;
+    [SerializeField] LegsNodeLine[] nodes;
+    
     public static RouteScriptableObject VisibleRoute => IsMod ? ModRoute : ActiveRoute;
-
+    
+    static bool IsMod => GameManager.Instance.IsMod;
     static RouteScriptableObject ActiveRoute => GameManager.Instance.ActiveRoute;
     static RouteScriptableObject ModRoute => GameManager.Instance.ModRoute;
-    static bool IsMod => GameManager.Instance.IsMod;
     static int StartingNodeIndex => GameManager.Instance.UnreachedNodeIndex;
     static MainScreen Main => MainScreen.Instance;
+    
     int NodesPerPage => nodes.Length;
-
-    DisplayNodesController nodesController;
-
-    NodeSelection selectionInfo;
-    NodeSelection lastSelectionClicked;
-
     RoutePoint GetSelectedPoint => selectionInfo == null ? null : 
         VisibleRoute.GetPoint(selectionInfo.LinkedId, out var _node) ? _node : null;
-
     RoutePoint LastSelectedPoint =>
         lastSelectionClicked == null ? null :
         VisibleRoute.GetPoint(lastSelectionClicked.LinkedId, out var _node) ? _node : null;
+
+    DisplayNodesController nodesController;
+    NodeSelection selectionInfo;
+    NodeSelection lastSelectionClicked;
+
+
 
 
     const string EraseTitle = "<ERASE";
