@@ -422,9 +422,15 @@ public class RouteScriptableObject : ScriptableObject
                 ID = GetNewId(),
             };
 
-            var _differencePosition = _routeNextNode.Distance - _activeDistancePassed;
-            _routeNextNode.RawDegrees = _routeNextNode.RawDegrees;
-            _routeNextNode.Distance = _differencePosition;
+            // the aircraft can be during a modification and so the angles are updated each fream
+            var _nextPosition = Geometry.GetNextPosition(Vector2.zero, _routeNextNode.Distance, _routeNextNode.Degrees);
+            var _differencePosition = _nextPosition - Aircraft.Position;
+            
+            var _updatedAngle = Geometry.AngleBetween(_differencePosition, Vector2.up);
+        
+            _routeNextNode.RawDegrees = _updatedAngle;
+            _routeNextNode.Distance = _differencePosition.magnitude;
+
         }
         else
         {
