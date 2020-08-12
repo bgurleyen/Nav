@@ -46,9 +46,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4638087e81455c84bbd5b49eb7325e3e, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mark: {fileID: 3245902935262049594}
+  mark: {fileID: 3245902935262049595}
   label: {fileID: 4100802902976092956}
-  drawer: {fileID: 988660702015700947}
+  lineRenderer: {fileID: 988660702015700947}
   showGuides: 0
 --- !u!120 &988660702015700947
 LineRenderer:

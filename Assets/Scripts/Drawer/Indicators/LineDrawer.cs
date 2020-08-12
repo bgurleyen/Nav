@@ -1,15 +1,25 @@
-﻿using Gamelogic.Extensions;
+﻿using System;
+using Gamelogic.Extensions;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class LineDrawer : MonoBehaviour
 {
-    [SerializeField] Transform mark;
+    [SerializeField] LineRenderer mark;
     [SerializeField] LabelText label;
 
-    [SerializeField] LineRenderer drawer;
+    [SerializeField] LineRenderer lineRenderer;
     [SerializeField] bool showGuides;
 
     MarkLine cacheLine;
+    Transform markTransform;
+    Transform labelTransform;
+
+    void Awake()
+    {
+        markTransform = mark.transform;
+        labelTransform = label.transform;
+    }
 
     public void Display(MarkLine line, RoutePoint routePoint, bool hiddenLabel, int fromPoint = 0)
     {
@@ -18,27 +28,32 @@ public class LineDrawer : MonoBehaviour
             cacheLine = line;
             if (line.Vertexes == null || line.Vertexes.Length == 0)
             {
-                drawer.positionCount = 0;
+                lineRenderer.positionCount = 0;
                 return;
             }
 
-            drawer.positionCount = line.Vertexes.Length - fromPoint;
+            lineRenderer.positionCount = line.Vertexes.Length - fromPoint;
             for (var i = fromPoint; i < line.Vertexes.Length; i++)
             {
-                drawer.SetPosition(i - fromPoint, line.Vertexes[i].To2DXY().ToDisplay());
+                lineRenderer.SetPosition(i - fromPoint, line.Vertexes[i].To2DXY().ToDisplay());
             }
         }
         else
         {
-            drawer.positionCount = 0;
+            lineRenderer.positionCount = 0;
         }
 
         if (!line.LinkedPoint.IsAfterDiscontinuity && !line.LinkedPoint.IsSkippable && !hiddenLabel)
         {
-            mark.localPosition = line.EndPosition.To2DXY().ToDisplay();
-            label.transform.localPosition = line.EndPosition.To2DXY().ToDisplay();
-            label.Init(routePoint.Name);
+            markTransform.localPosition = line.EndPosition.To2DXY().ToDisplay();
+            labelTransform.localPosition = line.EndPosition.To2DXY().ToDisplay();
+            var _color = !GameManager.Instance.IsMod && routePoint.IsCurrent
+                ? Drawer.Instance.CMagenta 
+                : Color.white;
+            label.Init(routePoint.Name, _color);
+            mark.startColor = mark.endColor = _color;
             label.gameObject.SetActive(true);
+            
         }
         else
         {

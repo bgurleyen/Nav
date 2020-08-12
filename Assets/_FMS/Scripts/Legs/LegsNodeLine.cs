@@ -80,7 +80,7 @@ public class LegsNodeLine : MonoBehaviour
     }
 
 
-    public void ShowAsDiscontinuity()
+    void ShowAsDiscontinuity()
     {
         hLeft.text = "THEN";
         hMiddle.text = "";
