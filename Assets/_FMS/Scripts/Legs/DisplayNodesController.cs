@@ -48,6 +48,8 @@
         var _discontinuityOffset = 0;
         var _hiddenOffset = 0;
         var _lastDiscontinuity = -1;
+        // this happens because the curves add distance and the position can become ahead. Needs to be dealt with in a more advanced way 
+        bool _positionIsTemporaryAhead = ActiveRoute.Points[StartingNodeIndex].IsPositionNode;
 
         for (var i = 1; i < VisibleRoute.Points.Length; i++) // may be optimised - cached
         {
@@ -58,7 +60,7 @@
 
             if (VisibleRoute.Points[i].IsAfterDiscontinuity)
             {
-                _lastDiscontinuity = i;
+                _lastDiscontinuity = i- (_positionIsTemporaryAhead ? 1 : 0);
             }
 
             if (VisibleRoute.Points[i - 1].IsAfterDiscontinuity)
@@ -78,7 +80,7 @@
         var _linkedId = _isEmpty ? -1: _point.ID;
 
         var _isStartingPoint = _linkedIndex == StartingNodeIndex;
-        var _isDiscontinuity = _lastDiscontinuity == _index;
+        var _isDiscontinuity = _lastDiscontinuity == _index ;
 
         return new NodeSelection
         {
