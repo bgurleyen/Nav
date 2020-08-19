@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using UnityEngine;
@@ -213,6 +214,12 @@ public class LegsScreen : ScreenBase
 
     public override void OnClearPress()
     {
+        // to generalize to all operations
+        if (ScratchPadInterpreter.IsDeletePending(scratchPadBuffer))
+        {
+            scratchPadBuffer = string.Empty;
+        }
+        
         if (scratchPadBuffer.Length > 0)
         {
             scratchPadBuffer = scratchPadBuffer.Remove(scratchPadBuffer.Length - 1);

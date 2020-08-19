@@ -61,6 +61,19 @@ public class RouteScriptableObject : ScriptableObject
         return _id;
     }
 
+    string GetNewName(string fromNode)
+    {
+        var _intro = fromNode.Substring(0, 3);
+        var _index = 1;
+
+        while (Points.Any(x=>x.Name == _intro + _index.ToString("00")))
+        {
+            _index++;
+        }
+
+        return _intro + _index.ToString("00");
+    }
+
     public RouteScriptableObject Clone()
     {
         var _newSet = CreateInstance<RouteScriptableObject>();// new DataSetScriptableObject();
@@ -207,7 +220,7 @@ public class RouteScriptableObject : ScriptableObject
 
         insertionNode = new RoutePoint
         {
-            Name = _node.Name + "01",
+            Name = GetNewName(_node.Name),
             Distance = _distanceFromAfter,
             RawDegrees = afterInsertion.RawDegrees,
             ID = GetNewId()
@@ -242,7 +255,7 @@ public class RouteScriptableObject : ScriptableObject
 
         insertionNode = new RoutePoint
         {
-            Name = _relativeFromNode.Name + "01",
+            Name = GetNewName(_relativeFromNode.Name),
             Distance = distance,
             RawDegrees = rawDegrees,
             ID = GetNewId()
@@ -314,7 +327,7 @@ public class RouteScriptableObject : ScriptableObject
         var _insertionAngle = Geometry.AngleBetween(_insertPosition, Vector2.up);
         insertionNode = new RoutePoint
         {
-            Name = _originalRelativeToNode.Name + "01",
+            Name = GetNewName(_originalRelativeToNode.Name),
             Distance = _insertPosition.magnitude,
             RawDegrees =_insertionAngle,
             ID = GetNewId()

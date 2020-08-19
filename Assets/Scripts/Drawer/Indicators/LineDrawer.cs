@@ -52,11 +52,13 @@ public class LineDrawer : MonoBehaviour
                 : Color.white;
             label.Init(routePoint.Name, _color);
             mark.startColor = mark.endColor = _color;
+            mark.gameObject.SetActive(true);
             label.gameObject.SetActive(true);
             
         }
         else
         {
+            mark.gameObject.SetActive(false);
             label.gameObject.SetActive(false);
         }
     }
