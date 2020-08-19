@@ -133,6 +133,7 @@ public class LegsScreen : ScreenBase
             scratchPadBuffer = GetSelectedPoint.Name;
             GetSelectedPoint.IsSelected = true;
             Main.UpdateScratchPad(scratchPadBuffer);
+            InterpretScratchpadOnTextChanged(false);
             return;
         }
 
