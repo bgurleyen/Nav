@@ -43,7 +43,7 @@ public class LineDrawer : MonoBehaviour
             lineRenderer.positionCount = 0;
         }
 
-        if (!line.LinkedPoint.IsAfterDiscontinuity && !line.LinkedPoint.IsSkippable && !hiddenLabel)
+        if ( !line.LinkedPoint.IsSkippable && !hiddenLabel)
         {
             markTransform.localPosition = line.EndPosition.To2DXY().ToDisplay();
             labelTransform.localPosition = line.EndPosition.To2DXY().ToDisplay();
