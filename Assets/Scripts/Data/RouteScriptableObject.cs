@@ -330,7 +330,8 @@ public class RouteScriptableObject : ScriptableObject
             Name = GetNewName(_originalRelativeToNode.Name),
             Distance = _insertPosition.magnitude,
             RawDegrees =_insertionAngle,
-            ID = GetNewId()
+            ID = GetNewId(),
+            Details = _originalRelativeToNode.IsAfterDiscontinuity  && showDiscontinuity ? "D" : ""
         };
 
         var _returnNode = _originalRelativeToNode.Clone();
