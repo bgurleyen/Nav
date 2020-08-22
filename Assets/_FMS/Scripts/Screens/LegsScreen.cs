@@ -75,7 +75,7 @@ public class LegsScreen : ScreenBase
     {
         Main.UpdatePageInfo(currentPage, TotalPages, IsMod, "LEGS");
 
-        Debug.Log("start");
+        // Debug.Log("start");
         for (var i = 0; i < nodes.Length; i++)
         {
             var _linkedSelection = nodesController.GetNodeInfoAtLineIndex(i, currentPage);

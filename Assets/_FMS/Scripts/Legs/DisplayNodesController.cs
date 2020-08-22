@@ -47,70 +47,85 @@ public class DisplayNodesController
     {
         var _totalLineIndex = lineIndex + currentPage * nodesPerPage;
 
-        var _discontinuityOffset = 0;
-        
-        // offset for skippable nodes
-        var _hiddenOffset = 0;
-        
-        var _lastDiscontinuity = -1;
-        
         // this happens because the curves add distance and the position can become ahead. Needs to be dealt with in a more advanced way 
         var _positionIsTemporaryAhead = ActiveRoute.Points[StartingNodeIndex].IsPositionNode;
 
-        var _computeLineIndex = 0;
+        var _thisIsDiscontinuity = false;
+        var _thisIsAfterDiscontinuity = false;
 
         var _linkedIndex = StartingNodeIndex + (_positionIsTemporaryAhead ? 1 : 0);
+        var _pointIsValid = false;
+        RoutePoint _linkedPoint = null;
+
         for (var i = 0; i <= _totalLineIndex; i++)
         {
-            
-        }
-        
-        // for (var i = 1; i < VisibleRoute.Points.Length; i++) // may be optimised - cached
-        // {
-        //     if (i > _totalLineIndex + _hiddenOffset + _discontinuityOffset )
-        //     {
-        //         break;
-        //     }
-        //
-        //     if (VisibleRoute.Points[i].IsAfterDiscontinuity)
-        //     {
-        //         _lastDiscontinuity = i - (_positionIsTemporaryAhead ? 1 : 0);
-        //     }
-        //
-        //     if (VisibleRoute.Points[i - 1].IsAfterDiscontinuity)
-        //     {
-        //         var _currentLinkedIndex = i - _discontinuityOffset + _hiddenOffset;
-        //         if (_currentLinkedIndex - 1 == _lastDiscontinuity)
-        //         {
-        //             _discontinuityOffset++;
-        //         }
-        //     }
-        //     
-        //     // only count hiddens after starting node since all are hidden and shortcuted for linear approach
-        //     if (i >= StartingNodeIndex && VisibleRoute.Points[i].IsSkippable)
-        //     {
-        //         _hiddenOffset++;
-        //     }
-        // }
+            _pointIsValid = VisibleRoute.GetPointAt(_linkedIndex, out _linkedPoint);
 
-         _linkedIndex = _totalLineIndex - _discontinuityOffset + _hiddenOffset;
-        var _isEmpty = !VisibleRoute.GetPointAt(_linkedIndex, out var _point);
-        var _linkedId = _isEmpty ? -1 : _point.ID;
+            var _handled = false;
+            var _canIncrement = false;
+            while (!_handled)
+            {
+                while (_pointIsValid && _linkedPoint.IsSkippable)
+                {
+                    _pointIsValid = VisibleRoute.GetPointAt(++_linkedIndex, out _linkedPoint);
+                }
+
+                if (!_pointIsValid)
+                {
+                    break;
+                }
+
+
+                if (_linkedPoint.IsAfterDiscontinuity)
+                {
+                    if (!_thisIsDiscontinuity)
+                    {
+                        _thisIsDiscontinuity = true;
+                        _handled = true;
+                    }
+                    else if (!_thisIsAfterDiscontinuity)
+                    {
+                        _thisIsAfterDiscontinuity = true;
+                        _handled = true;
+                    }
+                    else
+                    {
+                        _thisIsDiscontinuity = false;
+                        _thisIsAfterDiscontinuity = false;
+                        _pointIsValid = VisibleRoute.GetPointAt(++_linkedIndex, out _linkedPoint);
+                    }
+                }
+                else
+                {
+                    _thisIsDiscontinuity = false;
+                    _thisIsAfterDiscontinuity = false;
+                    _handled = true;
+                    _canIncrement = true;
+                }
+            }
+
+            if (_canIncrement)
+            {
+                if (i < _totalLineIndex)
+                {
+                    _linkedIndex++;
+                }
+            }
+        }
+
+
+        var _linkedId = _pointIsValid ? _linkedPoint.ID : -1;
 
         var _isStartingPoint = _linkedIndex == StartingNodeIndex;
 
-        var _thisIsSecondLineOfCurrentDiscontinuity = _lastDiscontinuity == _totalLineIndex - 1 + _hiddenOffset;
-        var _correction = _thisIsSecondLineOfCurrentDiscontinuity ? -1 : 0;
-        var _isDiscontinuity = _lastDiscontinuity + _discontinuityOffset + _correction == _totalLineIndex;
-
-        Debug.Log(
-            $"_linkedIndex:{_linkedIndex}  index:{_totalLineIndex}  discontinuityOffse:{_discontinuityOffset}  lastDiscont:{_lastDiscontinuity}  thisissecond:{_thisIsSecondLineOfCurrentDiscontinuity}");
+        // Debug.Log(
+        //     $"_linkedIndex:{_linkedIndex}  index:{_totalLineIndex} ");
 
         return new NodeSelection
         {
             LinkedId = _linkedId,
-            IsAddedDiscontinuity = _isDiscontinuity,
-            IsEmpty = _isEmpty,
+            IsAddedDiscontinuity = _thisIsDiscontinuity && !_thisIsAfterDiscontinuity,
+            IsEmpty = !_pointIsValid,
             IsStartingPoint = _isStartingPoint
         }; // not showing the first point as is NOW
     }
