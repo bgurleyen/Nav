@@ -414,8 +414,8 @@ public class Calculator : MonoBehaviour
         //DeltaAlt =  activeCurrentPosition.ComputedDistanceLeft * 318.43 + double.Parse(node.DisplayAltitude);
         Alt0 = double.Parse(node0.DisplayAltitude);
         Alt1 = double.Parse(node1.DisplayAltitude);
-        d = GameManager.Instance.Aircraft.ComputedDistanceLeft;
-        D = (d + PositionVirtualNode.ComputedDistancePassed); // Daniel: this will behave bad while free flight
+        d = GameManager.Instance.Aircraft.ComputedDistanceLeftOnSegment;
+        D = (d + GameManager.Instance.Aircraft.WalkedDistanceOnSegment); // Daniel: this will behave bad while free flight
 
         DeltaAlt = CAltitude - (Alt1 + (d * (Alt0 - Alt1)) / D);
         VDI_Text.text = (((DeltaAlt) > 50) || ((DeltaAlt) < -50)) ? "" + (int)DeltaAlt : "";

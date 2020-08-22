@@ -235,7 +235,7 @@ public class Drawer : Singleton<Drawer>
             case DrawerMode.Plan:
                 //rotate compass
                 compasPivot.SetLocalRotationZ(0);
-                mobilePlaneIndicatorPivot.position = GameManager.Instance.Aircraft.Position.ToDisplay();
+                mobilePlaneIndicatorPivot.position = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath.ToDisplay();
                 mobilePlaneIndicatorPivot.SetLocalRotationZ(-GameManager.Instance.Aircraft.Heading);
                 break;
             case DrawerMode.Suspeded:
@@ -441,9 +441,6 @@ public class Drawer : Singleton<Drawer>
             }
         }
 
-        // store cartesian position
-        nextPoint.CartesianPosition = line.EndPosition;
-
         return true;
     }
 
@@ -499,6 +496,6 @@ public class Drawer : Singleton<Drawer>
             return;
         }
 
-        Gizmos.DrawSphere(GameManager.Instance.Aircraft.Position.ToDisplay(), 0.05f);
+        Gizmos.DrawSphere(GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath.ToDisplay(), 0.05f);
     }
 }

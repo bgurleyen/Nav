@@ -96,8 +96,8 @@ public class Move : Singleton<Move>
                                         VirtualPtsPos[K - 50];
 
           
-            float x1 = GameManager.Instance.Aircraft.Position.x;
-            float y1 = GameManager.Instance.Aircraft.Position.y;
+            float x1 = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath.x;
+            float y1 = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath.y;
             float x2 = PtPos.x;
             float y2 = PtPos.y;
             float dx = x2 - x1;
@@ -153,7 +153,7 @@ public class Move : Singleton<Move>
                 {
                     Atc1.text = mode == 2 ? "Turn " + turnDirection(TrackToPoint(point)) + "Heading " + TrackToPoint(point) : "";
 
-                    if (DistanceFromRoute() < 30) PrvPos = GameManager.Instance.Aircraft.Position;
+                    if (DistanceFromRoute() < 30) PrvPos = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath;
 
                     if (Atc1.color == Color.red) Atc1.color = Color.white; else Atc1.color = Color.red;
 
@@ -200,9 +200,9 @@ public class Move : Singleton<Move>
 
             ATCCall();
 
-                OncekiPos = GameManager.Instance.Aircraft.Position; 
+                OncekiPos = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath; 
                 OncekiAlt = (int)Calculator.CAltitude;
-                myAC.transform.localPosition = GameManager.Instance.Aircraft.Position; //move AC on EditMap
+                myAC.transform.localPosition = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath; //move AC on EditMap
             
             if (PositionVirtualNode.PassedNodeIndex != prvWptIdx)
             { 

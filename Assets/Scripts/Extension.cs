@@ -8,7 +8,7 @@ public static class Extension
     {
         var _finalPosition = new Vector2(pos.x, pos.y);
 
-        var _walkedPosition = GameManager.Instance.Aircraft.Position;
+        var _walkedPosition = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath;
         var _walkedRotation = GameManager.Instance.Aircraft.Heading;
 
         switch (Drawer.Instance.Mode)

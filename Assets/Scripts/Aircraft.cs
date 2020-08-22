@@ -5,21 +5,25 @@ public class Aircraft
 {
     const float DeltaTime = 0.00003f;
     const float MaxTurningSpeed = 1f;
-
-    public Vector2 Position { get; private set; }
+    
+    // position that can be on the generated curved sections of the lines
+    public Vector2 PositionFreeOrOnCurvedPath { get; private set; }
+    
+    // position that is percentually represented on the straight segments only
+    public Vector2 PositionFreeOrOnSegment { get; private set; }
+    
     public float Heading { get; private set; } // Degrees based rotation
     public float TargetHeading { get; private set; }
-    public float WalkedDistanceOnLine { get; private set; }
-    
+    public float WalkedDistanceOnSegment { get; private set; }
     public PathVertexIndex PathLocalization;
 
-    public float ComputedDistanceLeft
+    public float ComputedDistanceLeftOnSegment
     {
         get
         {
             if (!IsFreeFlight && IsOnPath)
             {
-                return GetWalkedDistanceLeftOnLine();
+                return GetWalkedDistanceLeftOnSegment();
             }
 
             var _nextViableNodeIndex = PositionVirtualNode.PassedNodeIndex + 1;
@@ -28,7 +32,7 @@ public class Aircraft
                 _nextViableNodeIndex++;
             }
             return (GameManager.Instance.PathLines.GetNodePosition(_nextViableNodeIndex) -
-                    Position).magnitude;
+                    PositionFreeOrOnSegment).magnitude;
         }
     }
 
@@ -40,8 +44,9 @@ public class Aircraft
     public void ResetOnActiveSet(float aircraftSpeed, float altitude)
     {
         speed = aircraftSpeed;
-        Position = Vector2.zero;
-        WalkedDistanceOnLine = 0;
+        PositionFreeOrOnCurvedPath = Vector2.zero;
+        PositionFreeOrOnSegment = Vector2.zero;
+        WalkedDistanceOnSegment = 0;
 
         if (GameManager.Instance.PathLines.GetFirstDestination(out PathLocalization))
         {
@@ -64,12 +69,12 @@ public class Aircraft
 
     public void StartLNavMode()
     {
-        if (GameManager.Instance.ActiveRoute.FindFreeFlightExitPosition(out var _intersectionVertex, out var _distanceUntilVertex))
+        if (GameManager.Instance.ActiveRoute.FindFreeFlightExitPosition(out var _intersectionVertex, out var _distanceUntilLineIntersection))
         {
             IsFreeFlight = false;
 
             PathLocalization = _intersectionVertex;
-            WalkedDistanceOnLine = _distanceUntilVertex;
+            WalkedDistanceOnSegment = _distanceUntilLineIntersection;
         }
         else
         {
@@ -77,22 +82,33 @@ public class Aircraft
         }
     }
     
+    // on free flight
     void ExecuteStepMove()
     {
-        Position += CurrentDirection * FrameDistance;
+        PositionFreeOrOnCurvedPath += CurrentDirection * FrameDistance;
+        PositionFreeOrOnSegment = PositionFreeOrOnCurvedPath;
     }
 
     void ExecuteLerpMove(float stepDistance)
     {
         if (IsOnPath)
         {
-            WalkedDistanceOnLine += stepDistance;
+            WalkedDistanceOnSegment += stepDistance;
+            PositionFreeOrOnSegment = Vector2.Lerp(
+                PositionVirtualNode.CurrentSegment.StartPosition,
+                PositionVirtualNode.CurrentSegment.EndPosition,
+                WalkedDistanceOnSegment / PositionVirtualNode.GetNodeTo.Distance);
         }
 
-        var _distanceLeft = (PathLocalization.VertexPosition - Position).magnitude;
+        var _distanceLeft = (PathLocalization.VertexPosition - PositionFreeOrOnCurvedPath).magnitude;
         if (_distanceLeft > 0)
         {
-            Position = Vector2.Lerp(Position, PathLocalization.VertexPosition, stepDistance / _distanceLeft);
+            PositionFreeOrOnCurvedPath = Vector2.Lerp(PositionFreeOrOnCurvedPath, PathLocalization.VertexPosition, stepDistance / _distanceLeft);
+        }
+
+        if (!IsOnPath)
+        {
+            PositionFreeOrOnSegment = PositionFreeOrOnCurvedPath;
         }
     }
 
@@ -113,7 +129,7 @@ public class Aircraft
     {
         ExecuteStepHeadingCorrection();
         
-        var _distanceLeft = (PathLocalization.VertexPosition - Position).magnitude;
+        var _distanceLeft = (PathLocalization.VertexPosition - PositionFreeOrOnCurvedPath).magnitude;
 
         var _goesOver = _distanceLeft <= FrameDistance;
 
@@ -143,7 +159,7 @@ public class Aircraft
         // reset walked distance if the line has increased
         if (_newUnreachedVertex.CurrentNodeIndex != PathLocalization.CurrentNodeIndex)
         {
-            WalkedDistanceOnLine = 0;
+            WalkedDistanceOnSegment = 0;
             if (GameManager.Instance.ActiveRoute.Points[_newUnreachedVertex.CurrentNodeIndex].IsAfterDiscontinuity)
             {
                 GameManager.Instance.SwitchThroughHeading();
@@ -180,10 +196,10 @@ public class Aircraft
         ExecuteStepMove();
     }
 
-    float GetWalkedDistanceLeftOnLine()
+    float GetWalkedDistanceLeftOnSegment()
     {
-        return GameManager.Instance.PathLines.ComputedLines[PathLocalization.CurrentNodeIndex].ComputedLength -
-               WalkedDistanceOnLine;
+        return PositionVirtualNode.CurrentSegment.ComputedVertexLength -
+               WalkedDistanceOnSegment;
     }
 
     /// <summary>

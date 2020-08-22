@@ -16,7 +16,7 @@ public class DoubleCurve : Curve
     public void Init(Vector3 from, Vector3 offsetedFrom, RoutePoint middle, RoutePoint secondPoint, float angleBetween,
         float smallRadius, float bigRadius)
     {
-        ComputedLength = -1;
+        ComputedVertexLength = -1;
         StartPosition = from;
         StartOffsetPosition = offsetedFrom;
         EndPosition = Geometry.GetNextPosition(from, middle.Distance, middle.Degrees);

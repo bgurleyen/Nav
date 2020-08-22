@@ -5,6 +5,8 @@ public class DataHandler
 {
     public static void BuildSetDetails(RouteScriptableObject route)
     {
+        route.ComputeCartesianPositions();
+        
         BuildAltitudes(route);
 
         

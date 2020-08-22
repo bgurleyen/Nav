@@ -10,7 +10,7 @@ public class Curve : MarkLine
 
     public void Init( Vector3 from, Vector3 offsetedFrom, RoutePoint middle, RoutePoint secondPoint, float tangentToMiddle, float radius)
     {
-        ComputedLength = -1;
+        ComputedVertexLength = -1;
         CachedRadius = radius;
         StartPosition = from;
         StartOffsetPosition = offsetedFrom;

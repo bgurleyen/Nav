@@ -20,7 +20,7 @@ public class LegsNodeLine : MonoBehaviour
     public void DisplayNodeDetails(RoutePoint node, NodeSelection linkedInfo)
     {
         var _distance = linkedInfo.LinkedId == PositionVirtualNode.GetNodeTo.ID
-            ? GameManager.Instance.Aircraft.ComputedDistanceLeft
+            ? GameManager.Instance.Aircraft.ComputedDistanceLeftOnSegment
             : node.Distance;
 
         if (linkedInfo.IsAddedDiscontinuity)

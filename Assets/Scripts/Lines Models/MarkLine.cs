@@ -9,7 +9,7 @@ public class MarkLine : Line
     public Vector3 StartPosition { get; protected set; }
     public Vector3 EndOffsetPosition { get; protected set; }
     public Vector3 StartCurvePosition = Vector3.zero;
-    public float ComputedLength;
+    public float ComputedVertexLength;
     
     Vector3 lastPoint = Vector3.zero;
 
@@ -25,21 +25,21 @@ public class MarkLine : Line
     protected void ComputeDistanceForPoint(int pointIndex)
     {
         var _point = Vertexes[pointIndex];
-        if (ComputedLength == -1)
+        if (ComputedVertexLength == -1)
         {
             lastPoint = _point;
-            ComputedLength = 0;
+            ComputedVertexLength = 0;
             return;
         }
         var _nextSegment = (_point - lastPoint).magnitude;
 
-        ComputedLength += _nextSegment; // todo may take resources
+        ComputedVertexLength += _nextSegment; // todo may take resources
         lastPoint = _point;
     }
 
     public void Init(Vector3 from, Vector3 offsetedFrom, RoutePoint nextPoint)
     {
-        ComputedLength = -1;
+        ComputedVertexLength = -1;
         StartPosition = from;
         StartOffsetPosition = offsetedFrom;
         StartCurvePosition = EndPosition = EndOffsetPosition = Geometry.GetNextPosition(from, nextPoint.Distance, nextPoint.Degrees);

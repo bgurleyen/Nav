@@ -63,7 +63,7 @@ public class infoFMC : Singleton<infoFMC>
         double[] totalDistLeft = new double[WPTCount];
         double RW_Alt = activePoints.Points[WPTCount-1].Altitude.ComputedValue;
         double fuelBurn,fuelRemaining = Calculator.totalFuel / 100;  
-        float DirectDistance = (Vector2.Distance(GameManager.Instance.PathLines.GetNodePosition(WPTCount - 1), GameManager.Instance.Aircraft.Position));
+        float DirectDistance = (Vector2.Distance(GameManager.Instance.PathLines.GetNodePosition(WPTCount - 1), GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath));
 
         for (int i = prvWptIdx + 1; i < activePoints.Points.Length; i++)
         {
@@ -81,7 +81,7 @@ public class infoFMC : Singleton<infoFMC>
 
             //Infotext.text +=  activePoints.Points[i].Name;+ " D:" + Distance + " S:" + WE.GS + " A:" + Altitude + " V:" + VS + "   ff:" + ff + "   fb:" + fb + "   fr:" + System.Math.Round(fr,2) + "\n";
 
-            totalDistLeft[i] = (i==prvWptIdx + 1) ? GameManager.Instance.Aircraft.ComputedDistanceLeft : totalDistLeft[i - 1] + Distance;
+            totalDistLeft[i] = (i==prvWptIdx + 1) ? GameManager.Instance.Aircraft.ComputedDistanceLeftOnSegment : totalDistLeft[i - 1] + Distance;
             PrvAltitude = Altitude;
             fr_onpoint[i] = fuelRemaining;
             GS_onpoint[i] = WE.GS;
