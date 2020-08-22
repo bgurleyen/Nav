@@ -305,10 +305,10 @@ public class Drawer : Singleton<Drawer>
                 if (RoutePoint.HaveSamePosition(_activePoint, _point))
                 {
                     _hiddenLabel = true;
-                }
+                }    
                 else
                 {
-                    Debug.Log(_activePoint.Name + " " +
+                    Debug.LogWarning(_activePoint.Name + " " +
                               (_activePoint.CartesianPosition - _point.CartesianPosition).magnitude);
                 }
             }

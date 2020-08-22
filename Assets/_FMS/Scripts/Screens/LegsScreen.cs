@@ -425,7 +425,7 @@ public class LegsScreen : ScreenBase
             }
             else
             {
-                Debug.Log("Invalid Scratchpad Entry!");
+                Debug.LogWarning("Invalid Scratchpad Entry!");
             }
         }
 
