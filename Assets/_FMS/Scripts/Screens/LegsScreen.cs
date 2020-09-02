@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
+﻿using System.Linq;
 using UnityEngine;
 
 public class LegsScreen : ScreenBase
@@ -26,8 +23,6 @@ public class LegsScreen : ScreenBase
     DisplayNodesController nodesController;
     NodeSelection selectionInfo;
     NodeSelection lastSelectionClicked;
-
-
 
 
     const string EraseTitle = "<ERASE";
@@ -275,8 +270,7 @@ public class LegsScreen : ScreenBase
         public bool IsAltitudeRegulation(out string regulation)
         {
             regulation = "";
-            if (!IsValid || Node != null || Angle != null || Distance != null
-                || AltRegulation == null)
+            if (!IsValid || AltRegulation == null)
             {
                 return false;
             }
@@ -393,10 +387,15 @@ public class LegsScreen : ScreenBase
             }
             else
             {
-                if (scratchPadBuffer.Length == 3 && int.TryParse(scratchPadBuffer, out var _angle))
+                if (int.TryParse(scratchPadBuffer, out var _number))
                 {
-                    // Is linear approach
-                    scratchPadInterpreter.Angle = _angle;
+                    if (scratchPadBuffer.Length == 3)
+                    {
+                        // Is linear approach
+                        scratchPadInterpreter.Angle = _number;
+                    }
+
+                   
                 }
                 else
                 {
@@ -474,6 +473,11 @@ public class LegsScreen : ScreenBase
                 {
                     scratchPadInterpreter.IsValid = false;
                 }
+            }
+            else if (int.TryParse(scratchPadBuffer, out var _number))
+            {
+                // can be altitude regulation
+                scratchPadInterpreter.AltRegulation = scratchPadBuffer;
             }
         }
     }
