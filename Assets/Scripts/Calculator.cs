@@ -26,7 +26,7 @@ public class Calculator : MonoBehaviour
     public Transform VDI_Index;
 
 
-    public static double CSpeed = 225, CAltitude = 30000; // Currenr Altitude*************************
+    public static double CSpeed = 225, CAltitude = 37000; // Currenr Altitude*************************
     //                            ***              *****
     int RVS;
     public static int RSpeed = (int)CSpeed, RHeading, RAltitude, CVS;
@@ -35,21 +35,22 @@ public class Calculator : MonoBehaviour
     public static double TAS, GS;
 
     public Toggle VNAV_Toggle, LNAV_Toggle, LC_Toggle, HS_Toggle, AH_Toggle, VS_Toggle;
-    public Toggle LGToggle, SBToggle, co;//Landing Gear ,Speed Brake;
+    public Toggle   co;//Landing Gear ,Speed Brake;
     public static bool LGDown = false;
+    bool SBDown=false; 
     public Button FUP_Button, FDown_Button;
-    int Flap_Idx, increasedSpeed, excessSpeedCo = 0, excessSpeedCo2 = 10;
+    int Flap_Idx, increasedSpeed, excessSpeedCo = 0;
     float SpeedTime;
     double DTG;
     public Text windTxt;
     public static string CWind;
     public Text FMA1, FMA2, FMA3;
-    public Image FlapNeedle, windArrow,VSline,SpeedTrend;
-    public GameObject Progres;
+    public Image  windArrow,VSline,SpeedTrend;
+    public GameObject Progres,FlapNeedle,LGlever, SBlever;
     int N1, FF, dispN1 = 77;
     double dispFF = 270;
     public static bool isHDG;
-    public static double totalFuel = 1000; // 10 tons *100
+    public static double totalFuel = 1000; // 10 tons *100 
     //Speed:(NM per Hour = Knots)--> Show in PFD , map will move in this speed
     //Altitude:(Feet)--> Show in PFD ,no other effect
     //VS:(Feet per minute)--> Show in PFD ,no other effect
@@ -568,7 +569,7 @@ public class Calculator : MonoBehaviour
     }
     public void SetFlaps()
     {
-        int[] Fps = new int[9] { 22, -17, -60, -101, -130, -158, -186, -213, -244 };
+        int[] Fps = new int[9] { -179,-145 , -103, -64, -35, -3, 29, 57, 86 };
         int i, j, k;
         for (i = 0; i < 5; i++)
             for (j = 0; j < 4; j++)
@@ -576,15 +577,15 @@ public class Calculator : MonoBehaviour
                 {
                     M[i + 4, j, k] = Mf[Flap_Idx, i, j, k];
                 }
-        if (LGToggle.isOn) LGToggle_Change();
-        if (SBToggle.isOn) SBToggle_Change();
+        if (LGDown) LG_Click();
+        if (SBDown) SB_Click();
 
-        FlapNeedle.transform.localEulerAngles = new Vector3(0, 0, Fps[Flap_Idx]);
+        FlapNeedle.transform.localEulerAngles = new Vector3(-90, 180, Fps[Flap_Idx]);
 
         PFD_Animation Script2 = FindObjectOfType<PFD_Animation>();
         Script2.Flaps_Indexchange(Flap_Idx);
     }
-    public void LGToggle_Change()
+    public void LG_Click()
     {
         double[,] MVS = new double[9, 2] { { -2100, -1500 }, { -2700, -1500 }, { -2700, -1400 }, { -2600, -1300 }, { -2500, -1300 }, { -2300, -1200 }, { -1800, -600 }, { -1600, -500 }, { -1500, -300 } };
         double[,,] Wlg = new double[4, 2, 2] {
@@ -598,9 +599,11 @@ public class Calculator : MonoBehaviour
                                              { { 3460, 95 }, { 3200, 95 } },
                                              { { 3340, 95 }, { 3120, 95 } }};
         int i;
-        LGDown = LGToggle.isOn;
-        if (LGToggle.isOn)
+        LGDown = !LGDown;
+        if (LGDown)
         {
+            LGlever.transform.localEulerAngles = new Vector3(-45, 0, 0);
+
             for (i = 0; i < 9; i++)
             {
                 M[i, 1, 0] += MVS[i, 0];
@@ -621,6 +624,8 @@ public class Calculator : MonoBehaviour
 
         else
         {
+            LGlever.transform.localEulerAngles = new Vector3(-90, 0, 0);
+
             for (i = 0; i < 9; i++)
             {
                 M[i, 1, 0] -= MVS[i, 0];
@@ -640,14 +645,16 @@ public class Calculator : MonoBehaviour
             }
         }
     }
-    public void SBToggle_Change()
+    public void SB_Click()
     {
         double[,] Msb = new double[9, 2] { { -900, -600 }, { -900, -600 }, { -900, -500 }, { -900, -500 }, { -900, -400 }, { -900, -400 }, { -900, -400 }, { -900, -500 }, { -900, -400 } };
         //Sil
         DTG -= 1;
         int i;
-        if (SBToggle.isOn)
+        SBDown = !SBDown;
+        if (SBDown)
         {
+            SBlever.transform.localEulerAngles = new Vector3(-20, 0, 0);
             for (i = 0; i < 9; i++)
             {
                 M[i, 1, 0] += Msb[i, 0];
@@ -661,6 +668,8 @@ public class Calculator : MonoBehaviour
         }
         else
         {
+            SBlever.transform.localEulerAngles = new Vector3(-160, 0, 0);
+
             for (i = 0; i < 9; i++)
             {
                 M[i, 1, 0] -= Msb[i, 0];
@@ -674,6 +683,7 @@ public class Calculator : MonoBehaviour
         }
 
     }
+
     public static void Check_LimitSpeed()
     {
         if (Calculator.Instance.co.isOn)                                    //Mach
