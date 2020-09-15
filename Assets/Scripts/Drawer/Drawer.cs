@@ -410,15 +410,16 @@ public class Drawer : Singleton<Drawer>
             _angleBetween = Geometry.AngleBetweenNodes(nextPoint.Degrees, notTooCloseSecondPoint.Degrees);
         }
 
-        var _isStraight = lastLine.LinkedPoint != null &&
-                          (lastLine.LinkedPoint.IsAfterDiscontinuity || lastLine.LinkedPoint.IsHiddenLine)
-                          || forceEndStraight;
+        var _startsStraight = lastLine.LinkedPoint != null &&
+                              (lastLine.LinkedPoint.IsAfterDiscontinuity || lastLine.LinkedPoint.IsHiddenLine);
 
-        var _lastEndOffset = lastLine.LinkedPoint != null && _isStraight
+        var _endsStraight = forceEndStraight;
+
+        var _lastEndOffset = lastLine.LinkedPoint != null && _startsStraight
             ? lastLine.EndPosition
             : lastLine.EndOffsetPosition;
 
-        if (Math.Abs(_angleBetween - 180) < 0.2f || _isStraight)
+        if (Math.Abs(_angleBetween - 180) < 0.2f || _endsStraight)
         {
             // straight line  
             GenerateLine(nextPoint, lastLine.EndPosition, _lastEndOffset, out line);
