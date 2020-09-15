@@ -204,7 +204,7 @@ public class RouteScriptableObject : ScriptableObject
         }
     }
 
-    public void AddRelativeNodeOnDirection(int nodeId, int distance, out RoutePoint insertionNode,
+    public void AddRelativeNodeOnDirection(int nodeId, int distance, int relativeNodeId, out RoutePoint insertionNode,
         out RoutePoint afterInsertion) // @#$ todo refactor for passed nodes ?
     {
         var _nodeIndex = GetIndex(nodeId);
@@ -312,7 +312,7 @@ public class RouteScriptableObject : ScriptableObject
     }
 
 
-    public void AddRelativeNodeBefore(int relativeToNodeId, float rawDegrees, int distance,
+    public void AddRelativeNodeBefore(int relativeToNodeId, float rawDegrees, int distance, int relativeFromNodeId,
         out RoutePoint insertionNode,
         bool showDiscontinuity = false)
     {
@@ -324,6 +324,7 @@ public class RouteScriptableObject : ScriptableObject
         var _isInThePast = false;
 
         var _originalRelativeToNode = Points[_relativeToNodeIndex];
+        var _relativeFromNode = Points[GetIndex(relativeFromNodeId)];
         var _newDegrees = 360 - rawDegrees;
 
         Vector2 _insertPosition;
@@ -350,7 +351,7 @@ public class RouteScriptableObject : ScriptableObject
         var _insertionAngle = Geometry.AngleBetween(_insertPosition, Vector2.up);
         insertionNode = new RoutePoint
         {
-            Name = GetNewName(_originalRelativeToNode.Name),
+            Name = GetNewName(_relativeFromNode.Name),
             Distance = _insertPosition.magnitude,
             RawDegrees = _insertionAngle,
             ID = GetNewId(),
@@ -409,7 +410,7 @@ public class RouteScriptableObject : ScriptableObject
         _reducedPoint.IndicateDirectApproach(angle);
 
         // insert fake node as linear approach beginning - very far
-        AddRelativeNodeBefore(toNodeId, angle, -500, out var _veryFarNode);
+        AddRelativeNodeBefore(toNodeId, angle, -500, toNodeId, out var _veryFarNode);
 
         // insert fake node as current destination : before very far,  in the place of original next node
         // AddRelativeNodeBefore(_veryFarNode.ID, angle, 500, out var _);

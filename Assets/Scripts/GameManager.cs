@@ -159,7 +159,7 @@ public class GameManager : Singleton<GameManager>
         CheckModForOperation();
         cachedCommands.Add(command);
 
-        ModRoute.AddRelativeNodeOnDirection(command.FromNodeId, command.Distance, out var _, out var _);
+        ModRoute.AddRelativeNodeOnDirection(command.FromNodeId, command.Distance, command.RelativeNodeId, out var _, out var _);
         DataHandler.BuildSetDetails(ModRoute);
         MainScreen.Instance.DisplayOperation("ERASE");
 
@@ -172,7 +172,7 @@ public class GameManager : Singleton<GameManager>
         CheckModForOperation();
         cachedCommands.Add(command);
 
-        ModRoute.AddRelativeNodeBefore(command.FromNodeId, command.RawDegrees, command.Distance, out _, true);
+        ModRoute.AddRelativeNodeBefore(command.FromNodeId, command.RawDegrees, command.Distance, command.RelativeNodeId, out _, true);
         DataHandler.BuildSetDetails(ModRoute);
         MainScreen.Instance.DisplayOperation(MainScreen.Keywords.ERASE);
 

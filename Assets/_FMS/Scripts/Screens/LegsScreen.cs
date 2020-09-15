@@ -136,17 +136,17 @@ public class LegsScreen : ScreenBase
         GetSelectedPoint.IsSelected = false;
 
         if (!string.IsNullOrEmpty(scratchPadBuffer) &&
-            scratchPadInterpreter.IsRelativeNodeOnDirection(out var _distanceOnDirection))
+            scratchPadInterpreter.IsRelativeNodeOnDirection(out var _distanceOnDirection, out var _relativeNodeId))
         {
             GameManager.Instance.ExecuteInsertRelativeOnDirectionOnMod(new ExecuteRelativeOnDirectionOnMod
-                {FromNodeId = _clickedInfo.LinkedId, Distance = _distanceOnDirection});
+                {FromNodeId = _clickedInfo.LinkedId, Distance = _distanceOnDirection, RelativeNodeId = _relativeNodeId});
         }
         else if (!string.IsNullOrEmpty(scratchPadBuffer) &&
-                 scratchPadInterpreter.IsRelativeNode(out var _angle, out var _distance))
+                 scratchPadInterpreter.IsRelativeNode(out var _angle, out var _distance, out _relativeNodeId))
         {
             // if this is a relative insert command
             GameManager.Instance.ExecuteInsertRelativeOnMod(new InsertRelativeCommand
-                {FromNodeId = _clickedInfo.LinkedId, RawDegrees = _angle, Distance = _distance});
+                {FromNodeId = _clickedInfo.LinkedId, RawDegrees = _angle, Distance = _distance, RelativeNodeId = _relativeNodeId});
         }
         else
         {
@@ -278,10 +278,11 @@ public class LegsScreen : ScreenBase
             return true;
         }
 
-        public bool IsRelativeNode(out int angle, out int distance)
+        public bool IsRelativeNode(out int angle, out int distance, out int relativeNodeId)
         {
             distance = 0;
             angle = 0;
+            relativeNodeId = 0;
             if (!IsValid || AltRegulation != null || SpeedRegulation != null
                          || Node == null || Angle == null || Distance == null)
             {
@@ -291,12 +292,14 @@ public class LegsScreen : ScreenBase
             Debug.Log("=relative insert=");
             distance = Distance.Value;
             angle = Angle.Value;
+            relativeNodeId = Node.ID;
             return true;
         }
 
-        public bool IsRelativeNodeOnDirection(out int distance)
+        public bool IsRelativeNodeOnDirection(out int distance, out int relativeNodeId)
         {
             distance = 0;
+            relativeNodeId = 0;
             if (!IsValid || Angle != null || AltRegulation != null || SpeedRegulation != null
                 || Node == null || Distance == null)
             {
@@ -305,6 +308,7 @@ public class LegsScreen : ScreenBase
 
             Debug.Log("=relative insert on direction=");
             distance = Distance.Value;
+            relativeNodeId = Node.ID;
             return true;
         }
 

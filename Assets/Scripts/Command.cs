@@ -27,18 +27,21 @@ public struct InsertRelativeCommand : ICommand
     public int FromNodeId;
     public int RawDegrees;
     public int Distance;
-}
-
-public struct ExecuteShortcutOnModeCommand : ICommand
-{
-    public int FromNodeId;
-    public int ToNodeId;
+    public int RelativeNodeId;
+    
 }
 
 public struct ExecuteRelativeOnDirectionOnMod : ICommand
 {
     public int FromNodeId;
     public int Distance;
+    public int RelativeNodeId;
+}
+
+public struct ExecuteShortcutOnModeCommand : ICommand
+{
+    public int FromNodeId;
+    public int ToNodeId;
 }
 
 public struct ExecuteAddLinearApproachCommand : ICommand
