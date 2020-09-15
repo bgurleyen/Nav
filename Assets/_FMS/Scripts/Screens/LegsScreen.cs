@@ -5,9 +5,8 @@ public class LegsScreen : ScreenBase
 {
     [SerializeField] LegsNodeLine[] nodes;
     
-    public static RouteScriptableObject VisibleRoute => IsMod ? ModRoute : ActiveRoute;
+    public static RouteScriptableObject VisibleRoute => GameManager.Instance.IsMod ? ModRoute : ActiveRoute;
     
-    static bool IsMod => GameManager.Instance.IsMod;
     static RouteScriptableObject ActiveRoute => GameManager.Instance.ActiveRoute;
     static RouteScriptableObject ModRoute => GameManager.Instance.ModRoute;
     static int StartingNodeIndex => GameManager.Instance.UnreachedNodeIndex;
@@ -68,7 +67,7 @@ public class LegsScreen : ScreenBase
 
     public void DisplayCurrentPage()
     {
-        Main.UpdatePageInfo(currentPage, TotalPages, IsMod, "LEGS");
+        Main.UpdatePageInfo(currentPage, TotalPages, GameManager.Instance.IsMod, "LEGS");
 
         // Debug.Log("start");
         for (var i = 0; i < nodes.Length; i++)
@@ -173,7 +172,7 @@ public class LegsScreen : ScreenBase
 
     public override void OnExecPress()
     {
-        if (IsMod)
+        if (GameManager.Instance.IsMod)
         {
             GameManager.Instance.ApplyMod();
         }
@@ -185,7 +184,7 @@ public class LegsScreen : ScreenBase
 
     public override void OnRightCornerPress()
     {
-        if (!IsMod)
+        if (!GameManager.Instance.IsMod)
         {
             return;
         }

@@ -56,7 +56,16 @@ public class BgText : MonoBehaviour
                     label.text += $"<mark=#{ColorUtility.ToHtmlStringRGBA(modifiedBackground)}>{_part.Text}</mark>";
                     break;
                 case TextState.Magenta:
-                    label.text += $"<color=#{ColorUtility.ToHtmlStringRGB(magentaColor)}>{_part.Text}</color>";
+                    if (GameManager.Instance.IsMod)
+                    {
+                        // don't show anything magenta in mod
+                        label.text += _part.Text;
+                    }
+                    else
+                    {
+                        label.text += $"<color=#{ColorUtility.ToHtmlStringRGB(magentaColor)}>{_part.Text}</color>";
+                    }
+
                     break;
                 case TextState.Default:
                 case TextState.SmallText:

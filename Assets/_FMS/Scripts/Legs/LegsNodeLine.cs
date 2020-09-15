@@ -60,7 +60,7 @@ public class LegsNodeLine : MonoBehaviour
             var _speedState = node.IsSpeedModified
                 ? BgText.TextState.ModSelection
                 : _isSpeedRestriction
-                    ? node.ID == LegsScreen.VisibleRoute.FirstSpeedRegulationNodeId
+                    ? node.ID == LegsScreen.VisibleRoute.FirstSpeedRegulationNodeId 
                         ? BgText.TextState.Magenta
                         : BgText.TextState.TallText
                     : BgText.TextState.SmallText;

@@ -103,6 +103,8 @@ public class GameManager : Singleton<GameManager>
         ModRoute.GetPoint(command.NodeId, out var _node);
         _node.RawAltitude = "";
         _node.RawSpeed = 0;
+        
+        DataHandler.BuildSetDetails(ModRoute);
     }
 
     public void ExecuteAddSpeedRegulation(AddSpeedRegulationCommand command)
