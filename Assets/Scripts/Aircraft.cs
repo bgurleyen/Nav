@@ -9,7 +9,6 @@ public class Aircraft
     // position that can be on the generated curved sections of the lines
     public Vector2 PositionFreeOrOnCurvedPath { get; private set; }
     
-    // position that is percentually represented on the straight segments only
     public Vector2 PositionFreeOrOnSegment { get; private set; }
     
     public float Heading { get; private set; } // Degrees based rotation

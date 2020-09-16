@@ -47,7 +47,7 @@ public class DisplayNodesController
     {
         var _totalLineIndex = lineIndex + currentPage * nodesPerPage;
 
-        // this happens because the curves add distance and the position can become ahead. Needs to be dealt with in a more advanced way 
+        // when an insert have been made with the future position node and has been executed. happening until passing the new position
         var _positionIsTemporaryAhead = ActiveRoute.Points[StartingNodeIndex].IsPositionNode;
 
         var _thisIsDiscontinuity = false;

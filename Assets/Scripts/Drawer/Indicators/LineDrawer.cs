@@ -47,7 +47,7 @@ public class LineDrawer : MonoBehaviour
         {
             markTransform.localPosition = line.EndPosition.To2DXY().ToDisplay();
             labelTransform.localPosition = line.EndPosition.To2DXY().ToDisplay();
-            var _color = !GameManager.Instance.IsMod && routePoint.IsCurrent
+            var _color = !GameManager.Instance.IsMod && routePoint.GetIsDisplayCurrent
                 ? Drawer.Instance.CMagenta 
                 : Color.white;
             label.Init(routePoint.Name, _color);

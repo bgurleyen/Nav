@@ -12,17 +12,13 @@ public class RoutePoint
     public string RawAltitude = "";
     public string Details = "";
 
-
     public Vector2 CartesianPosition { get; set; }
     public int LinearApproachAngle { get; set; }
     public AltitudeData Altitude { get; private set; } = new AltitudeData();
     public SpeedData Speed { get; private set; } = new SpeedData();
 
-    // @#$ refactor this ?
-    public bool IsCurrent =>
-        GameManager.Instance.ActiveRoute.GetPointAt(GameManager.Instance.Aircraft.PathLocalization.CurrentNodeIndex,
-            out var _node) && _node.ID == ID;
     
+
     public bool IsSelected { get; internal set; }
     public bool IsModified { get; internal set; }
     public bool IsSpeedModified { get; internal set; }
@@ -44,6 +40,28 @@ public class RoutePoint
 
     public void SetSpeedComputed(int lastRegulation) =>
         Speed.SetComputedValue(lastRegulation, (int) GetAcceptedAltitude);
+
+    public bool GetIsDisplayCurrent
+    {
+        get
+        {
+            var _activeRoute = GameManager.Instance.ActiveRoute;
+
+            var _nodeCursor = PositionVirtualNode.GetNodeTo;
+            while (_nodeCursor.IsPositionNode || _nodeCursor.ID == ID)
+            {
+                if (_nodeCursor.ID == ID)
+                {
+                    return true;
+                }
+
+                _nodeCursor = _activeRoute.Points[_activeRoute.GetIndex(_nodeCursor.ID) + 1];
+            }
+
+            return false;
+
+        }
+    }
 
     public bool GetAltitudeIsRestricted(out string displayValue)
     {

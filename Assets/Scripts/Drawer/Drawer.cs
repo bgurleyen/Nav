@@ -105,7 +105,7 @@ public class Drawer : Singleton<Drawer>
 
         GameManager.Instance.ModeSetWithPosition = ModRoute.Clone(); // refactor
         
-        DisplayMod.AddPositionNode();
+        DisplayMod.AddDisplayPositionNode();
 
         GameManager.Instance.PathLines.ComputeSet(DisplayMod, true);
     }
@@ -426,8 +426,8 @@ public class Drawer : Singleton<Drawer>
         }
         else
         {
-            // try relaxed turn
-            if (!GenerateCurve(RelaxedRadius, nextPoint, notTooCloseSecondPoint, _angleBetween, lastLine.EndPosition,
+            // try relaxed turn. Update: don't use relaxed as the radius can become very big, and there is no advantage to it. Just go with regular curve
+            if (true || !GenerateCurve(RelaxedRadius, nextPoint, notTooCloseSecondPoint, _angleBetween, lastLine.EndPosition,
                 _lastEndOffset,
                 out line))
             {

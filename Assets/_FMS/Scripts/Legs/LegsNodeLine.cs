@@ -38,7 +38,7 @@ public class LegsNodeLine : MonoBehaviour
             {
                 fLeft.SetAsModified(node.Name);
             }
-            else if (node.IsCurrent)
+            else if (node.GetIsDisplayCurrent)
             {
                 fLeft.SetAsMagenta(node.Name);
             }

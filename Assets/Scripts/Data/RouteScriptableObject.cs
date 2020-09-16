@@ -400,6 +400,7 @@ public class RouteScriptableObject : ScriptableObject
         }
 
         Points = _newSet;
+        
     }
 
     public void CreateLinearApproach(int toNodeId, int angle)
@@ -429,14 +430,17 @@ public class RouteScriptableObject : ScriptableObject
         ActiveDirectApproach = true;
     }
 
-    public RoutePoint AddPositionNode(float neededOffsetDistance = 0)
+    public RoutePoint AddDisplayPositionNode(float neededOffsetDistance = 0)
     {
+        // ! Position node should be added in front of the actual position so that the aircraft can safely turn 
+        
         const float DISTANCE_THRESHOLD = 0.002f;
+        const float FORWARD_THRESHOLD = 3f;
 
-        if (Aircraft.ComputedDistanceLeftOnSegment < DISTANCE_THRESHOLD ||
+        if (Aircraft.ComputedDistanceLeftOnSegment < FORWARD_THRESHOLD ||
             Aircraft.WalkedDistanceOnSegment < DISTANCE_THRESHOLD)
         {
-            Debug.LogWarning("Skipped add position node");
+            Debug.LogWarning("ERROR: Skipped add position node - too close");
             return null;
         }
 
@@ -457,13 +461,16 @@ public class RouteScriptableObject : ScriptableObject
             LastAddedPositionNode = new RoutePoint
             {
                 Name = "_Position_",
-                Distance = _activeSegmentDistancePassed,
+                Distance = _activeSegmentDistancePassed + FORWARD_THRESHOLD, // @#$
                 RawDegrees = _activeNextNode.RawDegrees,
                 Details = "P",
                 ID = GetNewId(),
             };
 
-            var _differencePosition = _routeNextNode.CartesianPosition - Aircraft.PositionFreeOrOnSegment;
+            var _newFuturePosition = Geometry.GetNextPosition(Aircraft.PositionFreeOrOnSegment, FORWARD_THRESHOLD,
+                _activeNextNode.Degrees);
+            
+            var _differencePosition = _routeNextNode.CartesianPosition - _newFuturePosition;
             
             var _updatedAngle = Geometry.AngleBetween(_differencePosition, Vector2.up);
 
@@ -473,6 +480,8 @@ public class RouteScriptableObject : ScriptableObject
         else
         {
             // add position node as from where the aircraft is
+            
+            // also the position need to be forward with the threshold in the heading direction
 
 
             var _differenceToPosition = Aircraft.PositionFreeOrOnCurvedPath - _routePreviousNode.CartesianPosition;
