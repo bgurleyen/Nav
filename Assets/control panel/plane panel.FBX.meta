@@ -27,6 +27,26 @@ ModelImporter:
     100042: panel006
     100044: Plane009
     100046: Plane013
+    100048: base_low
+    100050: butto7_low
+    100052: button1_low
+    100054: button2_low
+    100056: button3_low
+    100058: button4_low
+    100060: button5_low
+    100062: button6_low
+    100064: knob1_low
+    100066: knob2_low
+    100068: knob3_low
+    100070: lever1_low
+    100072: lever2_low
+    100074: panel1_low
+    100076: panel2_low
+    100078: panel3_low
+    100080: panel4_low
+    100082: pointer_low
+    100084: switch1_low
+    100086: wheel_low
     400000: Cylinder004
     400002: Cylinder005
     400004: Cylinder006
@@ -51,6 +71,26 @@ ModelImporter:
     400042: panel006
     400044: Plane009
     400046: Plane013
+    400048: base_low
+    400050: butto7_low
+    400052: button1_low
+    400054: button2_low
+    400056: button3_low
+    400058: button4_low
+    400060: button5_low
+    400062: button6_low
+    400064: knob1_low
+    400066: knob2_low
+    400068: knob3_low
+    400070: lever1_low
+    400072: lever2_low
+    400074: panel1_low
+    400076: panel2_low
+    400078: panel3_low
+    400080: panel4_low
+    400082: pointer_low
+    400084: switch1_low
+    400086: wheel_low
     2100000: mat2
     2100002: mat1
     2300000: Cylinder004
@@ -76,6 +116,26 @@ ModelImporter:
     2300040: panel006
     2300042: Plane009
     2300044: Plane013
+    2300046: base_low
+    2300048: butto7_low
+    2300050: button1_low
+    2300052: button2_low
+    2300054: button3_low
+    2300056: button4_low
+    2300058: button5_low
+    2300060: button6_low
+    2300062: knob1_low
+    2300064: knob2_low
+    2300066: knob3_low
+    2300068: lever1_low
+    2300070: lever2_low
+    2300072: panel1_low
+    2300074: panel2_low
+    2300076: panel3_low
+    2300078: panel4_low
+    2300080: pointer_low
+    2300082: switch1_low
+    2300084: wheel_low
     3300000: Cylinder004
     3300002: Cylinder005
     3300004: Cylinder006
@@ -99,6 +159,26 @@ ModelImporter:
     3300040: panel006
     3300042: Plane009
     3300044: Plane013
+    3300046: base_low
+    3300048: butto7_low
+    3300050: button1_low
+    3300052: button2_low
+    3300054: button3_low
+    3300056: button4_low
+    3300058: button5_low
+    3300060: button6_low
+    3300062: knob1_low
+    3300064: knob2_low
+    3300066: knob3_low
+    3300068: lever1_low
+    3300070: lever2_low
+    3300072: panel1_low
+    3300074: panel2_low
+    3300076: panel3_low
+    3300078: panel4_low
+    3300080: pointer_low
+    3300082: switch1_low
+    3300084: wheel_low
     4300000: Cylinder004
     4300002: Cylinder005
     4300004: Cylinder006
@@ -122,6 +202,26 @@ ModelImporter:
     4300040: panel005
     4300042: panel006
     4300044: Plane013
+    4300046: panel1_low
+    4300048: knob2_low
+    4300050: knob3_low
+    4300052: button6_low
+    4300054: butto7_low
+    4300056: wheel_low
+    4300058: panel4_low
+    4300060: panel2_low
+    4300062: lever1_low
+    4300064: lever2_low
+    4300066: panel3_low
+    4300068: pointer_low
+    4300070: switch1_low
+    4300072: base_low
+    4300074: knob1_low
+    4300076: button1_low
+    4300078: button2_low
+    4300080: button3_low
+    4300082: button4_low
+    4300084: button5_low
   externalObjects: {}
   materials:
     importMaterials: 0
