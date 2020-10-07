@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: f1a748722520a86459d3abcde93cb008
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences:
+  - indicatorMesh: {instanceID: 0}
+  - onMat: {fileID: 2100000, guid: fc5423094676a6a48a7adc8f82f9ea59, type: 2}
+  - offMat: {fileID: 2100000, guid: 40a05e2b699eb1a4dbf0183169a7b35c, type: 2}
+  - meshAnimatorController: {fileID: 9100000, guid: 88bf9ec480d98894083bd3be38f8aaf0,
+      type: 2}
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
