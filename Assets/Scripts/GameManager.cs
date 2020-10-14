@@ -172,7 +172,7 @@ public class GameManager : Singleton<GameManager>
         CheckModForOperation();
         cachedCommands.Add(command);
 
-        ModRoute.AddRelativeNodeBefore(command.FromNodeId, command.RawDegrees, command.Distance, command.RelativeNodeId, out _, true);
+        ModRoute.AddRelativeNodeBefore(command.BeforeNodeId, command.RawDegrees, command.Distance, command.RelativeNodeId, out _, true);
         DataHandler.BuildSetDetails(ModRoute);
         MainScreen.Instance.DisplayOperation(MainScreen.Keywords.ERASE);
 

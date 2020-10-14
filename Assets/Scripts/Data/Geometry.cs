@@ -27,24 +27,34 @@ public static class Geometry
     {
         return GetNextPosition(start, distance, ReverseParallelAngle(degrees));
     }
+    
+    public static Vector2 GetPreviousPositionOfNode(RoutePoint node)
+    {
+        return GetPreviousPosition(node.CartesianPosition, node.Distance, ReverseParallelAngle(node.Degrees));
+    }
 
     public static float AngleBetween(Vector2 start, Vector2 end)
     {
-        var x1 = start.x;
-        var x2 = end.x;
-        var y1 = start.y;
-        var y2 = end.y;
-        var dot = x1 * x2 + y1 * y2;   // dot product between [x1, y1] and [x2, y2]
-        var det = x1 * y2 - y1 * x2;    // determinant
-        var angle = Mathf.Atan2(det, dot) * Mathf.Rad2Deg; // atan2(y, x) or atan2(sin, cos)
+        var _x1 = start.x;
+        var _x2 = end.x;
+        var _y1 = start.y;
+        var _y2 = end.y;
+        var _dot = _x1 * _x2 + _y1 * _y2;   // dot product between [x1, y1] and [x2, y2]
+        var _det = _x1 * _y2 - _y1 * _x2;    // determinant
+        var _angle = Mathf.Atan2(_det, _dot) * Mathf.Rad2Deg; // atan2(y, x) or atan2(sin, cos)
         
-        if(angle <0)
+        if(_angle <0)
         {
-            angle = 360 + angle;
+            _angle = 360 + _angle;
         }
 
-        return angle;
+        return _angle;
 
+    }
+
+    public static float AngleOfPosition(Vector2 ofPosition, Vector2 fromPosition)
+    {
+        return AngleBetween(ofPosition - fromPosition , Vector2.up);
     }
 
     public static float AngleBetween(float degreesA, float degreesB)

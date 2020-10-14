@@ -312,58 +312,42 @@ public class RouteScriptableObject : ScriptableObject
     }
 
 
-    public void AddRelativeNodeBefore(int relativeToNodeId, float rawDegrees, int distance, int relativeFromNodeId,
+    public void AddRelativeNodeBefore(int beforeNodeId, float rawDegrees, int distance, int relativeNodeId,
         out RoutePoint insertionNode,
         bool showDiscontinuity = false)
     {
-        var _relativeToNodeIndex = GetIndex(relativeToNodeId);
+        var _originalRelativeNodeIndex = GetIndex(relativeNodeId);
+        var _beforeNodeIndex = GetIndex(beforeNodeId);
 
         var _fromNodeIndex = Mathf.Max(
             PositionVirtualNode.PassedNodeIndex,
-            _relativeToNodeIndex - 1);
-        var _isInThePast = false;
+            _originalRelativeNodeIndex - 1);
 
-        var _originalRelativeToNode = Points[_relativeToNodeIndex];
-        var _relativeFromNode = Points[GetIndex(relativeFromNodeId)];
+        var _originalRelativeNode = Points[_originalRelativeNodeIndex];
+        var _beforeNode = Points[_beforeNodeIndex];
         var _newDegrees = 360 - rawDegrees;
+        var _isInThePast = _fromNodeIndex != _originalRelativeNodeIndex - 1;
 
-        Vector2 _insertPosition;
-        if (_fromNodeIndex <= _relativeToNodeIndex - 1)
-        {
-            // find end position relative to the node before selected ( meaning with the data from selected, because they refer to the state before the node )
-            _insertPosition = Geometry.GetNextPosition(Vector2.zero, _originalRelativeToNode.Distance,
-                _originalRelativeToNode.Degrees);
-            _insertPosition = Geometry.GetNextPosition(_insertPosition, distance, _newDegrees);
-        }
-        else // if the relative is in the past ( aircraft passed the relative node while pending mod modification )
-        {
-            _isInThePast = true;
-            _insertPosition = Vector2.zero;
-            for (var i = _fromNodeIndex; i > _relativeToNodeIndex; i--)
-            {
-                var _node = Points[i];
-                _insertPosition = Geometry.GetPreviousPosition(_insertPosition, _node.Distance, _node.Degrees);
-            }
+        var _insertPosition = Geometry.GetNextPosition(_originalRelativeNode.CartesianPosition, distance, _newDegrees);
+        var _positionBeforeInsertion = Points[_beforeNodeIndex - 1].CartesianPosition;
 
-            _insertPosition = Geometry.GetNextPosition(_insertPosition, distance, _newDegrees);
-        }
-
-        var _insertionAngle = Geometry.AngleBetween(_insertPosition, Vector2.up);
+        var _insertionAngle = Geometry.AngleOfPosition(_insertPosition, _positionBeforeInsertion);
+        var _insertionDistance = (_insertPosition - _positionBeforeInsertion).magnitude;
+        
         insertionNode = new RoutePoint
         {
-            Name = GetNewName(_relativeFromNode.Name),
-            Distance = _insertPosition.magnitude,
+            Name = GetNewName(_originalRelativeNode.Name),
+            Distance = _insertionDistance,
             RawDegrees = _insertionAngle,
             ID = GetNewId(),
-            Details = _originalRelativeToNode.IsAfterDiscontinuity && showDiscontinuity ? "D" : ""
+            Details = _beforeNode.IsAfterDiscontinuity && showDiscontinuity ? "D" : ""
         };
 
-        var _returnNode = _originalRelativeToNode.Clone();
+        var _returnNode = _beforeNode.Clone();
 
         // update info of selected to be relative to the inserted instead of the previous which is now previous to inserted
-        // ** probably need to refer to the original in active set to show the old relative values TRK
-        _returnNode.RawDegrees = Geometry.ReverseParallelAngle(rawDegrees);
-        _returnNode.Distance = distance;
+        _returnNode.RawDegrees = Geometry.AngleOfPosition(_beforeNode.CartesianPosition, _insertPosition); 
+        _returnNode.Distance = (_beforeNode.CartesianPosition - _insertPosition).magnitude;
         if (!_isInThePast && showDiscontinuity)
         {
             _returnNode.IndicateDiscontinuityBefore();
@@ -379,7 +363,7 @@ public class RouteScriptableObject : ScriptableObject
         var _offset = 0;
         for (var i = 0; i < Points.Length; i++)
         {
-            if (i == _fromNodeIndex + 1)
+            if (i == _beforeNodeIndex)
             {
                 _newSet[i] = insertionNode;
 

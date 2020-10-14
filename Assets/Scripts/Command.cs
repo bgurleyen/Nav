@@ -22,11 +22,18 @@ public struct AddSpeedRegulationCommand : ICommand
     public int Regulation;
 }
 
+
 public struct InsertRelativeCommand : ICommand
 {
-    public int FromNodeId;
+    /// <summary>
+    /// The node before which the discontinuity will be applied
+    /// </summary>
+    public int BeforeNodeId;
     public int RawDegrees;
     public int Distance;
+    /// <summary>
+    /// The node in the scratchpad on which the relative calculations will be made
+    /// </summary>
     public int RelativeNodeId;
     
 }

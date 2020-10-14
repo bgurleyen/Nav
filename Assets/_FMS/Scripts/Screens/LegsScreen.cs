@@ -146,7 +146,7 @@ public class LegsScreen : ScreenBase
         {
             // if this is a relative insert command
             GameManager.Instance.ExecuteInsertRelativeOnMod(new InsertRelativeCommand
-                {FromNodeId = _clickedInfo.LinkedId, RawDegrees = _angle, Distance = _distance, RelativeNodeId = _relativeNodeId});
+                {BeforeNodeId = _clickedInfo.LinkedId, RawDegrees = _angle, Distance = _distance, RelativeNodeId = _relativeNodeId});
         }
         else
         {
