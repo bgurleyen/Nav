@@ -20,55 +20,48 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 
     Details: 
-    CartesianPosition: {x: 0, y: 0}
   - ID: 0
     Name: ELNAT
     RawDegrees: 20
-    Distance: 45.7
+    Distance: 4
     RawSpeed: 0
     RawAltitude: 
     Details: 
-    CartesianPosition: {x: 0, y: 0}
   - ID: 0
     Name: NORTA
     RawDegrees: 5
-    Distance: 40.1
+    Distance: 4
     RawSpeed: 0
     RawAltitude: 
     Details: 
-    CartesianPosition: {x: 0, y: 0}
   - ID: 0
     Name: DLE-5
     RawDegrees: 6
-    Distance: 18.1
+    Distance: 4
     RawSpeed: 0
     RawAltitude: 
     Details: 
-    CartesianPosition: {x: 0, y: 0}
   - ID: 0
     Name: DLE
     RawDegrees: 3
-    Distance: 5
+    Distance: 4
     RawSpeed: 0
     RawAltitude: 8000A9000B
     Details: 
-    CartesianPosition: {x: 0, y: 0}
   - ID: 0
     Name: DV581
     RawDegrees: 2
-    Distance: 7.3
+    Distance: 4
     RawSpeed: 0
     RawAltitude: 
     Details: 
-    CartesianPosition: {x: 0, y: 0}
   - ID: 0
     Name: DV582
     RawDegrees: 91
-    Distance: 5.6
+    Distance: 4
     RawSpeed: 220
     RawAltitude: 
     Details: 
-    CartesianPosition: {x: 0, y: 0}
   - ID: 0
     Name: DV583
     RawDegrees: 91
@@ -76,7 +69,6 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 
     Details: C
-    CartesianPosition: {x: 0, y: 0}
   - ID: 0
     Name: DV584
     RawDegrees: 91
@@ -84,7 +76,6 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 
     Details: 
-    CartesianPosition: {x: 0, y: 0}
   - ID: 0
     Name: DV585
     RawDegrees: 91
@@ -92,15 +83,13 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 
     Details: 
-    CartesianPosition: {x: 0, y: 0}
   - ID: 0
     Name: DV575
     RawDegrees: 1
-    Distance: 5
+    Distance: 4
     RawSpeed: 0
     RawAltitude: 
     Details: 
-    CartesianPosition: {x: 0, y: 0}
   - ID: 0
     Name: DV574
     RawDegrees: 271
@@ -108,7 +97,6 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 
     Details: 
-    CartesianPosition: {x: 0, y: 0}
   - ID: 0
     Name: DV573
     RawDegrees: 271
@@ -116,7 +104,6 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 
     Details: 
-    CartesianPosition: {x: 0, y: 0}
   - ID: 0
     Name: DV572
     RawDegrees: 271
@@ -124,23 +111,20 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 
     Details: 
-    CartesianPosition: {x: 0, y: 0}
   - ID: 0
     Name: XAVER
     RawDegrees: 276
-    Distance: 4.3
+    Distance: 4
     RawSpeed: 179
     RawAltitude: 3000
     Details: 
-    CartesianPosition: {x: 0, y: 0}
   - ID: 0
     Name: HANB
     RawDegrees: 271
-    Distance: 4.9
+    Distance: 4
     RawSpeed: 173
     RawAltitude: 1440
     Details: 
-    CartesianPosition: {x: 0, y: 0}
   - ID: 0
     Name: RW27R
     RawDegrees: 271
@@ -148,4 +132,3 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 219
     Details: 
-    CartesianPosition: {x: 0, y: 0}

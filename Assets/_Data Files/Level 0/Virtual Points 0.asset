@@ -17,8 +17,8 @@ MonoBehaviour:
     x: 13.8
     y: 17.2
   - Number: 1
-    x: 10.2
-    y: 25.7
+    x: 3
+    y: 28
   - Number: 2
     x: 22.9
     y: 7.9
@@ -26,11 +26,29 @@ MonoBehaviour:
     x: 16
     y: -4.3
   - Number: 4
-    x: 12.4
-    y: 4.2
+    x: 0
+    y: 0
   - Number: 5
     x: 25.1
     y: -14
   - Number: 6
     x: 25.1
     y: -14
+  - Number: 80
+    x: 4
+    y: 20
+  - Number: 81
+    x: 4
+    y: 20
+  - Number: 82
+    x: 22
+    y: 20
+  - Number: 90
+    x: 4
+    y: 24
+  - Number: 91
+    x: 4
+    y: 24
+  - Number: 92
+    x: 22
+    y: 24

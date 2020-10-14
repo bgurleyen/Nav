@@ -26,7 +26,7 @@ public class Calculator : MonoBehaviour
     public Transform VDI_Index;
 
 
-    public static double CSpeed = 225, CAltitude = 37000; // Currenr Altitude*************************
+    public static double CSpeed = 300, CAltitude = 10000; // Currenr Altitude*************************
     //                            ***              *****
     int RVS;
     public static int RSpeed = (int)CSpeed, RHeading, RAltitude, CVS;
@@ -35,9 +35,9 @@ public class Calculator : MonoBehaviour
     public static double TAS, GS;
 
     public Toggle VNAV_Toggle, LNAV_Toggle, LC_Toggle, HS_Toggle, AH_Toggle, VS_Toggle;
-    public Toggle   co;//Landing Gear ,Speed Brake;
+    public Toggle co;//Landing Gear ,Speed Brake;
     public static bool LGDown = false;
-    bool SBDown=false; 
+    bool SBDown = false;
     public Button FUP_Button, FDown_Button;
     int Flap_Idx, increasedSpeed, excessSpeedCo = 0;
     float SpeedTime;
@@ -45,8 +45,8 @@ public class Calculator : MonoBehaviour
     public Text windTxt;
     public static string CWind;
     public Text FMA1, FMA2, FMA3;
-    public Image  windArrow,VSline,SpeedTrend;
-    public GameObject Progres,FlapNeedle,LGlever, SBlever;
+    public Image windArrow, VSline, SpeedTrend;
+    public GameObject Progres, FlapNeedle, LGlever, SBlever;
     int N1, FF, dispN1 = 77;
     double dispFF = 270;
     public static bool isHDG;
@@ -155,7 +155,7 @@ public class Calculator : MonoBehaviour
             if (CVS == 0)
                 return 0;
             else
-                return (float)((CAltitude - RAltitude) / CVS * GS / 60 *oneNM);
+                return (float)((CAltitude - RAltitude) / CVS * GS / 60 * oneNM);
         }
     }
     void Awake()
@@ -294,8 +294,8 @@ public class Calculator : MonoBehaviour
 
             if (SpeedTime > 1) excessSpeedCo += 100;
             if ((int)CSpeed == RSpeed) excessSpeedCo = 0;
-                RVS = (int)CSpeed - RSpeed > 10 ? -300 :
-                    RSpeed - (int)CSpeed > 0 ? (int)a[0] -excessSpeedCo : (int)a[0]; // surat yuksekse 
+            RVS = (int)CSpeed - RSpeed > 10 ? -300 :
+                RSpeed - (int)CSpeed > 0 ? (int)a[0] - excessSpeedCo : (int)a[0]; // surat yuksekse 
 
         }
     }
@@ -380,13 +380,13 @@ public class Calculator : MonoBehaviour
         txtDTG.text = "" + (int)DTG;
         Script2.SpeedTapeUpdate();
         Script2.SpeedIndexUpdate_Click();
-  
-        int DeltaN1 = N1-N1For(CAltitude,CVS,CSpeed);
-        SpeedTime = (DeltaN1==0) ? 1 : (DeltaN1 > 0) ? 2000 / Mathf.Abs((float) DeltaN1): 5380 / Mathf.Abs((float)DeltaN1);
+
+        int DeltaN1 = N1 - N1For(CAltitude, CVS, CSpeed);
+        SpeedTime = (DeltaN1 == 0) ? 1 : (DeltaN1 > 0) ? 2000 / Mathf.Abs((float)DeltaN1) : 5380 / Mathf.Abs((float)DeltaN1);
         if (SpeedTime > 5) SpeedTime = 5;
         if (SpeedTime < 0.3) SpeedTime = 0.3f;
         DrawSpeedTrend(SpeedTime);
-      
+
         Invoke("Speed_Equalize", SpeedTime * speedbandspeed);
     }
     private void SetAttPitch(int P)
@@ -429,7 +429,7 @@ public class Calculator : MonoBehaviour
         if (posY > 100) posY = 100;
         if (posY < -100) posY = -100;
 
-        VDI_Index.transform.localPosition = new Vector2(0.3f, posY/125);
+        VDI_Index.transform.localPosition = new Vector2(0.3f, posY / 125);
         if (DeltaAlt < 0) VDI_Text.transform.localPosition = new Vector2(0.1f, -1);
         else VDI_Text.transform.localPosition = new Vector2(0.1f, 1);
     }
@@ -509,7 +509,7 @@ public class Calculator : MonoBehaviour
         txtFF.text = "" + ((dispFF + lastdigit) / 100).ToString("0.00");
 
     }
-    public static double Speed2Mach(double Speed,double Altitude)
+    public static double Speed2Mach(double Speed, double Altitude)
     {
         Altitude = Altitude > 39900 ? 39900 : Altitude;
 
@@ -518,7 +518,7 @@ public class Calculator : MonoBehaviour
 
         return Mathf.Sqrt(Mathf.Pow(1 / p * (Mathf.Pow((float)Speed * (float)Speed / 2187771 + 1, 3.5f) - 1) + 1, 0.2857f) - 1) * Mathf.Sqrt(5);
     }
-    public static double Mach2Speed(double Mach,double Altitude)
+    public static double Mach2Speed(double Mach, double Altitude)
     {
         Altitude = Altitude > 39900 ? 39900 : Altitude;
         int F = 8 - Mathf.FloorToInt((float)Altitude / 5000);
@@ -528,22 +528,22 @@ public class Calculator : MonoBehaviour
         return Mathf.Sqrt(Mathf.Pow(p * (Mathf.Pow(TAS_ * TAS_ / 1653125 + 1, 3.5f) - 1) + 1, 0.2857f) - 1) * Mathf.Sqrt(5) * 661.4787;
 
     }
-    public static double CrossOverAltitude(double Speed,double Mach)
+    public static double CrossOverAltitude(double Speed, double Mach)
     {
-        float ro =(Mathf.Pow(1 + 0.2f * Mathf.Pow((float)Speed / 661.48f, 2), 3.5f) - 1) / (Mathf.Pow((float)(1 + 0.2 * Mach * Mach), 3.5f) - 1);
-        return Mathf.Floor( 145442.16f * (1 - Mathf.Pow(ro, 0.1902631f)));
+        float ro = (Mathf.Pow(1 + 0.2f * Mathf.Pow((float)Speed / 661.48f, 2), 3.5f) - 1) / (Mathf.Pow((float)(1 + 0.2 * Mach * Mach), 3.5f) - 1);
+        return Mathf.Floor(145442.16f * (1 - Mathf.Pow(ro, 0.1902631f)));
     }
     private void FuelandMach()
     {
         totalFuel -= (double)FF * 2 / 3600;                                                     //Fuel
         txtTotalFuel.text = "" + System.Math.Round(totalFuel / 100, 2);
 
-        CMach = Speed2Mach(CSpeed,CAltitude);
+        CMach = Speed2Mach(CSpeed, CAltitude);
         txtMach.text = CMach > 0.4 ? "." + System.Math.Round(CMach, 2) * 100 : "GS " + GS;
 
         if (co.isOn)
         {
-            RSpeed = (int)Mach2Speed(RMach,CAltitude);
+            RSpeed = (int)Mach2Speed(RMach, CAltitude);
             if (CAltitude < 26400) co.isOn = false;
         }
         if (CAltitude < 26400) co.enabled = false; else co.enabled = true;
@@ -569,7 +569,7 @@ public class Calculator : MonoBehaviour
     }
     public void SetFlaps()
     {
-        int[] Fps = new int[9] { -179,-145 , -103, -64, -35, -3, 29, 57, 86 };
+        int[] Fps = new int[9] { -179, -145, -103, -64, -35, -3, 29, 57, 86 };
         int i, j, k;
         for (i = 0; i < 5; i++)
             for (j = 0; j < 4; j++)
@@ -689,7 +689,7 @@ public class Calculator : MonoBehaviour
         if (Calculator.Instance.co.isOn)                                    //Mach
         {
             if (Calculator.Instance.RMach < 0.6) Calculator.Instance.RMach = 0.6;
-            if (Calculator.Instance.RMach > Speed2Mach(PFD_Animation.LimitSpeed,CAltitude)) Calculator.Instance.RMach = Speed2Mach(PFD_Animation.LimitSpeed,CAltitude);
+            if (Calculator.Instance.RMach > Speed2Mach(PFD_Animation.LimitSpeed, CAltitude)) Calculator.Instance.RMach = Speed2Mach(PFD_Animation.LimitSpeed, CAltitude);
             RSpeed = (int)Mach2Speed(Calculator.Instance.RMach, CAltitude);
             Calculator.Instance.txtRSpeed.text = "" + System.Math.Round(Calculator.Instance.RMach, 2);
         }
@@ -792,7 +792,7 @@ public class Calculator : MonoBehaviour
         double[,] MVS = new double[5, 2] { { -800, -280 }, { -680, -520 }, { -500, -400 }, { -430, -140 }, { -420, -240 } };
         if (co.isOn) // on mach
         {
-            RMach = Speed2Mach(RSpeed,CAltitude);
+            RMach = Speed2Mach(RSpeed, CAltitude);
             txtRSpeed.text = "" + System.Math.Round(RMach, 2);
             txtRSpeed_overTape.text = txtRSpeed.text;
             for (int i = 0; i < 4; i++)
