@@ -316,38 +316,42 @@ public class RouteScriptableObject : ScriptableObject
         out RoutePoint insertionNode,
         bool showDiscontinuity = false)
     {
-        var _originalRelativeNodeIndex = GetIndex(relativeNodeId);
-        var _beforeNodeIndex = GetIndex(beforeNodeId);
+        var _originalBeforeNodeIndex = GetIndex(beforeNodeId);
+        var _relativeNodeIndex = GetIndex(relativeNodeId);
 
         var _fromNodeIndex = Mathf.Max(
             PositionVirtualNode.PassedNodeIndex,
-            _originalRelativeNodeIndex - 1);
+            _originalBeforeNodeIndex - 1);
 
-        var _originalRelativeNode = Points[_originalRelativeNodeIndex];
-        var _beforeNode = Points[_beforeNodeIndex];
-        var _newDegrees = 360 - rawDegrees;
-        var _isInThePast = _fromNodeIndex != _originalRelativeNodeIndex - 1;
+        var _relativeNode = Points[_relativeNodeIndex];
+        var _insertPosition = Geometry.GetNextPosition(_relativeNode.CartesianPosition, distance, 360 - rawDegrees);
 
-        var _insertPosition = Geometry.GetNextPosition(_originalRelativeNode.CartesianPosition, distance, _newDegrees);
-        var _positionBeforeInsertion = Points[_beforeNodeIndex - 1].CartesianPosition;
+        var _isInThePast = _fromNodeIndex != _originalBeforeNodeIndex - 1;
+
+        var _indexBeforeInsertion = _isInThePast ? PositionVirtualNode.PassedNodeIndex : GetIndex(beforeNodeId) -1;
+
+        var _positionBeforeInsertion = Points[_indexBeforeInsertion].CartesianPosition;
 
         var _insertionAngle = Geometry.AngleOfPosition(_insertPosition, _positionBeforeInsertion);
         var _insertionDistance = (_insertPosition - _positionBeforeInsertion).magnitude;
+
+        var _nodeAfterInsertion = Points[GetIndex(beforeNodeId)];
         
         insertionNode = new RoutePoint
         {
-            Name = GetNewName(_originalRelativeNode.Name),
+            Name = GetNewName(_relativeNode.Name),
             Distance = _insertionDistance,
             RawDegrees = _insertionAngle,
             ID = GetNewId(),
-            Details = _beforeNode.IsAfterDiscontinuity && showDiscontinuity ? "D" : ""
+            Details = _nodeAfterInsertion.IsAfterDiscontinuity && showDiscontinuity ? "D" : ""
         };
-
-        var _returnNode = _beforeNode.Clone();
+        
+        
+        var _returnNode = _nodeAfterInsertion.Clone();
 
         // update info of selected to be relative to the inserted instead of the previous which is now previous to inserted
-        _returnNode.RawDegrees = Geometry.AngleOfPosition(_beforeNode.CartesianPosition, _insertPosition); 
-        _returnNode.Distance = (_beforeNode.CartesianPosition - _insertPosition).magnitude;
+        _returnNode.RawDegrees = Geometry.AngleOfPosition(_nodeAfterInsertion.CartesianPosition, _insertPosition); 
+        _returnNode.Distance = (_nodeAfterInsertion.CartesianPosition - _insertPosition).magnitude;
         if (!_isInThePast && showDiscontinuity)
         {
             _returnNode.IndicateDiscontinuityBefore();
@@ -363,7 +367,7 @@ public class RouteScriptableObject : ScriptableObject
         var _offset = 0;
         for (var i = 0; i < Points.Length; i++)
         {
-            if (i == _beforeNodeIndex)
+            if (i == _indexBeforeInsertion +1)
             {
                 _newSet[i] = insertionNode;
 
