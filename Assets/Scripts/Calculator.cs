@@ -861,6 +861,7 @@ public class Calculator : MonoBehaviour
         double HeadWind = Mathf.Cos(WE.relativeWindD * Mathf.Deg2Rad) * WE.WindM;
         double CrossWind = Mathf.Sin(WE.relativeWindD * Mathf.Deg2Rad) * WE.WindM;
 
+
         WE.TAS = (int)(IAS + (Altitude / 1000 * 0.02 * IAS));
 
         WE.GS = (int)(WE.TAS - HeadWind);

@@ -56,6 +56,8 @@ public class Move : Singleton<Move>
             GameObject pt = GameObject.Find("pt (" + j + ")");
 
             pt.transform.localPosition = Pos;
+   
+
             TempPtsPos[j] = Pos;
         }
         for (int j = 1; j < 13; j++)                                                      //Locate Virtual points on EditMap
@@ -81,28 +83,28 @@ public class Move : Singleton<Move>
         StartCoroutine(MoveAC(2));
         StartCoroutine(MoveMyAC());
     }
-
     private IEnumerator MoveMyAC()
     {
         float A0 = 0, h;
-        int i = 0, prvWptIdx = 0;
-
+        int i = 0, prvWptIdx = -1;
         int point, mode = 0, VS, VS_nx, Speed, Speed_nx;
         long Altitude;
 
+
+        Vector2 pointPos(int pt)
+        {
+            return (point < 50) ? (Vector2)GameManager.Instance.PathLines.ComputedLines[point + 1].EndPosition :
+                                     VirtualPtsPos[point - 50];
+            }
         int TrackToPoint(int K)
         {
             // computedLines start from 1. (0 is an added empty line)
 
 
-            Vector2 PtPos = (K < 50) ? (Vector2)GameManager.Instance.PathLines.ComputedLines[K + 1].EndPosition :
-                                        VirtualPtsPos[K - 50];
-
-
             float x1 = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath.x;
             float y1 = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath.y;
-            float x2 = PtPos.x;
-            float y2 = PtPos.y;
+            float x2 = pointPos(K).x;
+            float y2 = pointPos(K).y;
             float dx = x2 - x1;
             float dy = y2 - y1;
             h = Mathf.Sqrt(dx * dx + dy * dy);
@@ -142,7 +144,6 @@ public class Move : Singleton<Move>
 
                 string s = VS < 0 ? ", ROD " + (-VS) + " fpm" + nxTostring(VS_nx) : "";
                 Atc2.text = Altitude > 0 ? "Descent altitude " + Altitude + " feet" + s : "";
-
 
                 Atc3.text = Speed > 0 ? "Speed " + Speed + " knots " + nxTostring(Speed_nx) : Speed == 0 ? Atc3.text : "";
 
@@ -206,15 +207,18 @@ public class Move : Singleton<Move>
             OncekiPos = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath;
             OncekiAlt = (int)Calculator.CAltitude;
             myAC.transform.localPosition = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath; //move AC on EditMap
+            bool p = ((point != prvWptIdx));
+            //float V = Vector2.Distance( GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath, pointPos(point)) < 1;
 
-            if (PositionVirtualNode.PassedNodeIndex != prvWptIdx)
-            {
-                i += 1;
+             if ((point != prvWptIdx) && ((Vector2.Distance(GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath,
+                                             pointPos(point)) < 1)))
+                {
+                    i += 1;
                 NewPoint = true;
 
                 ATCAltitude = VS;
                 myAC.GetComponent<UnityEngine.UI.Text>().text = "#";
-                prvWptIdx = PositionVirtualNode.PassedNodeIndex;
+                prvWptIdx =point;
             }
 
 
