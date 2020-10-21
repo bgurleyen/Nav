@@ -420,17 +420,9 @@ public class RouteScriptableObject : ScriptableObject
 
     public RoutePoint AddDisplayPositionNode(float neededOffsetDistance = 0)
     {
-        // ! Position node should be added in front of the actual position so that the aircraft can safely turn 
+        // ! Position node is added in front of the actual position so that the aircraft can safely turn 
         
-        const float DISTANCE_THRESHOLD = 0.002f;
         const float FORWARD_THRESHOLD = 3f;
-
-        if (Aircraft.ComputedDistanceLeftOnSegment < FORWARD_THRESHOLD ||
-            Aircraft.WalkedDistanceOnSegment < DISTANCE_THRESHOLD)
-        {
-            Debug.LogWarning("ERROR: Skipped add position node - too close");
-            return null;
-        }
 
         var _routePreviousNodeIndex = PositionVirtualNode.PassedNodeIndex;
         var _routePreviousNode = Points[_routePreviousNodeIndex];
@@ -443,7 +435,6 @@ public class RouteScriptableObject : ScriptableObject
             // add position node on path
 
             var _activeNextNode = PositionVirtualNode.GetNodeTo;
-
             var _activeSegmentDistancePassed = Aircraft.WalkedDistanceOnSegment;
 
             LastAddedPositionNode = new RoutePoint
