@@ -749,14 +749,7 @@ public class Calculator : MonoBehaviour
         Script2.SpeedIndexUpdate_Click();
         Script2.CheckAltitudeIndicator(RAltitude, (int)CAltitude);
     }
-    public void Button_Long_Hold()
-    {
-        if (LongPressEventTrigger.held2)
-        {
-            Button_Click();
-            Invoke("Button_Long_Hold", 0.1f);
-        }
-    }
+    
     public void Toggle_Change()
     {
         if (!VS_Toggle.isOn) txtRVS.enabled = false;
