@@ -102,25 +102,15 @@ public class PathLines
         return GetNextDestination(1, 0, out vertexIndex);
     }
 
-    public bool GetFirstDestinationFromNode(RoutePoint node, out PathVertexIndex vertexIndex)
-    {
-        oldPositionVertex = Vector3.zero;
-
-        var _currentNodeIndex = GameManager.Instance.ActiveRoute.GetIndex(node.ID);
-        var _heading = node.Degrees; // Not sure if matters, but it's not correct
-
-        vertexIndex = new PathVertexIndex
-        {
-            CurrentNodeIndex = _currentNodeIndex + 1,
-            UnreachedPoint = 0,
-            HeadingBefore = _heading,
-            VertexPosition = node.CartesianPosition
-        };
-
-        return true;
-    }
+ 
 
     Vector3 oldPositionVertex = Vector3.zero;
+
+    public void ResetOldPosition()
+    {
+        oldPositionVertex = Vector3.zero;
+    }
+    
     /// <summary>
     /// 
     /// </summary>
