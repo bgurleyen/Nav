@@ -88,19 +88,22 @@ public class Drawer : Singleton<Drawer>
             return;
         }
 
-        // mod always has to include the last passed active node ( all the passed nodes ) 
-        // otherwise it is invalid - will reapply all the commands
-        var _passedNodeIndex = PositionVirtualNode.PassedNodeIndex;
-
-        if (_passedNodeIndex != modReExecutedForIndex)
+        if (GameManager.Instance.Aircraft.IsOnPath)
         {
-            if (ActiveRoute.Points[_passedNodeIndex].ID != ModRoute.Points[_passedNodeIndex].ID)
-            {
-                GameManager.Instance.ReExecuteCachedCommands();
-                Debug.Log("Reapplied MOD");
-            }
+            // mod always has to include the last passed active node ( all the passed nodes ) 
+            // otherwise it is invalid - will reapply all the commands
+            var _passedNodeIndex = PositionVirtualNode.PassedNodeIndex;
 
-            modReExecutedForIndex = _passedNodeIndex;
+            if (_passedNodeIndex != modReExecutedForIndex)
+            {
+                if (ActiveRoute.Points[_passedNodeIndex].ID != ModRoute.Points[_passedNodeIndex].ID)
+                {
+                    GameManager.Instance.ReExecuteCachedCommands();
+                    Debug.Log("Reapplied MOD");
+                }
+
+                modReExecutedForIndex = _passedNodeIndex;
+            }
         }
 
         GameManager.Instance.ModeSetWithPosition = ModRoute.Clone(); // refactor

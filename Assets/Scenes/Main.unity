@@ -4561,6 +4561,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   holdTime: 1
+  repeatTime: 0.3
   onClick:
     m_PersistentCalls:
       m_Calls:
@@ -6024,6 +6025,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   holdTime: 1
+  repeatTime: 0.3
   onClick:
     m_PersistentCalls:
       m_Calls:
@@ -8083,6 +8085,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   holdTime: 1
+  repeatTime: 0.3
   onClick:
     m_PersistentCalls:
       m_Calls:
@@ -14344,6 +14347,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   holdTime: 1
+  repeatTime: 0.3
   onClick:
     m_PersistentCalls:
       m_Calls:
@@ -16766,6 +16770,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   holdTime: 1
+  repeatTime: 0.3
   onClick:
     m_PersistentCalls:
       m_Calls:
@@ -18246,6 +18251,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   holdTime: 1
+  repeatTime: 0.1
   onClick:
     m_PersistentCalls:
       m_Calls:
@@ -18273,7 +18279,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rotatingMesh: {fileID: 1604226570}
-  stepDegrees: 5
+  stepDegrees: 20
   isPositive: 0
 --- !u!1 &1254730836
 GameObject:
@@ -19521,6 +19527,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   holdTime: 1
+  repeatTime: 0.3
   onClick:
     m_PersistentCalls:
       m_Calls:
@@ -21656,6 +21663,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   holdTime: 1
+  repeatTime: 0.1
   onClick:
     m_PersistentCalls:
       m_Calls:
@@ -21683,7 +21691,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rotatingMesh: {fileID: 1604226570}
-  stepDegrees: 5
+  stepDegrees: 20
   isPositive: 1
 --- !u!1 &1544646507
 GameObject:
