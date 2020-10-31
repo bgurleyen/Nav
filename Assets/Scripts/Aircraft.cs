@@ -182,11 +182,29 @@ public class Aircraft
         {
             var _lastAddedPositionNode = GameManager.Instance.ActiveRoute.LastAddedPositionNode;
             
-            if (GameManager.Instance.PathLines.GetFirstDestinationFromNode(_lastAddedPositionNode, out var _newUnreachedVertex) )
+            if (GetFirstDestinationFromNode(_lastAddedPositionNode, out var _newUnreachedVertex) )
             {
                 PathLocalization = _newUnreachedVertex;
             }
         }
+    }
+
+    static bool GetFirstDestinationFromNode(RoutePoint node, out PathVertexIndex vertexIndex)
+    {
+        GameManager.Instance.PathLines.ResetOldPosition();
+
+        var _currentNodeIndex = GameManager.Instance.ActiveRoute.GetIndex(node.ID);
+        var _heading = node.Degrees; // Not sure if matters, but it's not correct
+
+        vertexIndex = new PathVertexIndex
+        {
+            CurrentNodeIndex = _currentNodeIndex + 1,
+            UnreachedPoint = 0,
+            HeadingBefore = _heading,
+            VertexPosition = node.CartesianPosition
+        };
+
+        return true;
     }
 
     void AdvanceFreeFlight()

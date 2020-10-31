@@ -13,7 +13,6 @@ public class DisplayNodesController
     static RouteScriptableObject ActiveRoute => GameManager.Instance.ActiveRoute;
     static RouteScriptableObject ModRoute => GameManager.Instance.ModRoute;
     static RouteScriptableObject VisibleRoute => IsMod ? ModRoute : ActiveRoute;
-    static int StartingNodeIndex => GameManager.Instance.UnreachedNodeIndex;
 
     readonly int nodesPerPage;
 
@@ -26,7 +25,7 @@ public class DisplayNodesController
     {
         discontinuities = 0;
         skipped = 0;
-        for (var i = StartingNodeIndex; i < VisibleRoute.Points.Length; i++)
+        for (var i = PositionVirtualNode.NextNodeIndex; i < VisibleRoute.Points.Length; i++)
         {
             if (VisibleRoute.Points[i].IsSkippable)
             {
@@ -48,12 +47,12 @@ public class DisplayNodesController
         var _totalLineIndex = lineIndex + currentPage * nodesPerPage;
 
         // when an insert have been made with the future position node and has been executed. happening until passing the new position
-        var _positionIsTemporaryAhead = ActiveRoute.Points[StartingNodeIndex].IsPositionNode;
+        var _positionIsTemporaryAhead = ActiveRoute.Points[PositionVirtualNode.NextNodeIndex].IsPositionNode;
 
         var _thisIsDiscontinuity = false;
         var _thisIsAfterDiscontinuity = false;
 
-        var _linkedIndex = StartingNodeIndex + (_positionIsTemporaryAhead ? 1 : 0);
+        var _linkedIndex = PositionVirtualNode.NextNodeIndex + (_positionIsTemporaryAhead ? 1 : 0);
         var _pointIsValid = false;
         RoutePoint _linkedPoint = null;
 
@@ -116,7 +115,7 @@ public class DisplayNodesController
 
         var _linkedId = _pointIsValid ? _linkedPoint.ID : -1;
 
-        var _isStartingPoint = _linkedIndex == StartingNodeIndex;
+        var _isStartingPoint = _linkedIndex == PositionVirtualNode.NextNodeIndex;
 
         // Debug.Log(
         //     $"_linkedIndex:{_linkedIndex}  index:{_totalLineIndex} ");

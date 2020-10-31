@@ -20,8 +20,6 @@ public class GameManager : Singleton<GameManager>
     public RouteScriptableObject ModeSetWithPosition;
     public FixedPointsScriptableObject FixedPoints;
 
-    public int UnreachedNodeIndex => Aircraft.PathLocalization.CurrentNodeIndex;
-
     public bool IsMod { get; private set; }
     bool queueEraseMode;
 
@@ -89,7 +87,6 @@ public class GameManager : Singleton<GameManager>
                 FromNodeId = ModRoute.Points[1].ID,
                 ToNodeId = ModRoute.Points[Aircraft.PathLocalization.CurrentNodeIndex].ID
             });
-            Aircraft.PathLocalization.CurrentNodeIndex = 1;
         }
     }
 

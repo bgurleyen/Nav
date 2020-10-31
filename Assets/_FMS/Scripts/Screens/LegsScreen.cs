@@ -9,7 +9,6 @@ public class LegsScreen : ScreenBase
     
     static RouteScriptableObject ActiveRoute => GameManager.Instance.ActiveRoute;
     static RouteScriptableObject ModRoute => GameManager.Instance.ModRoute;
-    static int StartingNodeIndex => GameManager.Instance.UnreachedNodeIndex;
     static MainScreen Main => MainScreen.Instance;
     
     int NodesPerPage => nodes.Length;
@@ -32,7 +31,7 @@ public class LegsScreen : ScreenBase
     string scratchPadBuffer = "";
 
     int TotalPages =>
-        Mathf.CeilToInt((VisibleRoute.Points.Length - StartingNodeIndex + nodesController.TotalPagesCorrection) /
+        Mathf.CeilToInt((VisibleRoute.Points.Length - PositionVirtualNode.NextNodeIndex + nodesController.TotalPagesCorrection) /
                         (float) NodesPerPage);
 
     int currentPage = 0;
