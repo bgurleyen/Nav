@@ -3236,7 +3236,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -0.5995, y: -0.7878999}
+  m_AnchoredPosition: {x: -0.595, y: -0.669}
   m_SizeDelta: {x: 189.9045, y: 47.2735}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &214581282
@@ -4561,25 +4561,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   holdTime: 1
+  repeatTime: 0.3
   onClick:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 35611999}
         m_MethodName: Button_Click
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-  onLongPress:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 35611999}
-        m_MethodName: Button_Long_Hold
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -6038,25 +6025,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   holdTime: 1
+  repeatTime: 0.3
   onClick:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 35611999}
         m_MethodName: Button_Click
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-  onLongPress:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 35611999}
-        m_MethodName: Button_Long_Hold
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -6702,7 +6676,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 194.91003, y: 146.49005}
+  m_AnchoredPosition: {x: 194.4594, y: 134.6002}
   m_SizeDelta: {x: 97.45, y: 179.95}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &360366155
@@ -8265,25 +8239,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   holdTime: 1
+  repeatTime: 0.3
   onClick:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 35611999}
         m_MethodName: Button_Click
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-  onLongPress:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 35611999}
-        m_MethodName: Button_Long_Hold
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -11217,7 +11178,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 212.50989, y: 146.49005}
+  m_AnchoredPosition: {x: 212.06046, y: 134.6002}
   m_SizeDelta: {x: 93.656, y: 179.9}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &706987068
@@ -14925,25 +14886,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   holdTime: 1
+  repeatTime: 0.3
   onClick:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 35611999}
         m_MethodName: Button_Click
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-  onLongPress:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 35611999}
-        m_MethodName: Button_Long_Hold
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -17361,25 +17309,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   holdTime: 1
+  repeatTime: 0.3
   onClick:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 35611999}
         m_MethodName: Button_Click
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-  onLongPress:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 35611999}
-        m_MethodName: Button_Long_Hold
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -18181,6 +18116,31 @@ PrefabInstance:
       propertyPath: m_Name
       value: backlightL
       objectReference: {fileID: 0}
+    - target: {fileID: 9032954594847814039, guid: e40b18ac6ecd1a543b3be57ab104646a,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9032954594847814039, guid: e40b18ac6ecd1a543b3be57ab104646a,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 9032954594847814039, guid: e40b18ac6ecd1a543b3be57ab104646a,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9032954594847814039, guid: e40b18ac6ecd1a543b3be57ab104646a,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.70710677
+      objectReference: {fileID: 0}
+    - target: {fileID: 9032954594847814039, guid: e40b18ac6ecd1a543b3be57ab104646a,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 90.00001
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: e40b18ac6ecd1a543b3be57ab104646a, type: 3}
 --- !u!1 &1206775240
@@ -18788,6 +18748,7 @@ GameObject:
   - component: {fileID: 1252812843}
   - component: {fileID: 1252812842}
   - component: {fileID: 1252812845}
+  - component: {fileID: 1252812846}
   m_Layer: 5
   m_Name: LHeading
   m_TagString: Untagged
@@ -18906,6 +18867,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   holdTime: 1
+  repeatTime: 0.1
   onClick:
     m_PersistentCalls:
       m_Calls:
@@ -18920,20 +18882,21 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  onLongPress:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 35611999}
-        m_MethodName: Button_Long_Hold
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+--- !u!114 &1252812846
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1252812840}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 509d85e2b22cd77409aec7bb2ba537bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  rotatingMesh: {fileID: 1604226570}
+  stepDegrees: 20
+  isPositive: 0
 --- !u!1 &1254730836
 GameObject:
   m_ObjectHideFlags: 0
@@ -20180,25 +20143,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   holdTime: 1
+  repeatTime: 0.3
   onClick:
     m_PersistentCalls:
       m_Calls:
       - m_Target: {fileID: 35611999}
         m_MethodName: Button_Click
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-  onLongPress:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 35611999}
-        m_MethodName: Button_Long_Hold
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
@@ -21837,7 +21787,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 5.949974, y: -39.110016}
+  m_AnchoredPosition: {x: 5.500001, y: -51.00008}
   m_SizeDelta: {x: -188.9045, y: -46.2735}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1001 &1480765812
@@ -22287,6 +22237,7 @@ GameObject:
   - component: {fileID: 1528333755}
   - component: {fileID: 1528333754}
   - component: {fileID: 1528333757}
+  - component: {fileID: 1528333758}
   m_Layer: 5
   m_Name: RHeading
   m_TagString: Untagged
@@ -22405,6 +22356,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   holdTime: 1
+  repeatTime: 0.1
   onClick:
     m_PersistentCalls:
       m_Calls:
@@ -22419,20 +22371,21 @@ MonoBehaviour:
           m_StringArgument: 
           m_BoolArgument: 0
         m_CallState: 2
-  onLongPress:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 35611999}
-        m_MethodName: Button_Long_Hold
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+--- !u!114 &1528333758
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1528333752}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 509d85e2b22cd77409aec7bb2ba537bb, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  rotatingMesh: {fileID: 1604226570}
+  stepDegrees: 20
+  isPositive: 1
 --- !u!1 &1544646507
 GameObject:
   m_ObjectHideFlags: 0
@@ -23329,6 +23282,12 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1596058885}
   m_CullTransparentMesh: 0
+--- !u!4 &1604226570 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 9032954594847814039, guid: e40b18ac6ecd1a543b3be57ab104646a,
+    type: 3}
+  m_PrefabInstance: {fileID: 1204149217}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1614403354
 GameObject:
   m_ObjectHideFlags: 0
@@ -28412,14 +28371,14 @@ RectTransform:
   m_GameObject: {fileID: 2031048939}
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 139.84135}
-  m_LocalScale: {x: 0.15259553, y: 0.16, z: 100}
+  m_LocalScale: {x: 0.15259552, y: 0.16, z: 100}
   m_Children: []
   m_Father: {fileID: 214581281}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 0.4509239, y: 0.41449553}
-  m_AnchoredPosition: {x: 51.658073, y: 25.482544}
+  m_AnchoredPosition: {x: 51.20818, y: 13.592554}
   m_SizeDelta: {x: 1151.0184, y: 268.6198}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2031048941

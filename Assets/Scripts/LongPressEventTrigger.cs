@@ -6,7 +6,8 @@ using UnityEngine.EventSystems;
 public class LongPressEventTrigger : MonoBehaviour, IPointerDownHandler, IPointerUpHandler, IPointerExitHandler
 {
     [Tooltip("How long must pointer be down on this object to trigger a long press")]
-    [SerializeField] float holdTime = 1f;
+    [SerializeField] float holdTime = 0.7f;
+    [SerializeField] float repeatTime = 0.1f;
 
     public UnityEvent onClick = new UnityEvent();
 
@@ -18,10 +19,20 @@ public class LongPressEventTrigger : MonoBehaviour, IPointerDownHandler, IPointe
     {
         if (isDown)
         {
-            if (Time.time - lastExecute > holdTime)
+            if (!isHeld)
             {
-                isHeld = true;
-                Execute();
+                if (Time.time - lastExecute > holdTime)
+                {
+                    Execute();
+                    isHeld = true;
+                }
+            }
+            else
+            {
+                if (Time.time - lastExecute > repeatTime)
+                {
+                    Execute();
+                }
             }
         }
     }

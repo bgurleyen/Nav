@@ -68,11 +68,11 @@ public class Aircraft
 
     public void StartLNavMode()
     {
-        if (GameManager.Instance.ActiveRoute.FindFreeFlightExitPosition(out var _intersectionVertex, out var _distanceUntilLineIntersection))
+        if (GameManager.Instance.ActiveRoute.FindFreeFlightExitPosition(out var _intersectionInfo, out var _distanceUntilLineIntersection))
         {
             IsFreeFlight = false;
 
-            PathLocalization = _intersectionVertex;
+            PathLocalization = _intersectionInfo;
             WalkedDistanceOnSegment = _distanceUntilLineIntersection;
         }
         else
