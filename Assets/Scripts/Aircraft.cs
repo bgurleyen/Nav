@@ -4,6 +4,8 @@ using UnityEngine;
 public class Aircraft
 {
     const float DeltaTime = 0.0000055f;
+
+
     const float MaxTurningSpeed = 1f;
 
     // position that can be on the generated curved sections of the lines
@@ -36,7 +38,8 @@ public class Aircraft
     }
 
     Vector2 CurrentDirection => Geometry.GetDirectionFromHeading(Heading);
-    float FrameDistance => (float)Calculator.CSpeed * DeltaTime; // change
+   
+    float FrameDistance => (float)Calculator.CSpeed * DeltaTime * Calculator.Acceleration(); // change
 
     float speed;
 

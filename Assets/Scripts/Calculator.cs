@@ -9,6 +9,15 @@ using TMPro;
 
 public class Calculator : MonoBehaviour
 {
+    //TEMP
+    public  Toggle Accelerate ;
+
+    
+    public static  float Acceleration()
+    {
+        return  Calculator.Instance.Accelerate.isOn ? 10 : 1;
+    }
+
     public static int Level = 0;             // ***  Level
 
     public WindTableScriptableObject[] windTables;
@@ -26,7 +35,7 @@ public class Calculator : MonoBehaviour
     public Transform VDI_Index;
 
 
-    public static double CSpeed = 300, CAltitude = 10000; // Currenr Altitude*************************
+    public static double CSpeed = 300, CAltitude = 5500; // Currenr Altitude*************************
     //                            ***              *****
     int RVS;
     public static int RSpeed = (int)CSpeed, RHeading, RAltitude, CVS;

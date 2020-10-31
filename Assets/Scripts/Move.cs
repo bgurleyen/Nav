@@ -8,7 +8,7 @@ using UnityEngine.UI;
 [System.Serializable]
 public class Move : Singleton<Move>
 {
-
+    RouteScriptableObject Route;
     int Level = Calculator.Level;
     float GameSpeed = 1;
 
@@ -49,18 +49,18 @@ public class Move : Singleton<Move>
         // Altitude computed: GameManager.Instance.ActiveSet.Points[4].Altitude.ComputedValue
 
         Vector2 Pos = new Vector2(0, 0);
+        Route = GameManager.Instance.ActiveRoute.Clone();
 
         for (int j = 1; j < 17; j++)                                                    // Locate the points on EditMap
         {
-            Pos = GameManager.Instance.PathLines.ComputedLines[j].EndPosition;
+            Pos = Route.Points[j].CartesianPosition;
             GameObject pt = GameObject.Find("pt (" + j + ")");
 
             pt.transform.localPosition = Pos;
-   
 
             TempPtsPos[j] = Pos;
         }
-        for (int j = 1; j < 13; j++)                                                      //Locate Virtual points on EditMap
+        for (int j = 1; j < 11; j++)                                                      //Locate Virtual points on EditMap
         {
             pt = GameObject.Find("pt (" + (j + 50) + ")");
             VirtualPtsPos[j].x = virtualPoints[Level].VirtualPointsItems[j].x;
@@ -87,15 +87,14 @@ public class Move : Singleton<Move>
     {
         float A0 = 0, h;
         int i = 0, prvWptIdx = -1;
-        int point, mode = 0, VS, VS_nx, Speed, Speed_nx;
+        int point=1, mode, VS, VS_nx, Speed, Speed_nx;
         long Altitude;
 
 
         Vector2 pointPos(int pt)
         {
-            return (point < 50) ? (Vector2)GameManager.Instance.PathLines.ComputedLines[point + 1].EndPosition :
-                                     VirtualPtsPos[point - 50];
-            }
+            return (pt < 50) ? Route.Points[pt].CartesianPosition : VirtualPtsPos[pt - 50];
+        }
         int TrackToPoint(int K)
         {
             // computedLines start from 1. (0 is an added empty line)
@@ -127,20 +126,74 @@ public class Move : Singleton<Move>
         void ATCCall()
 
         {
-            RouteScriptableObject activePoints = GameManager.Instance.ActiveRoute;
+            void LocateSlidingPoint()
+            {
+                int nextPoint = aTCs[Level].ATCInstrucitonItems[i + 1].point;
+                int lastPoint = aTCs[Level].ATCInstrucitonItems[i + 2].point;
+                Vector2 Now = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath;
+
+                float NM = 32;
+
+                if (nextPoint == 59)
+                {
+                    float d = Vector2.Distance(Now, pointPos(point)) +
+                              Vector2.Distance(pointPos(point), pointPos(nextPoint))+
+                              Vector2.Distance(pointPos(nextPoint), pointPos(lastPoint));
+                    float a = Vector2.Distance(Now, pointPos(point + 1)) +
+                              Vector2.Distance(pointPos(point + 1), pointPos(nextPoint + 1))+
+                              Vector2.Distance(pointPos(point + 11), pointPos(lastPoint));
+
+                    float B1 = Vector2.Distance(pointPos(point), pointPos(point + 1));
+                    float B2 = Vector2.Distance(pointPos(nextPoint), pointPos(nextPoint + 1));
+
+
+                    float x1 = (NM - d) / ((a - d)) * B1;
+                    float x2 = (NM - d) / ((a - d)) * B2;
+
+                    VirtualPtsPos[7] = Vector2.MoveTowards(pointPos(point), pointPos(point + 1), x1);
+                    VirtualPtsPos[9] = Vector2.MoveTowards(pointPos(nextPoint), pointPos(nextPoint + 1), x2);
+
+                    GameObject pt = GameObject.Find("pt (" + 57 + ")");
+                    pt.transform.localPosition = VirtualPtsPos[7];
+                    pt = GameObject.Find("pt (" + 59 + ")");
+                    pt.transform.localPosition = VirtualPtsPos[9];
+                }
+                else
+                {
+                    float d = Vector2.Distance(Now, pointPos(point))+
+                              Vector2.Distance(pointPos(point), pointPos(nextPoint));
+                    float a = Vector2.Distance(Now, pointPos(point + 1))+
+                               Vector2.Distance(pointPos(point + 1), pointPos(nextPoint));
+                  
+                    float B1 = Vector2.Distance(pointPos(point), pointPos(point + 1));
+  
+                    float x1 = (NM - d) / ((a - d)) * B1;
+
+                    VirtualPtsPos[7] = Vector2.MoveTowards(pointPos(point), pointPos(point + 1), x1);
+
+                    GameObject pt = GameObject.Find("pt (" + 57 + ")");
+                    pt.transform.localPosition = VirtualPtsPos[7];
+                }
+            }
+
 
             point = aTCs[Level].ATCInstrucitonItems[i].point;
-            mode = aTCs[Level].ATCInstrucitonItems[i].mode;
+            mode = aTCs[Level].ATCInstrucitonItems[i] .mode;
             Altitude = aTCs[Level].ATCInstrucitonItems[i].Altitude;
             VS = aTCs[Level].ATCInstrucitonItems[i].VS;
             VS_nx = aTCs[Level].ATCInstrucitonItems[i].VS_nx;
             Speed = aTCs[Level].ATCInstrucitonItems[i].Speed;
             Speed_nx = aTCs[Level].ATCInstrucitonItems[i].Speed_nx;
 
+            Debug.Log("Point :" + point + "i: " + i + "Mode " + mode);
             if (NewPoint)
             {
-                Atc1.text = mode == 1 ? "Proceed direct to  " + activePoints.Points[point].Name :
+                if (point == 57) LocateSlidingPoint();
+
+                Atc1.text = mode == 1 ? "Proceed direct to  " + Route.Points[point].Name :
                             mode == 2 ? "Turn " + turnDirection(TrackToPoint(point)) + "Heading " + TrackToPoint(point) : "";
+
+                
 
                 string s = VS < 0 ? ", ROD " + (-VS) + " fpm" + nxTostring(VS_nx) : "";
                 Atc2.text = Altitude > 0 ? "Descent altitude " + Altitude + " feet" + s : "";
@@ -207,11 +260,11 @@ public class Move : Singleton<Move>
             OncekiPos = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath;
             OncekiAlt = (int)Calculator.CAltitude;
             myAC.transform.localPosition = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath; //move AC on EditMap
-            bool p = ((point != prvWptIdx));
-            //float V = Vector2.Distance( GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath, pointPos(point)) < 1;
 
-             if ((point != prvWptIdx) && ((Vector2.Distance(GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath,
-                                             pointPos(point)) < 1)))
+            float V = Vector2.Distance( GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath, pointPos(point));
+
+            Debug.Log(" V :" + V+ " P :" +point);
+             if ((point != prvWptIdx) && ((V < 1)))
                 {
                     i += 1;
                 NewPoint = true;
@@ -235,7 +288,7 @@ public class Move : Singleton<Move>
     { //Moves  other ACs based on the Route and Alt(Altitude) arrays.
 
         float dx, dy, h;
-        float x, y, EscapeX = 0, EscapeY = 0;
+        float x, y;
         int i = 1;
         float Speed, SpeedCo;
         string s;
@@ -243,36 +296,24 @@ public class Move : Singleton<Move>
         int Point, AltitudeR;
         float AltitudeC = otherACLevel[Level].otherACnr[ACnr].ACItems[0].Altitude;
         Vector2 finalPosition = PositionOfPoint(otherACLevel[Level].otherACnr[ACnr].ACItems[0].Point);  //intial pos and alt
+
+        var _aircraftKey = "AC (" + (ACnr + 1) + ")";
+
         void CollisionCheck()
         {
-            int j;
-            float myACAlt, ACAlt, Angle;
-            Vector3 myACpos, ACpos;
-            float D = Vector2.Distance(AC.transform.localPosition, myAC.transform.localPosition);
-            myACpos = myAC.transform.localPosition;
-            myACAlt = (int)Calculator.CAltitude;
-            ACAlt = AltitudeC;
 
-            for (j = 1; j < 10; j++)
+            float D = Vector2.Distance(GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath, finalPosition);
+
+            int myACAlt = (int)Calculator.CAltitude;
+            int ACAlt = (int)AltitudeC;
+
+            if ((D < 2) && (Mathf.Abs(myACAlt - ACAlt) < 700))
             {
-                myACpos += (myAC.transform.localPosition - OncekiPos);
-                ACpos = new Vector3(x + dx / h * SpeedCo * j, y + dy / h * SpeedCo * j, 0);
-                myACAlt -= (OncekiAlt - (int)Calculator.CAltitude);
-                if (myACAlt < Calculator.RAltitude) myACAlt = (int)Calculator.RAltitude;
-                // ACAlt  -= (Altitude0 - Altitude) / (h / 10); Change
-                if ((Vector3.Distance(myACpos, ACpos) < 50) && Mathf.Abs(myACAlt - ACAlt) < 800)
-                {
-                    Angle = (Vector2.Angle(AC.transform.localPosition, myAC.transform.localPosition) + 1.57f);
-                    EscapeX = Mathf.Cos(Angle) * SpeedCo;
-                    EscapeY = Mathf.Sin(Angle) * SpeedCo;
-
-                    AC.GetComponent<UnityEngine.UI.Text>().color = Color.cyan;
-                    break;
-                }
+                AC.GetComponent<UnityEngine.UI.Text>().color = Color.clear;
+                ACTexts[_aircraftKey] = "";
             }
 
         }
-
         Vector2 PositionOfPoint(int Pt)
         {
             Vector2 V;
@@ -296,7 +337,7 @@ public class Move : Singleton<Move>
 
             PtPos = PositionOfPoint(Point);
 
-            var _aircraftKey = "AC (" + (ACnr + 1) + ")";
+         
             if (!ACPositions.ContainsKey(_aircraftKey))
             {
                 ACPositions.Add(_aircraftKey, Vector2.zero);
@@ -306,7 +347,7 @@ public class Move : Singleton<Move>
 
             AC = GameObject.Find(_aircraftKey);
             AC.transform.localPosition = finalPosition;
-            SpeedCo = Speed / 360;
+            SpeedCo = Speed / 360 * Calculator.Acceleration();
 
             x = finalPosition.x;
             y = finalPosition.y;
@@ -316,17 +357,10 @@ public class Move : Singleton<Move>
             dy = PtPos.y - y;
             h = Mathf.Sqrt(dx * dx + dy * dy);
 
-            if (EscapeX == 0)
-            {
+     
                 AltitudeC -= ((AltitudeC - AltitudeR)) / h * SpeedCo / 10;
                 finalPosition = new Vector2(x + dx / h * SpeedCo / 10, y + dy / h * SpeedCo / 10); //Advance
-            }
-            else
-            {
-                AltitudeC += 100;
-                finalPosition = new Vector2(x + EscapeX, y + EscapeY);
-            }
-
+      
             AC.transform.localPosition = finalPosition;
             ACPositions[_aircraftKey] = finalPosition;
 
@@ -343,12 +377,13 @@ public class Move : Singleton<Move>
                 i += 1;
                 AltitudeC = AltitudeR;
             }
-            if (EscapeX == 0) CollisionCheck();
+            CollisionCheck();
         }
         AC.GetComponent<UnityEngine.UI.Text>().text = "";
 
 
     }
+
     void DescentCheck()
     {
 

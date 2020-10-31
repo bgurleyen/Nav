@@ -13,45 +13,39 @@ MonoBehaviour:
   m_Name: Other AC 1 Level 0
   m_EditorClassIdentifier: 
   ACItems:
-  - Point: 56
-    Altitude: 9000
-    Speed: 250
-  - Point: 53
-    Altitude: 9000
-    Speed: 230
-  - Point: 51
-    Altitude: 6000
-    Speed: 230
-  - Point: 8
-    Altitude: 6000
-    Speed: 220
-  - Point: 9
-    Altitude: 4000
-    Speed: 210
-  - Point: 10
-    Altitude: 3000
-    Speed: 200
   - Point: 52
+    Altitude: 9000
+    Speed: 300
+  - Point: 2
+    Altitude: 6000
+    Speed: 300
+  - Point: 3
+    Altitude: 6000
+    Speed: 300
+  - Point: 4
+    Altitude: 4000
+    Speed: 300
+  - Point: 5
     Altitude: 3000
-    Speed: 200
-  - Point: 11
+    Speed: 300
+  - Point: 6
     Altitude: 3000
-    Speed: 180
+    Speed: 300
+  - Point: 7
+    Altitude: 3000
+    Speed: 300
   - Point: 12
     Altitude: 2500
-    Speed: 180
+    Speed: 300
   - Point: 13
     Altitude: 2400
-    Speed: 160
+    Speed: 300
   - Point: 14
     Altitude: 2300
-    Speed: 150
+    Speed: 300
   - Point: 15
     Altitude: 2200
-    Speed: 140
+    Speed: 300
   - Point: 16
     Altitude: 1000
-    Speed: 140
-  - Point: 1
-    Altitude: 0
-    Speed: 0
+    Speed: 300
