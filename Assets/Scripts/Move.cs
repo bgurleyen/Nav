@@ -35,6 +35,7 @@ public class Move : Singleton<Move>
     bool isDescentChecked, isSpeedChecked;
     int modD = 0, modS = 0;
 
+    public static float Perpend;
 
     public Dictionary<string, Vector2> ACPositions = new Dictionary<string, Vector2>();
     public Dictionary<string, string> ACTexts = new Dictionary<string, string>();
@@ -82,35 +83,50 @@ public class Move : Singleton<Move>
         StartCoroutine(MoveAC(1));
         StartCoroutine(MoveAC(2));
         StartCoroutine(MoveMyAC());
-    }
-    private IEnumerator MoveMyAC()
+    }        
+    Vector2 pointPos(int pt)
+        {
+            return (pt < 50) ? Route.Points[pt].CartesianPosition : VirtualPtsPos[pt - 50];
+        }
+    float TrackToPoint(int pt)
     {
-        float A0 = 0, h;
+
+
+
+        float x1 = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath.x;
+        float y1 = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath.y;
+        float x2 = pointPos(pt).x;
+        float y2 = pointPos(pt).y;
+
+      
+        float Angle = Mathf.Atan2(x2 - x1, y2 - y1) * Mathf.Rad2Deg;
+        if (Angle < 0) Angle += 360;
+        return Angle;
+
+    }
+    public float LocDeviation(float course)
+    {
+        return Mathf.DeltaAngle(course, TrackToPoint(16));
+    }
+    public float GsDeviation(float GS)
+    {
+           float DescentAngle = Mathf.Atan2((float)Calculator.CAltitude,
+                               Vector2.Distance(GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath, pointPos(16)) * 6076.12f) * Mathf.Rad2Deg;
+ 
+        return Mathf.DeltaAngle(GS,DescentAngle);
+
+        // Calt- RW alt  , pos 16 -->> Rw point
+
+    }
+    public IEnumerator MoveMyAC()
+    {
+        float PrvTrackToPoint = 0, hyp;
         int i = 0, prvWptIdx = -1;
         int point=1, mode, VS, VS_nx, Speed, Speed_nx;
         long Altitude;
 
 
-        Vector2 pointPos(int pt)
-        {
-            return (pt < 50) ? Route.Points[pt].CartesianPosition : VirtualPtsPos[pt - 50];
-        }
-        int TrackToPoint(int K)
-        {
-            // computedLines start from 1. (0 is an added empty line)
 
-
-            float x1 = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath.x;
-            float y1 = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath.y;
-            float x2 = pointPos(K).x;
-            float y2 = pointPos(K).y;
-            float dx = x2 - x1;
-            float dy = y2 - y1;
-            h = Mathf.Sqrt(dx * dx + dy * dy);
-            int Angle = (int)(Mathf.Atan2(x2 - x1, y2 - y1) * Mathf.Rad2Deg);
-            if (Angle < 0) Angle += 360;
-            return Angle;
-        }
         string turnDirection(float newHdg)
         {
             return (Mathf.DeltaAngle(Calculator.RHeading, newHdg) >= 0) ? "Right " : "Left "; //change Rheading to C
@@ -121,7 +137,7 @@ public class Move : Singleton<Move>
         }
         float DistanceFromRoute()
         {
-            return (Mathf.Abs(Mathf.Sin(Mathf.Abs(TrackToPoint(point) - A0)) * Mathf.Deg2Rad) * h);
+            return (Mathf.Abs(Mathf.Sin(Mathf.Abs(TrackToPoint(point) - PrvTrackToPoint) * Mathf.Deg2Rad)) * hyp);
         }
         void ATCCall()
 
@@ -185,7 +201,9 @@ public class Move : Singleton<Move>
             Speed = aTCs[Level].ATCInstrucitonItems[i].Speed;
             Speed_nx = aTCs[Level].ATCInstrucitonItems[i].Speed_nx;
 
-            Debug.Log("Point :" + point + "i: " + i + "Mode " + mode);
+            hyp = Vector2.Distance(GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath, pointPos(point));
+
+            //Debug.Log("Point :" + point + "i: " + i + "Mode " + mode);
             if (NewPoint)
             {
                 if (point == 57) LocateSlidingPoint();
@@ -200,24 +218,30 @@ public class Move : Singleton<Move>
 
                 Atc3.text = Speed > 0 ? "Speed " + Speed + " knots " + nxTostring(Speed_nx) : Speed == 0 ? Atc3.text : "";
 
-                A0 = TrackToPoint(point);
+                PrvTrackToPoint = TrackToPoint(point);
                 Atc1.color = Color.green;
                 NewPoint = false;
             }
             else  // Not New
             {
-                if (DistanceFromRoute() > 20) //Warning
+              
+                Perpend = Mathf.Sin((TrackToPoint(point) - PrvTrackToPoint)*Mathf.Deg2Rad)>0 ? PrvTrackToPoint+90 : PrvTrackToPoint-90;
+
+                //Debug.Log(DistanceFromRoute() + "   Pp: " + Perpend + "  Tp: " + TrackToPoint(point) + " prv:" + PrvTrackToPoint + " hyp: " + hyp + " Point: " + point );
+                Debug.Log("Loc : "+ LocDeviation(272) + "  G/S : " + GsDeviation(3));
+
+                if (DistanceFromRoute() > 1) //Warning
                 {
-                    Atc1.text = mode == 2 ? "Turn " + turnDirection(TrackToPoint(point)) + "Heading " + TrackToPoint(point) : "";
+                  
+                    if (Mathf.Abs(Mathf.DeltaAngle(Calculator.RHeading, Perpend)) >= 90) // Hdg rota tracki ve +-90 arasinda
+                    {
+                       // Time.timeScale = 0;
+                    }
 
-                    if (DistanceFromRoute() < 30) PrvPos = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath;
+            
 
-                    if (Atc1.color == Color.red) Atc1.color = Color.white; else Atc1.color = Color.red;
-
-                    float sinus = Mathf.Sin((TrackToPoint(point) - A0) * Mathf.Deg2Rad) * h; // h calculated in TrackToPoint
-                    float delta = Mathf.DeltaAngle(Calculator.RHeading, TrackToPoint(point));//Change Calculator.RHeading to Cheading
-
-                    if ((sinus > 0 && delta < 2) || (sinus < 0 && delta > -2)) Atc1.color = Color.white; //if hdg is correcting
+                    Atc1.text = mode == 2 ? "Turn " + turnDirection(TrackToPoint(point)) + "Heading " + (int)TrackToPoint(point) : "";
+                    Atc1.color = Color.red;     
 
                 }
                 else Atc1.color = Color.white;
@@ -263,7 +287,7 @@ public class Move : Singleton<Move>
 
             float V = Vector2.Distance( GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath, pointPos(point));
 
-            Debug.Log(" V :" + V+ " P :" +point);
+            //Debug.Log(" V :" + V+ " P :" +point);
              if ((point != prvWptIdx) && ((V < 1)))
                 {
                     i += 1;
@@ -274,20 +298,12 @@ public class Move : Singleton<Move>
                 prvWptIdx =point;
             }
 
-
-            //(int) Altitude;
-            //((DistanceToRoute < 40))  //Not to continue if out of game borders
-            //else
-            //{
-            //    Atc1.color = Color.red;
-            //    myAC.transform.localPosition = PrvPos;
-            // }
         }
     }
     private IEnumerator MoveAC(int ACnr)
     { //Moves  other ACs based on the Route and Alt(Altitude) arrays.
 
-        float dx, dy, h;
+        float dx, dy, hyp;
         float x, y;
         int i = 1;
         float Speed, SpeedCo;
@@ -311,6 +327,7 @@ public class Move : Singleton<Move>
             {
                 AC.GetComponent<UnityEngine.UI.Text>().color = Color.clear;
                 ACTexts[_aircraftKey] = "";
+
             }
 
         }
@@ -355,11 +372,11 @@ public class Move : Singleton<Move>
 
             dx = PtPos.x - x;
             dy = PtPos.y - y;
-            h = Mathf.Sqrt(dx * dx + dy * dy);
+            hyp = Mathf.Sqrt(dx * dx + dy * dy);
 
      
-                AltitudeC -= ((AltitudeC - AltitudeR)) / h * SpeedCo / 10;
-                finalPosition = new Vector2(x + dx / h * SpeedCo / 10, y + dy / h * SpeedCo / 10); //Advance
+                AltitudeC -= ((AltitudeC - AltitudeR)) / hyp * SpeedCo / 10;
+                finalPosition = new Vector2(x + dx / hyp * SpeedCo / 10, y + dy / hyp * SpeedCo / 10); //Advance
       
             AC.transform.localPosition = finalPosition;
             ACPositions[_aircraftKey] = finalPosition;
@@ -372,7 +389,7 @@ public class Move : Singleton<Move>
                 AC.GetComponent<UnityEngine.UI.Text>().text = s;
             }
             ACTexts[_aircraftKey] = s;
-            if ((h <= 1))
+            if ((hyp <= 1))
             {
                 i += 1;
                 AltitudeC = AltitudeR;
@@ -380,7 +397,6 @@ public class Move : Singleton<Move>
             CollisionCheck();
         }
         AC.GetComponent<UnityEngine.UI.Text>().text = "";
-
 
     }
 

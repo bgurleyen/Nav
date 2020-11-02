@@ -747,11 +747,20 @@ public class Calculator : MonoBehaviour
         {
             RHeading += 1;
             if (RHeading > 359) RHeading = 0;
+            if (Mathf.Abs(Mathf.DeltaAngle(RHeading, Move.Perpend)) < 90) 
+            {
+                Time.timeScale = 1;
+            }
         }
         if (result == "LHeading")
         {
             RHeading -= 1;
             if (RHeading < 0) RHeading = 359;
+
+            if (Mathf.Abs(Mathf.DeltaAngle(RHeading, Move.Perpend)) < 90)
+            {
+                Time.timeScale = 1;
+            }
         }
         McpUI.Instance.RefreshHS();
         CHeading = RHeading;
