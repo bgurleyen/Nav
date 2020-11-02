@@ -3,16 +3,14 @@ using UnityEngine;
 
 public class Aircraft
 {
-    const float DeltaTime = 0.0000055f;
-
-
+    const float DeltaTime = 0.00003f;
     const float MaxTurningSpeed = 1f;
-
+    
     // position that can be on the generated curved sections of the lines
     public Vector2 PositionFreeOrOnCurvedPath { get; private set; }
-
+    
     public Vector2 PositionFreeOrOnSegment { get; private set; }
-
+    
     public float Heading { get; private set; } // Degrees based rotation
     public float TargetHeading { get; private set; }
     public float WalkedDistanceOnSegment { get; private set; }
@@ -38,8 +36,7 @@ public class Aircraft
     }
 
     Vector2 CurrentDirection => Geometry.GetDirectionFromHeading(Heading);
-   
-    float FrameDistance => (float)Calculator.CSpeed * DeltaTime * Calculator.Acceleration(); // change
+    float FrameDistance => speed * DeltaTime * Calculator.Acceleration(); //change
 
     float speed;
 
@@ -83,7 +80,7 @@ public class Aircraft
             Debug.LogError("No Intersection Point Found");
         }
     }
-
+    
     // on free flight
     void ExecuteStepMove()
     {
@@ -130,7 +127,7 @@ public class Aircraft
     void AdvanceOnPath()
     {
         ExecuteStepHeadingCorrection();
-
+        
         var _distanceLeft = (PathLocalization.VertexPosition - PositionFreeOrOnCurvedPath).magnitude;
 
         var _goesOver = _distanceLeft <= FrameDistance;
@@ -146,7 +143,7 @@ public class Aircraft
             IsOnPath = true;
             GameManager.Instance.ActiveRoute.OnPathRejoined();
         }
-
+        
         // move to the corner
         ExecuteLerpMove(_distanceLeft);
         var _leftToAdvance = FrameDistance - _distanceLeft;
@@ -184,12 +181,30 @@ public class Aircraft
         if (!IsOnPath)
         {
             var _lastAddedPositionNode = GameManager.Instance.ActiveRoute.LastAddedPositionNode;
-
-            if (GameManager.Instance.PathLines.GetFirstDestinationFromNode(_lastAddedPositionNode, out var _newUnreachedVertex))
+            
+            if (GetFirstDestinationFromNode(_lastAddedPositionNode, out var _newUnreachedVertex) )
             {
                 PathLocalization = _newUnreachedVertex;
             }
         }
+    }
+
+    static bool GetFirstDestinationFromNode(RoutePoint node, out PathVertexIndex vertexIndex)
+    {
+        GameManager.Instance.PathLines.ResetOldPosition();
+
+        var _currentNodeIndex = GameManager.Instance.ActiveRoute.GetIndex(node.ID);
+        var _heading = node.Degrees; // Not sure if matters, but it's not correct
+
+        vertexIndex = new PathVertexIndex
+        {
+            CurrentNodeIndex = _currentNodeIndex + 1,
+            UnreachedPoint = 0,
+            HeadingBefore = _heading,
+            VertexPosition = node.CartesianPosition
+        };
+
+        return true;
     }
 
     void AdvanceFreeFlight()
