@@ -39,7 +39,7 @@ public class Calculator : MonoBehaviour
     //                            ***              *****
     int RVS;
     public static int RSpeed = (int)CSpeed, RHeading, RAltitude, CVS;
-    public int CHeading, Track;
+    public static int CHeading, Track;
     double CMach, RMach, VNAV_VS;
     public static double TAS, GS;
 

@@ -23,6 +23,7 @@ public class Move : Singleton<Move>
 
 
     public GameObject pt, AC, myAC;
+    public Image LOCIndex, GSIndex;
 
     public Text Atc1, Atc2, Atc3;
     public string ATtc1; // maybe it's possible to use like this
@@ -106,14 +107,21 @@ public class Move : Singleton<Move>
     }
     public float LocDeviation(float course)
     {
-        return Mathf.DeltaAngle(course, TrackToPoint(16));
+        float  Deviation = Mathf.DeltaAngle(course, TrackToPoint(16));
+
+        if (Mathf.DeltaAngle(course, Calculator.CHeading) > 90) Deviation *=-1;
+        LOCIndex.transform.localPosition = new Vector2( Mathf.Clamp(Deviation * 1000,-1243,1243),-645);
+        return Deviation;
     }
     public float GsDeviation(float GS)
     {
            float DescentAngle = Mathf.Atan2((float)Calculator.CAltitude,
                                Vector2.Distance(GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath, pointPos(16)) * 6076.12f) * Mathf.Rad2Deg;
- 
-        return Mathf.DeltaAngle(GS,DescentAngle);
+            float Deviation = -Mathf.DeltaAngle(GS, DescentAngle);
+
+        GSIndex.transform.localPosition = new Vector2(1373, Mathf.Clamp(Deviation * 1500, -541, 541));
+
+        return Deviation;
 
         // Calt- RW alt  , pos 16 -->> Rw point
 
