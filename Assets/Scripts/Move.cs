@@ -109,31 +109,48 @@ public class Move : Singleton<Move>
     {
         float  Deviation = Mathf.DeltaAngle(course, TrackToPoint(16));
 
-        if (Mathf.DeltaAngle(course, Calculator.CHeading) > 90) Deviation *=-1;
-        LOCIndex.transform.localPosition = new Vector2( Mathf.Clamp(Deviation * 1000,-1243,1243),-645);
+        if (Mathf.Abs(Mathf.DeltaAngle(course, GameManager.Instance.Aircraft.Heading)) > 90) Deviation *=-1;
+        if (((Mathf.Abs(Deviation) < 35) && (DME() < 10)) || ((Mathf.Abs(Deviation) < 10) && (DME() < 25)))
+        {
+            LOCIndex.enabled = true;
+            LOCIndex.transform.localPosition = new Vector2(Mathf.Clamp(Deviation * 1000, -1243, 1243), -645);
+        }
+        else
+        {
+            LOCIndex.enabled = false;
+        }
         return Deviation;
     }
     public float GsDeviation(float GS)
     {
-           float DescentAngle = Mathf.Atan2((float)Calculator.CAltitude,
-                               Vector2.Distance(GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath, pointPos(16)) * 6076.12f) * Mathf.Rad2Deg;
+           float DescentAngle = Mathf.Atan2((float)Calculator.CAltitude,DME() * 6076.12f) * Mathf.Rad2Deg;
             float Deviation = -Mathf.DeltaAngle(GS, DescentAngle);
 
-        GSIndex.transform.localPosition = new Vector2(1373, Mathf.Clamp(Deviation * 1500, -541, 541));
-
+       
+        if ((Mathf.Abs(LocDeviation(272)) < 5) && (DME() < 20))
+        {
+            GSIndex.enabled = true;
+            GSIndex.transform.localPosition = new Vector2(1373, Mathf.Clamp(Deviation * 1500, -541, 541));
+        }
+        else
+        {
+            GSIndex.enabled = false;
+        }
         return Deviation;
 
         // Calt- RW alt  , pos 16 -->> Rw point
 
     }
+    public float DME()
+    {
+        return Vector2.Distance(GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath, pointPos(16));
+    } // Distance from RW
     public IEnumerator MoveMyAC()
     {
         float PrvTrackToPoint = 0, hyp;
         int i = 0, prvWptIdx = -1;
         int point=1, mode, VS, VS_nx, Speed, Speed_nx;
         long Altitude;
-
-
 
         string turnDirection(float newHdg)
         {
@@ -236,8 +253,10 @@ public class Move : Singleton<Move>
                 Perpend = Mathf.Sin((TrackToPoint(point) - PrvTrackToPoint)*Mathf.Deg2Rad)>0 ? PrvTrackToPoint+90 : PrvTrackToPoint-90;
 
                 //Debug.Log(DistanceFromRoute() + "   Pp: " + Perpend + "  Tp: " + TrackToPoint(point) + " prv:" + PrvTrackToPoint + " hyp: " + hyp + " Point: " + point );
-                Debug.Log("Loc : "+ LocDeviation(272) + "  G/S : " + GsDeviation(3));
+                //Debug.Log("Loc : "+ LocDeviation(272) + "  G/S : " + GsDeviation(3) + "  D: " + DME());
 
+                float dev = LocDeviation(272);
+                float gsD = GsDeviation(3);
                 if (DistanceFromRoute() > 1) //Warning
                 {
                   
@@ -245,8 +264,6 @@ public class Move : Singleton<Move>
                     {
                        // Time.timeScale = 0;
                     }
-
-            
 
                     Atc1.text = mode == 2 ? "Turn " + turnDirection(TrackToPoint(point)) + "Heading " + (int)TrackToPoint(point) : "";
                     Atc1.color = Color.red;     
@@ -407,7 +424,6 @@ public class Move : Singleton<Move>
         AC.GetComponent<UnityEngine.UI.Text>().text = "";
 
     }
-
     void DescentCheck()
     {
 

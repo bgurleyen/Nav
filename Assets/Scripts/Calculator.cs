@@ -50,7 +50,6 @@ public class Calculator : MonoBehaviour
     public Button FUP_Button, FDown_Button;
     int Flap_Idx, increasedSpeed, excessSpeedCo = 0;
     float SpeedTime;
-    double DTG;
     public Text windTxt;
     public static string CWind;
     public Text FMA1, FMA2, FMA3;
@@ -185,7 +184,7 @@ public class Calculator : MonoBehaviour
         txtRSpeed_overTape.text = txtRSpeed.text;
 
         txtCVS.text = "";
-        DTG = 173.1;
+
 
         Invoke("VS_Equalize", 1f);
         Invoke("Speed_Equalize", 0.1f);
@@ -385,8 +384,7 @@ public class Calculator : MonoBehaviour
             txtCSpeed.text = "" + (int)CSpeed;
 
         }
-        DTG -= (double)CSpeed / 3600;
-        txtDTG.text = "" + (int)DTG;
+        txtDTG.text =  Move.Instance.DME().ToString("F1") ;
         Script2.SpeedTapeUpdate();
         Script2.SpeedIndexUpdate_Click();
 
@@ -657,8 +655,7 @@ public class Calculator : MonoBehaviour
     public void SB_Click()
     {
         double[,] Msb = new double[9, 2] { { -900, -600 }, { -900, -600 }, { -900, -500 }, { -900, -500 }, { -900, -400 }, { -900, -400 }, { -900, -400 }, { -900, -500 }, { -900, -400 } };
-        //Sil
-        DTG -= 1;
+ 
         int i;
         SBDown = !SBDown;
         if (SBDown)
