@@ -319,16 +319,12 @@ public class RouteScriptableObject : ScriptableObject
         var _originalBeforeNodeIndex = GetIndex(beforeNodeId);
         var _relativeNodeIndex = GetIndex(relativeNodeId);
 
-        var _fromNodeIndex = Mathf.Max(
-            PositionVirtualNode.PassedNodeIndexForMode,
-            _originalBeforeNodeIndex - 1);
-
+        var _isInThePast = PositionVirtualNode.PassedNodeIndexForMode > _originalBeforeNodeIndex - 1;
+        
         var _relativeNode = Points[_relativeNodeIndex];
         var _insertPosition = Geometry.GetNextPosition(_relativeNode.CartesianPosition, distance, 360 - rawDegrees);
 
-        var _isInThePast = _fromNodeIndex != _originalBeforeNodeIndex - 1;
-
-        var _indexBeforeInsertion = _isInThePast ? PositionVirtualNode.PassedNodeIndexForMode : GetIndex(beforeNodeId) -1;
+        var _indexBeforeInsertion = _isInThePast ? PositionVirtualNode.PassedNodeIndexForMode : _originalBeforeNodeIndex - 1;
 
         var _positionBeforeInsertion = Points[_indexBeforeInsertion].CartesianPosition;
 
@@ -352,7 +348,7 @@ public class RouteScriptableObject : ScriptableObject
         // update info of selected to be relative to the inserted instead of the previous which is now previous to inserted
         _returnNode.RawDegrees = Geometry.AngleOfPosition(_nodeAfterInsertion.CartesianPosition, _insertPosition); 
         _returnNode.Distance = (_nodeAfterInsertion.CartesianPosition - _insertPosition).magnitude;
-        if (!_isInThePast && showDiscontinuity)
+        if ( showDiscontinuity)
         {
             _returnNode.IndicateDiscontinuityBefore();
         }
@@ -363,7 +359,8 @@ public class RouteScriptableObject : ScriptableObject
         }
 
         // replace set with new set that also contains insertion node
-        var _newSet = new RoutePoint[Points.Length + (_isInThePast ? 2 : 1)];
+        var _inThePastExtraNodes = _indexBeforeInsertion - _relativeNodeIndex + 1;
+        var _newSet = new RoutePoint[Points.Length + (_isInThePast ? 1+ _inThePastExtraNodes : 1)];
         var _offset = 0;
         for (var i = 0; i < Points.Length; i++)
         {
@@ -378,10 +375,20 @@ public class RouteScriptableObject : ScriptableObject
                     continue;
                 }
 
-                _newSet[i + 1] = _returnNode;
-                _newSet[i + 2] = Points[i];
-                _offset = 2;
-                continue;
+                else
+                {
+                    _offset = 1;
+                    _newSet[i + _offset] = _returnNode;
+                    
+                    // add all passed nodes after the insertion until current node
+                    for (var u = 0; u < _inThePastExtraNodes; u++)
+                    {
+                        _offset += 1;
+                        _newSet[i + _offset] = Points[_relativeNodeIndex + u + 1];
+                    }
+
+                    continue;
+                }
             }
 
             _newSet[i + _offset] = Points[i];
