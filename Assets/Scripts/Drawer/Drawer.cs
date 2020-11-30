@@ -248,7 +248,7 @@ public class Drawer : Singleton<Drawer>
         }
     }
 
-    private void DisplayOtherTraffic()
+    void DisplayOtherTraffic()
     {
         var _positions = Move.Instance.ACPositions;
         var _texts = Move.Instance.ACTexts;
@@ -264,11 +264,11 @@ public class Drawer : Singleton<Drawer>
         }
 
         // demo
-        var _onjective = otherAircraftsPool.Spawn(Vector3.zero, Quaternion.identity, dynamicHolderOtheriarcrafts)
+        var _objective = otherAircraftsPool.Spawn(Vector3.zero, Quaternion.identity, dynamicHolderOtheriarcrafts)
             .GetComponent<OtherAircrafIndicator>();
-        _onjective.name = "My objective";
-        _onjective.Init("*", Color.red);
-        _onjective.transform.localPosition = new Vector2(100, 100).ToDisplay();
+        _objective.name = "My objective";
+        _objective.Init("*", Color.red);
+        _objective.transform.localPosition = new Vector2(100, 100).ToDisplay();
     }
 
     void DisplaySet(bool mod)

@@ -67,6 +67,12 @@ public class GameManager : Singleton<GameManager>
         }
     }
 
+
+    void OnDrawGizmos()
+    {
+        Aircraft.DrawGizmos();
+    }
+
     void CheckModForOperation()
     {
         if (IsMod) return;

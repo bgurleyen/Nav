@@ -5,6 +5,7 @@ public class Aircraft
 {
     const float DeltaTime = 0.00003f;
     const float MaxTurningSpeed = 1f;
+    public const float FORWARD_THRESHOLD = 3f;
     
     // position that can be on the generated curved sections of the lines
     public Vector2 PositionFreeOrOnCurvedPath { get; private set; }
@@ -68,7 +69,7 @@ public class Aircraft
 
     public void StartLNavMode()
     {
-        if (GameManager.Instance.ActiveRoute.FindFreeFlightExitPosition(out var _intersectionInfo, out var _distanceUntilLineIntersection))
+        if (GameManager.Instance.ActiveRoute.FindFreeFlightFarExitPosition(out var _intersectionInfo, out var _distanceUntilLineIntersection))
         {
             IsFreeFlight = false;
 
@@ -233,5 +234,22 @@ public class Aircraft
         {
             AdvanceOnPath();
         }
+
+        if (GameManager.Instance.ActiveRoute.FindFreeFlightDirectExitScenario(out var _intersection))
+        {
+            exitIntersection = _intersection;
+        }
+    }
+
+    Vector2 exitIntersection;
+    public static Vector2 interserction1;
+    public static Vector2 interserction2;
+
+
+    public void DrawGizmos()
+    {
+        Gizmos.DrawSphere(Drawer.Instance.transform.position + exitIntersection.ToDisplay(), 0.1f);
+        Gizmos.DrawSphere(Drawer.Instance.transform.position + interserction1.ToDisplay(), 0.05f);
+        Gizmos.DrawSphere(Drawer.Instance.transform.position + interserction2.ToDisplay(), 0.05f);
     }
 }

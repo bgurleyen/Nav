@@ -109,39 +109,107 @@ public class RouteScriptableObject : ScriptableObject
         ActiveDirectApproach = false;
     }
 
-    public bool FindFreeFlightExitPosition(out PathVertexIndex intersectionTargetVertex,
-        out float distanceUntilLineIntersection)
+    public bool FindFreeFlightDirectExitScenario(out Vector2 intersection)
     {
-        var _planePosition = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath;
-        var _planeDirection = Geometry.GetDirectionFromHeading(GameManager.Instance.Aircraft.Heading);
-        var _segmentA = Vector2.zero;
-        var _segmentB = Vector2.zero;
 
+        var _aircraftPosition =
+            GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath; // would be free since we are in free flight
+        var _aircraftDirection = Geometry.GetDirectionFromHeading(GameManager.Instance.Aircraft.Heading);
+        var _segmentStart = Vector2.zero;
+        var _segmentEnd = Vector2.zero;
+
+        var _foundAt = -1;
+        var _intersection = Vector2.zero;
+        
         for (var i = 1; i < Points.Length; i++)
         {
-            _segmentA = _segmentB;
+            _segmentStart = _segmentEnd;
             // on could take the positions from PathLines
-            _segmentB = Geometry.GetNextPosition(_segmentA, Points[i].Distance, Points[i].Degrees);
+            _segmentEnd = Geometry.GetNextPosition(_segmentStart, Points[i].Distance, Points[i].Degrees);
 
-            if (Points[i].IsHiddenLine || Points[i].IsAfterDiscontinuity)
+            if (Points[i].IsHiddenLine || Points[i].IsAfterDiscontinuity ) //@#$ ask if we can join discontinuity segments
             {
                 continue;
             }
 
-            if (Geometry.FindLineSegmentIntersection(_planePosition, _planeDirection.x, _planeDirection.y,
-                    _segmentA, _segmentB, out var _intersection)
+            if (Geometry.FindLineSegmentIntersection(_aircraftPosition, _aircraftDirection.x, _aircraftDirection.y,
+                _segmentStart, _segmentEnd, out _intersection))
+            {
+                _foundAt = i;
+                break;
+            }
+        }
+
+        if (_foundAt >= 0)
+        {
+            var _nan = new Vector2(-100, -100);
+            
+            intersection = _intersection;
+
+            var _currentSegmentStart = Points[_foundAt - 1].CartesianPosition;
+            var _currentSegmentEnd = Points[_foundAt].CartesianPosition;
+
+            var _nextSegmentStart = _currentSegmentEnd;
+            //var _nextSegmentEnd = Points[_foundAt + 1].CartesianPosition;
+
+            var _count = Geometry.CircleIntersects(_currentSegmentStart, _currentSegmentEnd, intersection,
+                Aircraft.FORWARD_THRESHOLD,
+                false, out var _intersection1, out var _intersection2);
+            
+            // find forward intersection
+            
+            // if inside turn - prepare turn for corner on the other side of the circle of the aircraft and the exit of turn
+            // if not near turn - prepare turn for corner on circle center and the forward interserction
+            
+            // create lines with computed vertexes for turns for scenario and return them 
+
+            Aircraft.interserction1 = _count > 0 ? _intersection1 : _nan;
+            Aircraft.interserction2 = _count == 2 ? _intersection2 : _nan;
+                
+            
+            
+            return true;
+        }
+
+        intersection = Vector2.zero;
+        return false;
+    }
+    
+    
+
+    public bool FindFreeFlightFarExitPosition(out PathVertexIndex intersectionTargetVertex,
+        out float distanceUntilLineIntersection)
+    {
+        var _aircraftPosition = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath; // would be free since we are in free flight
+        var _aircraftDirection = Geometry.GetDirectionFromHeading(GameManager.Instance.Aircraft.Heading);
+        var _segmentStart = Vector2.zero;
+        var _segmentEnd = Vector2.zero;
+
+        for (var i = 1; i < Points.Length; i++)
+        {
+            _segmentStart = _segmentEnd;
+            // on could take the positions from PathLines
+            _segmentEnd = Geometry.GetNextPosition(_segmentStart, Points[i].Distance, Points[i].Degrees);
+
+            if (Points[i].IsHiddenLine || Points[i].IsAfterDiscontinuity) //@#$ ask if we can join discontinuity segments
+            {
+                continue;
+            }
+
+            if (Geometry.FindLineSegmentIntersection(_aircraftPosition, _aircraftDirection.x, _aircraftDirection.y,
+                    _segmentStart, _segmentEnd, out var _intersection)
                 && GameManager.Instance.PathLines.FindClosestVertexToDistanceOnLineActive(
-                    (_intersection - _segmentA).magnitude, i, out var _targetVertexIndex,
+                    (_intersection - _segmentStart).magnitude, i, out var _targetVertexIndex,
                     out var _targetVertexPosition))
             {
                 intersectionTargetVertex = new PathVertexIndex
                 {
                     CurrentNodeIndex = i,
-                    HeadingBefore = Geometry.GetHeadingOfDirection(_segmentB - _segmentA),
+                    HeadingBefore = Geometry.GetHeadingOfDirection(_segmentEnd - _segmentStart),
                     UnreachedPoint = _targetVertexIndex,
                     VertexPosition = _targetVertexPosition
                 };
-                distanceUntilLineIntersection = (_intersection - _segmentA).magnitude;
+                distanceUntilLineIntersection = (_intersection - _segmentStart).magnitude;
                 return true;
             }
         }
@@ -429,7 +497,6 @@ public class RouteScriptableObject : ScriptableObject
     {
         // ! Position node is added in front of the actual position so that the aircraft can safely turn 
         
-        const float FORWARD_THRESHOLD = 3f;
 
         var _routePreviousNodeIndex = PositionVirtualNode.PassedNodeIndex;
         var _routePreviousNode = Points[_routePreviousNodeIndex];
@@ -448,13 +515,13 @@ public class RouteScriptableObject : ScriptableObject
             LastAddedPositionNode = new RoutePoint
             {
                 Name = "_Position_",
-                Distance = _activeSegmentDistancePassed + FORWARD_THRESHOLD,
+                Distance = _activeSegmentDistancePassed + Aircraft.FORWARD_THRESHOLD,
                 RawDegrees = _activeNextNode.RawDegrees,
                 Details = "P",
                 ID = GetNewId(),
             };
 
-            var _newFuturePosition = Geometry.GetNextPosition(Aircraft.PositionFreeOrOnSegment, FORWARD_THRESHOLD,
+            var _newFuturePosition = Geometry.GetNextPosition(Aircraft.PositionFreeOrOnSegment, Aircraft.FORWARD_THRESHOLD,
                 _activeNextNode.Degrees);
             
             var _differencePosition = _routeNextNode.CartesianPosition - _newFuturePosition;
