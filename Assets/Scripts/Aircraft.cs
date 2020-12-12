@@ -5,7 +5,7 @@ public class Aircraft
 {
     const float DeltaTime = 0.00003f;
     const float MaxTurningSpeed = 1f;
-    public const float ForwardThreshold = 1.7f;
+    public const float ForwardThreshold = 2.1f; // @$# this has to be in sync with the minimum turn radius 
     
     // position that can be on the generated curved sections of the lines
     public Vector2 PositionFreeOrOnCurvedPath { get; private set; }
@@ -18,7 +18,7 @@ public class Aircraft
     public PathPositionInfo RoutePathLocalization;
     public PathPositionInfo RejoinPathLocalization;
 
-    PathLines tempPathLines;
+    public PathLines tempPathLines { get; private set; }
 
     public float ComputedDistanceLeftOnSegment
     {
@@ -81,9 +81,13 @@ public class Aircraft
 
             var _tempPoints = new RoutePoint[4];
             var _lastPoint = RoutePoint.ConstructFromPosition(Vector2.zero, null);
+            _tempPoints[0] = _lastPoint;
             _lastPoint = RoutePoint.ConstructFromPosition(PositionFreeOrOnCurvedPath, _lastPoint);
+            _tempPoints[1] = _lastPoint;
             _lastPoint = RoutePoint.ConstructFromPosition(centerOfTurn, _lastPoint);
+            _tempPoints[2] = _lastPoint;
             _lastPoint = RoutePoint.ConstructFromPosition(exitPoint, _lastPoint);
+            _tempPoints[3] = _lastPoint;
 
             tempPathLines.ComputeSet(_tempPoints);
 

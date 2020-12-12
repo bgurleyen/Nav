@@ -1,8 +1,6 @@
-﻿using System;
-using Gamelogic.Extensions;
+﻿using Gamelogic.Extensions;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 public class GameManager : Singleton<GameManager>
 {
@@ -11,7 +9,7 @@ public class GameManager : Singleton<GameManager>
 
     [SerializeField] RouteScriptableObject initialRoute;
 
-    public Aircraft Aircraft = new Aircraft();
+    public readonly Aircraft Aircraft = new Aircraft();
 
     [Header("Computed")]
     public RouteScriptableObject ActiveRoute;
@@ -22,6 +20,9 @@ public class GameManager : Singleton<GameManager>
     public bool IsMod { get; private set; }
     bool queueEraseMode;
 
+    // if we detect that during MOD the current node has passed we reExecute all the commands until that point
+    int modReExecutedForIndex = -1;
+    
     List<ICommand> cachedCommands;
 
     void Start()
@@ -35,8 +36,8 @@ public class GameManager : Singleton<GameManager>
         DataHandler.BuildSetDetails(ActiveRoute);
 
         Drawer.Instance.ResetMode();
-        Drawer.Instance.ComputeActive();
-        Drawer.Instance.ComputeMod();
+        ComputeActive();
+        ComputeMod();
         Drawer.Instance.Display();
         Drawer.Instance.ShowMapMode();
 
@@ -54,8 +55,8 @@ public class GameManager : Singleton<GameManager>
 
         queueEraseMode = false;
 
-        Drawer.Instance.ComputeActive();
-        Drawer.Instance.ComputeMod();
+        ComputeActive();
+        ComputeMod();
       
         Aircraft.Advance();
       
@@ -66,6 +67,48 @@ public class GameManager : Singleton<GameManager>
         }
     }
 
+    public void ComputeActive()
+    {
+        if (ActiveRoute == null)
+        {
+            return;
+        }
+
+        ActiveRoute.ComputeSet(false);
+    }
+
+    void ComputeMod()
+    {
+        if (ModRoute == null)
+        {
+            modReExecutedForIndex = -1;
+            return;
+        }
+
+        if (Aircraft.IsOnRoute)
+        {
+            // mod always has to include the last passed active node ( all the passed nodes ) 
+            // otherwise it is invalid - will reapply all the commands
+            var _passedNodeIndex = PositionVirtualNode.PassedNodeIndex;
+
+            if (_passedNodeIndex != modReExecutedForIndex)
+            {
+                if (ActiveRoute.Points[_passedNodeIndex].ID != ModRoute.Points[_passedNodeIndex].ID)
+                {
+                    ReExecuteCachedCommands();
+                    Debug.Log("Reapplied MOD");
+                }
+
+                modReExecutedForIndex = _passedNodeIndex;
+            }
+        }
+
+        ModeSetWithPosition = ModRoute.Clone(); // refactor
+
+        ModeSetWithPosition.AddDisplayPositionNode();
+
+        ModRoute.ComputeSet(true);
+    }
 
     void OnDrawGizmos()
     {

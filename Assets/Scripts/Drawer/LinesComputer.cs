@@ -18,7 +18,7 @@
             toDataPointIndex = fromDataPointIndex + 1;
             var _nextPoint = points[toDataPointIndex];
 
-            var _forceEndStraight = false;
+            var _forceEndStraight = true;
 
             if (toDataPointIndex + 1 < points.Length)
             {

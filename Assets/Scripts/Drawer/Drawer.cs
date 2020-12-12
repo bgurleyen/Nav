@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using Lean.Pool;
 using Gamelogic.Extensions;
@@ -62,56 +63,11 @@ public class Drawer : Singleton<Drawer>
     public static float GetMinRadius => Mathf.Pow(GS, 2) / (11.29f * Mathf.Tan(Bank)) * FtToNm;
     const bool WalkOnMod = false;
 
-    // if we detect that during MOD the current node has passed we reExecute all the commands until that point
-    int modReExecutedForIndex = -1;
-
-    static RouteScriptableObject ActiveRoute => GameManager.Instance.ActiveRoute;
-    static RouteScriptableObject ModRoute => GameManager.Instance.ModRoute;
-    static RouteScriptableObject DisplayMod => GameManager.Instance.ModeSetWithPosition;
 
 
-    public void ComputeActive()
-    {
-        if (ActiveRoute == null)
-        {
-            return;
-        }
 
-        GameManager.Instance.ActiveRoute.ComputeSet(false);
-    }
+    
 
-    public void ComputeMod()
-    {
-        if (ModRoute == null)
-        {
-            modReExecutedForIndex = -1;
-            return;
-        }
-
-        if (GameManager.Instance.Aircraft.IsOnRoute)
-        {
-            // mod always has to include the last passed active node ( all the passed nodes ) 
-            // otherwise it is invalid - will reapply all the commands
-            var _passedNodeIndex = PositionVirtualNode.PassedNodeIndex;
-
-            if (_passedNodeIndex != modReExecutedForIndex)
-            {
-                if (ActiveRoute.Points[_passedNodeIndex].ID != ModRoute.Points[_passedNodeIndex].ID)
-                {
-                    GameManager.Instance.ReExecuteCachedCommands();
-                    Debug.Log("Reapplied MOD");
-                }
-
-                modReExecutedForIndex = _passedNodeIndex;
-            }
-        }
-
-        GameManager.Instance.ModeSetWithPosition = ModRoute.Clone(); // refactor
-
-        DisplayMod.AddDisplayPositionNode();
-
-        GameManager.Instance.ModRoute.ComputeSet(true);
-    }
 
     public void ResetMode()
     {
@@ -212,14 +168,18 @@ public class Drawer : Singleton<Drawer>
 
     public void Display()
     {
-        DisplaySet(false);
-        DisplaySet(true);
+        DisplaySet(GameManager.Instance.ActiveRoute?.PathLines?.ComputedLines, false);
+        DisplaySet(GameManager.Instance.ModRoute?.PathLines?.ComputedLines, true);
         DisplayFixCircles();
         DisplayFixRays();
         freeFlightPivot.gameObject.SetActive(GameManager.Instance.Aircraft.IsFreeFlight);
         bananaIndicatorPivot.SetLocalY(Calculator.Instance.GetBananaPosition);
 
-
+        if (GameManager.Instance.Aircraft.tempPathLines != null)
+        {
+            DisplaySet(GameManager.Instance.Aircraft.tempPathLines.ComputedLines, false);
+        }
+        
         DisplayOtherTraffic();
 
 
@@ -272,8 +232,13 @@ public class Drawer : Singleton<Drawer>
         _objective.transform.localPosition = new Vector2(100, 100).ToDisplay();
     }
 
-    void DisplaySet(bool mod)
+    void DisplaySet(IReadOnlyList<MarkLine> lines, bool mod)
     {
+        if (lines == null)
+        {
+            return;
+        }
+        
         if (mod)
         {
             if (GameManager.Instance.ModRoute == null || GameManager.Instance.ModRoute.PathLines.ComputedLines == null)
@@ -282,16 +247,12 @@ public class Drawer : Singleton<Drawer>
             }
         }
 
-        var _lines = mod
-            ? GameManager.Instance.ModRoute.PathLines.ComputedLines
-            : GameManager.Instance.ActiveRoute.PathLines.ComputedLines;
-
         var _pool = mod ? linesPoolMod : linesPool;
         var _holder = mod ? dynamicHolderMod : dynamicHolder;
 
-        for (var i = 0; i < _lines.Length; i++)
+        for (var i = 0; i < lines.Count; i++)
         {
-            var _line = _lines[i];
+            var _line = lines[i];
 
             if (_line == null)
             {
