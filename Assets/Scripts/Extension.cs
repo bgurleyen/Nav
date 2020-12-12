@@ -22,7 +22,7 @@ public static class Extension
                 break;
             case DrawerMode.Plan:
                 // centered
-                _finalPosition -= GameManager.Instance.PathLines.CenteredPosition;
+                _finalPosition -= GameManager.Instance.ActiveRoute.PathLines.CenteredPosition;
                 break;
         }
 

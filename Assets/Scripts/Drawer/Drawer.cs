@@ -7,7 +7,7 @@ public class Drawer : Singleton<Drawer>
 {
     [SerializeField] Color cMagenta;
     [SerializeField] Color cLightYellow;
-    
+
     public Animator cameraAnimator;
     [Space] [SerializeField] Transform dynamicHolder;
     [SerializeField] Transform dynamicHolderMod;
@@ -77,7 +77,7 @@ public class Drawer : Singleton<Drawer>
             return;
         }
 
-        GameManager.Instance.PathLines.ComputeSet(ActiveRoute, false);
+        GameManager.Instance.ActiveRoute.ComputeSet(false);
     }
 
     public void ComputeMod()
@@ -107,10 +107,10 @@ public class Drawer : Singleton<Drawer>
         }
 
         GameManager.Instance.ModeSetWithPosition = ModRoute.Clone(); // refactor
-        
+
         DisplayMod.AddDisplayPositionNode();
 
-        GameManager.Instance.PathLines.ComputeSet(DisplayMod, true);
+        GameManager.Instance.ModRoute.ComputeSet(true);
     }
 
     public void ResetMode()
@@ -238,7 +238,8 @@ public class Drawer : Singleton<Drawer>
             case DrawerMode.Plan:
                 //rotate compass
                 compasPivot.SetLocalRotationZ(0);
-                mobilePlaneIndicatorPivot.position = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath.ToDisplay();
+                mobilePlaneIndicatorPivot.position =
+                    GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath.ToDisplay();
                 mobilePlaneIndicatorPivot.SetLocalRotationZ(-GameManager.Instance.Aircraft.Heading);
                 break;
             case DrawerMode.Suspeded:
@@ -275,15 +276,16 @@ public class Drawer : Singleton<Drawer>
     {
         if (mod)
         {
-            if (GameManager.Instance.ModRoute == null || GameManager.Instance.PathLines.ComputedLinesMod == null)
+            if (GameManager.Instance.ModRoute == null || GameManager.Instance.ModRoute.PathLines.ComputedLines == null)
             {
                 return;
             }
         }
 
         var _lines = mod
-            ? GameManager.Instance.PathLines.ComputedLinesMod
-            : GameManager.Instance.PathLines.ComputedLines;
+            ? GameManager.Instance.ModRoute.PathLines.ComputedLines
+            : GameManager.Instance.ActiveRoute.PathLines.ComputedLines;
+
         var _pool = mod ? linesPoolMod : linesPool;
         var _holder = mod ? dynamicHolderMod : dynamicHolder;
 
@@ -308,11 +310,11 @@ public class Drawer : Singleton<Drawer>
                 if (RoutePoint.HaveSamePosition(_activePoint, _point))
                 {
                     _hiddenLabel = true;
-                }    
+                }
                 else
                 {
                     Debug.LogWarning(_activePoint.Name + " " +
-                              (_activePoint.CartesianPosition - _point.CartesianPosition).magnitude);
+                                     (_activePoint.CartesianPosition - _point.CartesianPosition).magnitude);
                 }
             }
 
@@ -322,7 +324,7 @@ public class Drawer : Singleton<Drawer>
 
     void DisplayFixCircles()
     {
-        var _circles = GameManager.Instance.PathLines.ComputedCircles;
+        var _circles = GameManager.Instance.ActiveRoute.PathLines.ComputedCircles;
         var _pool = circlePool;
         var _holder = dynamicHolderCircles;
 
@@ -345,7 +347,7 @@ public class Drawer : Singleton<Drawer>
 
     void DisplayFixRays()
     {
-        var _rays = GameManager.Instance.PathLines.ComputedRays;
+        var _rays = GameManager.Instance.ActiveRoute.PathLines.ComputedRays;
         var _pool = rayPool;
         var _holder = dynamicHolderRays;
 
@@ -430,7 +432,8 @@ public class Drawer : Singleton<Drawer>
         else
         {
             // try relaxed turn. Update: don't use relaxed as the radius can become very big, and there is no advantage to it. Just go with regular curve
-            if (true || !GenerateCurve(RelaxedRadius, nextPoint, notTooCloseSecondPoint, _angleBetween, lastLine.EndPosition,
+            if (true || !GenerateCurve(RelaxedRadius, nextPoint, notTooCloseSecondPoint, _angleBetween,
+                lastLine.EndPosition,
                 _lastEndOffset,
                 out line))
             {
@@ -495,7 +498,7 @@ public class Drawer : Singleton<Drawer>
         Gizmos.DrawWireSphere(_up * planReferenceLength80 / 2f, 0.025f);
 
 
-        if (GameManager.Instance.PathLines.ComputedLines == null)
+        if (GameManager.Instance.ActiveRoute?.PathLines?.ComputedLines == null)
         {
             return;
         }

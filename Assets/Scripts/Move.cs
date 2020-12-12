@@ -52,7 +52,7 @@ public class Move : Singleton<Move>
 
         for (int j = 1; j < 17; j++)                                                    // Locate the points on EditMap
         {
-            Pos = GameManager.Instance.PathLines.ComputedLines[j].EndPosition;
+            Pos = GameManager.Instance.ActiveRoute.GetCartesianPosition(j);
             GameObject pt = GameObject.Find("pt (" + j + ")");
             pt.transform.localPosition = Pos;
             TempPtsPos[j] = Pos;
@@ -92,7 +92,7 @@ public class Move : Singleton<Move>
             // computedLines start from 1. (0 is an added empty line)
 
             
-            Vector2 PtPos = (K < 50) ? (Vector2)GameManager.Instance.PathLines.ComputedLines[K + 1].EndPosition : 
+            Vector2 PtPos = (K < 50) ? (Vector2)GameManager.Instance.ActiveRoute.GetCartesianPosition(K+1) : 
                                         VirtualPtsPos[K - 50];
 
           
@@ -268,7 +268,7 @@ public class Move : Singleton<Move>
         Vector2 PositionOfPoint(int Pt)  
         {
             Vector2 V;
-            V = Pt < 50 ? (Vector2)GameManager.Instance.PathLines.ComputedLines[Pt].EndPosition : //TempPtsPos[Pt] :
+            V = Pt < 50 ? (Vector2)GameManager.Instance.ActiveRoute.GetCartesianPosition(Pt) : //TempPtsPos[Pt] :
                            new Vector2(virtualPoints[Level].VirtualPointsItems[Pt - 51].x+34,  // VirtualPtsPos[Pt-50]; // ; TOTO review
                                        virtualPoints[Level].VirtualPointsItems[Pt - 51].y+87);
             return V;

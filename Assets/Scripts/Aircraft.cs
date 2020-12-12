@@ -18,6 +18,8 @@ public class Aircraft
     public PathPositionInfo RoutePathLocalization;
     public PathPositionInfo RejoinPathLocalization;
 
+    PathLines tempPath;
+
     public float ComputedDistanceLeftOnSegment
     {
         get
@@ -32,7 +34,7 @@ public class Aircraft
             {
                 _nextViableNodeIndex++;
             }
-            return (GameManager.Instance.PathLines.GetNodePosition(_nextViableNodeIndex) -
+            return (GameManager.Instance.ActiveRoute.GetCartesianPosition(_nextViableNodeIndex) -
                     PositionFreeOrOnRouteSegment).magnitude;
         }
     }
@@ -49,7 +51,7 @@ public class Aircraft
         PositionFreeOrOnRouteSegment = Vector2.zero;
         WalkedDistanceOnSegment = 0;
 
-        if (GameManager.Instance.PathLines.GetFirstDestination(out RoutePathLocalization))
+        if (GameManager.Instance.ActiveRoute.PathLines.GetFirstDestination(out RoutePathLocalization))
         {
             Heading = RoutePathLocalization.HeadingBefore;
         }
@@ -73,14 +75,19 @@ public class Aircraft
         if (GameManager.Instance.ActiveRoute.FindFreeFlightDirectExitScenario(out centerOfTurn, out exitPoint,
             out var _exitSegmentIndex))
         {
-            if (GameManager.Instance.ActiveRoute.LinkToRoute(centerOfTurn, _exitSegmentIndex, out var _intersectionInfo,
-                out var _distanceUntilLineIntersection))
-            {
-                IsFreeFlight = false;
+            //compute rejoin path
 
-                RoutePathLocalization = _intersectionInfo;
-                WalkedDistanceOnSegment = _distanceUntilLineIntersection;
-            }
+            IsFreeFlight = false;
+
+
+            // if (GameManager.Instance.ActiveRoute.LinkToRoute(centerOfTurn, _exitSegmentIndex, out var _intersectionInfo,
+            //     out var _distanceUntilLineIntersection))
+            // {
+            //     IsFreeFlight = false;
+            //
+            //     RoutePathLocalization = _intersectionInfo;
+            //     WalkedDistanceOnSegment = _distanceUntilLineIntersection;
+            // }
         }
         else
         {
@@ -157,7 +164,8 @@ public class Aircraft
         var _leftToAdvance = FrameDistance - _distanceLeftToNextVertex;
 
         // advance to next point
-        if (GameManager.Instance.PathLines.GetNextDestination(RejoinPathLocalization.CurrentNodeIndex,
+        if (tempPath.GetNextDestination(
+            RejoinPathLocalization.CurrentNodeIndex,
             RejoinPathLocalization.UnreachedVertexIndex, out var _newUnreachedVertex))
         {
             // reset walked distance if the line has increased
@@ -217,7 +225,8 @@ public class Aircraft
         var _leftToAdvance = _distanceToWalk - _distanceLeftToNextVertex;
 
         // advance to next point
-        if (!GameManager.Instance.PathLines.GetNextDestination(RoutePathLocalization.CurrentNodeIndex,
+        if (!GameManager.Instance.ActiveRoute.PathLines.GetNextDestination(
+            RoutePathLocalization.CurrentNodeIndex,
             RoutePathLocalization.UnreachedVertexIndex, out var _newUnreachedPositionInfo))
         {
             Debug.LogError("No destination could be found");
@@ -261,7 +270,7 @@ public class Aircraft
 
     static bool GetFirstDestinationFromNode(RoutePoint node, out PathPositionInfo positionInfo)
     {
-        GameManager.Instance.PathLines.ResetOldPosition();
+        GameManager.Instance.ActiveRoute.PathLines.ResetOldPosition();
 
         var _currentNodeIndex = GameManager.Instance.ActiveRoute.GetIndex(node.ID);
         var _heading = node.Degrees; // Not sure if matters, but it's not correct

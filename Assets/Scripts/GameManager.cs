@@ -12,7 +12,6 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] RouteScriptableObject initialRoute;
 
     public Aircraft Aircraft = new Aircraft();
-    public PathLines PathLines = new PathLines();
 
     [Header("Computed")]
     public RouteScriptableObject ActiveRoute;
@@ -104,7 +103,10 @@ public class GameManager : Singleton<GameManager>
                 Aircraft.StartHeadingMode();
                 break;
             default:
-                Aircraft.StartLNavMode();
+                if (!Aircraft.IsOnRoute)
+                {
+                    Aircraft.StartLNavMode();
+                }
                 break;
         }
     }

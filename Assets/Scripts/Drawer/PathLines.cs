@@ -2,18 +2,16 @@
 using System.Linq;
 using Gamelogic.Extensions;
 using UnityEngine;
-using UnityEngine.Profiling.Experimental;
 
 public class PathLines
 {
-    public MarkLine[] ComputedLines { get; private set; }
-    public MarkLine[] ComputedLinesMod { get; private set; }
+    public MarkLine[] ComputedLines { get; set; }
     public List<FixCircle> ComputedCircles;
     public List<FixRay> ComputedRays;
     public Vector2 CenteredPosition;
     
     static FixedPointsScriptableObject FixedPoints => GameManager.Instance.FixedPoints;
-    
+
     public void ComputeSet(RouteScriptableObject route, bool isMod)
     {
         if (route == null)
@@ -21,18 +19,14 @@ public class PathLines
             return;
         }
 
-        if (isMod)
-        {
-            ComputedLinesMod = new MarkLine[route.Points.Length];
-        }
-        else
+        ComputedLines = new MarkLine[route.Points.Length];
+        if (!isMod)
         {
             ComputedCircles = new List<FixCircle>();
             ComputedRays = new List<FixRay>();
-            ComputedLines = new MarkLine[route.Points.Length];
         }
 
-        var _computedLines = isMod ? ComputedLinesMod : ComputedLines;
+        var _computedLines = ComputedLines;
 
         var _lastLine = new MarkLine(null);
         _lastLine.InitBeginning();
@@ -49,6 +43,7 @@ public class PathLines
             {
                 continue;
             }
+
             _computedLines[_currentIndex] = _line;
             _lastLine = _line;
 
@@ -81,16 +76,9 @@ public class PathLines
             }
         }
     }
+
+
     
-    
-    public Vector2 GetNodePosition(int lineIndex)
-    {
-        if (ComputedLines.Length <= lineIndex)
-        {
-            return Vector2.zero;
-        }
-        return ComputedLines[lineIndex].EndPosition;
-    }
     
     /// <summary>
     ///  On Active Set
@@ -110,15 +98,16 @@ public class PathLines
     {
         oldPositionVertex = Vector3.zero;
     }
-    
+
     /// <summary>
     /// 
     /// </summary>
+    /// <param name="computedLines"></param>
     /// <param name="currentLineIndex">First line [0] is with no vertexes, [1] starts form (0,0)</param>
     /// <param name="currentPointIndex"></param>
     /// <param name="positionInfo"></param>
     /// <returns></returns>
-    public bool GetNextDestination(int currentLineIndex, int currentPointIndex, out PathPositionInfo positionInfo)
+    public bool GetNextDestination( int currentLineIndex, int currentPointIndex, out PathPositionInfo positionInfo)
     {
         if (GetNextComputedVertex(ComputedLines, currentLineIndex, currentPointIndex, out var _nextPoint, out var _nextLine))
         {

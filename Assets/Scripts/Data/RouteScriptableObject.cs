@@ -9,6 +9,7 @@ public class RouteScriptableObject : ScriptableObject
     public int FirstAltRegulationNodeId { get; set; }
 
     public RoutePoint[] Points;
+    public PathLines PathLines { get; private set; } = new PathLines();
 
     static Aircraft Aircraft => GameManager.Instance.Aircraft;
     public RoutePoint LastAddedPositionNode { get; private set; }
@@ -26,12 +27,27 @@ public class RouteScriptableObject : ScriptableObject
         }
     }
 
+    public void ComputeSet(bool isMod)
+    {
+        PathLines.ComputeSet(this, isMod);
+    }
+
     public void InitIds()
     {
         for (var i = 0; i < Points.Length; i++)
         {
             Points[i].ID = i;
         }
+    }
+
+    public Vector2 GetCartesianPosition(int lineIndex)
+    {
+        if (Points.Length <= lineIndex)
+        {
+            return Vector2.zero;
+        }
+
+        return Points[lineIndex].CartesianPosition;
     }
 
     public bool GetPoint(int nodeId, out RoutePoint point)
@@ -246,7 +262,7 @@ public class RouteScriptableObject : ScriptableObject
         var _segmentStart = Points[lineIndex - 1].CartesianPosition;
         var _segmentEnd = Points[lineIndex].CartesianPosition;
 
-        if (GameManager.Instance.PathLines.FindClosestVertexToDistanceOnLineActive(
+        if (GameManager.Instance.ActiveRoute.PathLines.FindClosestVertexToDistanceOnLineActive(
             (exitPoint - _segmentStart).magnitude, lineIndex, out var _targetVertexIndex,
             out var _targetVertexPosition))
         {
@@ -630,4 +646,5 @@ public class RouteScriptableObject : ScriptableObject
 
         return LastAddedPositionNode;
     }
+
 }
