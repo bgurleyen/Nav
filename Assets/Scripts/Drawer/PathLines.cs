@@ -129,7 +129,7 @@ public class PathLines
             vertexIndex = new PathVertexIndex
             {
                 CurrentNodeIndex = _nextLine,
-                UnreachedPoint = _nextPoint,
+                UnreachedVertexIndex = _nextPoint,
                 HeadingBefore = _heading,
                 VertexPosition = _vertex.To2DXY()
             };
@@ -187,7 +187,7 @@ public class PathLines
 public struct PathVertexIndex
 {
     public int CurrentNodeIndex;
-    public int UnreachedPoint;
+    public int UnreachedVertexIndex;
     public float HeadingBefore;
     public Vector2 VertexPosition;
 }

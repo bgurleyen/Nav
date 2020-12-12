@@ -5,7 +5,7 @@ public class Aircraft
 {
     const float DeltaTime = 0.00003f;
     const float MaxTurningSpeed = 1f;
-    public const float FORWARD_THRESHOLD = 1.7f;
+    public const float ForwardThreshold = 1.7f;
     
     // position that can be on the generated curved sections of the lines
     public Vector2 PositionFreeOrOnCurvedPath { get; private set; }
@@ -69,19 +69,24 @@ public class Aircraft
 
     public void StartLNavMode()
     {
-        if (GameManager.Instance.ActiveRoute.FindFreeFlightFarExitPosition(out var _intersectionInfo, out var _distanceUntilLineIntersection))
+        if (GameManager.Instance.ActiveRoute.FindFreeFlightDirectExitScenario(out centerOfTurn, out exitPoint,
+            out var _exitSegmentIndex))
         {
-            IsFreeFlight = false;
+            if (GameManager.Instance.ActiveRoute.LinkToRoute(centerOfTurn, _exitSegmentIndex, out var _intersectionInfo,
+                out var _distanceUntilLineIntersection))
+            {
+                IsFreeFlight = false;
 
-            PathLocalization = _intersectionInfo;
-            WalkedDistanceOnSegment = _distanceUntilLineIntersection;
+                PathLocalization = _intersectionInfo;
+                WalkedDistanceOnSegment = _distanceUntilLineIntersection;
+            }
         }
         else
         {
             Debug.LogError("No Intersection Point Found");
         }
     }
-    
+
     // on free flight
     void ExecuteStepMove()
     {
@@ -151,7 +156,7 @@ public class Aircraft
 
         // advance to next point
         if (!GameManager.Instance.PathLines.GetNextDestination(PathLocalization.CurrentNodeIndex,
-            PathLocalization.UnreachedPoint, out var _newUnreachedVertex))
+            PathLocalization.UnreachedVertexIndex, out var _newUnreachedVertex))
         {
             throw new Exception("No destination could be found");
         }
@@ -174,7 +179,6 @@ public class Aircraft
         // move the rest of the frameDistance
         ExecuteLerpMove(_leftToAdvance);
     }
-
 
     public void OnAppliedMod()
     {
@@ -200,7 +204,7 @@ public class Aircraft
         vertexIndex = new PathVertexIndex
         {
             CurrentNodeIndex = _currentNodeIndex + 1,
-            UnreachedPoint = 0,
+            UnreachedVertexIndex = 0,
             HeadingBefore = _heading,
             VertexPosition = node.CartesianPosition
         };
@@ -230,27 +234,21 @@ public class Aircraft
             IndicateTargetHeading(Calculator.RHeading);
             AdvanceFreeFlight();
 
-            if (GameManager.Instance.ActiveRoute.FindFreeFlightDirectExitScenario(out var _intersection))
-            {
-                exitIntersection = _intersection;
-            }
+            // for display only
+            GameManager.Instance.ActiveRoute.FindFreeFlightDirectExitScenario(out centerOfTurn, out exitPoint, out _);
         }
         else
         {
             AdvanceOnPath();
         }
-
-       
     }
 
-    Vector2 exitIntersection;
-    public static Vector2 centerOfTurn;
-    public static Vector2 exitPoint;
+    static Vector2 centerOfTurn;
+    static Vector2 exitPoint;
 
 
     public void DrawGizmos()
     {
-        Gizmos.DrawSphere(Drawer.Instance.transform.position + exitIntersection.ToDisplay(), 0.02f);
         Gizmos.color = Color.white;
         Gizmos.DrawSphere(Drawer.Instance.transform.position + centerOfTurn.ToDisplay(), 0.05f);
         Gizmos.color = Color.green;
