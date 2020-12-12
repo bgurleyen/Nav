@@ -88,7 +88,7 @@ public class Drawer : Singleton<Drawer>
             return;
         }
 
-        if (GameManager.Instance.Aircraft.IsOnPath)
+        if (GameManager.Instance.Aircraft.IsOnRoute)
         {
             // mod always has to include the last passed active node ( all the passed nodes ) 
             // otherwise it is invalid - will reapply all the commands

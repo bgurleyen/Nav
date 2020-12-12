@@ -96,10 +96,10 @@ public class PathLines
     ///  On Active Set
     /// </summary>
     /// <returns></returns>
-    public bool GetFirstDestination(out PathVertexIndex vertexIndex)
+    public bool GetFirstDestination(out PathPositionInfo positionInfo)
     {
         oldPositionVertex = Vector3.zero;
-        return GetNextDestination(1, 0, out vertexIndex);
+        return GetNextDestination(1, 0, out positionInfo);
     }
 
  
@@ -116,9 +116,9 @@ public class PathLines
     /// </summary>
     /// <param name="currentLineIndex">First line [0] is with no vertexes, [1] starts form (0,0)</param>
     /// <param name="currentPointIndex"></param>
-    /// <param name="vertexIndex"></param>
+    /// <param name="positionInfo"></param>
     /// <returns></returns>
-    public bool GetNextDestination(int currentLineIndex, int currentPointIndex, out PathVertexIndex vertexIndex)
+    public bool GetNextDestination(int currentLineIndex, int currentPointIndex, out PathPositionInfo positionInfo)
     {
         if (GetNextComputedVertex(ComputedLines, currentLineIndex, currentPointIndex, out var _nextPoint, out var _nextLine))
         {
@@ -126,17 +126,17 @@ public class PathLines
             var _heading = Geometry.GetHeadingOfDirection(_vertex - oldPositionVertex);
             oldPositionVertex = _vertex;
             
-            vertexIndex = new PathVertexIndex
+            positionInfo = new PathPositionInfo
             {
                 CurrentNodeIndex = _nextLine,
                 UnreachedVertexIndex = _nextPoint,
                 HeadingBefore = _heading,
-                VertexPosition = _vertex.To2DXY()
+                UnreachedVertexPosition = _vertex.To2DXY()
             };
             return true;
         }
 
-        vertexIndex = new PathVertexIndex();
+        positionInfo = new PathPositionInfo();
         return false;
     }
 
@@ -184,10 +184,10 @@ public class PathLines
     
 }
 
-public struct PathVertexIndex
+public struct PathPositionInfo
 {
     public int CurrentNodeIndex;
     public int UnreachedVertexIndex;
     public float HeadingBefore;
-    public Vector2 VertexPosition;
+    public Vector2 UnreachedVertexPosition;
 }

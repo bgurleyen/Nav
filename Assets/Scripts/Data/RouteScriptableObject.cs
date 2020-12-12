@@ -239,9 +239,9 @@ public class RouteScriptableObject : ScriptableObject
     }
 
 
-    public bool LinkToRoute(Vector2 exitPoint, int lineIndex, out PathVertexIndex  intersectionTargetVertex, out float distanceUntilLineIntersection)
+    public bool LinkToRoute(Vector2 exitPoint, int lineIndex, out PathPositionInfo  intersectionTargetVertex, out float distanceUntilLineIntersection)
     {
-        intersectionTargetVertex = new PathVertexIndex();
+        intersectionTargetVertex = new PathPositionInfo();
         distanceUntilLineIntersection = 0;
         var _segmentStart = Points[lineIndex - 1].CartesianPosition;
         var _segmentEnd = Points[lineIndex].CartesianPosition;
@@ -250,12 +250,12 @@ public class RouteScriptableObject : ScriptableObject
             (exitPoint - _segmentStart).magnitude, lineIndex, out var _targetVertexIndex,
             out var _targetVertexPosition))
         {
-            intersectionTargetVertex = new PathVertexIndex
+            intersectionTargetVertex = new PathPositionInfo
             {
                 CurrentNodeIndex = lineIndex,
                 HeadingBefore = Geometry.GetHeadingOfDirection(_segmentEnd - _segmentStart),
                 UnreachedVertexIndex = _targetVertexIndex,
-                VertexPosition = _targetVertexPosition
+                UnreachedVertexPosition = _targetVertexPosition
             };
             distanceUntilLineIntersection = (exitPoint - _segmentStart).magnitude;
             return true;
@@ -547,7 +547,7 @@ public class RouteScriptableObject : ScriptableObject
         var _routePreviousNode = Points[_routePreviousNodeIndex];
 
 
-        if (Aircraft.IsOnPath)
+        if (Aircraft.IsOnRoute)
         {
             // add position node on path
 
@@ -566,7 +566,7 @@ public class RouteScriptableObject : ScriptableObject
                 ID = GetNewId(),
             };
 
-            var _newFuturePosition = Geometry.GetNextPosition(Aircraft.PositionFreeOrOnSegment, Aircraft.ForwardThreshold,
+            var _newFuturePosition = Geometry.GetNextPosition(Aircraft.PositionFreeOrOnRouteSegment, Aircraft.ForwardThreshold,
                 _activeNextNode.Degrees);
             
             var _differencePosition = _routeNextNode.CartesianPosition - _newFuturePosition;
@@ -585,7 +585,7 @@ public class RouteScriptableObject : ScriptableObject
 
             // there is now from node to make cu curve correctly so for now is just not added any forward offset
             // var _nextFuturePosition = Geometry.GetNextPosition(Aircraft.PositionFreeOrOnSegment, FORWARD_THRESHOLD, Aircraft.Heading);
-            var _nextFuturePosition = Aircraft.PositionFreeOrOnSegment;
+            var _nextFuturePosition = Aircraft.PositionFreeOrOnRouteSegment;
             var _routeNextNode = Points[1];
             var _angleTo = Geometry.GetHeadingOfDirection(_nextFuturePosition);
             

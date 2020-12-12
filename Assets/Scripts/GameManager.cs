@@ -86,12 +86,12 @@ public class GameManager : Singleton<GameManager>
         IsMod = true;
         
         // in case the aircraft was in free flight with intersection valid shortcut mod until the node after intersection
-        if (!Aircraft.IsOnPath)
+        if (!Aircraft.IsOnRoute)
         {
             ExecuteShortcutOnMod(new ExecuteShortcutOnModeCommand
             {
                 FromNodeId = ModRoute.Points[1].ID,
-                ToNodeId = ModRoute.Points[Aircraft.PathLocalization.CurrentNodeIndex].ID
+                ToNodeId = ModRoute.Points[Aircraft.RoutePathLocalization.CurrentNodeIndex].ID
             });
         }
     }

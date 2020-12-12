@@ -10,18 +10,19 @@ public class Aircraft
     // position that can be on the generated curved sections of the lines
     public Vector2 PositionFreeOrOnCurvedPath { get; private set; }
     
-    public Vector2 PositionFreeOrOnSegment { get; private set; }
+    public Vector2 PositionFreeOrOnRouteSegment { get; private set; }
     
     public float Heading { get; private set; } // Degrees based rotation
     public float TargetHeading { get; private set; }
     public float WalkedDistanceOnSegment { get; private set; }
-    public PathVertexIndex PathLocalization;
+    public PathPositionInfo RoutePathLocalization;
+    public PathPositionInfo RejoinPathLocalization;
 
     public float ComputedDistanceLeftOnSegment
     {
         get
         {
-            if (!IsFreeFlight && IsOnPath)
+            if (!IsFreeFlight && IsOnRoute)
             {
                 return GetWalkedDistanceLeftOnSegment();
             }
@@ -32,7 +33,7 @@ public class Aircraft
                 _nextViableNodeIndex++;
             }
             return (GameManager.Instance.PathLines.GetNodePosition(_nextViableNodeIndex) -
-                    PositionFreeOrOnSegment).magnitude;
+                    PositionFreeOrOnRouteSegment).magnitude;
         }
     }
 
@@ -45,12 +46,12 @@ public class Aircraft
     {
         speed = aircraftSpeed;
         PositionFreeOrOnCurvedPath = Vector2.zero;
-        PositionFreeOrOnSegment = Vector2.zero;
+        PositionFreeOrOnRouteSegment = Vector2.zero;
         WalkedDistanceOnSegment = 0;
 
-        if (GameManager.Instance.PathLines.GetFirstDestination(out PathLocalization))
+        if (GameManager.Instance.PathLines.GetFirstDestination(out RoutePathLocalization))
         {
-            Heading = PathLocalization.HeadingBefore;
+            Heading = RoutePathLocalization.HeadingBefore;
         }
         else
         {
@@ -59,12 +60,12 @@ public class Aircraft
     }
 
     public bool IsFreeFlight;
-    public bool IsOnPath = true;
+    public bool IsOnRoute = true;
 
     public void StartHeadingMode()
     {
         IsFreeFlight = true;
-        IsOnPath = false;
+        IsOnRoute = false;
     }
 
     public void StartLNavMode()
@@ -77,7 +78,7 @@ public class Aircraft
             {
                 IsFreeFlight = false;
 
-                PathLocalization = _intersectionInfo;
+                RoutePathLocalization = _intersectionInfo;
                 WalkedDistanceOnSegment = _distanceUntilLineIntersection;
             }
         }
@@ -91,29 +92,29 @@ public class Aircraft
     void ExecuteStepMove()
     {
         PositionFreeOrOnCurvedPath += CurrentDirection * FrameDistance;
-        PositionFreeOrOnSegment = PositionFreeOrOnCurvedPath;
+        PositionFreeOrOnRouteSegment = PositionFreeOrOnCurvedPath;
     }
 
-    void ExecuteLerpMove(float stepDistance)
+    void ExecuteLerpMove(PathPositionInfo pathLocalisation ,float stepDistance, float distanceLeftToNextVertex)
     {
-        if (IsOnPath)
+        if (distanceLeftToNextVertex > 0)
+        {
+            PositionFreeOrOnCurvedPath = Vector2.Lerp(PositionFreeOrOnCurvedPath,
+                pathLocalisation.UnreachedVertexPosition, stepDistance / distanceLeftToNextVertex);
+        }
+
+        // if on route, synchronize with the position of the straight segments
+        if (IsOnRoute)
         {
             WalkedDistanceOnSegment += stepDistance;
-            PositionFreeOrOnSegment = Vector2.Lerp(
+            PositionFreeOrOnRouteSegment = Vector2.Lerp(
                 PositionVirtualNode.CurrentSegment.StartPosition,
                 PositionVirtualNode.CurrentSegment.EndPosition,
                 WalkedDistanceOnSegment / PositionVirtualNode.GetNodeTo.Distance);
         }
-
-        var _distanceLeft = (PathLocalization.VertexPosition - PositionFreeOrOnCurvedPath).magnitude;
-        if (_distanceLeft > 0)
+        else
         {
-            PositionFreeOrOnCurvedPath = Vector2.Lerp(PositionFreeOrOnCurvedPath, PathLocalization.VertexPosition, stepDistance / _distanceLeft);
-        }
-
-        if (!IsOnPath)
-        {
-            PositionFreeOrOnSegment = PositionFreeOrOnCurvedPath;
+            PositionFreeOrOnRouteSegment = PositionFreeOrOnCurvedPath;
         }
     }
 
@@ -130,83 +131,147 @@ public class Aircraft
         TargetHeading = heading;
     }
 
-    void AdvanceOnPath()
+    void AdvanceOnRejoinPath(out bool rejoined, out float leftFrameDistanceToWalk)
     {
+        leftFrameDistanceToWalk = 0;
+        rejoined = false;
         ExecuteStepHeadingCorrection();
-        
-        var _distanceLeft = (PathLocalization.VertexPosition - PositionFreeOrOnCurvedPath).magnitude;
 
-        var _goesOver = _distanceLeft <= FrameDistance;
+        var _distanceLeftToNextVertex =
+            (RejoinPathLocalization.UnreachedVertexPosition - PositionFreeOrOnCurvedPath).magnitude;
 
+        var _goesOver = _distanceLeftToNextVertex <= FrameDistance;
+
+        // while within current segment there will be no change on state - just advance
         if (!_goesOver)
         {
-            ExecuteLerpMove(FrameDistance);
+            ExecuteLerpMove(RejoinPathLocalization, FrameDistance, _distanceLeftToNextVertex);
             return;
         }
 
-        if (!IsFreeFlight && !IsOnPath)
-        {
-            IsOnPath = true;
-            GameManager.Instance.ActiveRoute.OnPathRejoined();
-        }
-        
+
+        // Will break motion in two: corner, after corner
+
         // move to the corner
-        ExecuteLerpMove(_distanceLeft);
-        var _leftToAdvance = FrameDistance - _distanceLeft;
+        ExecuteLerpMove(RejoinPathLocalization, _distanceLeftToNextVertex, _distanceLeftToNextVertex);
+        var _leftToAdvance = FrameDistance - _distanceLeftToNextVertex;
 
         // advance to next point
-        if (!GameManager.Instance.PathLines.GetNextDestination(PathLocalization.CurrentNodeIndex,
-            PathLocalization.UnreachedVertexIndex, out var _newUnreachedVertex))
+        if (GameManager.Instance.PathLines.GetNextDestination(RejoinPathLocalization.CurrentNodeIndex,
+            RejoinPathLocalization.UnreachedVertexIndex, out var _newUnreachedVertex))
         {
-            throw new Exception("No destination could be found");
+            // reset walked distance if the line has increased
+            if (_newUnreachedVertex.CurrentNodeIndex != RejoinPathLocalization.CurrentNodeIndex)
+            {
+                WalkedDistanceOnSegment = 0;
+                if (GameManager.Instance.ActiveRoute.Points[_newUnreachedVertex.CurrentNodeIndex].IsAfterDiscontinuity)
+                {
+                    GameManager.Instance.SwitchThroughHeading();
+                }
+            }
+
+            RoutePathLocalization = _newUnreachedVertex;
+            _distanceLeftToNextVertex =
+                (RoutePathLocalization.UnreachedVertexPosition - PositionFreeOrOnCurvedPath).magnitude;
+
+            // assume point heading
+            TargetHeading = RoutePathLocalization.HeadingBefore;
+
+            // move the rest of the frameDistance
+            ExecuteLerpMove(RejoinPathLocalization, _leftToAdvance, _distanceLeftToNextVertex);
+        }
+        else
+        {
+            // no next segment exists on current path
+            // rejoining path is ended - signal route path,
+            leftFrameDistanceToWalk = _leftToAdvance;
+            rejoined = true;
+        }
+    }
+
+    // exactDistance will be provided when rejoining from rejoining path and there is some distance left to walk
+    void AdvanceOnRoutePath(float exactDistance = -1)
+    {
+        ExecuteStepHeadingCorrection();
+
+        var _distanceToWalk = exactDistance > -1
+            ? exactDistance
+            : FrameDistance;
+
+        var _distanceLeftToNextVertex =
+            (RoutePathLocalization.UnreachedVertexPosition - PositionFreeOrOnCurvedPath).magnitude;
+
+        var _goesOver = _distanceLeftToNextVertex <= _distanceToWalk;
+
+        // while within current segment there will be no change on state - just advance
+        if (!_goesOver)
+        {
+            ExecuteLerpMove(RoutePathLocalization, _distanceToWalk, _distanceLeftToNextVertex);
+            return;
+        }
+
+        // Will break motion in two: corner, after corner:
+
+        // move to the corner
+        ExecuteLerpMove(RoutePathLocalization,_distanceLeftToNextVertex, _distanceLeftToNextVertex);
+        var _leftToAdvance = _distanceToWalk - _distanceLeftToNextVertex;
+
+        // advance to next point
+        if (!GameManager.Instance.PathLines.GetNextDestination(RoutePathLocalization.CurrentNodeIndex,
+            RoutePathLocalization.UnreachedVertexIndex, out var _newUnreachedPositionInfo))
+        {
+            Debug.LogError("No destination could be found");
+            return;
         }
 
         // reset walked distance if the line has increased
-        if (_newUnreachedVertex.CurrentNodeIndex != PathLocalization.CurrentNodeIndex)
+        if (_newUnreachedPositionInfo.CurrentNodeIndex != RoutePathLocalization.CurrentNodeIndex)
         {
             WalkedDistanceOnSegment = 0;
-            if (GameManager.Instance.ActiveRoute.Points[_newUnreachedVertex.CurrentNodeIndex].IsAfterDiscontinuity)
+            if (GameManager.Instance.ActiveRoute.Points[_newUnreachedPositionInfo.CurrentNodeIndex]
+                .IsAfterDiscontinuity)
             {
                 GameManager.Instance.SwitchThroughHeading();
             }
         }
 
-        PathLocalization = _newUnreachedVertex;
+        RoutePathLocalization = _newUnreachedPositionInfo;
+        _distanceLeftToNextVertex = (RoutePathLocalization.UnreachedVertexPosition - PositionFreeOrOnCurvedPath).magnitude;
 
         // assume point heading
-        TargetHeading = PathLocalization.HeadingBefore;
+        TargetHeading = RoutePathLocalization.HeadingBefore;
 
         // move the rest of the frameDistance
-        ExecuteLerpMove(_leftToAdvance);
+        ExecuteLerpMove(RoutePathLocalization,_leftToAdvance, _distanceLeftToNextVertex);
     }
 
     public void OnAppliedMod()
     {
         // update path relation as just left from the just added position
-        if (!IsOnPath)
+        if (!IsOnRoute)
         {
             var _lastAddedPositionNode = GameManager.Instance.ActiveRoute.LastAddedPositionNode;
             
             if (GetFirstDestinationFromNode(_lastAddedPositionNode, out var _newUnreachedVertex) )
             {
-                PathLocalization = _newUnreachedVertex;
+                RoutePathLocalization = _newUnreachedVertex;
             }
         }
     }
 
-    static bool GetFirstDestinationFromNode(RoutePoint node, out PathVertexIndex vertexIndex)
+    static bool GetFirstDestinationFromNode(RoutePoint node, out PathPositionInfo positionInfo)
     {
         GameManager.Instance.PathLines.ResetOldPosition();
 
         var _currentNodeIndex = GameManager.Instance.ActiveRoute.GetIndex(node.ID);
         var _heading = node.Degrees; // Not sure if matters, but it's not correct
 
-        vertexIndex = new PathVertexIndex
+        positionInfo = new PathPositionInfo
         {
             CurrentNodeIndex = _currentNodeIndex + 1,
             UnreachedVertexIndex = 0,
             HeadingBefore = _heading,
-            VertexPosition = node.CartesianPosition
+            UnreachedVertexPosition = node.CartesianPosition
         };
 
         return true;
@@ -239,7 +304,21 @@ public class Aircraft
         }
         else
         {
-            AdvanceOnPath();
+            if (IsOnRoute)
+            {
+                AdvanceOnRoutePath();
+            }
+            else
+            {
+                AdvanceOnRejoinPath(out var _rejoined, out var _leftFrameDistanceToWalk);
+                if (_rejoined)
+                {
+                    IsOnRoute = true;
+                    GameManager.Instance.ActiveRoute.OnPathRejoined();
+                    
+                    AdvanceOnRoutePath(_leftFrameDistanceToWalk);
+                }
+            }
         }
     }
 
