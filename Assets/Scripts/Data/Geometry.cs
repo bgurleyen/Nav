@@ -132,16 +132,13 @@ public static class Geometry
                 return x * x;
             }
     
-        const float eps = 1e-5f;
+        const float eps = 0.1f;
     // Prints the intersection points (if any) of a circle, center 'cp' with radius 'r',
 // and either an infinite line containing the points 'p1' and 'p2'
 // or a segment drawn between those points.
     public static int CircleIntersects(Vector2 p1, Vector2 p2, Vector2 cp, float r, bool segment, out Vector2 int1,
         out Vector2 int2)
     {
-
-
-        
 
         float fx(float A, float B, float C, float x)
         {

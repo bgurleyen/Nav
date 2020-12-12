@@ -5,7 +5,7 @@ public class Aircraft
 {
     const float DeltaTime = 0.00003f;
     const float MaxTurningSpeed = 1f;
-    public const float FORWARD_THRESHOLD = 3f;
+    public const float FORWARD_THRESHOLD = 1.7f;
     
     // position that can be on the generated curved sections of the lines
     public Vector2 PositionFreeOrOnCurvedPath { get; private set; }

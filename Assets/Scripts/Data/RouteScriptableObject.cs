@@ -112,11 +112,11 @@ public class RouteScriptableObject : ScriptableObject
     public bool FindFreeFlightDirectExitScenario(out Vector2 intersection)
     {
 
-            var _nan = new Vector2(-100, -100);
-            
+        var _nan = new Vector2(-100, -100);
+
         Aircraft.exitPoint = _nan;
         Aircraft.centerOfTurn = _nan;
-        
+
         var _aircraftPosition =
             GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath; // would be free since we are in free flight
         var _aircraftDirection = Geometry.GetDirectionFromHeading(GameManager.Instance.Aircraft.Heading);
@@ -125,14 +125,15 @@ public class RouteScriptableObject : ScriptableObject
 
         var _foundAt = -1;
         var _intersection = Vector2.zero;
-        
+
         for (var i = 1; i < Points.Length; i++)
         {
             _segmentStart = _segmentEnd;
             // on could take the positions from PathLines
             _segmentEnd = Geometry.GetNextPosition(_segmentStart, Points[i].Distance, Points[i].Degrees);
 
-            if (Points[i].IsHiddenLine || Points[i].IsAfterDiscontinuity ) //@#$ ask if we can join discontinuity segments
+            if (Points[i].IsHiddenLine || Points[i].IsAfterDiscontinuity
+            ) //@#$ ask if we can join discontinuity segments
             {
                 continue;
             }
@@ -165,7 +166,7 @@ public class RouteScriptableObject : ScriptableObject
             Vector2 _nextSegmentEnd = Vector2.zero;
             Vector2 _intersectionNext1 = Vector2.zero;
             Vector2 _intersectionNext2 = Vector2.zero;
-            
+
             int _countNext;
 
             if (Points.Length > _foundAt + 1)
@@ -187,8 +188,8 @@ public class RouteScriptableObject : ScriptableObject
             // the intersections on the current segment are clamped to segment
             if (_countCurrent <= 0)
             {
-                // should never happen
-                Debug.LogError("no intersections");
+                // should happen if the segment is smaller than the threshold ( go to the nexts segments ? )
+                Debug.LogError("no intersections - segment smaller than threshold?");
                 return false;
             }
 
@@ -198,7 +199,7 @@ public class RouteScriptableObject : ScriptableObject
 
             if (_countCurrent == 2)
             {
-                // the center of turn can be the intersection since is on the same line with the exit
+                // --> the center of turn can be the intersection since is on the same line with the exit
                 Aircraft.centerOfTurn = intersection;
                 Aircraft.exitPoint = _firstIsBefore ? _intersectionCurrent2 : _intersectionCurrent1;
                 return true;
@@ -206,22 +207,35 @@ public class RouteScriptableObject : ScriptableObject
 
             if (_towardsBeginning)
             {
-                // the center of turn can be the intersection since is on the same line with the exit
+                // --> the center of turn can be the intersection since is on the same line with the exit
                 Aircraft.centerOfTurn = intersection;
                 Aircraft.exitPoint = _intersectionCurrent1;
                 return true;
             }
 
-            // we will ne exiting on the next segment than the intersection
-            
-            // find center of turn as the intersection between next segment and current direction
+            // We are will be exiting on the next segment than the intersection
+            // --> find center of turn as the intersection between next segment and current direction
             Geometry.FindLineSegmentIntersection(_aircraftPosition, _aircraftDirection.x, _aircraftDirection.y,
                 _nextSegmentStart, _nextSegmentEnd, out var _newCenter, false);
-            Aircraft.centerOfTurn = _newCenter;
-            Aircraft.exitPoint = Geometry.IsWithinSegment(_nextSegmentStart.x, _nextSegmentStart.y,
+
+            var _exitPoint = Geometry.IsWithinSegment(_nextSegmentStart.x, _nextSegmentStart.y,
                 _nextSegmentEnd.x, _nextSegmentEnd.y, _intersectionNext1.x, _intersectionNext1.y)
                 ? _intersectionNext1
                 : _intersectionNext2;
+            
+            //if the angle is inwards (meaning the center of turn of further than the exitpoint ) ( see reference image.. ) move exit point further
+            var _exitIsBackwards = Vector2.SqrMagnitude(_nextSegmentEnd - _newCenter) <
+                                    Vector2.SqrMagnitude(_nextSegmentEnd - _exitPoint);
+            if (_exitIsBackwards)
+            {
+                _exitPoint = Vector2.MoveTowards(_newCenter, _nextSegmentEnd, Aircraft.FORWARD_THRESHOLD);
+            }
+            
+            // todo: if newCenter is passed the next segment end ( when in U turn and bypasses the middle ) -> try next
+            // todo: if exit point is near turn ( too close points) -> try next
+
+            Aircraft.centerOfTurn = _newCenter;
+            Aircraft.exitPoint = _exitPoint; 
 
             return true;
         }
@@ -229,8 +243,8 @@ public class RouteScriptableObject : ScriptableObject
         intersection = Vector2.zero;
         return false;
     }
-    
-    
+
+
 
     public bool FindFreeFlightFarExitPosition(out PathVertexIndex intersectionTargetVertex,
         out float distanceUntilLineIntersection)
