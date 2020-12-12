@@ -76,6 +76,14 @@ public class Aircraft
             out var _exitSegmentIndex))
         {
             //compute rejoin path
+            
+            tempPath = new PathLines();
+            tempPath.ComputeSet(new []
+            {
+                new RoutePoint{  },
+                new RoutePoint{ },
+                new RoutePoint{ },
+            });
 
             IsFreeFlight = false;
 

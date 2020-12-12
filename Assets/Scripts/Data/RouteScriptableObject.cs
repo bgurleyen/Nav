@@ -29,7 +29,7 @@ public class RouteScriptableObject : ScriptableObject
 
     public void ComputeSet(bool isMod)
     {
-        PathLines.ComputeSet(this, isMod);
+        PathLines.ComputeSet(Points, !isMod);
     }
 
     public void InitIds()
@@ -420,7 +420,7 @@ public class RouteScriptableObject : ScriptableObject
         var _lastLine = new MarkLine(_relativeFromNode);
         _lastLine.InitBeginning();
 
-        Drawer.ComputeLine(_lastLine, out var _testLine, insertionNode, afterInsertion);
+        LinesComputer.ComputeLine(_lastLine, out var _testLine, insertionNode, afterInsertion);
 
         // replace set with new set that also contains insertion node
         var _newSet = new RoutePoint[Points.Length + 1];

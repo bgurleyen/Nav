@@ -5,36 +5,29 @@ using UnityEngine;
 
 public class PathLines
 {
-    public MarkLine[] ComputedLines { get; set; }
+    public MarkLine[] ComputedLines { get; private set; }
     public List<FixCircle> ComputedCircles;
     public List<FixRay> ComputedRays;
     public Vector2 CenteredPosition;
     
     static FixedPointsScriptableObject FixedPoints => GameManager.Instance.FixedPoints;
 
-    public void ComputeSet(RouteScriptableObject route, bool isMod)
+    public void ComputeSet(RoutePoint[] pointsArray, bool hasOtherMarkers = false)
     {
-        if (route == null)
-        {
-            return;
-        }
-
-        ComputedLines = new MarkLine[route.Points.Length];
-        if (!isMod)
+        ComputedLines = new MarkLine[pointsArray.Length];
+        if (hasOtherMarkers)
         {
             ComputedCircles = new List<FixCircle>();
             ComputedRays = new List<FixRay>();
         }
 
-        var _computedLines = ComputedLines;
-
         var _lastLine = new MarkLine(null);
         _lastLine.InitBeginning();
         var _currentIndex = 0;
 
-        while (_currentIndex < route.Points.Length - 1)
+        while (_currentIndex < pointsArray.Length - 1)
         {
-            if (!Drawer.GetNextLine(_lastLine, _currentIndex, route.Points, out var _line, out _currentIndex))
+            if (!LinesComputer.GetNextLine(_lastLine, _currentIndex, pointsArray, out var _line, out _currentIndex))
             {
                 continue;
             }
@@ -44,7 +37,7 @@ public class PathLines
                 continue;
             }
 
-            _computedLines[_currentIndex] = _line;
+            ComputedLines[_currentIndex] = _line;
             _lastLine = _line;
 
             if (_line.LinkedPoint.IsCenter)
@@ -52,7 +45,7 @@ public class PathLines
                 CenteredPosition = _line.EndPosition;
             }
 
-            if (!isMod && FixedPoints != null)
+            if (hasOtherMarkers && FixedPoints != null)
             {
                 var _fixEntry = FixedPoints.Entries.FirstOrDefault(x => x.Name == _line.LinkedPoint.Name);
                 if (_fixEntry != null)
