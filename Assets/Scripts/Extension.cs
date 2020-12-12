@@ -41,6 +41,20 @@ public static class Extension
             pool.Despawn(l.gameObject);
         }
     }
+    
+    public static int GetNodeIndex(this RoutePoint[] points,int nodeId)
+    {
+        for (var i = 0; i < points.Length; i++)
+        {
+            if (points[i].ID == nodeId)
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+    
 }
 
 public enum DrawerMode { Map, Center, Plan, Suspeded}

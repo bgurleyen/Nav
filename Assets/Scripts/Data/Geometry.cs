@@ -52,12 +52,18 @@ public static class Geometry
 
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="ofPosition"></param>
+    /// <param name="fromPosition"></param>
+    /// <returns>Raw degrees</returns>
     public static float AngleOfPosition(Vector2 ofPosition, Vector2 fromPosition)
     {
         return AngleBetween(ofPosition - fromPosition , Vector2.up);
     }
 
-    public static float AngleBetween(float degreesA, float degreesB)
+    static float AngleBetween(float degreesA, float degreesB)
     {
         while (degreesA > 360)
         {

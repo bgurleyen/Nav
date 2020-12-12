@@ -18,7 +18,7 @@ public class Aircraft
     public PathPositionInfo RoutePathLocalization;
     public PathPositionInfo RejoinPathLocalization;
 
-    PathLines tempPath;
+    PathLines tempPathLines;
 
     public float ComputedDistanceLeftOnSegment
     {
@@ -76,17 +76,23 @@ public class Aircraft
             out var _exitSegmentIndex))
         {
             //compute rejoin path
-            
-            tempPath = new PathLines();
-            tempPath.ComputeSet(new []
-            {
-                new RoutePoint{  },
-                new RoutePoint{ },
-                new RoutePoint{ },
-            });
+
+            tempPathLines = new PathLines();
+
+            var _tempPoints = new RoutePoint[4];
+            var _lastPoint = RoutePoint.ConstructFromPosition(Vector2.zero, null);
+            _lastPoint = RoutePoint.ConstructFromPosition(PositionFreeOrOnCurvedPath, _lastPoint);
+            _lastPoint = RoutePoint.ConstructFromPosition(centerOfTurn, _lastPoint);
+            _lastPoint = RoutePoint.ConstructFromPosition(exitPoint, _lastPoint);
+
+            tempPathLines.ComputeSet(_tempPoints);
+
+            RejoinPathLocalization = new PathPositionInfo();
+
+            GetFirstDestinationFromNode(tempPathLines, _tempPoints[0], _tempPoints,
+                out RoutePathLocalization);
 
             IsFreeFlight = false;
-
 
             // if (GameManager.Instance.ActiveRoute.LinkToRoute(centerOfTurn, _exitSegmentIndex, out var _intersectionInfo,
             //     out var _distanceUntilLineIntersection))
@@ -172,21 +178,21 @@ public class Aircraft
         var _leftToAdvance = FrameDistance - _distanceLeftToNextVertex;
 
         // advance to next point
-        if (tempPath.GetNextDestination(
+        if (tempPathLines.GetNextDestination(
             RejoinPathLocalization.CurrentNodeIndex,
-            RejoinPathLocalization.UnreachedVertexIndex, out var _newUnreachedVertex))
+            RejoinPathLocalization.UnreachedVertexIndex, out var _newUnreachedPathLocalisation))
         {
             // reset walked distance if the line has increased
-            if (_newUnreachedVertex.CurrentNodeIndex != RejoinPathLocalization.CurrentNodeIndex)
+            if (_newUnreachedPathLocalisation.CurrentNodeIndex != RejoinPathLocalization.CurrentNodeIndex)
             {
                 WalkedDistanceOnSegment = 0;
-                if (GameManager.Instance.ActiveRoute.Points[_newUnreachedVertex.CurrentNodeIndex].IsAfterDiscontinuity)
+                if (GameManager.Instance.ActiveRoute.Points[_newUnreachedPathLocalisation.CurrentNodeIndex].IsAfterDiscontinuity)
                 {
                     GameManager.Instance.SwitchThroughHeading();
                 }
             }
 
-            RoutePathLocalization = _newUnreachedVertex;
+            RoutePathLocalization = _newUnreachedPathLocalisation;
             _distanceLeftToNextVertex =
                 (RoutePathLocalization.UnreachedVertexPosition - PositionFreeOrOnCurvedPath).magnitude;
 
@@ -267,31 +273,29 @@ public class Aircraft
         // update path relation as just left from the just added position
         if (!IsOnRoute)
         {
-            var _lastAddedPositionNode = GameManager.Instance.ActiveRoute.LastAddedPositionNode;
-            
-            if (GetFirstDestinationFromNode(_lastAddedPositionNode, out var _newUnreachedVertex) )
-            {
-                RoutePathLocalization = _newUnreachedVertex;
-            }
+            var _route = GameManager.Instance.ActiveRoute;
+
+            GetFirstDestinationFromNode(_route.PathLines, _route.LastAddedPositionNode, _route.Points,
+                out RoutePathLocalization);
         }
     }
 
-    static bool GetFirstDestinationFromNode(RoutePoint node, out PathPositionInfo positionInfo)
+    static void GetFirstDestinationFromNode(PathLines lines, RoutePoint node, RoutePoint[] nodes, out PathPositionInfo positionInfo)
     {
-        GameManager.Instance.ActiveRoute.PathLines.ResetOldPosition();
+        lines.ResetOldPosition();
 
-        var _currentNodeIndex = GameManager.Instance.ActiveRoute.GetIndex(node.ID);
+        var _nodeIndex = nodes.GetNodeIndex(node.ID);
         var _heading = node.Degrees; // Not sure if matters, but it's not correct
 
         positionInfo = new PathPositionInfo
         {
-            CurrentNodeIndex = _currentNodeIndex + 1,
+            // set destination as next node
+            CurrentNodeIndex = _nodeIndex + 1,
             UnreachedVertexIndex = 0,
             HeadingBefore = _heading,
+            // set position in the just passed node
             UnreachedVertexPosition = node.CartesianPosition
         };
-
-        return true;
     }
 
     void AdvanceFreeFlight()

@@ -1,7 +1,4 @@
-﻿using Gamelogic.Extensions;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class MarkLine : Line
 {
@@ -19,8 +16,6 @@ public class MarkLine : Line
     {
         StartPosition = StartOffsetPosition = EndPosition = EndOffsetPosition = Vector3.zero;
     }
-
-    public Vector3 GetNeededCurveOffset => (EndPosition - StartCurvePosition);
 
     protected void ComputeDistanceForPoint(int pointIndex)
     {

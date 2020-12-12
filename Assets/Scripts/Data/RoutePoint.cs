@@ -41,6 +41,22 @@ public class RoutePoint
     public void SetSpeedComputed(int lastRegulation) =>
         Speed.SetComputedValue(lastRegulation, (int) GetAcceptedAltitude);
 
+    public static RoutePoint ConstructFromPosition(Vector2 position, RoutePoint previousPoint)
+    {
+        var _rp = new RoutePoint{ CartesianPosition = position};
+
+        if (previousPoint == null)
+        {
+            _rp.Distance = 0;
+            return _rp;
+        }
+
+        _rp.Distance = Vector2.Distance(position, previousPoint.CartesianPosition);
+        _rp.RawDegrees = Geometry.AngleOfPosition(position, previousPoint.CartesianPosition);
+
+        return _rp;
+    }
+
     public bool GetIsDisplayCurrent
     {
         get
@@ -55,7 +71,7 @@ public class RoutePoint
                     return true;
                 }
 
-                _nodeCursor = _activeRoute.Points[_activeRoute.GetIndex(_nodeCursor.ID) + 1];
+                _nodeCursor = _activeRoute.Points[_activeRoute.Points.GetNodeIndex(_nodeCursor.ID) + 1];
             }
 
             return false;

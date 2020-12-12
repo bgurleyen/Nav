@@ -3,7 +3,6 @@
 
     public static class LinesComputer
     {
-
         public static bool GetNextLine(MarkLine lastLine, int fromDataPointIndex, RoutePoint[] points,
             out MarkLine line,
             out int toDataPointIndex)
@@ -40,7 +39,6 @@
 
             return ComputeLine(lastLine, out line, _nextPoint, _notToCloseSecondPoint, _forceEndStraight);
         }
-
 
         public static bool ComputeLine(MarkLine lastLine, out MarkLine line, RoutePoint nextPoint,
             RoutePoint notTooCloseSecondPoint = null, bool forceEndStraight = false)

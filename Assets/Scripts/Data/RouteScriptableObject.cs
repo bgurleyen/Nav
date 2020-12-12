@@ -52,7 +52,7 @@ public class RouteScriptableObject : ScriptableObject
 
     public bool GetPoint(int nodeId, out RoutePoint point)
     {
-        var _index = GetIndex(nodeId);
+        var _index = Points.GetNodeIndex(nodeId);
         return GetPointAt(_index, out point);
     }
 
@@ -68,18 +68,6 @@ public class RouteScriptableObject : ScriptableObject
         return true;
     }
 
-    public int GetIndex(int nodeId)
-    {
-        for (var i = 0; i < Points.Length; i++)
-        {
-            if (Points[i].ID == nodeId)
-            {
-                return i;
-            }
-        }
-
-        return -1;
-    }
 
     int GetNewId()
     {
@@ -283,8 +271,8 @@ public class RouteScriptableObject : ScriptableObject
     public void ShortcutNodes(int firstIdNodeToDissolve, int toId,
         out RoutePoint reducedPoint) // @#$ refactor for passed nodes ?
     {
-        var _startIndex = GetIndex(firstIdNodeToDissolve);
-        var _endIndex = GetIndex(toId);
+        var _startIndex = Points.GetNodeIndex(firstIdNodeToDissolve);
+        var _endIndex = Points.GetNodeIndex(toId);
 
         var _offset = _endIndex - _startIndex;
 
@@ -336,7 +324,7 @@ public class RouteScriptableObject : ScriptableObject
     public void AddRelativeNodeOnDirection(int nodeId, int distance, int relativeNodeId, out RoutePoint insertionNode,
         out RoutePoint afterInsertion) // @#$ todo refactor for passed nodes ?
     {
-        var _nodeIndex = GetIndex(nodeId);
+        var _nodeIndex = Points.GetNodeIndex(nodeId);
         var _node = Points[_nodeIndex];
 
         float _distanceToBefore;
@@ -396,7 +384,7 @@ public class RouteScriptableObject : ScriptableObject
     void AddRelativeNodeAfter(int relativeFromNodeId, float rawDegrees, int distance,
         out RoutePoint insertionNode, out RoutePoint afterInsertion, bool addCurveOffset = true)
     {
-        var _relativeFromNodeIndex = GetIndex(relativeFromNodeId);
+        var _relativeFromNodeIndex = Points.GetNodeIndex(relativeFromNodeId);
         var _relativeFromNode = Points[_relativeFromNodeIndex];
 
         afterInsertion = Points[_relativeFromNodeIndex + 1];
@@ -445,8 +433,8 @@ public class RouteScriptableObject : ScriptableObject
         out RoutePoint insertionNode,
         bool showDiscontinuity = false)
     {
-        var _originalBeforeNodeIndex = GetIndex(beforeNodeId);
-        var _relativeNodeIndex = GetIndex(relativeNodeId);
+        var _originalBeforeNodeIndex = Points.GetNodeIndex(beforeNodeId);
+        var _relativeNodeIndex = Points.GetNodeIndex(relativeNodeId);
 
         var _isInThePast = PositionVirtualNode.PassedNodeIndexForMode > _originalBeforeNodeIndex - 1;
         
@@ -460,7 +448,7 @@ public class RouteScriptableObject : ScriptableObject
         var _insertionAngle = Geometry.AngleOfPosition(_insertPosition, _positionBeforeInsertion);
         var _insertionDistance = (_insertPosition - _positionBeforeInsertion).magnitude;
 
-        var _nodeAfterInsertion = Points[GetIndex(beforeNodeId)];
+        GetPoint(beforeNodeId, out var _nodeAfterInsertion);
         
         insertionNode = new RoutePoint
         {
