@@ -243,25 +243,24 @@ public class RouteScriptableObject : ScriptableObject
     }
 
 
-    public bool LinkToRoute(Vector2 exitPoint, int lineIndex, out PathPositionInfo  intersectionTargetVertex, out float distanceUntilLineIntersection)
+    public bool TransferPathToRoute(Vector2 exitPoint, int lineIndex, out PathPositionInfo  intersectionRoutePathInfo, out float segmentDistanceUntilIntersection)
     {
-        intersectionTargetVertex = new PathPositionInfo();
-        distanceUntilLineIntersection = 0;
+        intersectionRoutePathInfo = new PathPositionInfo();
         var _segmentStart = Points[lineIndex - 1].CartesianPosition;
         var _segmentEnd = Points[lineIndex].CartesianPosition;
 
+        segmentDistanceUntilIntersection = (exitPoint - _segmentStart).magnitude;
         if (GameManager.Instance.ActiveRoute.PathLines.FindClosestVertexToDistanceOnLineActive(
-            (exitPoint - _segmentStart).magnitude, lineIndex, out var _targetVertexIndex,
+            segmentDistanceUntilIntersection, lineIndex, out var _targetVertexIndex,
             out var _targetVertexPosition))
         {
-            intersectionTargetVertex = new PathPositionInfo
+            intersectionRoutePathInfo = new PathPositionInfo
             {
                 CurrentNodeIndex = lineIndex,
-                HeadingBefore = Geometry.GetHeadingOfDirection(_segmentEnd - _segmentStart),
+                HeadingBefore = GameManager.Instance.Aircraft.Heading,
                 UnreachedVertexIndex = _targetVertexIndex,
                 UnreachedVertexPosition = _targetVertexPosition
             };
-            distanceUntilLineIntersection = (exitPoint - _segmentStart).magnitude;
             return true;
         }
 

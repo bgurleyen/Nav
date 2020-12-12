@@ -43,7 +43,7 @@ public class RoutePoint
 
     public static RoutePoint ConstructFromPosition(Vector2 position, RoutePoint previousPoint)
     {
-        var _rp = new RoutePoint{ CartesianPosition = position};
+        var _rp = new RoutePoint{ CartesianPosition = position, ID = 0};
 
         if (previousPoint == null)
         {
@@ -53,6 +53,7 @@ public class RoutePoint
 
         _rp.Distance = Vector2.Distance(position, previousPoint.CartesianPosition);
         _rp.RawDegrees = Geometry.AngleOfPosition(position, previousPoint.CartesianPosition);
+        _rp.ID = previousPoint.ID + 1;
 
         return _rp;
     }
