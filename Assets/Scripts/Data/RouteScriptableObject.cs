@@ -112,6 +112,11 @@ public class RouteScriptableObject : ScriptableObject
     public bool FindFreeFlightDirectExitScenario(out Vector2 intersection)
     {
 
+            var _nan = new Vector2(-100, -100);
+            
+        Aircraft.exitPoint = _nan;
+        Aircraft.centerOfTurn = _nan;
+        
         var _aircraftPosition =
             GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath; // would be free since we are in free flight
         var _aircraftDirection = Geometry.GetDirectionFromHeading(GameManager.Instance.Aircraft.Heading);
@@ -142,32 +147,82 @@ public class RouteScriptableObject : ScriptableObject
 
         if (_foundAt >= 0)
         {
-            var _nan = new Vector2(-100, -100);
-            
+
             intersection = _intersection;
 
             var _currentSegmentStart = Points[_foundAt - 1].CartesianPosition;
             var _currentSegmentEnd = Points[_foundAt].CartesianPosition;
 
-            var _nextSegmentStart = _currentSegmentEnd;
-            //var _nextSegmentEnd = Points[_foundAt + 1].CartesianPosition;
+            var _towardsBeginning = Vector2.SqrMagnitude(_currentSegmentStart - _intersection) <
+                                    Vector2.SqrMagnitude(_currentSegmentEnd - intersection);
 
-            var _count = Geometry.CircleIntersects(_currentSegmentStart, _currentSegmentEnd, intersection,
+            var _nextSegmentStart = _currentSegmentEnd;
+
+            var _countCurrent = Geometry.CircleIntersects(_currentSegmentStart, _currentSegmentEnd, intersection,
                 Aircraft.FORWARD_THRESHOLD,
-                false, out var _intersection1, out var _intersection2);
+                true, out var _intersectionCurrent1, out var _intersectionCurrent2);
+
+            Vector2 _nextSegmentEnd = Vector2.zero;
+            Vector2 _intersectionNext1 = Vector2.zero;
+            Vector2 _intersectionNext2 = Vector2.zero;
             
+            int _countNext;
+
+            if (Points.Length > _foundAt + 1)
+            {
+                _nextSegmentEnd = Points[_foundAt + 1].CartesianPosition;
+                _countNext = Geometry.CircleIntersects(_nextSegmentStart, _nextSegmentEnd, intersection,
+                    Aircraft.FORWARD_THRESHOLD,
+                    false, out _intersectionNext1, out _intersectionNext2);
+            }
+
             // find forward intersection
-            
+
             // if inside turn - prepare turn for corner on the other side of the circle of the aircraft and the exit of turn
             // if not near turn - prepare turn for corner on circle center and the forward interserction
-            
+
             // create lines with computed vertexes for turns for scenario and return them 
 
-            Aircraft.interserction1 = _count > 0 ? _intersection1 : _nan;
-            Aircraft.interserction2 = _count == 2 ? _intersection2 : _nan;
-                
+
+            // the intersections on the current segment are clamped to segment
+            if (_countCurrent <= 0)
+            {
+                // should never happen
+                Debug.LogError("no intersections");
+                return false;
+            }
+
+            // we are not sure of the order of the circle intersections on the circle
+            var _firstIsBefore = Vector2.SqrMagnitude(_currentSegmentStart - _intersectionCurrent1) <
+                                 Vector2.SqrMagnitude(_currentSegmentStart - _intersection);
+
+            if (_countCurrent == 2)
+            {
+                // the center of turn can be the intersection since is on the same line with the exit
+                Aircraft.centerOfTurn = intersection;
+                Aircraft.exitPoint = _firstIsBefore ? _intersectionCurrent2 : _intersectionCurrent1;
+                return true;
+            }
+
+            if (_towardsBeginning)
+            {
+                // the center of turn can be the intersection since is on the same line with the exit
+                Aircraft.centerOfTurn = intersection;
+                Aircraft.exitPoint = _intersectionCurrent1;
+                return true;
+            }
+
+            // we will ne exiting on the next segment than the intersection
             
-            
+            // find center of turn as the intersection between next segment and current direction
+            Geometry.FindLineSegmentIntersection(_aircraftPosition, _aircraftDirection.x, _aircraftDirection.y,
+                _nextSegmentStart, _nextSegmentEnd, out var _newCenter, false);
+            Aircraft.centerOfTurn = _newCenter;
+            Aircraft.exitPoint = Geometry.IsWithinSegment(_nextSegmentStart.x, _nextSegmentStart.y,
+                _nextSegmentEnd.x, _nextSegmentEnd.y, _intersectionNext1.x, _intersectionNext1.y)
+                ? _intersectionNext1
+                : _intersectionNext2;
+
             return true;
         }
 

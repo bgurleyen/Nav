@@ -18279,7 +18279,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rotatingMesh: {fileID: 1604226570}
-  stepDegrees: 20
+  stepDegrees: 10
   isPositive: 0
 --- !u!1 &1254730836
 GameObject:
@@ -21691,7 +21691,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   rotatingMesh: {fileID: 1604226570}
-  stepDegrees: 20
+  stepDegrees: 10
   isPositive: 1
 --- !u!1 &1544646507
 GameObject:
@@ -30664,8 +30664,8 @@ LineRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 6599994631422807261}
   m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
+  m_CastShadows: 0
+  m_ReceiveShadows: 0
   m_DynamicOccludee: 1
   m_MotionVectors: 0
   m_LightProbeUsage: 0
@@ -30697,10 +30697,10 @@ LineRenderer:
   m_SortingOrder: 1
   m_Positions:
   - {x: 0, y: 0, z: 0}
-  - {x: 0, y: 4.8, z: 0}
+  - {x: 0, y: 33.910217, z: 0}
   m_Parameters:
     serializedVersion: 3
-    widthMultiplier: 0.02730913
+    widthMultiplier: 0.017
     widthCurve:
       serializedVersion: 2
       m_Curve:
@@ -30748,7 +30748,7 @@ LineRenderer:
     numCornerVertices: 0
     numCapVertices: 0
     alignment: 0
-    textureMode: 3
+    textureMode: 1
     shadowBias: 0.5
     generateLightingData: 0
   m_UseWorldSpace: 0

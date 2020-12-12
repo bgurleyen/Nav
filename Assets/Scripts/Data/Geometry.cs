@@ -84,7 +84,7 @@ public static class Geometry
 
     }
 
-    public static bool FindLineSegmentIntersection(Vector2 from, float dx, float dy, Vector2 segmentA, Vector2 segmentB, out Vector2 intersection)
+    public static bool FindLineSegmentIntersection(Vector2 from, float dx, float dy, Vector2 segmentA, Vector2 segmentB, out Vector2 intersection, bool clamToSegment = true)
     {
         var _x = from.x;
         var _y = from.y;
@@ -103,7 +103,7 @@ public static class Geometry
             {
                 var _r = ((_y - _y1) * (_x2 - _x1) - (_x - _x1) * (_y2 - _y1)) / _d;
                 var _s = ((_y - _y1) * dx - (_x - _x1) * dy) / _d;
-                if (_r >= 0 && _s >= 0 && _s <= 1)
+                if (_r >= 0 && (!clamToSegment || _s >= 0 && _s <= 1))
                 {
                     intersection = new Vector2(
                         _x + _r * dx,
@@ -117,8 +117,22 @@ public static class Geometry
         intersection = Vector2.zero;
         return false;
     }
+
+    public static bool IsWithinSegment(float x1, float y1, float x2, float y2, float x, float y)
+    {
+        float d1 = Mathf.Sqrt(sq(x2 - x1) + sq(y2 - y1)); // distance between end-points
+        float d2 = Mathf.Sqrt(sq(x - x1) + sq(y - y1)); // distance from point to one end
+        float d3 = Mathf.Sqrt(sq(x2 - x) + sq(y2 - y)); // distance from point to other end
+        float delta = d1 - d2 - d3;
+        return Mathf.Abs(delta) < eps; // true if delta is less than a small tolerance
+    }
+
+    static float sq(float x)
+            {
+                return x * x;
+            }
     
-    
+        const float eps = 1e-5f;
     // Prints the intersection points (if any) of a circle, center 'cp' with radius 'r',
 // and either an infinite line containing the points 'p1' and 'p2'
 // or a segment drawn between those points.
@@ -126,12 +140,8 @@ public static class Geometry
         out Vector2 int2)
     {
 
-        const float eps = 1e-5f;
 
-        float sq(float x)
-        {
-            return x * x;
-        }
+        
 
         float fx(float A, float B, float C, float x)
         {
@@ -143,18 +153,11 @@ public static class Geometry
             return -(B * y + C) / A;
         }
 
-        bool within(float x1, float y1, float x2, float y2, float x, float y)
-        {
-            float d1 = Mathf.Sqrt(sq(x2 - x1) + sq(y2 - y1)); // distance between end-points
-            float d2 = Mathf.Sqrt(sq(x - x1) + sq(y - y1)); // distance from point to one end
-            float d3 = Mathf.Sqrt(sq(x2 - x) + sq(y2 - y)); // distance from point to other end
-            float delta = d1 - d2 - d3;
-            return Mathf.Abs(delta) < eps; // true if delta is less than a small tolerance
-        }
+        
 
         bool rxy(float x1, float y1, float x2, float y2, float x, float y, bool isSegment)
         {
-            return !isSegment || within(x1, y1, x2, y2, x, y);
+            return !isSegment || IsWithinSegment(x1, y1, x2, y2, x, y);
         }
 
         int1 = int2 = Vector2.zero;

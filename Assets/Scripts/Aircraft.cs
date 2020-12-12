@@ -229,27 +229,31 @@ public class Aircraft
         {
             IndicateTargetHeading(Calculator.RHeading);
             AdvanceFreeFlight();
+
+            if (GameManager.Instance.ActiveRoute.FindFreeFlightDirectExitScenario(out var _intersection))
+            {
+                exitIntersection = _intersection;
+            }
         }
         else
         {
             AdvanceOnPath();
         }
 
-        if (GameManager.Instance.ActiveRoute.FindFreeFlightDirectExitScenario(out var _intersection))
-        {
-            exitIntersection = _intersection;
-        }
+       
     }
 
     Vector2 exitIntersection;
-    public static Vector2 interserction1;
-    public static Vector2 interserction2;
+    public static Vector2 centerOfTurn;
+    public static Vector2 exitPoint;
 
 
     public void DrawGizmos()
     {
-        Gizmos.DrawSphere(Drawer.Instance.transform.position + exitIntersection.ToDisplay(), 0.1f);
-        Gizmos.DrawSphere(Drawer.Instance.transform.position + interserction1.ToDisplay(), 0.05f);
-        Gizmos.DrawSphere(Drawer.Instance.transform.position + interserction2.ToDisplay(), 0.05f);
+        Gizmos.DrawSphere(Drawer.Instance.transform.position + exitIntersection.ToDisplay(), 0.02f);
+        Gizmos.color = Color.white;
+        Gizmos.DrawSphere(Drawer.Instance.transform.position + centerOfTurn.ToDisplay(), 0.05f);
+        Gizmos.color = Color.green;
+        Gizmos.DrawSphere(Drawer.Instance.transform.position + exitPoint.ToDisplay(), 0.05f);
     }
 }
