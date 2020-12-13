@@ -3,7 +3,8 @@ using UnityEngine;
 
 public class Aircraft
 {
-    const float DeltaTime = 0.00003f;
+    const float DeltaTime = 0.0000057f;
+   // const float DeltaTime = 0.0000003f;
     const float MaxTurningSpeed = 1f;
     
     // position that can be on the generated curved sections of the lines

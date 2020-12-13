@@ -14,7 +14,7 @@ public class infoFMC : Singleton<infoFMC>
     int previousPrvIndex = 0;
     int Level = Calculator.Level; 
 
-    public class INITREF { public string GWT, Destination, RW, Field, FreqCourse,F15,F30,F40,Vref; }
+    public class INITREF { public string GWT, Destination, RW, Field, Freq,F15,F30,F40,Vref; public int Course; }
     public class RTE { public string Destination, RW; }
     public class DES { public string RWAltitude, Destination,WptAltFix,FPA,VB,VS; }
     public class CRZ { public string Destination,FuelAtDestination, ActualWind; }
@@ -93,7 +93,8 @@ public class infoFMC : Singleton<infoFMC>
         Fmc.Initref.Destination = levelsInfoData[Level].Destination;
         Fmc.Initref.RW = levelsInfoData[Level].Runway;
         Fmc.Initref.Field = levelsInfoData[Level].FieldInfo;
-        Fmc.Initref.FreqCourse = levelsInfoData[Level].FreqCourse;
+        Fmc.Initref.Freq = levelsInfoData[Level].Freq;
+        Fmc.Initref.Course= levelsInfoData[Level].Course;
         Fmc.Initref.F15 = "" + (levelsInfoData[Level].F30Speed - 10);
         Fmc.Initref.F30 = levelsInfoData[Level].F30Speed.ToString();
         Fmc.Initref.F40 = ""+ (levelsInfoData[Level].F30Speed+ 10);
@@ -154,7 +155,8 @@ public class infoFMC : Singleton<infoFMC>
                                   Fmc.Initref.Destination + "\n" +
                                   Fmc.Initref.RW + "\n" +
                                   Fmc.Initref.Field + "\n" +
-                                  Fmc.Initref.FreqCourse + "\n" +
+                                  Fmc.Initref.Freq + "\n" +
+                                  Fmc.Initref.Course + "\n" +
                                   Fmc.Initref.F15 + "\n" +
                                   Fmc.Initref.F30 + "\n" +
                                   Fmc.Initref.F40 + "\n" +

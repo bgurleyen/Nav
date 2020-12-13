@@ -11,7 +11,8 @@ public class LevelInfoScriptableObject : ScriptableObject
     public string Transition;
     public string Runway;
     public string FieldInfo;
-    public string FreqCourse;
+    public string Freq;
+    public int  Course;
     public float ZFW;
     public float Fuel;
     public long CrzAltitude;
@@ -20,4 +21,5 @@ public class LevelInfoScriptableObject : ScriptableObject
     public int DesEconSpeed;
     public int DesEconMach;
     public int GateIdx;
+    public int CheckPointTime;
 }

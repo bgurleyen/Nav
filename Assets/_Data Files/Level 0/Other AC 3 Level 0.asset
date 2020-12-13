@@ -10,20 +10,26 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 686a3e082b8fa1242ad16fff883efb61, type: 3}
-  m_Name: Other AC 0 Level 0
+  m_Name: Other AC 3 Level 0
   m_EditorClassIdentifier: 
   ACItems:
-  - Point: 51
+  - Point: 57
     Altitude: 7000
     Speed: 300
-  - Point: 52
+  - Point: 2
     Altitude: 6000
     Speed: 300
-  - Point: 12
-    Altitude: 4000
+  - Point: 54
+    Altitude: 5000
+    Speed: 300
+  - Point: 90
+    Altitude: 3000
+    Speed: 300
+  - Point: 92
+    Altitude: 3000
     Speed: 300
   - Point: 12
-    Altitude: 2000
+    Altitude: 1000
     Speed: 300
   - Point: 13
     Altitude: 0
@@ -32,6 +38,15 @@ MonoBehaviour:
     Altitude: 0
     Speed: 300
   - Point: 15
+    Altitude: 0
+    Speed: 300
+  - Point: 16
+    Altitude: 0
+    Speed: 300
+  - Point: 16
+    Altitude: 0
+    Speed: 300
+  - Point: 16
     Altitude: 0
     Speed: 300
   - Point: 16

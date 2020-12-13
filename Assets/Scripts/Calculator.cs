@@ -13,7 +13,7 @@ public class Calculator : MonoBehaviour
     public  Toggle Accelerate ;
 
     
-    public static  float Acceleration()
+    public static  int Acceleration()
     {
         return  Calculator.Instance.Accelerate.isOn ? 10 : 1;
     }
