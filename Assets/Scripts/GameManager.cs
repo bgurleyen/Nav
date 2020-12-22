@@ -306,7 +306,6 @@ public class GameManager : Singleton<GameManager>
         queueEraseMode = true;
     }
 
-
     public void SwitchThroughHeading()
     {
         Calculator.RHeading = (int) Aircraft.TargetHeading;

@@ -271,6 +271,14 @@ public class Aircraft
 
             GetFirstDestinationFromNode(_route.PathLines, _route.LastAddedPositionNode, _route.Points,
                 out RoutePathLocalization);
+
+            if (IsFreeFlight)
+            {
+                IsFreeFlight = false;
+                McpUI.SilentSwitchLNAV(true);
+                McpUI.SilentSwitchHeading(false);
+            }
+            IsOnRoute = true;
         }
     }
 
@@ -316,6 +324,7 @@ public class Aircraft
 
             // for display only
             GameManager.Instance.ActiveRoute.FindFreeFlightDirectExitScenario(out centerOfTurn, out exitPoint, out _);
+
         }
         else
         {
