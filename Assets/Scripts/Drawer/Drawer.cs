@@ -169,7 +169,11 @@ public class Drawer : Singleton<Drawer>
     public void Display()
     {
         DisplaySet(GameManager.Instance.ActiveRoute?.PathLines?.ComputedLines, false);
-        DisplaySet(GameManager.Instance.ModRoute?.PathLines?.ComputedLines, true);
+        if (GameManager.Instance.ModRoute != null)
+        {
+            DisplaySet(GameManager.Instance.ModeSetWithPosition?.PathLines?.ComputedLines, true);
+        }
+
         DisplayFixCircles();
         DisplayFixRays();
         freeFlightPivot.gameObject.SetActive(GameManager.Instance.Aircraft.IsFreeFlight);
@@ -237,14 +241,6 @@ public class Drawer : Singleton<Drawer>
         if (lines == null)
         {
             return;
-        }
-        
-        if (mod)
-        {
-            if (GameManager.Instance.ModRoute == null || GameManager.Instance.ModRoute.PathLines.ComputedLines == null)
-            {
-                return;
-            }
         }
 
         var _pool = mod ? linesPoolMod : linesPool;

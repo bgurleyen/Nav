@@ -63,7 +63,10 @@
             if (Math.Abs(_angleBetween - 180) < 0.2f || _endsStraight)
             {
                 // straight line  
-                GenerateLine(nextPoint, lastLine.EndPosition, _lastEndOffset, out line);
+                if (!GenerateLine(nextPoint, lastLine.EndPosition, _lastEndOffset, out line))
+                {
+                    return false;
+                }
             }
             else
             {
@@ -90,12 +93,11 @@
             return true;
         }
 
-        static void GenerateLine(RoutePoint nextPoint, Vector3 lastEndPosition, Vector3 lastEndOffset,
+        static bool GenerateLine(RoutePoint nextPoint, Vector3 lastEndPosition, Vector3 lastEndOffset,
             out MarkLine line)
         {
-            var _l = new MarkLine(nextPoint);
-            _l.Init(lastEndPosition, lastEndOffset, nextPoint);
-            line = _l;
+            line = new MarkLine(nextPoint);
+            return line.Init(lastEndPosition, lastEndOffset, nextPoint);
         }
 
         static bool GenerateCurve(float chosenRadius, RoutePoint nextPoint, RoutePoint secondPoint, float angleBetween,

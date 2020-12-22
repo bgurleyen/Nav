@@ -7,6 +7,7 @@ public class GameManager : Singleton<GameManager>
     public delegate void OnOperationMadeDelegate();
     public event OnOperationMadeDelegate OnOperationMade;
 
+    public bool isDebug;
     [SerializeField] RouteScriptableObject initialRoute;
 
     public readonly Aircraft Aircraft = new Aircraft();
@@ -107,7 +108,7 @@ public class GameManager : Singleton<GameManager>
 
         ModeSetWithPosition.AddDisplayPositionNode();
 
-        ModRoute.ComputeSet(true);
+        ModeSetWithPosition.ComputeSet(true);
     }
 
     void OnDrawGizmos()
@@ -121,8 +122,6 @@ public class GameManager : Singleton<GameManager>
 
         // if this is the first modification generate a new mod from current active
         ModRoute = ActiveRoute.Clone();
-
-
 
         cachedCommands = new List<ICommand>();
         IsMod = true;

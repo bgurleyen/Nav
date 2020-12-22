@@ -19,32 +19,36 @@ public class Curve : MarkLine
 
         StartCurvePosition = Vector3.Lerp(EndPosition, from, tangentToMiddle / middle.Distance);
 
-        var secondEndPosition = Geometry.GetNextPosition(EndPosition, secondPoint.Distance, secondPoint.Degrees);
-        EndOffsetPosition = Vector3.Lerp(EndPosition, secondEndPosition, tangentToMiddle / secondPoint.Distance);
+        var _secondEndPosition = Geometry.GetNextPosition(EndPosition, secondPoint.Distance, secondPoint.Degrees);
+        EndOffsetPosition = Vector3.Lerp(EndPosition, _secondEndPosition, tangentToMiddle / secondPoint.Distance);
 
 
         // the curve will be made between startCurvePosition and EndOffsetPoint
 
-        var lineLength = (StartCurvePosition - StartOffsetPosition).magnitude;
-        var points = Mathf.CeilToInt(lineLength / UnitLength);
+        var _lineLength = (StartCurvePosition - StartOffsetPosition).magnitude;
+        var _pointsCount = Mathf.CeilToInt(_lineLength / UnitLength);
+        if (_pointsCount == 0)
+        {
+            Debug.Log("no points");
+        }
 
         //var curveLength = (EndOffsetPosition - StartCurvePosition).magnitude; //  refactor with arclength
         //var curvePoints = Mathf.CeilToInt(curveLength / UnitLength);
 
         O1 = GetFurtherCircle(StartCurvePosition.x, StartCurvePosition.y, EndOffsetPosition.x, EndOffsetPosition.y, radius, EndPosition.To2DXY());
         ComputeArcAngles(O1.x, O1.y, StartCurvePosition.x, StartCurvePosition.y, EndOffsetPosition.x, EndOffsetPosition.y, out var startAngle, out var endAngle);
-        var arcPoints = ComputeArcPoints(startAngle, endAngle, UnitLength, radius, O1, EndPosition);
+        var _arcPoints = ComputeArcPoints(startAngle, endAngle, UnitLength, radius, O1, EndPosition);
 
-        Vertexes = new Vector3[points  + arcPoints.Length];
+        Vertexes = new Vector3[_pointsCount  + _arcPoints.Length];
 
-        for (var i = 0; i <= points; i++)
+        for (var i = 0; i <= _pointsCount; i++)
         {
-            Vertexes[i] = Vector3.Lerp(StartOffsetPosition, StartCurvePosition, UnitLength * i / lineLength);
+            Vertexes[i] = Vector3.Lerp(StartOffsetPosition, StartCurvePosition, UnitLength * i / _lineLength);
             ComputeDistanceForPoint(i);
 
         }
 
-        for (var i = points; i < Vertexes.Length; i++)
+        for (var i = _pointsCount; i < Vertexes.Length; i++)
         {
             if (i < 0)
             {
@@ -56,7 +60,7 @@ public class Curve : MarkLine
                 Debug.Log("mai mare");
                 continue;
             }
-            Vertexes[i] = (arcPoints[i - points] + O1).To3DXY();
+            Vertexes[i] = (_arcPoints[i - _pointsCount] + O1).To3DXY();
             ComputeDistanceForPoint(i);
         }
     }

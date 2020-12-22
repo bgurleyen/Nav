@@ -5,7 +5,7 @@ public class Aircraft
 {
     const float DeltaTime = 0.00003f;
     const float MaxTurningSpeed = 1f;
-    public const float ForwardThreshold = 3f; // @$# this has to be in sync with the minimum turn radius 
+    public const float ForwardThreshold = 2f; // @$# this has to be in sync with the minimum turn radius 
     
     // position that can be on the generated curved sections of the lines
     public Vector2 PositionFreeOrOnCurvedPath { get; private set; }

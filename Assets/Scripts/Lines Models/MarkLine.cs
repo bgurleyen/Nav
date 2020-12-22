@@ -32,7 +32,7 @@ public class MarkLine : Line
         lastPoint = _point;
     }
 
-    public void Init(Vector3 from, Vector3 offsetedFrom, RoutePoint nextPoint)
+    public bool Init(Vector3 from, Vector3 offsetedFrom, RoutePoint nextPoint)
     {
         ComputedVertexLength = -1;
         StartPosition = from;
@@ -40,6 +40,12 @@ public class MarkLine : Line
         StartCurvePosition = EndPosition = EndOffsetPosition = Geometry.GetNextPosition(from, nextPoint.Distance, nextPoint.Degrees);
 
         var _lineLength = (EndPosition - StartOffsetPosition).magnitude;
+
+        if (_lineLength == 0)
+        {
+            Debug.LogError("line has length 0");
+            return false;
+        }
 
         var _points = Mathf.CeilToInt(_lineLength / UnitLength);
         Vertexes = new Vector3[_points + 1];
@@ -49,5 +55,7 @@ public class MarkLine : Line
             Vertexes[i] = Vector3.Lerp(StartOffsetPosition, EndPosition, UnitLength * i / _lineLength);
             ComputeDistanceForPoint(i);
         }
+
+        return true;
     }
 }
