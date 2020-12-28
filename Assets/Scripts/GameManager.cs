@@ -137,7 +137,7 @@ public class GameManager : Singleton<GameManager>
         }
     }
 
-    public void SwitchFreeFlight(bool state)
+    public void PressSwitchFreeFlight(bool state)
     {
         switch (state)
         {
@@ -147,7 +147,7 @@ public class GameManager : Singleton<GameManager>
             default:
                 if (!Aircraft.IsOnRoute)
                 {
-                    Aircraft.StartLNavMode();
+                    Aircraft.StartLNavMode(Aircraft.RejoinRouteMode.DirectIntersection);
                 }
                 break;
         }
@@ -279,7 +279,8 @@ public class GameManager : Singleton<GameManager>
         ModRoute.ClearModifiedFlags();
         ModeSetWithPosition.ClearModifiedFlags();
 
-        ActiveRoute = ModeSetWithPosition;
+        // if it's free flight, aircraft will switch to the temp path computed until rejoining active path
+        ActiveRoute = Aircraft.IsFreeFlight ? ModRoute : ModeSetWithPosition;
         
         Aircraft.OnAppliedMod();
         
@@ -309,8 +310,8 @@ public class GameManager : Singleton<GameManager>
     public void SwitchThroughHeading()
     {
         Calculator.RHeading = (int) Aircraft.TargetHeading;
-        SwitchFreeFlight(true);
-        SwitchFreeFlight(false);
+        PressSwitchFreeFlight(true);
+        PressSwitchFreeFlight(false);
         McpUI.Instance.RefreshHS();
     }
 }

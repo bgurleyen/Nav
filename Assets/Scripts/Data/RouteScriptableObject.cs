@@ -12,7 +12,6 @@ public class RouteScriptableObject : ScriptableObject
     public PathLines PathLines { get; private set; } = new PathLines();
 
     static Aircraft Aircraft => GameManager.Instance.Aircraft;
-    public RoutePoint LastAddedPositionNode { get; private set; }
 
     public void ComputeCartesianPositions()
     {
@@ -113,6 +112,25 @@ public class RouteScriptableObject : ScriptableObject
         ActiveDirectApproach = false;
     }
 
+    // to be executed on ACTIVE route
+    public bool FindFreeFlightNextNodeExitScenario(out Vector2 futurePosition, out Vector2 centerOfTurn, out Vector2 exitPoint,
+        out int exitSegmentIndex)
+    {
+        futurePosition = Geometry.GetNextPosition(Aircraft.PositionFreeOrOnCurvedPath, Aircraft.ForwardThreshold,
+            -Aircraft.Heading);
+            
+        var _currentNodeIndex = GameManager.Instance.Aircraft.RoutePathLocalization.CurrentNodeIndex;
+        centerOfTurn = Points[_currentNodeIndex].CartesianPosition;
+        var _nextNextNodePosition = Points[_currentNodeIndex + 1].CartesianPosition;
+        exitPoint = Vector2.Lerp(centerOfTurn, _nextNextNodePosition,
+            Aircraft.ForwardThreshold / Vector2.Distance(centerOfTurn, _nextNextNodePosition));
+
+        exitSegmentIndex = _currentNodeIndex + 1;
+
+        return true;
+    }
+
+    // to be executed on ACTIVE route
     public bool FindFreeFlightDirectExitScenario(out Vector2 centerOfTurn, out Vector2 exitPoint, out int exitSegmentIndex)
     {
 
@@ -192,7 +210,7 @@ public class RouteScriptableObject : ScriptableObject
                 return false;
             }
 
-            // we are not sure of the order of the circle intersections on the circle
+            // we are not sure of the order of the circle intersections on the segment 
             var _firstIsBefore = Vector2.SqrMagnitude(_currentSegmentStart - _intersectionCurrent1) <
                                  Vector2.SqrMagnitude(_currentSegmentStart - _intersection);
 
@@ -541,9 +559,10 @@ public class RouteScriptableObject : ScriptableObject
         ActiveDirectApproach = true;
     }
 
-    public RoutePoint AddDisplayPositionNode()
+    public void AddDisplayPositionNode()
     {
         // ! Position node is added in front of the actual position so that the aircraft can safely turn 
+        RoutePoint _lastAddedPositionNode;
         
 
         var _routePreviousNodeIndex = PositionVirtualNode.PassedNodeIndex;
@@ -560,7 +579,7 @@ public class RouteScriptableObject : ScriptableObject
             var _activeNextNodeIndex = PositionVirtualNode.PassedNodeIndex + 1;
             var _routeNextNode = Points[_activeNextNodeIndex];
 
-            LastAddedPositionNode = new RoutePoint
+            _lastAddedPositionNode = new RoutePoint
             {
                 Name = "_Position_",
                 Distance = _activeSegmentDistancePassed + Aircraft.ForwardThreshold,
@@ -592,7 +611,7 @@ public class RouteScriptableObject : ScriptableObject
             var _routeNextNode = Points[1];
             var _angleTo = Geometry.GetHeadingOfDirection(_nextFuturePosition);
             
-            LastAddedPositionNode = new RoutePoint
+            _lastAddedPositionNode = new RoutePoint
             {
                 Name = "_Position_",
                 Distance = _nextFuturePosition.magnitude,
@@ -610,7 +629,7 @@ public class RouteScriptableObject : ScriptableObject
 
         if (ActiveDirectApproach)
         {
-            LastAddedPositionNode.IndicateHiddenLine();
+            _lastAddedPositionNode.IndicateHiddenLine();
         }
 
 
@@ -621,7 +640,7 @@ public class RouteScriptableObject : ScriptableObject
         {
             if (i == PositionVirtualNode.NextNodeIndex)
             {
-                _newSet[i] = LastAddedPositionNode;
+                _newSet[i] = _lastAddedPositionNode;
                 _offset = 1;
             }
 
@@ -629,9 +648,6 @@ public class RouteScriptableObject : ScriptableObject
         }
 
         Points = _newSet;
-
-
-        return LastAddedPositionNode;
     }
 
 }

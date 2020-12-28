@@ -74,7 +74,7 @@ public class McpUI : Singleton<McpUI>
         {
             if (toggle)
             {
-                GameManager.Instance.SwitchFreeFlight(true);
+                GameManager.Instance.PressSwitchFreeFlight(true);
                 SilentSwitchLNAV(false);
             }
         }
@@ -90,7 +90,7 @@ public class McpUI : Singleton<McpUI>
         {
             if (toggle)
             {
-                GameManager.Instance.SwitchFreeFlight(false);
+                GameManager.Instance.PressSwitchFreeFlight(false);
                 SilentSwitchHeading(false);
             }
         }
