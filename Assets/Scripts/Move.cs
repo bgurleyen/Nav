@@ -57,8 +57,8 @@ public class Move : Singleton<Move>
 
         Vector2 Pos = new Vector2(0, 0);
         Route = GameManager.Instance.ActiveRoute.Clone();
-
-        for (int j = 1; j < 17; j++)                                                    // Locate the points on EditMap
+        int l= Route.Points.Length;
+        for (int j = 1; j <17; j++)                                                    // Locate the points on EditMap
         {
             Pos = Route.Points[j].CartesianPosition;
             GameObject pt = GameObject.Find("pt (" + j + ")");
@@ -66,7 +66,7 @@ public class Move : Singleton<Move>
             pt.transform.localPosition = Pos;
 
             TempPtsPos[j] = Pos;
-        }
+        } 
         int base0;
         for (int j = 1; j < 13; j++)                                                      //Locate Virtual points on EditMap
         {

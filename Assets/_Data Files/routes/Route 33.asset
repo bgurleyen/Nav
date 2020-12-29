@@ -1,0 +1,85 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba3b8b30b7d3d124482f44bf0dbbbfaf, type: 3}
+  m_Name: Route 33
+  m_EditorClassIdentifier: 
+  Points:
+  - ID: 0
+    Name: _START_
+    RawDegrees: 0
+    Distance: 0
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 0
+    Name: 'STONE '
+    RawDegrees: 38
+    Distance: 99
+    RawSpeed: 250
+    RawAltitude: 11000
+    Details: 
+  - ID: 0
+    Name: TLE
+    RawDegrees: 195
+    Distance: 15.8
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 0
+    Name: CURRY
+    RawDegrees: 186
+    Distance: 14.6
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 0
+    Name: COUPE
+    RawDegrees: 186
+    Distance: 9.6
+    RawSpeed: 0
+    RawAltitude: 8000A
+    Details: 
+  - ID: 0
+    Name: CUTIE
+    RawDegrees: 179
+    Distance: 9.2
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 0
+    Name: CREAM
+    RawDegrees: 224
+    Distance: 11.7
+    RawSpeed: 0
+    RawAltitude: 5000A
+    Details: 
+  - ID: 0
+    Name: ARLON
+    RawDegrees: 247
+    Distance: 6.3
+    RawSpeed: 0
+    RawAltitude: 5000
+    Details: 
+  - ID: 0
+    Name: APOLO
+    RawDegrees: 337
+    Distance: 15
+    RawSpeed: 0
+    RawAltitude: 5000
+    Details: 
+  - ID: 0
+    Name: RW34L
+    RawDegrees: 337
+    Distance: 2.4
+    RawSpeed: 0
+    RawAltitude: 68
+    Details: 

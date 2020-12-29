@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ba3b8b30b7d3d124482f44bf0dbbbfaf, type: 3}
-  m_Name: _ Route Data Demo 1
+  m_Name: Route 2
   m_EditorClassIdentifier: 
   Points:
   - ID: 0
@@ -21,113 +21,106 @@ MonoBehaviour:
     RawAltitude: 
     Details: 
   - ID: 0
-    Name: ELNAT
-    RawDegrees: 20
-    Distance: 19
+    Name: HLZ
+    RawDegrees: 67
+    Distance: 99
     RawSpeed: 0
     RawAltitude: 
     Details: 
   - ID: 0
-    Name: NORTA
-    RawDegrees: 5
-    Distance: 40.1
+    Name: CELNB
+    RawDegrees: 294
+    Distance: 31.1
     RawSpeed: 0
-    RawAltitude: 
+    RawAltitude: 11000B
     Details: 
   - ID: 0
-    Name: DLE-5
-    RawDegrees: 6
-    Distance: 18.1
-    RawSpeed: 0
-    RawAltitude: 
-    Details: 
-  - ID: 0
-    Name: DLE
-    RawDegrees: 3
-    Distance: 5
-    RawSpeed: 0
-    RawAltitude: 8000A9000B
-    Details: 
-  - ID: 0
-    Name: DV581
-    RawDegrees: 2
-    Distance: 7.3
-    RawSpeed: 0
-    RawAltitude: 
-    Details: 
-  - ID: 0
-    Name: DV582
-    RawDegrees: 91
-    Distance: 5.6
+    Name: DV460
+    RawDegrees: 260
+    Distance: 17.5
     RawSpeed: 220
     RawAltitude: 
     Details: 
   - ID: 0
-    Name: DV583
-    RawDegrees: 91
-    Distance: 4
-    RawSpeed: 0
-    RawAltitude: 
-    Details: C
-  - ID: 0
-    Name: DV584
-    RawDegrees: 91
+    Name: DV461
+    RawDegrees: 271
     Distance: 4
     RawSpeed: 0
     RawAltitude: 
     Details: 
   - ID: 0
-    Name: DV585
-    RawDegrees: 91
+    Name: DV462
+    RawDegrees: 271
     Distance: 4
     RawSpeed: 0
     RawAltitude: 
     Details: 
   - ID: 0
-    Name: DV575
-    RawDegrees: 1
+    Name: DV463
+    RawDegrees: 271
+    Distance: 4
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 0
+    Name: DV464
+    RawDegrees: 271
+    Distance: 4
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 0
+    Name: DV465
+    RawDegrees: 271
+    Distance: 4
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 0
+    Name: DV475
+    RawDegrees: 181
     Distance: 5
     RawSpeed: 0
     RawAltitude: 
     Details: 
   - ID: 0
-    Name: DV574
-    RawDegrees: 271
+    Name: DV474
+    RawDegrees: 91
     Distance: 4
     RawSpeed: 0
     RawAltitude: 
     Details: 
   - ID: 0
-    Name: DV573
-    RawDegrees: 271
-    Distance: 4.3
-    RawSpeed: 0
-    RawAltitude: 
-    Details: 
-  - ID: 0
-    Name: DV572
-    RawDegrees: 271
-    Distance: 4.9
-    RawSpeed: 0
-    RawAltitude: 
-    Details: 
-  - ID: 0
-    Name: XAVER
-    RawDegrees: 276
+    Name: DV473
+    RawDegrees: 91
     Distance: 4
-    RawSpeed: 179
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 0
+    Name: DV472
+    RawDegrees: 91
+    Distance: 4
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 0
+    Name: DESIM
+    RawDegrees: 84
+    Distance: 3.1
+    RawSpeed: 0
     RawAltitude: 3000
     Details: 
   - ID: 0
-    Name: HANB
-    RawDegrees: 271
-    Distance: 4
-    RawSpeed: 173
-    RawAltitude: 1440
+    Name: HWNB
+    RawDegrees: 93
+    Distance: 4.8
+    RawSpeed: 0
+    RawAltitude: 1460
     Details: 
   - ID: 0
-    Name: RW27R
-    RawDegrees: 271
+    Name: RW09L
+    RawDegrees: 89
     Distance: 4
     RawSpeed: 0
     RawAltitude: 219
