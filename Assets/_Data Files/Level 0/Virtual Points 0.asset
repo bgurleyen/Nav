@@ -15,40 +15,40 @@ MonoBehaviour:
   VirtualPointsItems:
   - Number: 0
     x: 0
-    y: 36
+    y: 66
   - Number: 1
     x: -28
-    y: 64
+    y: 94
   - Number: 2
     x: 26
-    y: 64
+    y: 94
   - Number: 3
     x: 5
-    y: 44
+    y: 74
   - Number: 4
     x: 26
-    y: 46
+    y: 76
   - Number: 5
     x: 41.1
-    y: 44
+    y: 74
   - Number: 6
     x: -6
-    y: -2
+    y: 28
   - Number: 7
     x: 0
     y: 0
   - Number: 8
     x: 40
-    y: 2
+    y: 32
   - Number: 90
     x: 29
-    y: 56
+    y: 86
   - Number: 91
     x: 38
-    y: 56
+    y: 86
   - Number: 92
     x: 29
-    y: 60
+    y: 90
   - Number: 93
     x: 38
-    y: 60
+    y: 90

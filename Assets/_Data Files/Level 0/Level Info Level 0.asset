@@ -28,3 +28,4 @@ MonoBehaviour:
   DesEconSpeed: 270
   DesEconMach: 79
   GateIdx: 14
+  CheckPointTime: 680

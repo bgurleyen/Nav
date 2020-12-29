@@ -1,0 +1,85 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba3b8b30b7d3d124482f44bf0dbbbfaf, type: 3}
+  m_Name: Route 26
+  m_EditorClassIdentifier: 
+  Points:
+  - ID: 0
+    Name: _START_
+    RawDegrees: 0
+    Distance: 0
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 0
+    Name: CARLI
+    RawDegrees: 88
+    Distance: 99
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 0
+    Name: DKI44
+    RawDegrees: 89
+    Distance: 37.6
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 0
+    Name: NOKTA
+    RawDegrees: 164
+    Distance: 13.4
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 0
+    Name: DKI28
+    RawDegrees: 207
+    Distance: 41.2
+    RawSpeed: 0
+    RawAltitude: 6000A
+    Details: 
+  - ID: 0
+    Name: DKI-42
+    RawDegrees: 255
+    Distance: 14
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 0
+    Name: INTC
+    RawDegrees: 158
+    Distance: 6.9
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 0
+    Name: CF07R
+    RawDegrees: 68
+    Distance: 8.4
+    RawSpeed: 0
+    RawAltitude: 3000
+    Details: 
+  - ID: 0
+    Name: OM07R
+    RawDegrees: 64
+    Distance: 4.2
+    RawSpeed: 0
+    RawAltitude: 1693
+    Details: 
+  - ID: 0
+    Name: RW07R
+    RawDegrees: 68
+    Distance: 5.2
+    RawSpeed: 0
+    RawAltitude: 84
+    Details: 
