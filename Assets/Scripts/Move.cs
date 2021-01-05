@@ -57,8 +57,8 @@ public class Move : Singleton<Move>
 
         Vector2 Pos = new Vector2(0, 0);
         Route = GameManager.Instance.ActiveRoute.Clone();
-        int l= Route.Points.Length;
-        for (int j = 1; j <17; j++)                                                    // Locate the points on EditMap
+    
+        for (int j = 1; j < Route.Points.Length; j++)                                                    // Locate the points on EditMap
         {
             Pos = Route.Points[j].CartesianPosition;
             GameObject pt = GameObject.Find("pt (" + j + ")");
@@ -207,7 +207,9 @@ public class Move : Singleton<Move>
                     NM = (float) (d + (CheckPointTime - ElapsedTime) * Calculator.GS / 3600);
 
                     float x1 = (NM - d) / ((a - d)) * B1;
+                    if (Mathf.Abs(x1) > Mathf.Abs(B1)) x1 = B1 * Mathf.Sign(x1);  // Do not ecxeed half distance
                     float x2 = (NM - d) / ((a - d)) * B2;
+                    if (Mathf.Abs(x2) > Mathf.Abs(B2)) x2 = B2 * Mathf.Sign(x2);
 
 
 
@@ -232,6 +234,7 @@ public class Move : Singleton<Move>
                     NM = (float)(d + (CheckPointTime - ElapsedTime) * Calculator.GS / 3600);
 
                     float x1 = (NM - d) / ((a - d)) * B1;
+                    if (Mathf.Abs(x1) > Mathf.Abs(B1)) x1 = B1 * Mathf.Sign(x1);  // Do not ecxeed half distance
 
                     VirtualPtsPos[ptCount - 4] = Vector2.MoveTowards(pointPos(point), pointPos(point + 1), x1);
 
@@ -288,7 +291,7 @@ public class Move : Singleton<Move>
                        // Time.timeScale = 0;
                     }
 
-                    Atc1.text = mode == 2 ? "Turn " + turnDirection(TrackToPoint(point)) + "Heading " + (int)TrackToPoint(point) : "";
+                    if (mode == 2) Atc1.text =  "Turn " + turnDirection(TrackToPoint(point)) + "Heading " + (int)TrackToPoint(point) ;
                     Atc1.color = Color.red;     
 
                 }
