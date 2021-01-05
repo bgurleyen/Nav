@@ -64,11 +64,6 @@ public class Drawer : Singleton<Drawer>
     const bool WalkOnMod = false;
 
 
-
-
-    
-
-
     public void ResetMode()
     {
         Mode = DrawerMode.Map;
@@ -185,7 +180,6 @@ public class Drawer : Singleton<Drawer>
         }
         
         DisplayOtherTraffic();
-
 
         switch (Mode)
         {

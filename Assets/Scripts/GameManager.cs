@@ -147,7 +147,7 @@ public class GameManager : Singleton<GameManager>
             default:
                 if (!Aircraft.IsOnRoute)
                 {
-                    Aircraft.StartLNavMode(Aircraft.RejoinRouteMode.DirectIntersection);
+                    Aircraft.StartLNavMode(Aircraft.RejoinRouteMode.Manual);
                 }
                 break;
         }
@@ -281,9 +281,12 @@ public class GameManager : Singleton<GameManager>
 
         // if it's free flight, aircraft will switch to the temp path computed until rejoining active path
         ActiveRoute = Aircraft.IsFreeFlight ? ModRoute : ModeSetWithPosition;
-        
-        Aircraft.OnAppliedMod();
-        
+
+        if (!Aircraft.IsOnRoute)
+        {
+            Aircraft.StartLNavMode(Aircraft.RejoinRouteMode.NextRouteNode);
+        }
+
         ModRoute = null;
         IsMod = false;
         MainScreen.Instance.DisplayOperation("0k");

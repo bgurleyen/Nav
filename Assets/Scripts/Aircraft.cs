@@ -4,8 +4,10 @@ using UnityEngine;
 public class Aircraft
 {
     const float DeltaTime = 0.00003f;
-    const float MaxTurningSpeed = 1f;
+    const float MaxTurningSpeed = 0.4f;
     public const float ForwardThreshold = 2f; // @$# this has to be in sync with the minimum turn radius 
+    public const float RejoinDistance = 2.8f; 
+    
     
     // position that can be on the generated curved sections of the lines
     public Vector2 PositionFreeOrOnCurvedPath { get; private set; }
@@ -73,16 +75,14 @@ public class Aircraft
         IsOnRoute = false;
     }
 
-    public enum RejoinRouteMode { DirectIntersection, ClosestSegment, NextRouteNode}
+    public enum RejoinRouteMode { Manual, NextRouteNode}
 
     public void StartLNavMode(RejoinRouteMode mode)
     {
         switch (mode)
         {
-            case RejoinRouteMode.DirectIntersection:
-                ComputeTempPathForDirectIntersection();
-                break;
-            case RejoinRouteMode.ClosestSegment:
+            case RejoinRouteMode.Manual:
+                ChooseAutoRejoinMethod();
                 break;
             case RejoinRouteMode.NextRouteNode:
                 ComputeTempPathForNextNode();
@@ -92,6 +92,22 @@ public class Aircraft
         }
     }
 
+    void ChooseAutoRejoinMethod()
+    {
+        if (GameManager.Instance.ActiveRoute.FindFreeFlightCloseToPathExitScenario(RejoinDistance,
+            out var _futurePosition, out var _centerOfTurn,
+            out cachedExitPointFromHeading, out cachedExitSegmentOfHeadingRejoinIntersection))
+        {
+            ComputeTempPathForCloseToPath(_futurePosition,_centerOfTurn);
+        }
+        else
+        {
+            Debug.Log("Close scenario not found, proceed to direct intersection");
+            ComputeTempPathForDirectIntersection();
+        }
+    }
+    
+    // when aircraft is in HDG and user applies a MOD
     void ComputeTempPathForNextNode()
     {
 
@@ -100,7 +116,7 @@ public class Aircraft
       
             //compute rejoin path
 
-            Debug.Log("start LNAV");
+            Debug.Log("start LNAV - rejoin next node");
             tempPathLines = new PathLines();
 
             var _tempPoints = new RoutePoint[5];
@@ -123,6 +139,33 @@ public class Aircraft
             IsFreeFlight = false;
     }
 
+    void ComputeTempPathForCloseToPath(Vector2 futurePosition, Vector2 centerOfTurn)
+    {
+        Debug.Log("start LNAV - rejoin close path");
+        tempPathLines = new PathLines();
+
+        var _tempPoints = new RoutePoint[5];
+        var _lastPoint = RoutePoint.ConstructFromPosition(Vector2.zero, null);
+        _tempPoints[0] = _lastPoint;
+        _lastPoint = RoutePoint.ConstructFromPosition(PositionFreeOrOnCurvedPath, _lastPoint);
+        _tempPoints[1] = _lastPoint;
+        _lastPoint = RoutePoint.ConstructFromPosition(futurePosition, _lastPoint);
+        _tempPoints[2] = _lastPoint;
+        _lastPoint = RoutePoint.ConstructFromPosition(centerOfTurn, _lastPoint);
+        _tempPoints[3] = _lastPoint;
+        _lastPoint = RoutePoint.ConstructFromPosition(cachedExitPointFromHeading, _lastPoint);
+        _tempPoints[4] = _lastPoint;
+
+        tempPathLines.ComputeSet(_tempPoints);
+
+        GetFirstDestinationFromNode(tempPathLines, _tempPoints[1], _tempPoints,
+            out RejoinPathLocalization);
+
+        IsFreeFlight = false;
+
+    }
+
+    // when aircraft is in heading and user switches to LNav ( and the case is straight intersection with the path )
     void ComputeTempPathForDirectIntersection()
     {
         if (GameManager.Instance.ActiveRoute.FindFreeFlightDirectExitScenario(out var _centerOfTurn, out cachedExitPointFromHeading,
@@ -130,7 +173,7 @@ public class Aircraft
         {
             //compute rejoin path
 
-            Debug.Log("start LNAV");
+            Debug.Log("start LNAV - rejoin direct intersection");
             tempPathLines = new PathLines();
 
             var _tempPoints = new RoutePoint[4];
@@ -149,9 +192,6 @@ public class Aircraft
                 out RejoinPathLocalization);
 
             IsFreeFlight = false;
-            
-            
-
         }
         else
         {
@@ -314,14 +354,6 @@ public class Aircraft
 
         // move the rest of the frameDistance
         ExecuteLerpMove(RoutePathLocalization,_leftToAdvance, _distanceLeftToNextVertex);
-    }
-
-    public void OnAppliedMod()
-    {
-        if (!IsOnRoute)
-        {
-            StartLNavMode(RejoinRouteMode.NextRouteNode);
-        }
     }
 
     static void GetFirstDestinationFromNode(PathLines lines, RoutePoint node, RoutePoint[] nodes, out PathPositionInfo positionInfo)

@@ -112,6 +112,63 @@ public class RouteScriptableObject : ScriptableObject
         ActiveDirectApproach = false;
     }
 
+    public bool FindFreeFlightCloseToPathExitScenario(float maxDistance,out Vector2 futurePosition, out Vector2 centerOfTurn,
+        out Vector2 exitPoint,
+        out int exitSegmentIndex)
+    {
+        var _nan = new Vector2(-100, -100);
+
+
+        futurePosition = Geometry.GetNextPosition(Aircraft.PositionFreeOrOnCurvedPath, Aircraft.ForwardThreshold,
+            -Aircraft.Heading);
+
+        exitPoint = _nan;
+        centerOfTurn = _nan;
+
+        var _currentNodeIndex = GameManager.Instance.Aircraft.RoutePathLocalization.CurrentNodeIndex;
+        var _aircraftPosition =
+            GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath; // would be free since we are in free flight
+
+        exitSegmentIndex = -1;
+
+        for (var i = _currentNodeIndex; i < Points.Length; i++)
+        {
+            if (Points[i].IsHiddenLine || Points[i].IsAfterDiscontinuity)
+            {
+                continue;
+            }
+
+            var _segmentStart = Points[i-1].CartesianPosition;
+            var _segmentEnd = Points[i].CartesianPosition;
+
+            if (Geometry.FindDistanceToSegment(_aircraftPosition, _segmentStart, _segmentEnd,
+                out var _intersection, out var _distance) && _distance <= maxDistance)
+            {
+                exitSegmentIndex = i;
+                centerOfTurn = _intersection;
+
+                // don't break, keep computing to find the most forward segment that is withing max distance range
+            }
+        }
+
+        if (exitSegmentIndex < 0)
+        {
+            return false;
+        }
+        var _nextNextNodePosition = Points[exitSegmentIndex].CartesianPosition;
+        
+        // just to be sure move the center of turn further to have space for turn
+        // - @#$ todo will need to refine the scenarios here
+        centerOfTurn = Vector2.Lerp(centerOfTurn, _nextNextNodePosition,
+            (2*Aircraft.ForwardThreshold) / Vector2.Distance(centerOfTurn, _nextNextNodePosition));
+
+        
+        exitPoint = Vector2.Lerp(centerOfTurn, _nextNextNodePosition,
+            Aircraft.ForwardThreshold / Vector2.Distance(centerOfTurn, _nextNextNodePosition));
+        
+        return true;
+    }
+
     // to be executed on ACTIVE route
     public bool FindFreeFlightNextNodeExitScenario(out Vector2 futurePosition, out Vector2 centerOfTurn, out Vector2 exitPoint,
         out int exitSegmentIndex)
@@ -121,6 +178,8 @@ public class RouteScriptableObject : ScriptableObject
             
         var _currentNodeIndex = GameManager.Instance.Aircraft.RoutePathLocalization.CurrentNodeIndex;
         centerOfTurn = Points[_currentNodeIndex].CartesianPosition;
+        
+        // we rejoin after intersection
         var _nextNextNodePosition = Points[_currentNodeIndex + 1].CartesianPosition;
         exitPoint = Vector2.Lerp(centerOfTurn, _nextNextNodePosition,
             Aircraft.ForwardThreshold / Vector2.Distance(centerOfTurn, _nextNextNodePosition));
@@ -197,7 +256,7 @@ public class RouteScriptableObject : ScriptableObject
             // find forward intersection
 
             // if inside turn - prepare turn for corner on the other side of the circle of the aircraft and the exit of turn
-            // if not near turn - prepare turn for corner on circle center and the forward interserction
+            // if not near turn - prepare turn for corner on circle center and the forward intersection
 
             // create lines with computed vertexes for turns for scenario and return them 
 
@@ -205,7 +264,7 @@ public class RouteScriptableObject : ScriptableObject
             // the intersections on the current segment are clamped to segment
             if (_countCurrent <= 0)
             {
-                // should happen if the segment is smaller than the threshold ( go to the nexts segments ? )
+                // should happen if the segment is smaller than the threshold ( go to the next segments ? )
                 Debug.LogError("no intersections - segment smaller than threshold?");
                 return false;
             }
