@@ -4,7 +4,7 @@ using UnityEngine;
 public class Aircraft
 {
     const float DeltaTime = 0.00003f;
-    const float MaxTurningSpeed = 0.4f;
+    const float MaxTurningSpeed = 0.1f;
     public const float ForwardThreshold = 2f; // @$# this has to be in sync with the minimum turn radius 
     public const float RejoinDistance = 2.8f; 
     
@@ -21,6 +21,13 @@ public class Aircraft
     public PathPositionInfo RejoinPathLocalization;
 
     public PathLines tempPathLines { get; private set; }
+    public bool IsFreeFlight;
+    public bool IsOnRoute = true;
+
+    public int CachedExitSegmentOfHeadingRejoinIntersection => cachedExitSegmentOfHeadingRejoinIntersection;
+    public Vector2 CachedExitPointFromHeading => cachedExitPointFromHeading;
+
+    public bool IsRejoining => !IsFreeFlight && !IsOnRoute;
 
     int cachedExitSegmentOfHeadingRejoinIntersection;
     Vector2 cachedExitPointFromHeading;
@@ -66,8 +73,6 @@ public class Aircraft
         }
     }
 
-    public bool IsFreeFlight;
-    public bool IsOnRoute = true;
 
     public void StartHeadingMode()
     {

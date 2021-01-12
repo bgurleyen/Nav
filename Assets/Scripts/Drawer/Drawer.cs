@@ -163,10 +163,10 @@ public class Drawer : Singleton<Drawer>
 
     public void Display()
     {
-        DisplaySet(GameManager.Instance.ActiveRoute?.PathLines?.ComputedLines, false);
+        DisplaySet(GameManager.Instance.ActiveRoute?.PathLines?.ComputedLines, LinesType.Active);
         if (GameManager.Instance.ModRoute != null)
         {
-            DisplaySet(GameManager.Instance.ModeSetWithPosition?.PathLines?.ComputedLines, true);
+            DisplaySet(GameManager.Instance.ModeSetWithPosition?.PathLines?.ComputedLines, LinesType.Mod);
         }
 
         DisplayFixCircles();
@@ -176,7 +176,7 @@ public class Drawer : Singleton<Drawer>
 
         if (GameManager.Instance.Aircraft.tempPathLines != null)
         {
-            DisplaySet(GameManager.Instance.Aircraft.tempPathLines.ComputedLines, false);
+            DisplaySet(GameManager.Instance.Aircraft.tempPathLines.ComputedLines,  LinesType.Rejoin);
         }
         
         DisplayOtherTraffic();
@@ -230,18 +230,45 @@ public class Drawer : Singleton<Drawer>
         _objective.transform.localPosition = new Vector2(100, 100).ToDisplay();
     }
 
-    void DisplaySet(IReadOnlyList<MarkLine> lines, bool mod)
+    void DisplaySet(IReadOnlyList<MarkLine> lines, LinesType linesType)
     {
         if (lines == null)
         {
             return;
         }
 
-        var _pool = mod ? linesPoolMod : linesPool;
-        var _holder = mod ? dynamicHolderMod : dynamicHolder;
+        LeanGameObjectPool _pool;
+        Transform _holder;
+
+        switch (linesType)
+        {
+            case LinesType.Mod:
+                _pool = linesPoolMod;
+                _holder = dynamicHolderMod;
+                break;
+            case LinesType.Active:
+            case LinesType.Rejoin:
+                _pool = linesPool;
+                _holder = dynamicHolder;
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(linesType), linesType, null);
+        }
+
+        var _aircraft = GameManager.Instance.Aircraft;
+        var _rejoinSegmentIndex = 0;
+        var _rejoinPoint = Vector2.zero;
+        if (_aircraft.IsRejoining)
+        {
+            _rejoinSegmentIndex = _aircraft.CachedExitSegmentOfHeadingRejoinIntersection;
+            _rejoinPoint = _aircraft.CachedExitPointFromHeading;
+        }
 
         for (var i = 0; i < lines.Count; i++)
         {
+            var _hiddenLabel = false;
+            var _hiddenLine = false;
+            var _fromPointIndex = 0;
             var _line = lines[i];
 
             if (_line == null)
@@ -249,13 +276,42 @@ public class Drawer : Singleton<Drawer>
                 continue;
             }
 
+            if (linesType == LinesType.Active && _aircraft.IsRejoining)
+            {
+                if (i < _rejoinSegmentIndex )
+                {
+                    _hiddenLine = true;
+                }
+                else if (i == _rejoinSegmentIndex)
+                {
+                    // find intersection vertex index of generated line with rejoin line.. 
+
+
+                    if (_line.Vertexes.Length > 4)
+                    {
+                        var _dist = (_line.Vertexes[0].To2DXY() - _rejoinPoint).sqrMagnitude;
+
+                        for (int p = 1; p < _line.Vertexes.Length; p++)
+                        {
+                            var _nextDist = (_line.Vertexes[p].To2DXY() - _rejoinPoint).sqrMagnitude;
+                            if (_nextDist > _dist)
+                            {
+                                _fromPointIndex = p - 1;
+                                break;
+                            }
+
+                            _dist = _nextDist;
+                        }
+                    }
+                }
+            }
+
             var _point = _line.LinkedPoint;
 
             var _drawer = _pool.Spawn(Vector3.zero, Quaternion.identity, _holder).GetComponent<LineDrawer>();
             _drawer.name = _line.GetName + " " + _point.Name;
 
-            var _hiddenLabel = false;
-            if (mod && GameManager.Instance.ActiveRoute.GetPoint(_point.ID, out var _activePoint))
+            if (linesType == LinesType.Mod && GameManager.Instance.ActiveRoute.GetPoint(_point.ID, out var _activePoint))
             {
                 // @#$ error at cartesian position
                 if (RoutePoint.HaveSamePosition(_activePoint, _point))
@@ -269,8 +325,14 @@ public class Drawer : Singleton<Drawer>
                 }
             }
 
-            _drawer.Display(_line, _point, _hiddenLabel);
+            
+            _drawer.Display(_line, _point, _hiddenLabel || linesType == LinesType.Rejoin , _hiddenLine,_fromPointIndex);
         }
+    }
+    
+    public enum LinesType
+    {
+        Mod, Active, Rejoin
     }
 
     void DisplayFixCircles()

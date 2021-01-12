@@ -21,9 +21,9 @@ public class LineDrawer : MonoBehaviour
         labelTransform = label.transform;
     }
 
-    public void Display(MarkLine line, RoutePoint routePoint, bool hiddenLabel, int fromPoint = 0)
+    public void Display(MarkLine line, RoutePoint routePoint, bool hiddenLabel, bool hiddenLine, int fromPoint)
     {
-        if (!line.LinkedPoint.IsAfterDiscontinuity && !line.LinkedPoint.IsHiddenLine)
+        if (!hiddenLine && !line.LinkedPoint.IsAfterDiscontinuity && !line.LinkedPoint.IsHiddenLine)
         {
             cacheLine = line;
             if (line.Vertexes == null || line.Vertexes.Length == 0)
