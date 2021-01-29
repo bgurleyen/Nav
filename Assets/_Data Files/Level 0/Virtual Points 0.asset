@@ -17,11 +17,11 @@ MonoBehaviour:
     x: 0
     y: 66
   - Number: 1
-    x: -28
-    y: 94
+    x: -43
+    y: 98
   - Number: 2
-    x: 26
-    y: 94
+    x: 24
+    y: 98
   - Number: 3
     x: 5
     y: 74
@@ -33,13 +33,13 @@ MonoBehaviour:
     y: 74
   - Number: 6
     x: -6
-    y: 28
+    y: 3
   - Number: 7
     x: 0
     y: 0
   - Number: 8
     x: 40
-    y: 32
+    y: 15
   - Number: 90
     x: 29
     y: 86

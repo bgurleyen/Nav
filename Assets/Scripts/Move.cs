@@ -366,6 +366,7 @@ public class Move : Singleton<Move>
         int Point, AltitudeR;
         float AltitudeC = otherACLevel[Level].otherACnr[ACnr].ACItems[0].Altitude;
         Vector2 finalPosition = pointPos(otherACLevel[Level].otherACnr[ACnr].ACItems[0].Point);  //intial pos and alt
+        int HeadingW = 0;
 
         var _aircraftKey = "AC (" + (ACnr + 1) + ")";
 
@@ -398,7 +399,13 @@ public class Move : Singleton<Move>
 
             PtPos = pointPos(Point);
 
-         
+            Calculator.WindElements WE = Calculator.CalculateWindElements(AltitudeR, Speed, HeadingW);
+
+            float GS = WE.GS; // Convert the speed to Ground Speed
+
+            if (ACnr  == 3 ) Debug.Log("   A: " + AltitudeR +"    S: " + Speed + "    GS: " + GS + "  H:" + HeadingW);
+            //if (ACnr == 3) Debug.Log("   F: " + finalPosition + "    pt: " + PtPos + "  Aci: " + HeadingW);
+
             if (!ACPositions.ContainsKey(_aircraftKey))
             {
                 ACPositions.Add(_aircraftKey, Vector2.zero);
@@ -407,14 +414,16 @@ public class Move : Singleton<Move>
 
 
             AC = GameObject.Find(_aircraftKey);
-            SpeedCo = Speed / 360 * Calculator.Acceleration();
+            SpeedCo = GS / 360 * Calculator.Acceleration()*1.06f;
 
             x = finalPosition.x;
             y = finalPosition.y;
 
-
             dx = PtPos.x - x;
             dy = PtPos.y - y;
+
+            HeadingW =  90- (int)(Mathf.Atan2(dy, dx)*Mathf.Rad2Deg);
+
             hyp = Mathf.Sqrt(dx * dx + dy * dy);
 
      
@@ -432,7 +441,7 @@ public class Move : Singleton<Move>
                 AC.GetComponent<UnityEngine.UI.Text>().text = s;
             }
             ACTexts[_aircraftKey] = s;
-            if ((hyp <= 1))
+            if ((hyp <= 1.5))
             {
                 i += 1;
                 AltitudeC = AltitudeR;

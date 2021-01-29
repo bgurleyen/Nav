@@ -35,7 +35,7 @@ public class Calculator : MonoBehaviour
     public Transform VDI_Index;
 
 
-    public static double CSpeed = 300, CAltitude = 5500; // Currenr Altitude*************************
+    public static double CSpeed = 220, CAltitude = 6000; // Currenr Altitude*************************
     //                            ***              *****
     int RVS;
     public static int RSpeed = (int)CSpeed, RHeading, RAltitude, CVS;
