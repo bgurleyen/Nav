@@ -2,16 +2,16 @@
 {
     static Aircraft Aircraft => GameManager.Instance.Aircraft;
 
-    public static int PassedNodeIndex => Aircraft.PathLocalization.CurrentNodeIndex - 1;
-    public static int PassedNodeIndexForMode => Aircraft.IsOnPath 
-        ? Aircraft.PathLocalization.CurrentNodeIndex - 1 
+    public static int PassedNodeIndex => Aircraft.RoutePathLocalization.CurrentNodeIndex - 1;
+    public static int PassedNodeIndexForMode => Aircraft.IsOnRoute 
+        ? Aircraft.RoutePathLocalization.CurrentNodeIndex - 1 
         : 0;
 
-    public static int NextNodeIndex => !GameManager.Instance.Aircraft.IsOnPath && GameManager.Instance.IsMod
+    public static int NextNodeIndex => !GameManager.Instance.Aircraft.IsOnRoute && GameManager.Instance.IsMod
         ? 1
-        : Aircraft.PathLocalization.CurrentNodeIndex;
+        : Aircraft.RoutePathLocalization.CurrentNodeIndex;
     public static RoutePoint GetNodeFrom => GameManager.Instance.ActiveRoute.Points[PassedNodeIndex];
     public static RoutePoint GetNodeTo => GameManager.Instance.ActiveRoute.Points[PassedNodeIndex + 1]; // todo may need to be adjusted : line goes passed the node, sometimes with a lot
-    public static MarkLine CurrentSegment => GameManager.Instance.PathLines.ComputedLines[PassedNodeIndex + 1];
+    public static MarkLine CurrentSegment => GameManager.Instance.ActiveRoute.PathLines.ComputedLines[PassedNodeIndex + 1];
 
 }

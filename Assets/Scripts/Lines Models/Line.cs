@@ -53,63 +53,63 @@ public class Line
 
     protected static Vector2[] ComputeArcPoints(float startAngle, float endAngle, float unitLength, float radius, Vector3 o, Vector3 towardsPoint)
     {
-        var _arcPoints = new List<Vector2>();
-        var _angle = startAngle;
+        var arcPoints = new List<Vector2>();
+        var angle = startAngle;
 
-        var _angleBetween = endAngle - startAngle;
+        var angleBetween = endAngle - startAngle;
 
 
-        while (_angleBetween > 180)
-            _angleBetween -= 360;
+        while (angleBetween > 180)
+            angleBetween -= 360;
 
-        while (_angleBetween < -180)
-            _angleBetween += 360;
+        while (angleBetween < -180)
+            angleBetween += 360;
 
-        while (_angleBetween > 360)
-            _angleBetween -= 360;
+        while (angleBetween > 360)
+            angleBetween -= 360;
 
-        while (_angleBetween < -360)
-            _angleBetween += 360;
+        while (angleBetween < -360)
+            angleBetween += 360;
 
-        var _reversedAngle = (360 - Mathf.Abs(_angleBetween)) * (_angleBetween < 0 ? 1 : -1);
+        var reversedAngle = (360 - Mathf.Abs(angleBetween)) * (angleBetween < 0 ? 1 : -1);
 
 
         // determine the direction of the arc based on if it gets away of towards the target by a small angle
-        var _firstNextPoint = o + GetPointOnArc(_angle + (_angleBetween < 0 ? -1 : 1), radius).To3DXY();
-        var _reversedNextPoint = o + GetPointOnArc(_angle + (_reversedAngle < 0 ? -1 : 1), radius).To3DXY();
+        var firstNextPoint = o + GetPointOnArc(angle + (angleBetween < 0 ? -1 : 1), radius).To3DXY();
+        var reversedNextPoint = o + GetPointOnArc(angle + (reversedAngle < 0 ? -1 : 1), radius).To3DXY();
 
-        var _dist = (_firstNextPoint - towardsPoint).sqrMagnitude;
-        var _reversedDist = (_reversedNextPoint - towardsPoint).sqrMagnitude;
+        var dist = (firstNextPoint - towardsPoint).sqrMagnitude;
+        var reversedDist = (reversedNextPoint - towardsPoint).sqrMagnitude;
 
-        _angleBetween = _dist < _reversedDist ? _angleBetween : _reversedAngle;
+        angleBetween = dist < reversedDist ? angleBetween : reversedAngle;
 
-        var _arcLength = radius * Mathf.Deg2Rad * _angleBetween;
-        var _segments = Mathf.CeilToInt(Mathf.Abs(_arcLength / unitLength));
-        var _fraction = _angleBetween / _segments;
+        var arcLength = radius * Mathf.Deg2Rad * angleBetween;
+        var segments = Mathf.CeilToInt(Mathf.Abs(arcLength / unitLength));
+        var fraction = angleBetween / segments;
         
-        for (var i = 0; i <= _segments; i++)
+        for (var i = 0; i <= segments; i++)
         {
-            if (i == _segments)
+            if (i == segments)
             {
-                _angle = startAngle + _angleBetween;
+                angle = startAngle + angleBetween;
             }
-            var _x = Mathf.Sin(Mathf.Deg2Rad * _angle) * radius;
-            var _y = Mathf.Cos(Mathf.Deg2Rad * _angle) * radius;
+            var x = Mathf.Sin(Mathf.Deg2Rad * angle) * radius;
+            var y = Mathf.Cos(Mathf.Deg2Rad * angle) * radius;
 
-            _arcPoints.Add(new Vector2(_x, _y));
+            arcPoints.Add(new Vector2(x, y));
 
-            _angle += _fraction;
+            angle += fraction;
         }
-        return _arcPoints.ToArray();
+        return arcPoints.ToArray();
     }
 
 
     static Vector2 GetPointOnArc(float angle, float radius)
     {
-        var _x = Mathf.Sin(Mathf.Deg2Rad * angle) * radius;
-        var _y = Mathf.Cos(Mathf.Deg2Rad * angle) * radius;
+        var x = Mathf.Sin(Mathf.Deg2Rad * angle) * radius;
+        var y = Mathf.Cos(Mathf.Deg2Rad * angle) * radius;
 
-        return new Vector2(_x, _y);
+        return new Vector2(x, y);
     }
 
     public virtual string GetName => "line";

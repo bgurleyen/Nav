@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using UnityEngine;
 using Lean.Pool;
 using Gamelogic.Extensions;
@@ -7,7 +8,7 @@ public class Drawer : Singleton<Drawer>
 {
     [SerializeField] Color cMagenta;
     [SerializeField] Color cLightYellow;
-    
+
     public Animator cameraAnimator;
     [Space] [SerializeField] Transform dynamicHolder;
     [SerializeField] Transform dynamicHolderMod;
@@ -62,56 +63,6 @@ public class Drawer : Singleton<Drawer>
     public static float GetMinRadius => Mathf.Pow(GS, 2) / (11.29f * Mathf.Tan(Bank)) * FtToNm;
     const bool WalkOnMod = false;
 
-    // if we detect that during MOD the current node has passed we reExecute all the commands until that point
-    int modReExecutedForIndex = -1;
-
-    static RouteScriptableObject ActiveRoute => GameManager.Instance.ActiveRoute;
-    static RouteScriptableObject ModRoute => GameManager.Instance.ModRoute;
-    static RouteScriptableObject DisplayMod => GameManager.Instance.ModeSetWithPosition;
-
-
-    public void ComputeActive()
-    {
-        if (ActiveRoute == null)
-        {
-            return;
-        }
-
-        GameManager.Instance.PathLines.ComputeSet(ActiveRoute, false);
-    }
-
-    public void ComputeMod()
-    {
-        if (ModRoute == null)
-        {
-            modReExecutedForIndex = -1;
-            return;
-        }
-
-        if (GameManager.Instance.Aircraft.IsOnPath)
-        {
-            // mod always has to include the last passed active node ( all the passed nodes ) 
-            // otherwise it is invalid - will reapply all the commands
-            var _passedNodeIndex = PositionVirtualNode.PassedNodeIndex;
-
-            if (_passedNodeIndex != modReExecutedForIndex)
-            {
-                if (ActiveRoute.Points[_passedNodeIndex].ID != ModRoute.Points[_passedNodeIndex].ID)
-                {
-                    GameManager.Instance.ReExecuteCachedCommands();
-                    Debug.Log("Reapplied MOD");
-                }
-
-                modReExecutedForIndex = _passedNodeIndex;
-            }
-        }
-
-        GameManager.Instance.ModeSetWithPosition = ModRoute.Clone(); // refactor
-        
-        DisplayMod.AddDisplayPositionNode();
-
-        GameManager.Instance.PathLines.ComputeSet(DisplayMod, true);
-    }
 
     public void ResetMode()
     {
@@ -212,16 +163,23 @@ public class Drawer : Singleton<Drawer>
 
     public void Display()
     {
-        DisplaySet(false);
-        DisplaySet(true);
+        DisplaySet(GameManager.Instance.ActiveRoute?.PathLines?.ComputedLines, LinesType.Active);
+        if (GameManager.Instance.ModRoute != null)
+        {
+            DisplaySet(GameManager.Instance.ModeSetWithPosition?.PathLines?.ComputedLines, LinesType.Mod);
+        }
+
         DisplayFixCircles();
         DisplayFixRays();
         freeFlightPivot.gameObject.SetActive(GameManager.Instance.Aircraft.IsFreeFlight);
         bananaIndicatorPivot.SetLocalY(Calculator.Instance.GetBananaPosition);
 
-
+        if (GameManager.Instance.Aircraft.TempPathLines != null)
+        {
+            DisplaySet(GameManager.Instance.Aircraft.TempPathLines.ComputedLines,  LinesType.Rejoin);
+        }
+        
         DisplayOtherTraffic();
-
 
         switch (Mode)
         {
@@ -238,7 +196,8 @@ public class Drawer : Singleton<Drawer>
             case DrawerMode.Plan:
                 //rotate compass
                 compasPivot.SetLocalRotationZ(0);
-                mobilePlaneIndicatorPivot.position = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath.ToDisplay();
+                mobilePlaneIndicatorPivot.position =
+                    GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath.ToDisplay();
                 mobilePlaneIndicatorPivot.SetLocalRotationZ(-GameManager.Instance.Aircraft.Heading);
                 break;
             case DrawerMode.Suspeded:
@@ -248,254 +207,198 @@ public class Drawer : Singleton<Drawer>
         }
     }
 
-    private void DisplayOtherTraffic()
+    void DisplayOtherTraffic()
     {
-        var _positions = Move.Instance.ACPositions;
-        var _texts = Move.Instance.ACTexts;
+        var positions = Move.Instance.ACPositions;
+        var texts = Move.Instance.ACTexts;
 
-        foreach (var _key in _positions.Keys)
+        foreach (var key in positions.Keys)
         {
             // Debug.Log(_positions[_key]);
-            var _drawer = otherAircraftsPool.Spawn(Vector3.zero, Quaternion.identity, dynamicHolderOtheriarcrafts)
+            var drawer = otherAircraftsPool.Spawn(Vector3.zero, Quaternion.identity, dynamicHolderOtheriarcrafts)
                 .GetComponent<OtherAircrafIndicator>();
-            _drawer.name = _key;
-            _drawer.Init(_texts[_key], Color.yellow);
-            _drawer.transform.localPosition = _positions[_key].ToDisplay();
+            drawer.name = key;
+            drawer.Init(texts[key], Color.yellow);
+            drawer.transform.localPosition = positions[key].ToDisplay();
         }
 
         // demo
-        var _onjective = otherAircraftsPool.Spawn(Vector3.zero, Quaternion.identity, dynamicHolderOtheriarcrafts)
+        var objective = otherAircraftsPool.Spawn(Vector3.zero, Quaternion.identity, dynamicHolderOtheriarcrafts)
             .GetComponent<OtherAircrafIndicator>();
-        _onjective.name = "My objective";
-        _onjective.Init("*", Color.red);
-        _onjective.transform.localPosition = new Vector2(100, 100).ToDisplay();
+        objective.name = "My objective";
+        objective.Init("*", Color.red);
+        objective.transform.localPosition = new Vector2(100, 100).ToDisplay();
     }
 
-    void DisplaySet(bool mod)
+    void DisplaySet(IReadOnlyList<MarkLine> lines, LinesType linesType)
     {
-        if (mod)
+        if (lines == null)
         {
-            if (GameManager.Instance.ModRoute == null || GameManager.Instance.PathLines.ComputedLinesMod == null)
-            {
-                return;
-            }
+            return;
         }
 
-        var _lines = mod
-            ? GameManager.Instance.PathLines.ComputedLinesMod
-            : GameManager.Instance.PathLines.ComputedLines;
-        var _pool = mod ? linesPoolMod : linesPool;
-        var _holder = mod ? dynamicHolderMod : dynamicHolder;
+        LeanGameObjectPool pool;
+        Transform holder;
 
-        for (var i = 0; i < _lines.Length; i++)
+        switch (linesType)
         {
-            var _line = _lines[i];
+            case LinesType.Mod:
+                pool = linesPoolMod;
+                holder = dynamicHolderMod;
+                break;
+            case LinesType.Active:
+            case LinesType.Rejoin:
+                pool = linesPool;
+                holder = dynamicHolder;
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(linesType), linesType, null);
+        }
 
-            if (_line == null)
+        var aircraft = GameManager.Instance.Aircraft;
+        var rejoinSegmentIndex = 0;
+        var rejoinPoint = Vector2.zero;
+        if (aircraft.IsRejoining)
+        {
+            rejoinSegmentIndex = aircraft.CachedExitSegmentOfHeadingRejoinIntersection;
+            rejoinPoint = aircraft.CachedExitPointFromHeading;
+        }
+
+        for (var i = 0; i < lines.Count; i++)
+        {
+            var hiddenLabel = false;
+            var hiddenLine = false;
+            var fromPointIndex = 0;
+            var line = lines[i];
+
+            if (line == null)
             {
                 continue;
             }
 
-            var _point = _line.LinkedPoint;
-
-            var _drawer = _pool.Spawn(Vector3.zero, Quaternion.identity, _holder).GetComponent<LineDrawer>();
-            _drawer.name = _line.GetName + " " + _point.Name;
-
-            var _hiddenLabel = false;
-            if (mod && GameManager.Instance.ActiveRoute.GetPoint(_point.ID, out var _activePoint))
+            if (linesType == LinesType.Active && aircraft.IsRejoining)
             {
-                // @#$ error at cartesian position
-                if (RoutePoint.HaveSamePosition(_activePoint, _point))
+                if (i < rejoinSegmentIndex )
                 {
-                    _hiddenLabel = true;
-                }    
-                else
+                    hiddenLine = true;
+                }
+                else if (i == rejoinSegmentIndex)
                 {
-                    Debug.LogWarning(_activePoint.Name + " " +
-                              (_activePoint.CartesianPosition - _point.CartesianPosition).magnitude);
+                    // find intersection vertex index of generated line with rejoin line.. 
+
+
+                    if (line.Vertexes.Length > 4)
+                    {
+                        var dist = (line.Vertexes[0].To2DXY() - rejoinPoint).sqrMagnitude;
+
+                        for (int p = 1; p < line.Vertexes.Length; p++)
+                        {
+                            var nextDist = (line.Vertexes[p].To2DXY() - rejoinPoint).sqrMagnitude;
+                            if (nextDist > dist)
+                            {
+                                fromPointIndex = p - 1;
+                                break;
+                            }
+
+                            dist = nextDist;
+                        }
+                    }
                 }
             }
 
-            _drawer.Display(_line, _point, _hiddenLabel);
+            var point = line.LinkedPoint;
+
+            var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<LineDrawer>();
+            drawer.name = line.GetName + " " + point.Name;
+
+            if (linesType == LinesType.Mod && GameManager.Instance.ActiveRoute.GetPoint(point.ID, out var activePoint))
+            {
+                // @#$ error at cartesian position
+                if (RoutePoint.HaveSamePosition(activePoint, point))
+                {
+                    hiddenLabel = true;
+                }
+                else
+                {
+                    Debug.LogWarning(activePoint.Name + " " +
+                                     (activePoint.CartesianPosition - point.CartesianPosition).magnitude);
+                }
+            }
+
+            
+            drawer.Display(line, point, hiddenLabel || linesType == LinesType.Rejoin , hiddenLine,fromPointIndex);
         }
+    }
+    
+    public enum LinesType
+    {
+        Mod, Active, Rejoin
     }
 
     void DisplayFixCircles()
     {
-        var _circles = GameManager.Instance.PathLines.ComputedCircles;
-        var _pool = circlePool;
-        var _holder = dynamicHolderCircles;
+        var circles = GameManager.Instance.ActiveRoute.PathLines.ComputedCircles;
+        var pool = circlePool;
+        var holder = dynamicHolderCircles;
 
-        for (var i = 0; i < _circles.Count; i++)
+        for (var i = 0; i < circles.Count; i++)
         {
-            var _line = _circles[i];
+            var line = circles[i];
 
-            if (_line == null)
+            if (line == null)
             {
                 continue;
             }
 
-            var _point = _line.LinkedPoint;
+            var point = line.LinkedPoint;
 
-            var _drawer = _pool.Spawn(Vector3.zero, Quaternion.identity, _holder).GetComponent<FixedCircleDrawer>();
-            _drawer.name = _line.GetName + " " + _point.Name;
-            _drawer.Display(_line);
+            var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<FixedCircleDrawer>();
+            drawer.name = line.GetName + " " + point.Name;
+            drawer.Display(line);
         }
     }
 
     void DisplayFixRays()
     {
-        var _rays = GameManager.Instance.PathLines.ComputedRays;
-        var _pool = rayPool;
-        var _holder = dynamicHolderRays;
+        var rays = GameManager.Instance.ActiveRoute.PathLines.ComputedRays;
+        var pool = rayPool;
+        var holder = dynamicHolderRays;
 
-        for (var i = 0; i < _rays.Count; i++)
+        for (var i = 0; i < rays.Count; i++)
         {
-            var _ray = _rays[i];
+            var ray = rays[i];
 
-            if (_ray == null)
+            if (ray == null)
             {
                 continue;
             }
 
-            var _point = _ray.LinkedPoint;
+            var point = ray.LinkedPoint;
 
-            var _drawer = _pool.Spawn(Vector3.zero, Quaternion.identity, _holder).GetComponent<FixedRayDrawer>();
-            _drawer.name = _ray.GetName + " " + _point.Name;
-            _drawer.Display(_ray);
+            var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<FixedRayDrawer>();
+            drawer.name = ray.GetName + " " + point.Name;
+            drawer.Display(ray);
         }
     }
 
-    public static bool GetNextLine(MarkLine lastLine, int fromDataPointIndex, RoutePoint[] points, out MarkLine line,
-        out int toDataPointIndex)
-    {
-        // the line may be already begun if previous was a curve 
-        line = null;
-        if (fromDataPointIndex == points.Length - 1)
-        {
-            toDataPointIndex = fromDataPointIndex;
-            return false;
-        }
 
-        toDataPointIndex = fromDataPointIndex + 1;
-        var _nextPoint = points[toDataPointIndex];
 
-        var _forceEndStraight = false;
-
-        if (toDataPointIndex + 1 < points.Length)
-        {
-            _forceEndStraight = points[toDataPointIndex + 1].IsAfterDiscontinuity;
-        }
-
-        RoutePoint _notToCloseSecondPoint = null;
-
-        // there are no more points to create a curve to ( in which case continue with straight line on current segment )
-        if (toDataPointIndex != points.Length - 1)
-        {
-            var _secondPoint = points[toDataPointIndex + 1];
-            if (_secondPoint.Distance > 0.5f)
-            {
-                _notToCloseSecondPoint = _secondPoint;
-            }
-        }
-
-        return ComputeLine(lastLine, out line, _nextPoint, _notToCloseSecondPoint, _forceEndStraight);
-    }
-
-    public static bool ComputeLine(MarkLine lastLine, out MarkLine line, RoutePoint nextPoint,
-        RoutePoint notTooCloseSecondPoint = null, bool forceEndStraight = false)
-    {
-        float _angleBetween = 180;
-
-        // there are no more points to create a curve to ( in which case continue with straight line on current segment )
-        if (notTooCloseSecondPoint != null)
-        {
-            _angleBetween = Geometry.AngleBetweenNodes(nextPoint.Degrees, notTooCloseSecondPoint.Degrees);
-        }
-
-        var _startsStraight = lastLine.LinkedPoint != null &&
-                              (lastLine.LinkedPoint.IsAfterDiscontinuity || lastLine.LinkedPoint.IsHiddenLine);
-
-        var _endsStraight = forceEndStraight;
-
-        var _lastEndOffset = lastLine.LinkedPoint != null && _startsStraight
-            ? lastLine.EndPosition
-            : lastLine.EndOffsetPosition;
-
-        if (Math.Abs(_angleBetween - 180) < 0.2f || _endsStraight)
-        {
-            // straight line  
-            GenerateLine(nextPoint, lastLine.EndPosition, _lastEndOffset, out line);
-        }
-        else
-        {
-            // try relaxed turn. Update: don't use relaxed as the radius can become very big, and there is no advantage to it. Just go with regular curve
-            if (true || !GenerateCurve(RelaxedRadius, nextPoint, notTooCloseSecondPoint, _angleBetween, lastLine.EndPosition,
-                _lastEndOffset,
-                out line))
-            {
-                if (!GenerateCurve(GetMinRadius, nextPoint, notTooCloseSecondPoint, _angleBetween, lastLine.EndPosition,
-                    _lastEndOffset,
-                    out line))
-                {
-                    GenerateDoubleCurve(GetMinRadius, RelaxedRadius, nextPoint, notTooCloseSecondPoint, _angleBetween,
-                        lastLine.EndPosition,
-                        _lastEndOffset, out line);
-                }
-            }
-        }
-
-        return true;
-    }
-
-    static void GenerateLine(RoutePoint nextPoint, Vector3 lastEndPosition, Vector3 lastEndOffset, out MarkLine line)
-    {
-        var _l = new MarkLine(nextPoint);
-        _l.Init(lastEndPosition, lastEndOffset, nextPoint);
-        line = _l;
-    }
-
-    static bool GenerateCurve(float chosenRadius, RoutePoint nextPoint, RoutePoint secondPoint, float angleBetween,
-        Vector3 lastEndPosition, Vector3 lastEndOffset, out MarkLine line)
-    {
-        var _tangentToMiddle = Line.GetTangentToMiddle(chosenRadius, angleBetween);
-
-        if (_tangentToMiddle <= nextPoint.Distance && _tangentToMiddle <= secondPoint.Distance &&
-            _tangentToMiddle <= chosenRadius)
-        {
-            var l = new Curve(nextPoint);
-            l.Init(lastEndPosition, lastEndOffset, nextPoint, secondPoint, _tangentToMiddle, chosenRadius);
-            line = l;
-            return true;
-        }
-
-        line = null;
-        return false;
-    }
-
-    static void GenerateDoubleCurve(float smallRadius, float bigRadius, RoutePoint nextPoint, RoutePoint secondPoint,
-        float angleBetween, Vector3 lastEndPosition, Vector3 lastEndOffset, out MarkLine line)
-    {
-        var l = new DoubleCurve(nextPoint);
-        l.Init(lastEndPosition, lastEndOffset, nextPoint, secondPoint, angleBetween, smallRadius, bigRadius);
-        line = l;
-    }
 
 
     void OnDrawGizmos()
     {
         Gizmos.color = Color.green;
-        var _up = pivot.up;
-        Gizmos.DrawSphere(_up * mapReferenceLength80, 0.05f);
+        var up = pivot.up;
+        Gizmos.DrawSphere(up * mapReferenceLength80, 0.05f);
 
         Gizmos.color = Color.blue;
-        Gizmos.DrawWireSphere(_up * planReferenceLength80, 0.065f);
+        Gizmos.DrawWireSphere(up * planReferenceLength80, 0.065f);
 
         Gizmos.color = Color.cyan;
-        Gizmos.DrawWireSphere(_up * planReferenceLength80 / 2f, 0.025f);
+        Gizmos.DrawWireSphere(up * planReferenceLength80 / 2f, 0.025f);
 
 
-        if (GameManager.Instance.PathLines.ComputedLines == null)
+        if (GameManager.Instance.ActiveRoute?.PathLines?.ComputedLines == null)
         {
             return;
         }

@@ -1,18 +1,16 @@
-﻿using System;
-using Gamelogic.Extensions;
+﻿using Gamelogic.Extensions;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 public class GameManager : Singleton<GameManager>
 {
     public delegate void OnOperationMadeDelegate();
     public event OnOperationMadeDelegate OnOperationMade;
 
+    public bool isDebug;
     [SerializeField] RouteScriptableObject initialRoute;
 
-    public Aircraft Aircraft = new Aircraft();
-    public PathLines PathLines = new PathLines();
+    public readonly Aircraft Aircraft = new Aircraft();
 
     [Header("Computed")]
     public RouteScriptableObject ActiveRoute;
@@ -23,6 +21,9 @@ public class GameManager : Singleton<GameManager>
     public bool IsMod { get; private set; }
     bool queueEraseMode;
 
+    // if we detect that during MOD the current node has passed we reExecute all the commands until that point
+    int modReExecutedForIndex = -1;
+    
     List<ICommand> cachedCommands;
 
     void Start()
@@ -36,8 +37,8 @@ public class GameManager : Singleton<GameManager>
         DataHandler.BuildSetDetails(ActiveRoute);
 
         Drawer.Instance.ResetMode();
-        Drawer.Instance.ComputeActive();
-        Drawer.Instance.ComputeMod();
+        ComputeActive();
+        ComputeMod();
         Drawer.Instance.Display();
         Drawer.Instance.ShowMapMode();
 
@@ -55,8 +56,8 @@ public class GameManager : Singleton<GameManager>
 
         queueEraseMode = false;
 
-        Drawer.Instance.ComputeActive();
-        Drawer.Instance.ComputeMod();
+        ComputeActive();
+        ComputeMod();
       
         Aircraft.Advance();
       
@@ -67,6 +68,54 @@ public class GameManager : Singleton<GameManager>
         }
     }
 
+    public void ComputeActive()
+    {
+        if (ActiveRoute == null)
+        {
+            return;
+        }
+
+        ActiveRoute.ComputeSet(false);
+    }
+
+    void ComputeMod()
+    {
+        if (ModRoute == null)
+        {
+            modReExecutedForIndex = -1;
+            return;
+        }
+
+        if (Aircraft.IsOnRoute)
+        {
+            // mod always has to include the last passed active node ( all the passed nodes ) 
+            // otherwise it is invalid - will reapply all the commands
+            var passedNodeIndex = PositionVirtualNode.PassedNodeIndex;
+
+            if (passedNodeIndex != modReExecutedForIndex)
+            {
+                if (ActiveRoute.Points[passedNodeIndex].ID != ModRoute.Points[passedNodeIndex].ID)
+                {
+                    ReExecuteCachedCommands();
+                    Debug.Log("Reapplied MOD");
+                }
+
+                modReExecutedForIndex = passedNodeIndex;
+            }
+        }
+
+        ModeSetWithPosition = ModRoute.Clone(); // refactor
+
+        ModeSetWithPosition.AddDisplayPositionNode();
+
+        ModeSetWithPosition.ComputeSet(true);
+    }
+
+    void OnDrawGizmos()
+    {
+        Aircraft.DrawGizmos();
+    }
+
     void CheckModForOperation()
     {
         if (IsMod) return;
@@ -74,23 +123,21 @@ public class GameManager : Singleton<GameManager>
         // if this is the first modification generate a new mod from current active
         ModRoute = ActiveRoute.Clone();
 
-
-
         cachedCommands = new List<ICommand>();
         IsMod = true;
         
         // in case the aircraft was in free flight with intersection valid shortcut mod until the node after intersection
-        if (!Aircraft.IsOnPath)
+        if (!Aircraft.IsOnRoute)
         {
             ExecuteShortcutOnMod(new ExecuteShortcutOnModeCommand
             {
                 FromNodeId = ModRoute.Points[1].ID,
-                ToNodeId = ModRoute.Points[Aircraft.PathLocalization.CurrentNodeIndex].ID
+                ToNodeId = ModRoute.Points[Aircraft.RoutePathLocalization.CurrentNodeIndex].ID
             });
         }
     }
 
-    public void SwitchFreeFlight(bool state)
+    public void PressSwitchFreeFlight(bool state)
     {
         switch (state)
         {
@@ -98,7 +145,10 @@ public class GameManager : Singleton<GameManager>
                 Aircraft.StartHeadingMode();
                 break;
             default:
-                Aircraft.StartLNavMode();
+                if (!Aircraft.IsOnRoute)
+                {
+                    Aircraft.StartLNavMode(Aircraft.RejoinRouteMode.Manual);
+                }
                 break;
         }
     }
@@ -110,9 +160,9 @@ public class GameManager : Singleton<GameManager>
         
         MainScreen.Instance.DisplayOperation("ERASE");
 
-        ModRoute.GetPoint(command.NodeId, out var _node);
-        _node.RawAltitude = "";
-        _node.RawSpeed = 0;
+        ModRoute.GetPoint(command.NodeId, out var node);
+        node.RawAltitude = "";
+        node.RawSpeed = 0;
         
         DataHandler.BuildSetDetails(ModRoute);
     }
@@ -123,9 +173,9 @@ public class GameManager : Singleton<GameManager>
         cachedCommands.Add(command);
         
         MainScreen.Instance.DisplayOperation("ERASE");
-        ModRoute.GetPoint(command.NodeId, out var _node);
-        _node.RawSpeed = command.Regulation;
-        _node.IsSpeedModified = true;
+        ModRoute.GetPoint(command.NodeId, out var node);
+        node.RawSpeed = command.Regulation;
+        node.IsSpeedModified = true;
         DataHandler.BuildSetDetails(ModRoute);
 
         OnOperationMade?.Invoke();
@@ -151,8 +201,8 @@ public class GameManager : Singleton<GameManager>
         CheckModForOperation();
         cachedCommands.Add(command);
 
-        ModRoute.GetPoint(command.FromNodeId, out var _node);
-        MainScreen.Instance.DisplayOperation("ERASE", ToDegreesDisplay(_node.RawDegrees));
+        ModRoute.GetPoint(command.FromNodeId, out var node);
+        MainScreen.Instance.DisplayOperation("ERASE", ToDegreesDisplay(node.RawDegrees));
         ModRoute.ShortcutNodes(command.FromNodeId, command.ToNodeId, out var _);
         DataHandler.BuildSetDetails(ModRoute);
 
@@ -204,21 +254,20 @@ public class GameManager : Singleton<GameManager>
     public void ReExecuteCachedCommands()
     {
         EraseMod();
-        var _cachedCommands = cachedCommands;
 
-        for (var i = 0; i < _cachedCommands.Count; i++)
+        for (var i = 0; i < cachedCommands.Count; i++)
         {
-            var _command = _cachedCommands[i];
-            switch (_command)
+            var command = cachedCommands[i];
+            switch (command)
             {
-                case InsertRelativeCommand _relativeCommand:
-                    ExecuteInsertRelativeOnMod(_relativeCommand);
+                case InsertRelativeCommand relativeCommand:
+                    ExecuteInsertRelativeOnMod(relativeCommand);
                     break;
-                case ExecuteShortcutOnModeCommand _modeCommand:
-                    ExecuteShortcutOnMod(_modeCommand);
+                case ExecuteShortcutOnModeCommand modeCommand:
+                    ExecuteShortcutOnMod(modeCommand);
                     break;
-                case ExecuteAddLinearApproachCommand _approachCommand:
-                    ExecuteLinearApproachOnMod(_approachCommand);
+                case ExecuteAddLinearApproachCommand approachCommand:
+                    ExecuteLinearApproachOnMod(approachCommand);
                     break;
             }
         }
@@ -229,10 +278,14 @@ public class GameManager : Singleton<GameManager>
         ModRoute.ClearModifiedFlags();
         ModeSetWithPosition.ClearModifiedFlags();
 
-        ActiveRoute = ModeSetWithPosition;
-        
-        Aircraft.OnAppliedMod();
-        
+        // if it's free flight, aircraft will switch to the temp path computed until rejoining active path
+        ActiveRoute = Aircraft.IsFreeFlight ? ModRoute : ModeSetWithPosition;
+
+        if (!Aircraft.IsOnRoute)
+        {
+            Aircraft.StartLNavMode(Aircraft.RejoinRouteMode.NextRouteNode);
+        }
+
         ModRoute = null;
         IsMod = false;
         MainScreen.Instance.DisplayOperation("0k");
@@ -256,12 +309,11 @@ public class GameManager : Singleton<GameManager>
         queueEraseMode = true;
     }
 
-
     public void SwitchThroughHeading()
     {
         Calculator.RHeading = (int) Aircraft.TargetHeading;
-        SwitchFreeFlight(true);
-        SwitchFreeFlight(false);
+        PressSwitchFreeFlight(true);
+        PressSwitchFreeFlight(false);
         McpUI.Instance.RefreshHS();
     }
 }

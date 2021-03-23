@@ -26,26 +26,26 @@ public class DoubleCurve : Curve
         StartCurvePosition = Vector3.Lerp(EndPosition, from, smallRadius / middle.Distance);
 
         //  FIRST TURN CENTER
-        var o1_testA = (EndPosition - StartCurvePosition).To2DXY().Rotate(-90).To3DXY() + StartCurvePosition;
-        var o1_testB = (EndPosition - StartCurvePosition).To2DXY().Rotate(90).To3DXY() + StartCurvePosition;
+        var o1TestA = (EndPosition - StartCurvePosition).To2DXY().Rotate(-90).To3DXY() + StartCurvePosition;
+        var o1TestB = (EndPosition - StartCurvePosition).To2DXY().Rotate(90).To3DXY() + StartCurvePosition;
 
         var testPointOnSecond = Vector2.Lerp(EndPosition, secondEndPosition, smallRadius / secondPoint.Distance);
         int rotateDirection;
-        if (Vector2.Distance(testPointOnSecond, o1_testA) > Vector2.Distance(testPointOnSecond, o1_testB))
+        if (Vector2.Distance(testPointOnSecond, o1TestA) > Vector2.Distance(testPointOnSecond, o1TestB))
         {
-            O1 = o1_testB;
+            O1 = o1TestB;
             rotateDirection = -90;
         }
         else
         {
-            O1 = o1_testA;
+            O1 = o1TestA;
             rotateDirection = 90;
         }
 
-        var A = Mathf.Tan(Mathf.Deg2Rad * angleBetween) * smallRadius;
-        var B = A + smallRadius;
-        var C = Mathf.Cos(Mathf.Deg2Rad * angleBetween) * B;
-        o1OnSecondProjection = Vector3.Lerp(EndPosition, secondEndPosition, C / secondPoint.Distance).To2DXY();
+        var a = Mathf.Tan(Mathf.Deg2Rad * angleBetween) * smallRadius;
+        var b = a + smallRadius;
+        var c = Mathf.Cos(Mathf.Deg2Rad * angleBetween) * b;
+        o1OnSecondProjection = Vector3.Lerp(EndPosition, secondEndPosition, c / secondPoint.Distance).To2DXY();
 
         //var o1OnSecondProjection = EndPoint + Vector3.Project(o1 - EndPoint, secondEndPosition - EndPoint);
         // ^ or like that is first method is slow
@@ -53,11 +53,11 @@ public class DoubleCurve : Curve
         Q = o1OnSecondProjection +
             (secondEndPosition - EndPosition).normalized.To2DXY().Rotate(rotateDirection) * bigRadius;
 
-        var o1_Q = (O1 - Q).magnitude;
+        var o1Q = (O1 - Q).magnitude;
 
 
-        var Q_o2 = Mathf.Sqrt(Mathf.Pow(smallRadius + bigRadius, 2) - o1_Q * o1_Q);
-        EndOffsetPosition = Vector3.Lerp(EndPosition, secondEndPosition, (C + Q_o2) / secondPoint.Distance);
+        var qO2 = Mathf.Sqrt(Mathf.Pow(smallRadius + bigRadius, 2) - o1Q * o1Q);
+        EndOffsetPosition = Vector3.Lerp(EndPosition, secondEndPosition, (c + qO2) / secondPoint.Distance);
 
         // SECOND TURN CENTER
         o2 = Q + (EndOffsetPosition.To2DXY() - o1OnSecondProjection);

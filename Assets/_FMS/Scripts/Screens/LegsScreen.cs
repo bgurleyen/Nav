@@ -149,8 +149,8 @@ public class LegsScreen : ScreenBase
         }
         else
         {
-            var _selectedIndex = VisibleRoute.GetIndex(selectionInfo.LinkedId);
-            var _clickedIndex = VisibleRoute.GetIndex(_clickedInfo.LinkedId);
+            var _selectedIndex = VisibleRoute.Points.GetNodeIndex(selectionInfo.LinkedId);
+            var _clickedIndex = VisibleRoute.Points.GetNodeIndex(_clickedInfo.LinkedId);
 
             // when user clicks on the node below
             if (_selectedIndex < _clickedIndex)

@@ -13,6 +13,7 @@ public class McpUI : Singleton<McpUI>
     
     byte mode = 1;
     public GameObject MCPSwitch;
+    static bool cacheSilentSwitch;
     void Awake()
     {
         hsToggle.onValueChanged.AddListener(OnHS);
@@ -63,22 +64,53 @@ public class McpUI : Singleton<McpUI>
         Drawer.Instance.ShowPlanMode();
     }
 
-
     static void OnHS(bool toggle)
     {
-        if (!toggle) return;
-        GameManager.Instance.SwitchFreeFlight(true);
+        if (cacheSilentSwitch)
+        {
+            cacheSilentSwitch = false;
+        }
+        else
+        {
+            if (toggle)
+            {
+                GameManager.Instance.PressSwitchFreeFlight(true);
+                SilentSwitchLNAV(false);
+            }
+        }
     }
 
     static void OnLNav(bool toggle)
     {
-        if (!toggle) return;
-        GameManager.Instance.SwitchFreeFlight(false);
+        if (cacheSilentSwitch)
+        {
+            cacheSilentSwitch = false;
+        }
+        else
+        {
+            if (toggle)
+            {
+                GameManager.Instance.PressSwitchFreeFlight(false);
+                SilentSwitchHeading(false);
+            }
+        }
     }
 
 
     public void RefreshHS()
     {
         headingText.text = Calculator.RHeading.ToString();
+    }
+
+    public static void SilentSwitchHeading(bool value)
+    {
+        cacheSilentSwitch = true;
+        Instance.hsToggle.isOn = value;
+    }
+
+    public static void SilentSwitchLNAV(bool value)
+    {
+        cacheSilentSwitch = true;
+        Instance.lNavToggle.isOn = value;
     }
 }

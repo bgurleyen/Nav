@@ -1,7 +1,4 @@
-﻿using Gamelogic.Extensions;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class MarkLine : Line
 {
@@ -20,39 +17,45 @@ public class MarkLine : Line
         StartPosition = StartOffsetPosition = EndPosition = EndOffsetPosition = Vector3.zero;
     }
 
-    public Vector3 GetNeededCurveOffset => (EndPosition - StartCurvePosition);
-
     protected void ComputeDistanceForPoint(int pointIndex)
     {
-        var _point = Vertexes[pointIndex];
+        var point = Vertexes[pointIndex];
         if (ComputedVertexLength == -1)
         {
-            lastPoint = _point;
+            lastPoint = point;
             ComputedVertexLength = 0;
             return;
         }
-        var _nextSegment = (_point - lastPoint).magnitude;
+        var nextSegment = (point - lastPoint).magnitude;
 
-        ComputedVertexLength += _nextSegment; // todo may take resources
-        lastPoint = _point;
+        ComputedVertexLength += nextSegment; // todo may take resources
+        lastPoint = point;
     }
 
-    public void Init(Vector3 from, Vector3 offsetedFrom, RoutePoint nextPoint)
+    public bool Init(Vector3 from, Vector3 offsetedFrom, RoutePoint nextPoint)
     {
         ComputedVertexLength = -1;
         StartPosition = from;
         StartOffsetPosition = offsetedFrom;
         StartCurvePosition = EndPosition = EndOffsetPosition = Geometry.GetNextPosition(from, nextPoint.Distance, nextPoint.Degrees);
 
-        var _lineLength = (EndPosition - StartOffsetPosition).magnitude;
+        var lineLength = (EndPosition - StartOffsetPosition).magnitude;
 
-        var _points = Mathf.CeilToInt(_lineLength / UnitLength);
-        Vertexes = new Vector3[_points + 1];
-
-        for (var i = 0; i <= _points; i++)
+        if (lineLength == 0)
         {
-            Vertexes[i] = Vector3.Lerp(StartOffsetPosition, EndPosition, UnitLength * i / _lineLength);
+            Debug.LogError("line has length 0");
+            return false;
+        }
+
+        var points = Mathf.CeilToInt(lineLength / UnitLength);
+        Vertexes = new Vector3[points + 1];
+
+        for (var i = 0; i <= points; i++)
+        {
+            Vertexes[i] = Vector3.Lerp(StartOffsetPosition, EndPosition, UnitLength * i / lineLength);
             ComputeDistanceForPoint(i);
         }
+
+        return true;
     }
 }

@@ -9,9 +9,9 @@ public class RouteScriptableObject : ScriptableObject
     public int FirstAltRegulationNodeId { get; set; }
 
     public RoutePoint[] Points;
+    public PathLines PathLines { get; private set; } = new PathLines();
 
     static Aircraft Aircraft => GameManager.Instance.Aircraft;
-    public RoutePoint LastAddedPositionNode { get; private set; }
 
     public void ComputeCartesianPositions()
     {
@@ -26,6 +26,11 @@ public class RouteScriptableObject : ScriptableObject
         }
     }
 
+    public void ComputeSet(bool isMod)
+    {
+        PathLines.ComputeSet(Points, !isMod);
+    }
+
     public void InitIds()
     {
         for (var i = 0; i < Points.Length; i++)
@@ -34,10 +39,20 @@ public class RouteScriptableObject : ScriptableObject
         }
     }
 
+    public Vector2 GetCartesianPosition(int lineIndex)
+    {
+        if (Points.Length <= lineIndex)
+        {
+            return Vector2.zero;
+        }
+
+        return Points[lineIndex].CartesianPosition;
+    }
+
     public bool GetPoint(int nodeId, out RoutePoint point)
     {
-        var _index = GetIndex(nodeId);
-        return GetPointAt(_index, out point);
+        var index = Points.GetNodeIndex(nodeId);
+        return GetPointAt(index, out point);
     }
 
     public bool GetPointAt(int index, out RoutePoint point)
@@ -52,56 +67,44 @@ public class RouteScriptableObject : ScriptableObject
         return true;
     }
 
-    public int GetIndex(int nodeId)
-    {
-        for (int i = 0; i < Points.Length; i++)
-        {
-            if (Points[i].ID == nodeId)
-            {
-                return i;
-            }
-        }
-
-        return -1;
-    }
 
     int GetNewId()
     {
-        var _id = Points.Length;
-        while (Points.Any(x => x.ID == _id))
+        var id = Points.Length;
+        while (Points.Any(x => x.ID == id))
         {
-            _id++;
+            id++;
         }
 
-        return _id;
+        return id;
     }
 
     string GetNewName(string fromNode)
     {
-        var _intro = fromNode.Substring(0, 3);
-        var _index = 1;
+        var intro = fromNode.Substring(0, 3);
+        var index = 1;
 
-        while (Points.Any(x => x.Name == _intro + _index.ToString("00")))
+        while (Points.Any(x => x.Name == intro + index.ToString("00")))
         {
-            _index++;
+            index++;
         }
 
-        return _intro + _index.ToString("00");
+        return intro + index.ToString("00");
     }
 
     public RouteScriptableObject Clone()
     {
-        var _newSet = CreateInstance<RouteScriptableObject>(); // new DataSetScriptableObject();
-        _newSet.ActiveDirectApproach = ActiveDirectApproach;
-        _newSet.FirstAltRegulationNodeId = FirstAltRegulationNodeId;
-        _newSet.FirstSpeedRegulationNodeId = FirstSpeedRegulationNodeId;
-        _newSet.Points = new RoutePoint[Points.Length];
+        var newSet = CreateInstance<RouteScriptableObject>(); // new DataSetScriptableObject();
+        newSet.ActiveDirectApproach = ActiveDirectApproach;
+        newSet.FirstAltRegulationNodeId = FirstAltRegulationNodeId;
+        newSet.FirstSpeedRegulationNodeId = FirstSpeedRegulationNodeId;
+        newSet.Points = new RoutePoint[Points.Length];
         for (var i = 0; i < Points.Length; i++)
         {
-            _newSet.Points[i] = Points[i].Clone();
+            newSet.Points[i] = Points[i].Clone();
         }
 
-        return _newSet;
+        return newSet;
     }
 
     public void OnPathRejoined()
@@ -109,89 +112,279 @@ public class RouteScriptableObject : ScriptableObject
         ActiveDirectApproach = false;
     }
 
-    public bool FindFreeFlightExitPosition(out PathVertexIndex intersectionTargetVertex,
-        out float distanceUntilLineIntersection)
+    public bool FindFreeFlightCloseToPathExitScenario(float maxDistance,out Vector2 futurePosition, out Vector2 centerOfTurn,
+        out Vector2 exitPoint,
+        out int exitSegmentIndex)
     {
-        var _planePosition = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath;
-        var _planeDirection = Geometry.GetDirectionFromHeading(GameManager.Instance.Aircraft.Heading);
-        var _segmentA = Vector2.zero;
-        var _segmentB = Vector2.zero;
+        var nan = new Vector2(-100, -100);
 
-        for (var i = 1; i < Points.Length; i++)
+
+        futurePosition = Geometry.GetNextPosition(Aircraft.PositionFreeOrOnCurvedPath, Aircraft.ForwardThreshold,
+            -Aircraft.Heading);
+
+        exitPoint = nan;
+        centerOfTurn = nan;
+
+        var currentNodeIndex = GameManager.Instance.Aircraft.RoutePathLocalization.CurrentNodeIndex;
+        var aircraftPosition =
+            GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath; // would be free since we are in free flight
+
+        exitSegmentIndex = -1;
+
+        for (var i = currentNodeIndex; i < Points.Length; i++)
         {
-            _segmentA = _segmentB;
-            // on could take the positions from PathLines
-            _segmentB = Geometry.GetNextPosition(_segmentA, Points[i].Distance, Points[i].Degrees);
-
             if (Points[i].IsHiddenLine || Points[i].IsAfterDiscontinuity)
             {
                 continue;
             }
 
-            if (Geometry.FindLineSegmentIntersection(_planePosition, _planeDirection.x, _planeDirection.y,
-                    _segmentA, _segmentB, out var _intersection)
-                && GameManager.Instance.PathLines.FindClosestVertexToDistanceOnLineActive(
-                    (_intersection - _segmentA).magnitude, i, out var _targetVertexIndex,
-                    out var _targetVertexPosition))
+            var segmentStart = Points[i-1].CartesianPosition;
+            var segmentEnd = Points[i].CartesianPosition;
+
+            if (Geometry.FindDistanceToSegment(aircraftPosition, segmentStart, segmentEnd,
+                out var intersection, out var distance) && distance <= maxDistance)
             {
-                intersectionTargetVertex = new PathVertexIndex
-                {
-                    CurrentNodeIndex = i,
-                    HeadingBefore = Geometry.GetHeadingOfDirection(_segmentB - _segmentA),
-                    UnreachedPoint = _targetVertexIndex,
-                    VertexPosition = _targetVertexPosition
-                };
-                distanceUntilLineIntersection = (_intersection - _segmentA).magnitude;
-                return true;
+                exitSegmentIndex = i;
+                centerOfTurn = intersection;
+
+                // don't break, keep computing to find the most forward segment that is withing max distance range
             }
         }
 
-        intersectionTargetVertex = new PathVertexIndex();
-        distanceUntilLineIntersection = 0;
+        if (exitSegmentIndex < 0)
+        {
+            return false;
+        }
+        var nextNextNodePosition = Points[exitSegmentIndex].CartesianPosition;
+        
+        // just to be sure move the center of turn further to have space for turn
+        // - @#$ todo will need to refine the scenarios here
+        centerOfTurn = Vector2.Lerp(centerOfTurn, nextNextNodePosition,
+            (2*Aircraft.ForwardThreshold) / Vector2.Distance(centerOfTurn, nextNextNodePosition));
+
+        
+        exitPoint = Vector2.Lerp(centerOfTurn, nextNextNodePosition,
+            Aircraft.ForwardThreshold / Vector2.Distance(centerOfTurn, nextNextNodePosition));
+        
+        return true;
+    }
+
+    // to be executed on ACTIVE route
+    public bool FindFreeFlightNextNodeExitScenario(out Vector2 futurePosition, out Vector2 centerOfTurn, out Vector2 exitPoint,
+        out int exitSegmentIndex)
+    {
+        futurePosition = Geometry.GetNextPosition(Aircraft.PositionFreeOrOnCurvedPath, Aircraft.ForwardThreshold,
+            -Aircraft.Heading);
+            
+        var currentNodeIndex = GameManager.Instance.Aircraft.RoutePathLocalization.CurrentNodeIndex;
+        centerOfTurn = Points[currentNodeIndex].CartesianPosition;
+        
+        // we rejoin after intersection
+        var nextNextNodePosition = Points[currentNodeIndex + 1].CartesianPosition;
+        exitPoint = Vector2.Lerp(centerOfTurn, nextNextNodePosition,
+            Aircraft.ForwardThreshold / Vector2.Distance(centerOfTurn, nextNextNodePosition));
+
+        exitSegmentIndex = currentNodeIndex + 1;
+
+        return true;
+    }
+
+    // to be executed on ACTIVE route
+    public bool FindFreeFlightDirectExitScenario(out Vector2 centerOfTurn, out Vector2 exitPoint, out int exitSegmentIndex)
+    {
+
+        var nan = new Vector2(-100, -100);
+
+        exitPoint = nan;
+        centerOfTurn = nan;
+        var aircraftPosition =
+            GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath; // would be free since we are in free flight
+        var aircraftDirection = Geometry.GetDirectionFromHeading(GameManager.Instance.Aircraft.Heading);
+        var segmentEnd = Vector2.zero;
+
+        exitSegmentIndex = -1;
+        var intersection = Vector2.zero;
+
+        for (var i = 1; i < Points.Length; i++)
+        {
+            var segmentStart = segmentEnd;
+            // on could take the positions from PathLines
+            segmentEnd = Geometry.GetNextPosition(segmentStart, Points[i].Distance, Points[i].Degrees);
+
+            if (Points[i].IsHiddenLine || Points[i].IsAfterDiscontinuity
+            ) //@#$ ask if we can join discontinuity segments
+            {
+                continue;
+            }
+
+            if (Geometry.FindLineSegmentIntersection(aircraftPosition, aircraftDirection.x, aircraftDirection.y,
+                segmentStart, segmentEnd, out intersection))
+            {
+                exitSegmentIndex = i;
+                break;
+            }
+        }
+
+        if (exitSegmentIndex >= 0)
+        {
+            var currentSegmentStart = Points[exitSegmentIndex - 1].CartesianPosition;
+            var currentSegmentEnd = Points[exitSegmentIndex].CartesianPosition;
+
+            var towardsBeginning = Vector2.SqrMagnitude(currentSegmentStart - intersection) <
+                                    Vector2.SqrMagnitude(currentSegmentEnd - intersection);
+
+            var nextSegmentStart = currentSegmentEnd;
+
+            var countCurrent = Geometry.CircleIntersects(currentSegmentStart, currentSegmentEnd, intersection,
+                Aircraft.ForwardThreshold,
+                true, out var intersectionCurrent1, out var intersectionCurrent2);
+
+            var nextSegmentEnd = Vector2.zero;
+            var intersectionNext1 = Vector2.zero;
+            var intersectionNext2 = Vector2.zero;
+
+            int countNext;
+
+            if (Points.Length > exitSegmentIndex + 1)
+            {
+                nextSegmentEnd = Points[exitSegmentIndex + 1].CartesianPosition;
+                countNext = Geometry.CircleIntersects(nextSegmentStart, nextSegmentEnd, intersection,
+                    Aircraft.ForwardThreshold,
+                    false, out intersectionNext1, out intersectionNext2);
+            }
+
+            // find forward intersection
+
+            // if inside turn - prepare turn for corner on the other side of the circle of the aircraft and the exit of turn
+            // if not near turn - prepare turn for corner on circle center and the forward intersection
+
+            // create lines with computed vertexes for turns for scenario and return them 
+
+
+            // the intersections on the current segment are clamped to segment
+            if (countCurrent <= 0)
+            {
+                // should happen if the segment is smaller than the threshold ( go to the next segments ? )
+                Debug.LogError("no intersections - segment smaller than threshold?");
+                return false;
+            }
+
+            // we are not sure of the order of the circle intersections on the segment 
+            var firstIsBefore = Vector2.SqrMagnitude(currentSegmentStart - intersectionCurrent1) <
+                                 Vector2.SqrMagnitude(currentSegmentStart - intersection);
+
+            if (countCurrent == 2)
+            {
+                // --> the center of turn can be the intersection since is on the same line with the exit
+                centerOfTurn = intersection;
+                exitPoint = firstIsBefore ? intersectionCurrent2 : intersectionCurrent1;
+                return true;
+            }
+
+            if (towardsBeginning)
+            {
+                // --> the center of turn can be the intersection since is on the same line with the exit
+                centerOfTurn = intersection;
+                exitPoint = intersectionCurrent1;
+                return true;
+            }
+
+            // We are will be exiting on the next segment than the intersection
+            // --> find center of turn as the intersection between next segment and current direction
+            Geometry.FindLineSegmentIntersection(aircraftPosition, aircraftDirection.x, aircraftDirection.y,
+                nextSegmentStart, nextSegmentEnd, out var newCenter, false);
+
+            var nextExitPoint = Geometry.IsWithinSegment(nextSegmentStart.x, nextSegmentStart.y,
+                nextSegmentEnd.x, nextSegmentEnd.y, intersectionNext1.x, intersectionNext1.y)
+                ? intersectionNext1
+                : intersectionNext2;
+
+            //if the angle is inwards (meaning the center of turn of further than the exitpoint ) ( see reference image.. ) move exit point further
+            var exitIsBackwards = Vector2.SqrMagnitude(nextSegmentEnd - newCenter) <
+                                   Vector2.SqrMagnitude(nextSegmentEnd - nextExitPoint);
+            if (exitIsBackwards)
+            {
+                nextExitPoint = Vector2.MoveTowards(newCenter, nextSegmentEnd, Aircraft.ForwardThreshold);
+            }
+
+            // todo: if newCenter is passed the next segment end ( when in U turn and bypasses the middle ) -> try next
+            // todo: if exit point is near turn ( too close points) -> try next
+
+            centerOfTurn = newCenter;
+            exitPoint = nextExitPoint;
+
+            return true;
+        }
+
+        return false;
+    }
+
+
+    public bool TransferPathToRoute(Vector2 exitPoint, int lineIndex, out PathPositionInfo  intersectionRoutePathInfo, out float segmentDistanceUntilIntersection)
+    {
+        intersectionRoutePathInfo = new PathPositionInfo();
+        var segmentStart = Points[lineIndex - 1].CartesianPosition;
+        var segmentEnd = Points[lineIndex].CartesianPosition;
+
+        segmentDistanceUntilIntersection = (exitPoint - segmentStart).magnitude;
+        if (GameManager.Instance.ActiveRoute.PathLines.FindClosestVertexToDistanceOnLineActive(
+            segmentDistanceUntilIntersection, lineIndex, out var targetVertexIndex,
+            out var targetVertexPosition))
+        {
+            intersectionRoutePathInfo = new PathPositionInfo
+            {
+                CurrentNodeIndex = lineIndex,
+                HeadingBefore = GameManager.Instance.Aircraft.Heading,
+                UnreachedVertexIndex = targetVertexIndex,
+                UnreachedVertexPosition = targetVertexPosition
+            };
+            return true;
+        }
+
         return false;
     }
 
     public void ShortcutNodes(int firstIdNodeToDissolve, int toId,
         out RoutePoint reducedPoint) // @#$ refactor for passed nodes ?
     {
-        var _startIndex = GetIndex(firstIdNodeToDissolve);
-        var _endIndex = GetIndex(toId);
+        var startIndex = Points.GetNodeIndex(firstIdNodeToDissolve);
+        var endIndex = Points.GetNodeIndex(toId);
 
-        var _offset = _endIndex - _startIndex;
+        var offset = endIndex - startIndex;
 
-        var _newSet = new RoutePoint[Points.Length - _offset];
+        var newSet = new RoutePoint[Points.Length - offset];
 
-        for (var i = 0; i < _startIndex; i++)
+        for (var i = 0; i < startIndex; i++)
         {
-            _newSet[i] = Points[i];
+            newSet[i] = Points[i];
         }
 
         // compute new distance
-        var _endPosition =
-            Geometry.GetNextPosition(Vector2.zero, Points[_startIndex].Distance, Points[_startIndex].Degrees);
-        for (var i = _startIndex; i < _endIndex; i++)
+        var endPosition =
+            Geometry.GetNextPosition(Vector2.zero, Points[startIndex].Distance, Points[startIndex].Degrees);
+        for (var i = startIndex; i < endIndex; i++)
         {
-            _endPosition = Geometry.GetNextPosition(_endPosition, Points[i + 1].Distance, Points[i + 1].Degrees);
+            endPosition = Geometry.GetNextPosition(endPosition, Points[i + 1].Distance, Points[i + 1].Degrees);
         }
 
         //compute new angle
-        var _angle = Geometry.AngleBetween(_endPosition, Vector2.up);
+        var angle = Geometry.AngleBetween(endPosition, Vector2.up);
 
-        reducedPoint = Points[_endIndex].Clone();
+        reducedPoint = Points[endIndex].Clone();
         reducedPoint.ClearDetails();
-        reducedPoint.Distance = _endPosition.magnitude;
-        reducedPoint.RawDegrees = _angle;
+        reducedPoint.Distance = endPosition.magnitude;
+        reducedPoint.RawDegrees = angle;
         reducedPoint.IsModified = true;
 
-        _newSet[_startIndex] = reducedPoint;
+        newSet[startIndex] = reducedPoint;
 
-        for (var i = _endIndex + 1; i < Points.Length; i++)
+        for (var i = endIndex + 1; i < Points.Length; i++)
         {
-            var _newIndex = i - _offset;
-            _newSet[_newIndex] = Points[i];
+            var newIndex = i - offset;
+            newSet[newIndex] = Points[i];
         }
 
-        Points = _newSet;
+        Points = newSet;
     }
 
     public void ClearModifiedFlags()
@@ -207,25 +400,25 @@ public class RouteScriptableObject : ScriptableObject
     public void AddRelativeNodeOnDirection(int nodeId, int distance, int relativeNodeId, out RoutePoint insertionNode,
         out RoutePoint afterInsertion) // @#$ todo refactor for passed nodes ?
     {
-        var _nodeIndex = GetIndex(nodeId);
-        var _node = Points[_nodeIndex];
+        var nodeIndex = Points.GetNodeIndex(nodeId);
+        var node = Points[nodeIndex];
 
-        float _distanceToBefore;
-        float _distanceFromAfter;
+        float distanceToBefore;
+        float distanceFromAfter;
         afterInsertion = null;
 
         if (distance <= 0)
         {
-            afterInsertion = _node;
-            _distanceToBefore = -distance;
-            _distanceFromAfter = afterInsertion.Distance - _distanceToBefore;
+            afterInsertion = node;
+            distanceToBefore = -distance;
+            distanceFromAfter = afterInsertion.Distance - distanceToBefore;
         }
         else // if > 0
         {
-            if (Points.Length > _nodeIndex + 1)
+            if (Points.Length > nodeIndex + 1)
             {
-                afterInsertion = Points[_nodeIndex + 1];
-                _distanceToBefore = afterInsertion.Distance - distance;
+                afterInsertion = Points[nodeIndex + 1];
+                distanceToBefore = afterInsertion.Distance - distance;
             }
             else
             {
@@ -234,81 +427,81 @@ public class RouteScriptableObject : ScriptableObject
                 return;
             }
 
-            _distanceFromAfter = distance;
+            distanceFromAfter = distance;
         }
 
         insertionNode = new RoutePoint
         {
-            Name = GetNewName(_node.Name),
-            Distance = _distanceFromAfter,
+            Name = GetNewName(node.Name),
+            Distance = distanceFromAfter,
             RawDegrees = afterInsertion.RawDegrees,
             ID = GetNewId()
         };
 
-        afterInsertion.Distance = _distanceToBefore;
+        afterInsertion.Distance = distanceToBefore;
 
         // replace set with new set that also contains insertion node
-        var _newSet = new RoutePoint[Points.Length + 1];
-        var _offset = 0;
+        var newSet = new RoutePoint[Points.Length + 1];
+        var offset = 0;
         for (var i = 0; i < Points.Length; i++)
         {
-            if (i == _nodeIndex + (distance > 0 ? 1 : 0))
+            if (i == nodeIndex + (distance > 0 ? 1 : 0))
             {
-                _newSet[i] = insertionNode;
-                _offset = 1;
+                newSet[i] = insertionNode;
+                offset = 1;
             }
 
-            _newSet[i + _offset] = Points[i];
+            newSet[i + offset] = Points[i];
         }
 
-        Points = _newSet;
+        Points = newSet;
     }
 
     void AddRelativeNodeAfter(int relativeFromNodeId, float rawDegrees, int distance,
         out RoutePoint insertionNode, out RoutePoint afterInsertion, bool addCurveOffset = true)
     {
-        var _relativeFromNodeIndex = GetIndex(relativeFromNodeId);
-        var _relativeFromNode = Points[_relativeFromNodeIndex];
+        var relativeFromNodeIndex = Points.GetNodeIndex(relativeFromNodeId);
+        var relativeFromNode = Points[relativeFromNodeIndex];
 
-        afterInsertion = Points[_relativeFromNodeIndex + 1];
+        afterInsertion = Points[relativeFromNodeIndex + 1];
 
         insertionNode = new RoutePoint
         {
-            Name = GetNewName(_relativeFromNode.Name),
+            Name = GetNewName(relativeFromNode.Name),
             Distance = distance,
             RawDegrees = rawDegrees,
             ID = GetNewId()
         };
 
-        var _insertPosition = Geometry.GetNextPosition(Vector2.zero, distance, rawDegrees);
-        var _originalToPosition =
+        var insertPosition = Geometry.GetNextPosition(Vector2.zero, distance, rawDegrees);
+        var originalToPosition =
             Geometry.GetNextPosition(Vector2.zero, afterInsertion.Distance, afterInsertion.RawDegrees);
-        var _returnDirection = _originalToPosition - _insertPosition;
-        afterInsertion.RawDegrees = Geometry.AngleBetween(Vector2.up, _returnDirection);
-        afterInsertion.Distance = _returnDirection.magnitude;
+        var returnDirection = originalToPosition - insertPosition;
+        afterInsertion.RawDegrees = Geometry.AngleBetween(Vector2.up, returnDirection);
+        afterInsertion.Distance = returnDirection.magnitude;
 
         // simulate the curve to the the needed offset
-        var _lastLine = new MarkLine(_relativeFromNode);
-        _lastLine.InitBeginning();
+        var lastLine = new MarkLine(relativeFromNode);
+        lastLine.InitBeginning();
 
-        Drawer.ComputeLine(_lastLine, out var _testLine, insertionNode, afterInsertion);
+        LinesComputer.ComputeLine(lastLine, out var testLine, insertionNode, afterInsertion);
 
         // replace set with new set that also contains insertion node
-        var _newSet = new RoutePoint[Points.Length + 1];
-        var _offset = 0;
+        var newSet = new RoutePoint[Points.Length + 1];
+        var offset = 0;
         for (var i = 0; i < Points.Length; i++)
         {
-            if (i == _relativeFromNodeIndex + 1)
+            if (i == relativeFromNodeIndex + 1)
             {
-                _newSet[i] = insertionNode;
+                newSet[i] = insertionNode;
 
-                _offset = 1;
+                offset = 1;
             }
 
-            _newSet[i + _offset] = Points[i];
+            newSet[i + offset] = Points[i];
         }
 
-        Points = _newSet;
+        Points = newSet;
     }
 
 
@@ -316,85 +509,85 @@ public class RouteScriptableObject : ScriptableObject
         out RoutePoint insertionNode,
         bool showDiscontinuity = false)
     {
-        var _originalBeforeNodeIndex = GetIndex(beforeNodeId);
-        var _relativeNodeIndex = GetIndex(relativeNodeId);
+        var originalBeforeNodeIndex = Points.GetNodeIndex(beforeNodeId);
+        var relativeNodeIndex = Points.GetNodeIndex(relativeNodeId);
 
-        var _isInThePast = PositionVirtualNode.PassedNodeIndexForMode > _originalBeforeNodeIndex - 1;
+        var isInThePast = PositionVirtualNode.PassedNodeIndexForMode > originalBeforeNodeIndex - 1;
         
-        var _relativeNode = Points[_relativeNodeIndex];
-        var _insertPosition = Geometry.GetNextPosition(_relativeNode.CartesianPosition, distance, 360 - rawDegrees);
+        var relativeNode = Points[relativeNodeIndex];
+        var insertPosition = Geometry.GetNextPosition(relativeNode.CartesianPosition, distance, 360 - rawDegrees);
 
-        var _indexBeforeInsertion = _isInThePast ? PositionVirtualNode.PassedNodeIndexForMode : _originalBeforeNodeIndex - 1;
+        var indexBeforeInsertion = isInThePast ? PositionVirtualNode.PassedNodeIndexForMode : originalBeforeNodeIndex - 1;
 
-        var _positionBeforeInsertion = Points[_indexBeforeInsertion].CartesianPosition;
+        var positionBeforeInsertion = Points[indexBeforeInsertion].CartesianPosition;
 
-        var _insertionAngle = Geometry.AngleOfPosition(_insertPosition, _positionBeforeInsertion);
-        var _insertionDistance = (_insertPosition - _positionBeforeInsertion).magnitude;
+        var insertionAngle = Geometry.AngleOfPosition(insertPosition, positionBeforeInsertion);
+        var insertionDistance = (insertPosition - positionBeforeInsertion).magnitude;
 
-        var _nodeAfterInsertion = Points[GetIndex(beforeNodeId)];
+        GetPoint(beforeNodeId, out var nodeAfterInsertion);
         
         insertionNode = new RoutePoint
         {
-            Name = GetNewName(_relativeNode.Name),
-            Distance = _insertionDistance,
-            RawDegrees = _insertionAngle,
+            Name = GetNewName(relativeNode.Name),
+            Distance = insertionDistance,
+            RawDegrees = insertionAngle,
             ID = GetNewId(),
-            Details = _nodeAfterInsertion.IsAfterDiscontinuity && showDiscontinuity ? "D" : ""
+            Details = nodeAfterInsertion.IsAfterDiscontinuity && showDiscontinuity ? "D" : ""
         };
         
         
-        var _returnNode = _nodeAfterInsertion.Clone();
+        var returnNode = nodeAfterInsertion.Clone();
 
         // update info of selected to be relative to the inserted instead of the previous which is now previous to inserted
-        _returnNode.RawDegrees = Geometry.AngleOfPosition(_nodeAfterInsertion.CartesianPosition, _insertPosition); 
-        _returnNode.Distance = (_nodeAfterInsertion.CartesianPosition - _insertPosition).magnitude;
+        returnNode.RawDegrees = Geometry.AngleOfPosition(nodeAfterInsertion.CartesianPosition, insertPosition); 
+        returnNode.Distance = (nodeAfterInsertion.CartesianPosition - insertPosition).magnitude;
         if ( showDiscontinuity)
         {
-            _returnNode.IndicateDiscontinuityBefore();
+            returnNode.IndicateDiscontinuityBefore();
         }
 
-        if (_isInThePast)
+        if (isInThePast)
         {
-            _returnNode.ID = GetNewId() + Points.Length;
+            returnNode.ID = GetNewId() + Points.Length;
         }
 
         // replace set with new set that also contains insertion node
-        var _inThePastExtraNodes = _indexBeforeInsertion - _relativeNodeIndex + 1;
-        var _newSet = new RoutePoint[Points.Length + (_isInThePast ? 1+ _inThePastExtraNodes : 1)];
-        var _offset = 0;
+        var inThePastExtraNodes = indexBeforeInsertion - relativeNodeIndex + 1;
+        var newSet = new RoutePoint[Points.Length + (isInThePast ? 1+ inThePastExtraNodes : 1)];
+        var offset = 0;
         for (var i = 0; i < Points.Length; i++)
         {
-            if (i == _indexBeforeInsertion +1)
+            if (i == indexBeforeInsertion +1)
             {
-                _newSet[i] = insertionNode;
+                newSet[i] = insertionNode;
 
-                if (!_isInThePast)
+                if (!isInThePast)
                 {
-                    _newSet[i + 1] = _returnNode;
-                    _offset = 1;
+                    newSet[i + 1] = returnNode;
+                    offset = 1;
                     continue;
                 }
 
                 else
                 {
-                    _offset = 1;
-                    _newSet[i + _offset] = _returnNode;
+                    offset = 1;
+                    newSet[i + offset] = returnNode;
                     
                     // add all passed nodes after the insertion until current node
-                    for (var u = 0; u < _inThePastExtraNodes; u++)
+                    for (var u = 0; u < inThePastExtraNodes; u++)
                     {
-                        _offset += 1;
-                        _newSet[i + _offset] = Points[_relativeNodeIndex + u + 1];
+                        offset += 1;
+                        newSet[i + offset] = Points[relativeNodeIndex + u + 1];
                     }
 
                     continue;
                 }
             }
 
-            _newSet[i + _offset] = Points[i];
+            newSet[i + offset] = Points[i];
         }
 
-        Points = _newSet;
+        Points = newSet;
         
     }
 
@@ -425,44 +618,44 @@ public class RouteScriptableObject : ScriptableObject
         ActiveDirectApproach = true;
     }
 
-    public RoutePoint AddDisplayPositionNode()
+    public void AddDisplayPositionNode()
     {
         // ! Position node is added in front of the actual position so that the aircraft can safely turn 
+        RoutePoint lastAddedPositionNode;
         
-        const float FORWARD_THRESHOLD = 3f;
 
-        var _routePreviousNodeIndex = PositionVirtualNode.PassedNodeIndex;
-        var _routePreviousNode = Points[_routePreviousNodeIndex];
+        var routePreviousNodeIndex = PositionVirtualNode.PassedNodeIndex;
+        var routePreviousNode = Points[routePreviousNodeIndex];
 
 
-        if (Aircraft.IsOnPath)
+        if (Aircraft.IsOnRoute)
         {
             // add position node on path
 
-            var _activeNextNode = PositionVirtualNode.GetNodeTo;
-            var _activeSegmentDistancePassed = Aircraft.WalkedDistanceOnSegment;
+            var activeNextNode = PositionVirtualNode.GetNodeTo;
+            var activeSegmentDistancePassed = Aircraft.WalkedDistanceOnSegment;
             
-            var _activeNextNodeIndex = PositionVirtualNode.PassedNodeIndex + 1;
-            var _routeNextNode = Points[_activeNextNodeIndex];
+            var activeNextNodeIndex = PositionVirtualNode.PassedNodeIndex + 1;
+            var routeNextNode = Points[activeNextNodeIndex];
 
-            LastAddedPositionNode = new RoutePoint
+            lastAddedPositionNode = new RoutePoint
             {
                 Name = "_Position_",
-                Distance = _activeSegmentDistancePassed + FORWARD_THRESHOLD,
-                RawDegrees = _activeNextNode.RawDegrees,
+                Distance = activeSegmentDistancePassed + Aircraft.ForwardThreshold,
+                RawDegrees = activeNextNode.RawDegrees,
                 Details = "P",
                 ID = GetNewId(),
             };
 
-            var _newFuturePosition = Geometry.GetNextPosition(Aircraft.PositionFreeOrOnSegment, FORWARD_THRESHOLD,
-                _activeNextNode.Degrees);
+            var newFuturePosition = Geometry.GetNextPosition(Aircraft.PositionFreeOrOnRouteSegment, Aircraft.ForwardThreshold,
+                activeNextNode.Degrees);
             
-            var _differencePosition = _routeNextNode.CartesianPosition - _newFuturePosition;
+            var differencePosition = routeNextNode.CartesianPosition - newFuturePosition;
             
-            var _updatedAngle = Geometry.AngleBetween(_differencePosition, Vector2.up);
+            var updatedAngle = Geometry.AngleBetween(differencePosition, Vector2.up);
 
-            _routeNextNode.RawDegrees = _updatedAngle;
-            _routeNextNode.Distance = _differencePosition.magnitude;
+            routeNextNode.RawDegrees = updatedAngle;
+            routeNextNode.Distance = differencePosition.magnitude;
         }
         else
         {
@@ -471,51 +664,49 @@ public class RouteScriptableObject : ScriptableObject
             // also the position need to be forward with the threshold in the heading direction
 
 
-            // there is now from node to make cu curve correctly so for now is just not added any forward offset
+            // there is no 'from node' to make the curve correctly so for now is just not added any forward offset
             // var _nextFuturePosition = Geometry.GetNextPosition(Aircraft.PositionFreeOrOnSegment, FORWARD_THRESHOLD, Aircraft.Heading);
-            var _nextFuturePosition = Aircraft.PositionFreeOrOnSegment;
-            var _routeNextNode = Points[1];
-            var _angleTo = Geometry.GetHeadingOfDirection(_nextFuturePosition);
+            var nextFuturePosition = Aircraft.PositionFreeOrOnRouteSegment;
+            var routeNextNode = Points[1];
+            var angleTo = Geometry.GetHeadingOfDirection(nextFuturePosition);
             
-            LastAddedPositionNode = new RoutePoint
+            lastAddedPositionNode = new RoutePoint
             {
                 Name = "_Position_",
-                Distance = _nextFuturePosition.magnitude,
-                RawDegrees =  _angleTo,
+                Distance = nextFuturePosition.magnitude,
+                RawDegrees =  angleTo,
                 Details = "P",
                 ID = GetNewId(),
-                CartesianPosition = _nextFuturePosition
+                CartesianPosition = nextFuturePosition
             };
 
-            var _differencePosition = _routeNextNode.CartesianPosition - _nextFuturePosition;
-            var _updatedAngle = Geometry.GetHeadingOfDirection(_differencePosition);
-            _routeNextNode.RawDegrees = _updatedAngle;
-            _routeNextNode.Distance = _differencePosition.magnitude;
+            var differencePosition = routeNextNode.CartesianPosition - nextFuturePosition;
+            var updatedAngle = Geometry.GetHeadingOfDirection(differencePosition);
+            routeNextNode.RawDegrees = updatedAngle;
+            routeNextNode.Distance = differencePosition.magnitude;
         }
 
         if (ActiveDirectApproach)
         {
-            LastAddedPositionNode.IndicateHiddenLine();
+            lastAddedPositionNode.IndicateHiddenLine();
         }
 
 
         // replace set with new set that also contains insertion node
-        var _newSet = new RoutePoint[Points.Length + 1];
-        var _offset = 0;
+        var newSet = new RoutePoint[Points.Length + 1];
+        var offset = 0;
         for (var i = 0; i < Points.Length; i++)
         {
             if (i == PositionVirtualNode.NextNodeIndex)
             {
-                _newSet[i] = LastAddedPositionNode;
-                _offset = 1;
+                newSet[i] = lastAddedPositionNode;
+                offset = 1;
             }
 
-            _newSet[i + _offset] = Points[i];
+            newSet[i + offset] = Points[i];
         }
 
-        Points = _newSet;
-
-
-        return LastAddedPositionNode;
+        Points = newSet;
     }
+
 }

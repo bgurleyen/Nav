@@ -587,7 +587,14 @@ public class Calculator : MonoBehaviour
         if (LGDown) LG_Click();
         if (SBDown) SB_Click();
 
-        FlapNeedle.transform.localEulerAngles = new Vector3(-90, 180, Fps[Flap_Idx]);
+        if (FlapNeedle != null)
+        {
+            FlapNeedle.transform.localEulerAngles = new Vector3(-90, 180, Fps[Flap_Idx]);
+        }
+        else
+        {
+            Debug.LogError("Assign flapNeedle");
+        }
 
         PFD_Animation Script2 = FindObjectOfType<PFD_Animation>();
         Script2.Flaps_Indexchange(Flap_Idx);
