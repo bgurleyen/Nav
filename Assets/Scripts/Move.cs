@@ -60,7 +60,7 @@ public class Move : Singleton<Move>
     
         for (int j = 1; j < Route.Points.Length; j++)                                                    // Locate the points on EditMap
         {
-            Pos = Route.Points[j].CartesianPosition;
+            Pos = Route.GetCartesianPosition(j);
             GameObject pt = GameObject.Find("pt (" + j + ")");
 
             pt.transform.localPosition = Pos;
