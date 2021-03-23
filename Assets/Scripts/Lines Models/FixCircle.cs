@@ -14,13 +14,13 @@ public class FixCircle : Line
     {
         EndPosition = endPosition;
 
-        var _arcPoints = ComputeArcPoints(0, 360, 100, LinkedInfo.NM ?? 0, EndPosition, Vector3.zero);
+        var arcPoints = ComputeArcPoints(0, 360, 100, LinkedInfo.NM ?? 0, EndPosition, Vector3.zero);
 
-        Vertexes = new Vector3[_arcPoints.Length];
+        Vertexes = new Vector3[arcPoints.Length];
 
-        for (var i = 0; i < _arcPoints.Length; i++)
+        for (var i = 0; i < arcPoints.Length; i++)
         {
-            Vertexes[i] = EndPosition + _arcPoints[i].To3DXY();
+            Vertexes[i] = EndPosition + arcPoints[i].To3DXY();
         }
 
     }

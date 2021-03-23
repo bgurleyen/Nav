@@ -90,17 +90,17 @@ public class GameManager : Singleton<GameManager>
         {
             // mod always has to include the last passed active node ( all the passed nodes ) 
             // otherwise it is invalid - will reapply all the commands
-            var _passedNodeIndex = PositionVirtualNode.PassedNodeIndex;
+            var passedNodeIndex = PositionVirtualNode.PassedNodeIndex;
 
-            if (_passedNodeIndex != modReExecutedForIndex)
+            if (passedNodeIndex != modReExecutedForIndex)
             {
-                if (ActiveRoute.Points[_passedNodeIndex].ID != ModRoute.Points[_passedNodeIndex].ID)
+                if (ActiveRoute.Points[passedNodeIndex].ID != ModRoute.Points[passedNodeIndex].ID)
                 {
                     ReExecuteCachedCommands();
                     Debug.Log("Reapplied MOD");
                 }
 
-                modReExecutedForIndex = _passedNodeIndex;
+                modReExecutedForIndex = passedNodeIndex;
             }
         }
 
@@ -160,9 +160,9 @@ public class GameManager : Singleton<GameManager>
         
         MainScreen.Instance.DisplayOperation("ERASE");
 
-        ModRoute.GetPoint(command.NodeId, out var _node);
-        _node.RawAltitude = "";
-        _node.RawSpeed = 0;
+        ModRoute.GetPoint(command.NodeId, out var node);
+        node.RawAltitude = "";
+        node.RawSpeed = 0;
         
         DataHandler.BuildSetDetails(ModRoute);
     }
@@ -173,9 +173,9 @@ public class GameManager : Singleton<GameManager>
         cachedCommands.Add(command);
         
         MainScreen.Instance.DisplayOperation("ERASE");
-        ModRoute.GetPoint(command.NodeId, out var _node);
-        _node.RawSpeed = command.Regulation;
-        _node.IsSpeedModified = true;
+        ModRoute.GetPoint(command.NodeId, out var node);
+        node.RawSpeed = command.Regulation;
+        node.IsSpeedModified = true;
         DataHandler.BuildSetDetails(ModRoute);
 
         OnOperationMade?.Invoke();
@@ -201,8 +201,8 @@ public class GameManager : Singleton<GameManager>
         CheckModForOperation();
         cachedCommands.Add(command);
 
-        ModRoute.GetPoint(command.FromNodeId, out var _node);
-        MainScreen.Instance.DisplayOperation("ERASE", ToDegreesDisplay(_node.RawDegrees));
+        ModRoute.GetPoint(command.FromNodeId, out var node);
+        MainScreen.Instance.DisplayOperation("ERASE", ToDegreesDisplay(node.RawDegrees));
         ModRoute.ShortcutNodes(command.FromNodeId, command.ToNodeId, out var _);
         DataHandler.BuildSetDetails(ModRoute);
 
@@ -254,21 +254,20 @@ public class GameManager : Singleton<GameManager>
     public void ReExecuteCachedCommands()
     {
         EraseMod();
-        var _cachedCommands = cachedCommands;
 
-        for (var i = 0; i < _cachedCommands.Count; i++)
+        for (var i = 0; i < cachedCommands.Count; i++)
         {
-            var _command = _cachedCommands[i];
-            switch (_command)
+            var command = cachedCommands[i];
+            switch (command)
             {
-                case InsertRelativeCommand _relativeCommand:
-                    ExecuteInsertRelativeOnMod(_relativeCommand);
+                case InsertRelativeCommand relativeCommand:
+                    ExecuteInsertRelativeOnMod(relativeCommand);
                     break;
-                case ExecuteShortcutOnModeCommand _modeCommand:
-                    ExecuteShortcutOnMod(_modeCommand);
+                case ExecuteShortcutOnModeCommand modeCommand:
+                    ExecuteShortcutOnMod(modeCommand);
                     break;
-                case ExecuteAddLinearApproachCommand _approachCommand:
-                    ExecuteLinearApproachOnMod(_approachCommand);
+                case ExecuteAddLinearApproachCommand approachCommand:
+                    ExecuteLinearApproachOnMod(approachCommand);
                     break;
             }
         }

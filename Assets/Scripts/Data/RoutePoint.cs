@@ -62,17 +62,17 @@ public class RoutePoint
     {
         get
         {
-            var _activeRoute = GameManager.Instance.ActiveRoute;
+            var activeRoute = GameManager.Instance.ActiveRoute;
 
-            var _nodeCursor = PositionVirtualNode.GetNodeTo;
-            while (_nodeCursor.IsPositionNode || _nodeCursor.ID == ID)
+            var nodeCursor = PositionVirtualNode.GetNodeTo;
+            while (nodeCursor.IsPositionNode || nodeCursor.ID == ID)
             {
-                if (_nodeCursor.ID == ID)
+                if (nodeCursor.ID == ID)
                 {
                     return true;
                 }
 
-                _nodeCursor = _activeRoute.Points[_activeRoute.Points.GetNodeIndex(_nodeCursor.ID) + 1];
+                nodeCursor = activeRoute.Points[activeRoute.Points.GetNodeIndex(nodeCursor.ID) + 1];
             }
 
             return false;
@@ -82,14 +82,14 @@ public class RoutePoint
 
     public bool GetAltitudeIsRestricted(out string displayValue)
     {
-        displayValue = Altitude.GetDisplayValue(RawAltitude, out var _isRestricted);
-        return _isRestricted;
+        displayValue = Altitude.GetDisplayValue(RawAltitude, out var isRestricted);
+        return isRestricted;
     }
 
     public bool GetSpeedIsRestricted(out string displayValue)
     {
-        displayValue = Speed.GetDisplayValue(RawSpeed, out var _isRestricted).ToString();
-        return _isRestricted;
+        displayValue = Speed.GetDisplayValue(RawSpeed, out var isRestricted).ToString();
+        return isRestricted;
     }
 
     internal RoutePoint Clone()
@@ -181,13 +181,13 @@ public class RoutePoint
 
         public int GetLinearValue(int rawSpeed, int acceptedAltitude)
         {
-            var _displayed = GetDisplayValue(rawSpeed, out var _);
+            var displayed = GetDisplayValue(rawSpeed, out var _);
             if (acceptedAltitude > 10000)
             {
-                return _displayed;
+                return displayed;
             }
 
-            return Mathf.Min(_displayed, 240);
+            return Mathf.Min(displayed, 240);
         }
     }
 
@@ -255,8 +255,8 @@ public class RoutePoint
 
         internal float GetAcceptedValue()
         {
-            var _flag = GetFlag(parsedAltitude);
-            switch (_flag)
+            var flag = GetFlag(parsedAltitude);
+            switch (flag)
             {
                 case AltitudeFlags.Exact:
                     return RestrictionExact;

@@ -20,7 +20,7 @@ public class Aircraft
     public PathPositionInfo RoutePathLocalization;
     public PathPositionInfo RejoinPathLocalization;
 
-    public PathLines tempPathLines { get; private set; }
+    public PathLines TempPathLines { get; private set; }
     public bool IsFreeFlight;
     public bool IsOnRoute = true;
 
@@ -41,12 +41,12 @@ public class Aircraft
                 return GetWalkedDistanceLeftOnSegment();
             }
 
-            var _nextViableNodeIndex = PositionVirtualNode.PassedNodeIndex + 1;
-            while (GameManager.Instance.ActiveRoute.Points[_nextViableNodeIndex].IsSkippable)
+            var nextViableNodeIndex = PositionVirtualNode.PassedNodeIndex + 1;
+            while (GameManager.Instance.ActiveRoute.Points[nextViableNodeIndex].IsSkippable)
             {
-                _nextViableNodeIndex++;
+                nextViableNodeIndex++;
             }
-            return (GameManager.Instance.ActiveRoute.GetCartesianPosition(_nextViableNodeIndex) -
+            return (GameManager.Instance.ActiveRoute.GetCartesianPosition(nextViableNodeIndex) -
                     PositionFreeOrOnRouteSegment).magnitude;
         }
     }
@@ -100,10 +100,10 @@ public class Aircraft
     void ChooseAutoRejoinMethod()
     {
         if (GameManager.Instance.ActiveRoute.FindFreeFlightCloseToPathExitScenario(RejoinDistance,
-            out var _futurePosition, out var _centerOfTurn,
+            out var futurePosition, out var centerOfTurn,
             out cachedExitPointFromHeading, out cachedExitSegmentOfHeadingRejoinIntersection))
         {
-            ComputeTempPathForCloseToPath(_futurePosition,_centerOfTurn);
+            ComputeTempPathForCloseToPath(futurePosition,centerOfTurn);
         }
         else
         {
@@ -116,29 +116,29 @@ public class Aircraft
     void ComputeTempPathForNextNode()
     {
 
-        GameManager.Instance.ActiveRoute.FindFreeFlightNextNodeExitScenario(out var _futurePosition, out var _centerOfTurn, out cachedExitPointFromHeading,
+        GameManager.Instance.ActiveRoute.FindFreeFlightNextNodeExitScenario(out var futurePosition, out var centerOfTurn, out cachedExitPointFromHeading,
             out cachedExitSegmentOfHeadingRejoinIntersection);
       
             //compute rejoin path
 
             Debug.Log("start LNAV - rejoin next node");
-            tempPathLines = new PathLines();
+            TempPathLines = new PathLines();
 
-            var _tempPoints = new RoutePoint[5];
-            var _lastPoint = RoutePoint.ConstructFromPosition(Vector2.zero, null);
-            _tempPoints[0] = _lastPoint;
-            _lastPoint = RoutePoint.ConstructFromPosition(PositionFreeOrOnCurvedPath, _lastPoint);
-            _tempPoints[1] = _lastPoint;
-            _lastPoint = RoutePoint.ConstructFromPosition(_futurePosition, _lastPoint);
-            _tempPoints[2] = _lastPoint;
-            _lastPoint = RoutePoint.ConstructFromPosition(_centerOfTurn, _lastPoint);
-            _tempPoints[3] = _lastPoint;
-            _lastPoint = RoutePoint.ConstructFromPosition(cachedExitPointFromHeading, _lastPoint);
-            _tempPoints[4] = _lastPoint;
+            var tempPoints = new RoutePoint[5];
+            var lastPoint = RoutePoint.ConstructFromPosition(Vector2.zero, null);
+            tempPoints[0] = lastPoint;
+            lastPoint = RoutePoint.ConstructFromPosition(PositionFreeOrOnCurvedPath, lastPoint);
+            tempPoints[1] = lastPoint;
+            lastPoint = RoutePoint.ConstructFromPosition(futurePosition, lastPoint);
+            tempPoints[2] = lastPoint;
+            lastPoint = RoutePoint.ConstructFromPosition(centerOfTurn, lastPoint);
+            tempPoints[3] = lastPoint;
+            lastPoint = RoutePoint.ConstructFromPosition(cachedExitPointFromHeading, lastPoint);
+            tempPoints[4] = lastPoint;
 
-            tempPathLines.ComputeSet(_tempPoints);
+            TempPathLines.ComputeSet(tempPoints);
 
-            GetFirstDestinationFromNode(tempPathLines, _tempPoints[1], _tempPoints,
+            GetFirstDestinationFromNode(TempPathLines, tempPoints[1], tempPoints,
                 out RejoinPathLocalization);
 
             IsFreeFlight = false;
@@ -147,23 +147,23 @@ public class Aircraft
     void ComputeTempPathForCloseToPath(Vector2 futurePosition, Vector2 centerOfTurn)
     {
         Debug.Log("start LNAV - rejoin close path");
-        tempPathLines = new PathLines();
+        TempPathLines = new PathLines();
 
-        var _tempPoints = new RoutePoint[5];
-        var _lastPoint = RoutePoint.ConstructFromPosition(Vector2.zero, null);
-        _tempPoints[0] = _lastPoint;
-        _lastPoint = RoutePoint.ConstructFromPosition(PositionFreeOrOnCurvedPath, _lastPoint);
-        _tempPoints[1] = _lastPoint;
-        _lastPoint = RoutePoint.ConstructFromPosition(futurePosition, _lastPoint);
-        _tempPoints[2] = _lastPoint;
-        _lastPoint = RoutePoint.ConstructFromPosition(centerOfTurn, _lastPoint);
-        _tempPoints[3] = _lastPoint;
-        _lastPoint = RoutePoint.ConstructFromPosition(cachedExitPointFromHeading, _lastPoint);
-        _tempPoints[4] = _lastPoint;
+        var tempPoints = new RoutePoint[5];
+        var lastPoint = RoutePoint.ConstructFromPosition(Vector2.zero, null);
+        tempPoints[0] = lastPoint;
+        lastPoint = RoutePoint.ConstructFromPosition(PositionFreeOrOnCurvedPath, lastPoint);
+        tempPoints[1] = lastPoint;
+        lastPoint = RoutePoint.ConstructFromPosition(futurePosition, lastPoint);
+        tempPoints[2] = lastPoint;
+        lastPoint = RoutePoint.ConstructFromPosition(centerOfTurn, lastPoint);
+        tempPoints[3] = lastPoint;
+        lastPoint = RoutePoint.ConstructFromPosition(cachedExitPointFromHeading, lastPoint);
+        tempPoints[4] = lastPoint;
 
-        tempPathLines.ComputeSet(_tempPoints);
+        TempPathLines.ComputeSet(tempPoints);
 
-        GetFirstDestinationFromNode(tempPathLines, _tempPoints[1], _tempPoints,
+        GetFirstDestinationFromNode(TempPathLines, tempPoints[1], tempPoints,
             out RejoinPathLocalization);
 
         IsFreeFlight = false;
@@ -173,27 +173,27 @@ public class Aircraft
     // when aircraft is in heading and user switches to LNav ( and the case is straight intersection with the path )
     void ComputeTempPathForDirectIntersection()
     {
-        if (GameManager.Instance.ActiveRoute.FindFreeFlightDirectExitScenario(out var _centerOfTurn, out cachedExitPointFromHeading,
+        if (GameManager.Instance.ActiveRoute.FindFreeFlightDirectExitScenario(out var centerOfTurn, out cachedExitPointFromHeading,
             out cachedExitSegmentOfHeadingRejoinIntersection))
         {
             //compute rejoin path
 
             Debug.Log("start LNAV - rejoin direct intersection");
-            tempPathLines = new PathLines();
+            TempPathLines = new PathLines();
 
-            var _tempPoints = new RoutePoint[4];
-            var _lastPoint = RoutePoint.ConstructFromPosition(Vector2.zero, null);
-            _tempPoints[0] = _lastPoint;
-            _lastPoint = RoutePoint.ConstructFromPosition(PositionFreeOrOnCurvedPath, _lastPoint);
-            _tempPoints[1] = _lastPoint;
-            _lastPoint = RoutePoint.ConstructFromPosition(_centerOfTurn, _lastPoint);
-            _tempPoints[2] = _lastPoint;
-            _lastPoint = RoutePoint.ConstructFromPosition(cachedExitPointFromHeading, _lastPoint);
-            _tempPoints[3] = _lastPoint;
+            var tempPoints = new RoutePoint[4];
+            var lastPoint = RoutePoint.ConstructFromPosition(Vector2.zero, null);
+            tempPoints[0] = lastPoint;
+            lastPoint = RoutePoint.ConstructFromPosition(PositionFreeOrOnCurvedPath, lastPoint);
+            tempPoints[1] = lastPoint;
+            lastPoint = RoutePoint.ConstructFromPosition(centerOfTurn, lastPoint);
+            tempPoints[2] = lastPoint;
+            lastPoint = RoutePoint.ConstructFromPosition(cachedExitPointFromHeading, lastPoint);
+            tempPoints[3] = lastPoint;
 
-            tempPathLines.ComputeSet(_tempPoints);
+            TempPathLines.ComputeSet(tempPoints);
 
-            GetFirstDestinationFromNode(tempPathLines, _tempPoints[1], _tempPoints,
+            GetFirstDestinationFromNode(TempPathLines, tempPoints[1], tempPoints,
                 out RejoinPathLocalization);
 
             IsFreeFlight = false;
@@ -254,15 +254,15 @@ public class Aircraft
         rejoined = false;
         ExecuteStepHeadingCorrection();
 
-        var _distanceLeftToNextVertex =
+        var distanceLeftToNextVertex =
             (RejoinPathLocalization.UnreachedVertexPosition - PositionFreeOrOnCurvedPath).magnitude;
 
-        var _goesOver = _distanceLeftToNextVertex <= FrameDistance;
+        var goesOver = distanceLeftToNextVertex <= FrameDistance;
 
         // while within current segment there will be no change on state - just advance
-        if (!_goesOver)
+        if (!goesOver)
         {
-            ExecuteLerpMove(RejoinPathLocalization, FrameDistance, _distanceLeftToNextVertex);
+            ExecuteLerpMove(RejoinPathLocalization, FrameDistance, distanceLeftToNextVertex);
             return;
         }
 
@@ -270,36 +270,36 @@ public class Aircraft
         // Will break motion in two: corner, after corner
 
         // move to the corner
-        ExecuteLerpMove(RejoinPathLocalization, _distanceLeftToNextVertex, _distanceLeftToNextVertex);
-        var _leftToAdvance = FrameDistance - _distanceLeftToNextVertex;
+        ExecuteLerpMove(RejoinPathLocalization, distanceLeftToNextVertex, distanceLeftToNextVertex);
+        var leftToAdvance = FrameDistance - distanceLeftToNextVertex;
 
         // advance to next point
-        if (tempPathLines.GetNextDestination(
+        if (TempPathLines.GetNextDestination(
             RejoinPathLocalization.CurrentNodeIndex,
-            RejoinPathLocalization.UnreachedVertexIndex, out var _newUnreachedPathLocalisation))
+            RejoinPathLocalization.UnreachedVertexIndex, out var newUnreachedPathLocalisation))
         {
             // reset walked distance if the line has increased
-            if (_newUnreachedPathLocalisation.CurrentNodeIndex != RejoinPathLocalization.CurrentNodeIndex)
+            if (newUnreachedPathLocalisation.CurrentNodeIndex != RejoinPathLocalization.CurrentNodeIndex)
             {
                 // is different than de other method here !
                 WalkedDistanceOnSegment = 0;
             }
 
-            RejoinPathLocalization = _newUnreachedPathLocalisation;
-            _distanceLeftToNextVertex =
+            RejoinPathLocalization = newUnreachedPathLocalisation;
+            distanceLeftToNextVertex =
                 (RejoinPathLocalization.UnreachedVertexPosition - PositionFreeOrOnCurvedPath).magnitude;
 
             // assume point heading
             TargetHeading = RejoinPathLocalization.HeadingBefore;
 
             // move the rest of the frameDistance
-            ExecuteLerpMove(RejoinPathLocalization, _leftToAdvance, _distanceLeftToNextVertex);
+            ExecuteLerpMove(RejoinPathLocalization, leftToAdvance, distanceLeftToNextVertex);
         }
         else
         {
             // no next segment exists on current path
             // rejoining path is ended - signal route path,
-            leftFrameDistanceToWalk = _leftToAdvance;
+            leftFrameDistanceToWalk = leftToAdvance;
             rejoined = true;
         }
     }
@@ -309,73 +309,73 @@ public class Aircraft
     {
         ExecuteStepHeadingCorrection();
 
-        var _distanceToWalk = exactDistance > -1
+        var distanceToWalk = exactDistance > -1
             ? exactDistance
             : FrameDistance;
 
-        var _distanceLeftToNextVertex =
+        var distanceLeftToNextVertex =
             (RoutePathLocalization.UnreachedVertexPosition - PositionFreeOrOnCurvedPath).magnitude;
 
-        var _goesOver = _distanceLeftToNextVertex <= _distanceToWalk;
+        var goesOver = distanceLeftToNextVertex <= distanceToWalk;
 
         // while within current segment there will be no change on state - just advance
-        if (!_goesOver)
+        if (!goesOver)
         {
-            ExecuteLerpMove(RoutePathLocalization, _distanceToWalk, _distanceLeftToNextVertex);
+            ExecuteLerpMove(RoutePathLocalization, distanceToWalk, distanceLeftToNextVertex);
             return;
         }
 
         // Will break motion in two: corner, after corner:
 
         // move to the corner
-        ExecuteLerpMove(RoutePathLocalization,_distanceLeftToNextVertex, _distanceLeftToNextVertex);
-        var _leftToAdvance = _distanceToWalk - _distanceLeftToNextVertex;
+        ExecuteLerpMove(RoutePathLocalization,distanceLeftToNextVertex, distanceLeftToNextVertex);
+        var leftToAdvance = distanceToWalk - distanceLeftToNextVertex;
 
         // advance to next point
         if (!GameManager.Instance.ActiveRoute.PathLines.GetNextDestination(
             RoutePathLocalization.CurrentNodeIndex,
-            RoutePathLocalization.UnreachedVertexIndex, out var _newUnreachedPositionInfo))
+            RoutePathLocalization.UnreachedVertexIndex, out var newUnreachedPositionInfo))
         {
             Debug.LogError("No destination could be found");
             return;
         }
 
         // reset walked distance if the line has increased
-        if (_newUnreachedPositionInfo.CurrentNodeIndex != RoutePathLocalization.CurrentNodeIndex)
+        if (newUnreachedPositionInfo.CurrentNodeIndex != RoutePathLocalization.CurrentNodeIndex)
         {
             WalkedDistanceOnSegment = 0;
-            if (GameManager.Instance.ActiveRoute.Points[_newUnreachedPositionInfo.CurrentNodeIndex]
+            if (GameManager.Instance.ActiveRoute.Points[newUnreachedPositionInfo.CurrentNodeIndex]
                 .IsAfterDiscontinuity)
             {
                 GameManager.Instance.SwitchThroughHeading();
             }
         }
 
-        RoutePathLocalization = _newUnreachedPositionInfo;
-        _distanceLeftToNextVertex = (RoutePathLocalization.UnreachedVertexPosition - PositionFreeOrOnCurvedPath).magnitude;
+        RoutePathLocalization = newUnreachedPositionInfo;
+        distanceLeftToNextVertex = (RoutePathLocalization.UnreachedVertexPosition - PositionFreeOrOnCurvedPath).magnitude;
 
         // assume point heading
         TargetHeading = RoutePathLocalization.HeadingBefore;
 
         // move the rest of the frameDistance
-        ExecuteLerpMove(RoutePathLocalization,_leftToAdvance, _distanceLeftToNextVertex);
+        ExecuteLerpMove(RoutePathLocalization,leftToAdvance, distanceLeftToNextVertex);
     }
 
     static void GetFirstDestinationFromNode(PathLines lines, RoutePoint node, RoutePoint[] nodes, out PathPositionInfo positionInfo)
     {
         lines.ResetOldPosition();
 
-        var _nodeIndex = nodes.GetNodeIndex(node.ID);
-        var _heading = node.Degrees; // Not sure if matters, but it's not correct
+        var nodeIndex = nodes.GetNodeIndex(node.ID);
+        var heading = node.Degrees; // Not sure if matters, but it's not correct
 
         positionInfo = new PathPositionInfo
         {
             // set destination as next node
-            CurrentNodeIndex = _nodeIndex + 1,
+            CurrentNodeIndex = nodeIndex + 1,
             UnreachedVertexIndex = 0,
-            HeadingBefore = _heading,
+            HeadingBefore = heading,
             // set position in the just passed node
-            UnreachedVertexPosition = lines.ComputedLines[_nodeIndex+1].Vertexes[0] 
+            UnreachedVertexPosition = lines.ComputedLines[nodeIndex+1].Vertexes[0] 
         };
     }
 
@@ -413,22 +413,22 @@ public class Aircraft
             }
             else
             {
-                AdvanceOnRejoinPath(out var _rejoined, out var _exitSegmentIndex, out var _leftFrameDistanceToWalk);
-                if (_rejoined)
+                AdvanceOnRejoinPath(out var rejoined, out var exitSegmentIndex, out var leftFrameDistanceToWalk);
+                if (rejoined)
                 {
                     IsOnRoute = true;
                     GameManager.Instance.ActiveRoute.OnPathRejoined();
 
-                    if (GameManager.Instance.ActiveRoute.TransferPathToRoute(cachedExitPointFromHeading, _exitSegmentIndex,
-                        out var _intersectionInfo,
-                        out var _walkedDistanceOnSegment))
+                    if (GameManager.Instance.ActiveRoute.TransferPathToRoute(cachedExitPointFromHeading, exitSegmentIndex,
+                        out var intersectionInfo,
+                        out var walkedDistanceOnSegment))
                     {
 
-                        RoutePathLocalization = _intersectionInfo;
-                        WalkedDistanceOnSegment = _walkedDistanceOnSegment;
+                        RoutePathLocalization = intersectionInfo;
+                        WalkedDistanceOnSegment = walkedDistanceOnSegment;
                     }
 
-                    AdvanceOnRoutePath(_leftFrameDistanceToWalk);
+                    AdvanceOnRoutePath(leftFrameDistanceToWalk);
                 }
             }
         }

@@ -6,37 +6,37 @@ public static class Extension
 {
     public static Vector3 ToDisplay(this Vector2 pos)
     {
-        var _finalPosition = new Vector2(pos.x, pos.y);
+        var finalPosition = new Vector2(pos.x, pos.y);
 
-        var _walkedPosition = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath;
-        var _walkedRotation = GameManager.Instance.Aircraft.Heading;
+        var walkedPosition = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath;
+        var walkedRotation = GameManager.Instance.Aircraft.Heading;
 
         switch (Drawer.Instance.Mode)
         {
             case DrawerMode.Map:
             case DrawerMode.Center:
                 // walked
-                _finalPosition -= _walkedPosition;
+                finalPosition -= walkedPosition;
                 // walked rotation
-                _finalPosition = _finalPosition.Rotate(_walkedRotation);
+                finalPosition = finalPosition.Rotate(walkedRotation);
                 break;
             case DrawerMode.Plan:
                 // centered
-                _finalPosition -= GameManager.Instance.ActiveRoute.PathLines.CenteredPosition;
+                finalPosition -= GameManager.Instance.ActiveRoute.PathLines.CenteredPosition;
                 break;
         }
 
         // zoom
-        _finalPosition *= Drawer.Instance.Zoom;
+        finalPosition *= Drawer.Instance.Zoom;
 
-        return _finalPosition;
+        return finalPosition;
     }
 
 
     public static void DespawnChildred<T>(Transform holder, LeanGameObjectPool pool) where T : MonoBehaviour
     {
-        var _lines = holder.GetComponentsInChildren<T>();
-        foreach (var l in _lines)
+        var lines = holder.GetComponentsInChildren<T>();
+        foreach (var l in lines)
         {
             pool.Despawn(l.gameObject);
         }

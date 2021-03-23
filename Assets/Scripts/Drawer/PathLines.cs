@@ -21,47 +21,47 @@ public class PathLines
             ComputedRays = new List<FixRay>();
         }
 
-        var _lastLine = new MarkLine(null);
-        _lastLine.InitBeginning();
-        var _currentIndex = 0;
+        var lastLine = new MarkLine(null);
+        lastLine.InitBeginning();
+        var currentIndex = 0;
 
-        while (_currentIndex < pointsArray.Length - 1)
+        while (currentIndex < pointsArray.Length - 1)
         {
-            if (!LinesComputer.GetNextLine(_lastLine, _currentIndex, pointsArray, out var _line, out _currentIndex))
+            if (!LinesComputer.GetNextLine(lastLine, currentIndex, pointsArray, out var line, out currentIndex))
             {
                 continue;
             }
 
-            if (_line == null)
+            if (line == null)
             {
                 continue;
             }
 
-            ComputedLines[_currentIndex] = _line;
-            _lastLine = _line;
+            ComputedLines[currentIndex] = line;
+            lastLine = line;
 
-            if (_line.LinkedPoint.IsCenter)
+            if (line.LinkedPoint.IsCenter)
             {
-                CenteredPosition = _line.EndPosition;
+                CenteredPosition = line.EndPosition;
             }
 
             if (hasOtherMarkers && FixedPoints != null)
             {
-                var _fixEntry = FixedPoints.Entries.FirstOrDefault(x => x.Name == _line.LinkedPoint.Name);
-                if (_fixEntry != null)
+                var fixEntry = FixedPoints.Entries.FirstOrDefault(x => x.Name == line.LinkedPoint.Name);
+                if (fixEntry != null)
                 {
-                    for (var i = 0; i < _fixEntry.Infos.Length; i++)
+                    for (var i = 0; i < fixEntry.Infos.Length; i++)
                     {
-                        if (Drawer.GetCircleFix(_line.LinkedPoint, _line.EndPosition, _fixEntry.Infos[i],
-                            out var _circleDraw))
+                        if (Drawer.GetCircleFix(line.LinkedPoint, line.EndPosition, fixEntry.Infos[i],
+                            out var circleDraw))
                         {
-                            ComputedCircles.Add(_circleDraw);
+                            ComputedCircles.Add(circleDraw);
                         }
 
-                        if (Drawer.GetRayFix(_line.LinkedPoint, _line.EndPosition, _fixEntry.Infos[i],
-                            out var _rayDraw))
+                        if (Drawer.GetRayFix(line.LinkedPoint, line.EndPosition, fixEntry.Infos[i],
+                            out var rayDraw))
                         {
-                            ComputedRays.Add(_rayDraw);
+                            ComputedRays.Add(rayDraw);
                         }
 
                     }
@@ -102,18 +102,18 @@ public class PathLines
     /// <returns></returns>
     public bool GetNextDestination( int currentLineIndex, int currentPointIndex, out PathPositionInfo positionInfo)
     {
-        if (GetNextComputedVertex(ComputedLines, currentLineIndex, currentPointIndex, out var _nextPoint, out var _nextLine))
+        if (GetNextComputedVertex(ComputedLines, currentLineIndex, currentPointIndex, out var nextPoint, out var nextLine))
         {
-            var _vertex = ComputedLines[_nextLine].Vertexes[_nextPoint];
-            var _heading = Geometry.GetHeadingOfDirection(_vertex - oldPositionVertex);
-            oldPositionVertex = _vertex;
+            var vertex = ComputedLines[nextLine].Vertexes[nextPoint];
+            var heading = Geometry.GetHeadingOfDirection(vertex - oldPositionVertex);
+            oldPositionVertex = vertex;
             
             positionInfo = new PathPositionInfo
             {
-                CurrentNodeIndex = _nextLine,
-                UnreachedVertexIndex = _nextPoint,
-                HeadingBefore = _heading,
-                UnreachedVertexPosition = _vertex.To2DXY()
+                CurrentNodeIndex = nextLine,
+                UnreachedVertexIndex = nextPoint,
+                HeadingBefore = heading,
+                UnreachedVertexPosition = vertex.To2DXY()
             };
             return true;
         }
@@ -145,16 +145,16 @@ public class PathLines
 
     public bool FindClosestVertexToDistanceOnLineActive(float distance, int lineIndex, out int vertexIndex, out Vector2 vertexPosition)
     {
-        var _line = ComputedLines[lineIndex];
-        var _accumulated = 0f;
-        for (var i = 1; i < _line.Vertexes.Length; i++)
+        var line = ComputedLines[lineIndex];
+        var accumulated = 0f;
+        for (var i = 1; i < line.Vertexes.Length; i++)
         {
-            _accumulated += (_line.Vertexes[i] - _line.Vertexes[i - 1]).magnitude;
+            accumulated += (line.Vertexes[i] - line.Vertexes[i - 1]).magnitude;
 
-            if (_accumulated > distance)
+            if (accumulated > distance)
             {
                 vertexIndex = i;
-                vertexPosition = _line.Vertexes[i];
+                vertexPosition = line.Vertexes[i];
                 return true;
             }
         }

@@ -19,17 +19,17 @@ public class MarkLine : Line
 
     protected void ComputeDistanceForPoint(int pointIndex)
     {
-        var _point = Vertexes[pointIndex];
+        var point = Vertexes[pointIndex];
         if (ComputedVertexLength == -1)
         {
-            lastPoint = _point;
+            lastPoint = point;
             ComputedVertexLength = 0;
             return;
         }
-        var _nextSegment = (_point - lastPoint).magnitude;
+        var nextSegment = (point - lastPoint).magnitude;
 
-        ComputedVertexLength += _nextSegment; // todo may take resources
-        lastPoint = _point;
+        ComputedVertexLength += nextSegment; // todo may take resources
+        lastPoint = point;
     }
 
     public bool Init(Vector3 from, Vector3 offsetedFrom, RoutePoint nextPoint)
@@ -39,20 +39,20 @@ public class MarkLine : Line
         StartOffsetPosition = offsetedFrom;
         StartCurvePosition = EndPosition = EndOffsetPosition = Geometry.GetNextPosition(from, nextPoint.Distance, nextPoint.Degrees);
 
-        var _lineLength = (EndPosition - StartOffsetPosition).magnitude;
+        var lineLength = (EndPosition - StartOffsetPosition).magnitude;
 
-        if (_lineLength == 0)
+        if (lineLength == 0)
         {
             Debug.LogError("line has length 0");
             return false;
         }
 
-        var _points = Mathf.CeilToInt(_lineLength / UnitLength);
-        Vertexes = new Vector3[_points + 1];
+        var points = Mathf.CeilToInt(lineLength / UnitLength);
+        Vertexes = new Vector3[points + 1];
 
-        for (var i = 0; i <= _points; i++)
+        for (var i = 0; i <= points; i++)
         {
-            Vertexes[i] = Vector3.Lerp(StartOffsetPosition, EndPosition, UnitLength * i / _lineLength);
+            Vertexes[i] = Vector3.Lerp(StartOffsetPosition, EndPosition, UnitLength * i / lineLength);
             ComputeDistanceForPoint(i);
         }
 

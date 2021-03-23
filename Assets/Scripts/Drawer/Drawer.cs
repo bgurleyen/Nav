@@ -174,9 +174,9 @@ public class Drawer : Singleton<Drawer>
         freeFlightPivot.gameObject.SetActive(GameManager.Instance.Aircraft.IsFreeFlight);
         bananaIndicatorPivot.SetLocalY(Calculator.Instance.GetBananaPosition);
 
-        if (GameManager.Instance.Aircraft.tempPathLines != null)
+        if (GameManager.Instance.Aircraft.TempPathLines != null)
         {
-            DisplaySet(GameManager.Instance.Aircraft.tempPathLines.ComputedLines,  LinesType.Rejoin);
+            DisplaySet(GameManager.Instance.Aircraft.TempPathLines.ComputedLines,  LinesType.Rejoin);
         }
         
         DisplayOtherTraffic();
@@ -209,25 +209,25 @@ public class Drawer : Singleton<Drawer>
 
     void DisplayOtherTraffic()
     {
-        var _positions = Move.Instance.ACPositions;
-        var _texts = Move.Instance.ACTexts;
+        var positions = Move.Instance.ACPositions;
+        var texts = Move.Instance.ACTexts;
 
-        foreach (var _key in _positions.Keys)
+        foreach (var key in positions.Keys)
         {
             // Debug.Log(_positions[_key]);
-            var _drawer = otherAircraftsPool.Spawn(Vector3.zero, Quaternion.identity, dynamicHolderOtheriarcrafts)
+            var drawer = otherAircraftsPool.Spawn(Vector3.zero, Quaternion.identity, dynamicHolderOtheriarcrafts)
                 .GetComponent<OtherAircrafIndicator>();
-            _drawer.name = _key;
-            _drawer.Init(_texts[_key], Color.yellow);
-            _drawer.transform.localPosition = _positions[_key].ToDisplay();
+            drawer.name = key;
+            drawer.Init(texts[key], Color.yellow);
+            drawer.transform.localPosition = positions[key].ToDisplay();
         }
 
         // demo
-        var _objective = otherAircraftsPool.Spawn(Vector3.zero, Quaternion.identity, dynamicHolderOtheriarcrafts)
+        var objective = otherAircraftsPool.Spawn(Vector3.zero, Quaternion.identity, dynamicHolderOtheriarcrafts)
             .GetComponent<OtherAircrafIndicator>();
-        _objective.name = "My objective";
-        _objective.Init("*", Color.red);
-        _objective.transform.localPosition = new Vector2(100, 100).ToDisplay();
+        objective.name = "My objective";
+        objective.Init("*", Color.red);
+        objective.transform.localPosition = new Vector2(100, 100).ToDisplay();
     }
 
     void DisplaySet(IReadOnlyList<MarkLine> lines, LinesType linesType)
@@ -237,96 +237,96 @@ public class Drawer : Singleton<Drawer>
             return;
         }
 
-        LeanGameObjectPool _pool;
-        Transform _holder;
+        LeanGameObjectPool pool;
+        Transform holder;
 
         switch (linesType)
         {
             case LinesType.Mod:
-                _pool = linesPoolMod;
-                _holder = dynamicHolderMod;
+                pool = linesPoolMod;
+                holder = dynamicHolderMod;
                 break;
             case LinesType.Active:
             case LinesType.Rejoin:
-                _pool = linesPool;
-                _holder = dynamicHolder;
+                pool = linesPool;
+                holder = dynamicHolder;
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(linesType), linesType, null);
         }
 
-        var _aircraft = GameManager.Instance.Aircraft;
-        var _rejoinSegmentIndex = 0;
-        var _rejoinPoint = Vector2.zero;
-        if (_aircraft.IsRejoining)
+        var aircraft = GameManager.Instance.Aircraft;
+        var rejoinSegmentIndex = 0;
+        var rejoinPoint = Vector2.zero;
+        if (aircraft.IsRejoining)
         {
-            _rejoinSegmentIndex = _aircraft.CachedExitSegmentOfHeadingRejoinIntersection;
-            _rejoinPoint = _aircraft.CachedExitPointFromHeading;
+            rejoinSegmentIndex = aircraft.CachedExitSegmentOfHeadingRejoinIntersection;
+            rejoinPoint = aircraft.CachedExitPointFromHeading;
         }
 
         for (var i = 0; i < lines.Count; i++)
         {
-            var _hiddenLabel = false;
-            var _hiddenLine = false;
-            var _fromPointIndex = 0;
-            var _line = lines[i];
+            var hiddenLabel = false;
+            var hiddenLine = false;
+            var fromPointIndex = 0;
+            var line = lines[i];
 
-            if (_line == null)
+            if (line == null)
             {
                 continue;
             }
 
-            if (linesType == LinesType.Active && _aircraft.IsRejoining)
+            if (linesType == LinesType.Active && aircraft.IsRejoining)
             {
-                if (i < _rejoinSegmentIndex )
+                if (i < rejoinSegmentIndex )
                 {
-                    _hiddenLine = true;
+                    hiddenLine = true;
                 }
-                else if (i == _rejoinSegmentIndex)
+                else if (i == rejoinSegmentIndex)
                 {
                     // find intersection vertex index of generated line with rejoin line.. 
 
 
-                    if (_line.Vertexes.Length > 4)
+                    if (line.Vertexes.Length > 4)
                     {
-                        var _dist = (_line.Vertexes[0].To2DXY() - _rejoinPoint).sqrMagnitude;
+                        var dist = (line.Vertexes[0].To2DXY() - rejoinPoint).sqrMagnitude;
 
-                        for (int p = 1; p < _line.Vertexes.Length; p++)
+                        for (int p = 1; p < line.Vertexes.Length; p++)
                         {
-                            var _nextDist = (_line.Vertexes[p].To2DXY() - _rejoinPoint).sqrMagnitude;
-                            if (_nextDist > _dist)
+                            var nextDist = (line.Vertexes[p].To2DXY() - rejoinPoint).sqrMagnitude;
+                            if (nextDist > dist)
                             {
-                                _fromPointIndex = p - 1;
+                                fromPointIndex = p - 1;
                                 break;
                             }
 
-                            _dist = _nextDist;
+                            dist = nextDist;
                         }
                     }
                 }
             }
 
-            var _point = _line.LinkedPoint;
+            var point = line.LinkedPoint;
 
-            var _drawer = _pool.Spawn(Vector3.zero, Quaternion.identity, _holder).GetComponent<LineDrawer>();
-            _drawer.name = _line.GetName + " " + _point.Name;
+            var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<LineDrawer>();
+            drawer.name = line.GetName + " " + point.Name;
 
-            if (linesType == LinesType.Mod && GameManager.Instance.ActiveRoute.GetPoint(_point.ID, out var _activePoint))
+            if (linesType == LinesType.Mod && GameManager.Instance.ActiveRoute.GetPoint(point.ID, out var activePoint))
             {
                 // @#$ error at cartesian position
-                if (RoutePoint.HaveSamePosition(_activePoint, _point))
+                if (RoutePoint.HaveSamePosition(activePoint, point))
                 {
-                    _hiddenLabel = true;
+                    hiddenLabel = true;
                 }
                 else
                 {
-                    Debug.LogWarning(_activePoint.Name + " " +
-                                     (_activePoint.CartesianPosition - _point.CartesianPosition).magnitude);
+                    Debug.LogWarning(activePoint.Name + " " +
+                                     (activePoint.CartesianPosition - point.CartesianPosition).magnitude);
                 }
             }
 
             
-            _drawer.Display(_line, _point, _hiddenLabel || linesType == LinesType.Rejoin , _hiddenLine,_fromPointIndex);
+            drawer.Display(line, point, hiddenLabel || linesType == LinesType.Rejoin , hiddenLine,fromPointIndex);
         }
     }
     
@@ -337,47 +337,47 @@ public class Drawer : Singleton<Drawer>
 
     void DisplayFixCircles()
     {
-        var _circles = GameManager.Instance.ActiveRoute.PathLines.ComputedCircles;
-        var _pool = circlePool;
-        var _holder = dynamicHolderCircles;
+        var circles = GameManager.Instance.ActiveRoute.PathLines.ComputedCircles;
+        var pool = circlePool;
+        var holder = dynamicHolderCircles;
 
-        for (var i = 0; i < _circles.Count; i++)
+        for (var i = 0; i < circles.Count; i++)
         {
-            var _line = _circles[i];
+            var line = circles[i];
 
-            if (_line == null)
+            if (line == null)
             {
                 continue;
             }
 
-            var _point = _line.LinkedPoint;
+            var point = line.LinkedPoint;
 
-            var _drawer = _pool.Spawn(Vector3.zero, Quaternion.identity, _holder).GetComponent<FixedCircleDrawer>();
-            _drawer.name = _line.GetName + " " + _point.Name;
-            _drawer.Display(_line);
+            var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<FixedCircleDrawer>();
+            drawer.name = line.GetName + " " + point.Name;
+            drawer.Display(line);
         }
     }
 
     void DisplayFixRays()
     {
-        var _rays = GameManager.Instance.ActiveRoute.PathLines.ComputedRays;
-        var _pool = rayPool;
-        var _holder = dynamicHolderRays;
+        var rays = GameManager.Instance.ActiveRoute.PathLines.ComputedRays;
+        var pool = rayPool;
+        var holder = dynamicHolderRays;
 
-        for (var i = 0; i < _rays.Count; i++)
+        for (var i = 0; i < rays.Count; i++)
         {
-            var _ray = _rays[i];
+            var ray = rays[i];
 
-            if (_ray == null)
+            if (ray == null)
             {
                 continue;
             }
 
-            var _point = _ray.LinkedPoint;
+            var point = ray.LinkedPoint;
 
-            var _drawer = _pool.Spawn(Vector3.zero, Quaternion.identity, _holder).GetComponent<FixedRayDrawer>();
-            _drawer.name = _ray.GetName + " " + _point.Name;
-            _drawer.Display(_ray);
+            var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<FixedRayDrawer>();
+            drawer.name = ray.GetName + " " + point.Name;
+            drawer.Display(ray);
         }
     }
 
@@ -388,14 +388,14 @@ public class Drawer : Singleton<Drawer>
     void OnDrawGizmos()
     {
         Gizmos.color = Color.green;
-        var _up = pivot.up;
-        Gizmos.DrawSphere(_up * mapReferenceLength80, 0.05f);
+        var up = pivot.up;
+        Gizmos.DrawSphere(up * mapReferenceLength80, 0.05f);
 
         Gizmos.color = Color.blue;
-        Gizmos.DrawWireSphere(_up * planReferenceLength80, 0.065f);
+        Gizmos.DrawWireSphere(up * planReferenceLength80, 0.065f);
 
         Gizmos.color = Color.cyan;
-        Gizmos.DrawWireSphere(_up * planReferenceLength80 / 2f, 0.025f);
+        Gizmos.DrawWireSphere(up * planReferenceLength80 / 2f, 0.025f);
 
 
         if (GameManager.Instance.ActiveRoute?.PathLines?.ComputedLines == null)

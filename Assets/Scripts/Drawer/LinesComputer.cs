@@ -16,54 +16,54 @@
             }
 
             toDataPointIndex = fromDataPointIndex + 1;
-            var _nextPoint = points[toDataPointIndex];
+            var nextPoint = points[toDataPointIndex];
 
-            var _forceEndStraight = true;
+            var forceEndStraight = true;
 
             if (toDataPointIndex + 1 < points.Length)
             {
-                _forceEndStraight = points[toDataPointIndex + 1].IsAfterDiscontinuity;
+                forceEndStraight = points[toDataPointIndex + 1].IsAfterDiscontinuity;
             }
 
-            RoutePoint _notToCloseSecondPoint = null;
+            RoutePoint notToCloseSecondPoint = null;
 
             // there are no more points to create a curve to ( in which case continue with straight line on current segment )
             if (toDataPointIndex != points.Length - 1)
             {
-                var _secondPoint = points[toDataPointIndex + 1];
-                if (_secondPoint.Distance > 0.5f)
+                var secondPoint = points[toDataPointIndex + 1];
+                if (secondPoint.Distance > 0.5f)
                 {
-                    _notToCloseSecondPoint = _secondPoint;
+                    notToCloseSecondPoint = secondPoint;
                 }
             }
 
-            return ComputeLine(lastLine, out line, _nextPoint, _notToCloseSecondPoint, _forceEndStraight);
+            return ComputeLine(lastLine, out line, nextPoint, notToCloseSecondPoint, forceEndStraight);
         }
 
         public static bool ComputeLine(MarkLine lastLine, out MarkLine line, RoutePoint nextPoint,
             RoutePoint notTooCloseSecondPoint = null, bool forceEndStraight = false)
         {
-            float _angleBetween = 180;
+            float angleBetween = 180;
 
             // there are no more points to create a curve to ( in which case continue with straight line on current segment )
             if (notTooCloseSecondPoint != null)
             {
-                _angleBetween = Geometry.AngleBetweenNodes(nextPoint.Degrees, notTooCloseSecondPoint.Degrees);
+                angleBetween = Geometry.AngleBetweenNodes(nextPoint.Degrees, notTooCloseSecondPoint.Degrees);
             }
 
-            var _startsStraight = lastLine.LinkedPoint != null &&
+            var startsStraight = lastLine.LinkedPoint != null &&
                                   (lastLine.LinkedPoint.IsAfterDiscontinuity || lastLine.LinkedPoint.IsHiddenLine);
 
-            var _endsStraight = forceEndStraight;
+            var endsStraight = forceEndStraight;
 
-            var _lastEndOffset = lastLine.LinkedPoint != null && _startsStraight
+            var lastEndOffset = lastLine.LinkedPoint != null && startsStraight
                 ? lastLine.EndPosition
                 : lastLine.EndOffsetPosition;
 
-            if (Math.Abs(_angleBetween - 180) < 0.2f || _endsStraight)
+            if (Math.Abs(angleBetween - 180) < 0.2f || endsStraight)
             {
                 // straight line  
-                if (!GenerateLine(nextPoint, lastLine.EndPosition, _lastEndOffset, out line))
+                if (!GenerateLine(nextPoint, lastLine.EndPosition, lastEndOffset, out line))
                 {
                     return false;
                 }
@@ -71,21 +71,21 @@
             else
             {
                 // try relaxed turn. Update: don't use relaxed as the radius can become very big, and there is no advantage to it. Just go with regular curve
-                if (true || !GenerateCurve(Drawer.RelaxedRadius, nextPoint, notTooCloseSecondPoint, _angleBetween,
+                if (true || !GenerateCurve(Drawer.RelaxedRadius, nextPoint, notTooCloseSecondPoint, angleBetween,
                     lastLine.EndPosition,
-                    _lastEndOffset,
+                    lastEndOffset,
                     out line))
                 {
-                    if (!GenerateCurve(Drawer.GetMinRadius, nextPoint, notTooCloseSecondPoint, _angleBetween,
+                    if (!GenerateCurve(Drawer.GetMinRadius, nextPoint, notTooCloseSecondPoint, angleBetween,
                         lastLine.EndPosition,
-                        _lastEndOffset,
+                        lastEndOffset,
                         out line))
                     {
                         GenerateDoubleCurve(Drawer.GetMinRadius, Drawer.RelaxedRadius, nextPoint,
                             notTooCloseSecondPoint,
-                            _angleBetween,
+                            angleBetween,
                             lastLine.EndPosition,
-                            _lastEndOffset, out line);
+                            lastEndOffset, out line);
                     }
                 }
             }
@@ -103,13 +103,13 @@
         static bool GenerateCurve(float chosenRadius, RoutePoint nextPoint, RoutePoint secondPoint, float angleBetween,
             Vector3 lastEndPosition, Vector3 lastEndOffset, out MarkLine line)
         {
-            var _tangentToMiddle = Line.GetTangentToMiddle(chosenRadius, angleBetween);
+            var tangentToMiddle = Line.GetTangentToMiddle(chosenRadius, angleBetween);
 
-            if (_tangentToMiddle <= nextPoint.Distance && _tangentToMiddle <= secondPoint.Distance &&
-                _tangentToMiddle <= chosenRadius)
+            if (tangentToMiddle <= nextPoint.Distance && tangentToMiddle <= secondPoint.Distance &&
+                tangentToMiddle <= chosenRadius)
             {
                 var l = new Curve(nextPoint);
-                l.Init(lastEndPosition, lastEndOffset, nextPoint, secondPoint, _tangentToMiddle, chosenRadius);
+                l.Init(lastEndPosition, lastEndOffset, nextPoint, secondPoint, tangentToMiddle, chosenRadius);
                 line = l;
                 return true;
             }
