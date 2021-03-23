@@ -664,7 +664,7 @@ public class RouteScriptableObject : ScriptableObject
             // also the position need to be forward with the threshold in the heading direction
 
 
-            // there is now from node to make cu curve correctly so for now is just not added any forward offset
+            // there is no 'from node' to make the curve correctly so for now is just not added any forward offset
             // var _nextFuturePosition = Geometry.GetNextPosition(Aircraft.PositionFreeOrOnSegment, FORWARD_THRESHOLD, Aircraft.Heading);
             var nextFuturePosition = Aircraft.PositionFreeOrOnRouteSegment;
             var routeNextNode = Points[1];

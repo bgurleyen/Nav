@@ -43,19 +43,19 @@ public class RoutePoint
 
     public static RoutePoint ConstructFromPosition(Vector2 position, RoutePoint previousPoint)
     {
-        var _rp = new RoutePoint{ CartesianPosition = position, ID = 0};
+        var rp = new RoutePoint{ CartesianPosition = position, ID = 0};
 
         if (previousPoint == null)
         {
-            _rp.Distance = 0;
-            return _rp;
+            rp.Distance = 0;
+            return rp;
         }
 
-        _rp.Distance = Vector2.Distance(position, previousPoint.CartesianPosition);
-        _rp.RawDegrees = Geometry.AngleOfPosition(position, previousPoint.CartesianPosition);
-        _rp.ID = previousPoint.ID + 1;
+        rp.Distance = Vector2.Distance(position, previousPoint.CartesianPosition);
+        rp.RawDegrees = Geometry.AngleOfPosition(position, previousPoint.CartesianPosition);
+        rp.ID = previousPoint.ID + 1;
 
-        return _rp;
+        return rp;
     }
 
     public bool GetIsDisplayCurrent
