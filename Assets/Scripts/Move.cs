@@ -99,7 +99,7 @@ public class Move : Singleton<Move>
     Vector2 pointPos(int pt)
     {
         int ptCount = virtualPoints[Level].VirtualPointsItems.Length;
-        return  pt < 50 ? Route.Points[pt].CartesianPosition :
+        return  pt < 50 ? Route.GetCartesianPosition(pt) :
                 pt < 90 ? VirtualPtsPos[pt - 50] :
                VirtualPtsPos[ptCount-(94 - pt)];
     }
