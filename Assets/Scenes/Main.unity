@@ -648,9 +648,9 @@ MonoBehaviour:
   VSline: {fileID: 984840915}
   SpeedTrend: {fileID: 416818898}
   Progres: {fileID: 1324111199}
-  FlapNeedle: {fileID: 0}
-  LGlever: {fileID: 0}
-  SBlever: {fileID: 0}
+  FlapNeedle: {fileID: 1755100001}
+  LGlever: {fileID: 1879961657}
+  SBlever: {fileID: 82292741}
 --- !u!1001 &39664486
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1466,6 +1466,12 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 671ffbde7c793b94487d4641a78a404d, type: 3}
+--- !u!1 &82292741 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5427751397200540958, guid: e40b18ac6ecd1a543b3be57ab104646a,
+    type: 3}
+  m_PrefabInstance: {fileID: 1204149217}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &88885601 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2921245751565504503, guid: 7c1dadd19af2dec48bbe5ab1bd92c1f6,
@@ -17780,6 +17786,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: VS Drum
       objectReference: {fileID: 0}
+    - target: {fileID: 486636804391799252, guid: e40b18ac6ecd1a543b3be57ab104646a,
+        type: 3}
+      propertyPath: m_Name
+      value: LGlever
+      objectReference: {fileID: 0}
     - target: {fileID: 677846970352704275, guid: e40b18ac6ecd1a543b3be57ab104646a,
         type: 3}
       propertyPath: m_Name
@@ -18095,6 +18106,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: MCP Base
       objectReference: {fileID: 0}
+    - target: {fileID: 5427751397200540958, guid: e40b18ac6ecd1a543b3be57ab104646a,
+        type: 3}
+      propertyPath: m_Name
+      value: SBlever
+      objectReference: {fileID: 0}
     - target: {fileID: 5592952950366704315, guid: e40b18ac6ecd1a543b3be57ab104646a,
         type: 3}
       propertyPath: m_Name
@@ -18179,6 +18195,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalPosition.x
       value: 1.321
+      objectReference: {fileID: 0}
+    - target: {fileID: 7016155457673310524, guid: e40b18ac6ecd1a543b3be57ab104646a,
+        type: 3}
+      propertyPath: m_Name
+      value: flapNeedle
       objectReference: {fileID: 0}
     - target: {fileID: 7065563781300082973, guid: e40b18ac6ecd1a543b3be57ab104646a,
         type: 3}
@@ -25137,6 +25158,12 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1746069871}
   m_CullTransparentMesh: 0
+--- !u!1 &1755100001 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 7016155457673310524, guid: e40b18ac6ecd1a543b3be57ab104646a,
+    type: 3}
+  m_PrefabInstance: {fileID: 1204149217}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1770456587
 GameObject:
   m_ObjectHideFlags: 0
@@ -26985,6 +27012,12 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 671ffbde7c793b94487d4641a78a404d, type: 3}
+--- !u!1 &1879961657 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 486636804391799252, guid: e40b18ac6ecd1a543b3be57ab104646a,
+    type: 3}
+  m_PrefabInstance: {fileID: 1204149217}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1901066267
 GameObject:
   m_ObjectHideFlags: 0
