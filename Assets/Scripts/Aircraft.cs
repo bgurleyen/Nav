@@ -15,7 +15,10 @@ public class Aircraft
     
     public Vector2 PositionFreeOrOnRouteSegment { get; private set; }
     
-    public float Heading { get; private set; } // Degrees based rotation
+    /// <summary>
+    /// If used for geometry should be used with '-' . see other places
+    /// </summary>
+    public float HeadingDegrees { get; private set; } 
     public float TargetHeading { get; private set; }
     public float WalkedDistanceOnSegment { get; private set; }
     public PathPositionInfo RoutePathLocalization;
@@ -52,7 +55,7 @@ public class Aircraft
         }
     }
 
-    Vector2 CurrentDirection => Geometry.GetDirectionFromHeading(Heading);
+    Vector2 CurrentDirection => Geometry.GetDirectionFromHeading(HeadingDegrees);
     float FrameDistance => speed * DeltaTime * Calculator.Acceleration(); //change
 
     float speed;
@@ -66,7 +69,7 @@ public class Aircraft
 
         if (GameManager.Instance.ActiveRoute.PathLines.GetFirstDestination(out RoutePathLocalization))
         {
-            Heading = RoutePathLocalization.HeadingBefore;
+            HeadingDegrees = RoutePathLocalization.HeadingBefore;
         }
         else
         {
@@ -237,9 +240,9 @@ public class Aircraft
 
     void ExecuteStepHeadingCorrection()
     {
-        if (Math.Abs(TargetHeading - Heading) > 0.01f)
+        if (Math.Abs(TargetHeading - HeadingDegrees) > 0.01f)
         {
-            Heading = Mathf.MoveTowardsAngle(Heading, TargetHeading, MaxTurningSpeed);
+            HeadingDegrees = Mathf.MoveTowardsAngle(HeadingDegrees, TargetHeading, MaxTurningSpeed);
         }
     }
 

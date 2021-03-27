@@ -44,88 +44,88 @@ public class DisplayNodesController
 
     public NodeSelection GetNodeInfoAtLineIndex(int lineIndex, int currentPage)
     {
-        var _totalLineIndex = lineIndex + currentPage * nodesPerPage;
+        var totalLineIndex = lineIndex + currentPage * nodesPerPage;
 
         // when an insert have been made with the future position node and has been executed. happening until passing the new position
-        var _positionIsTemporaryAhead = ActiveRoute.Points[PositionVirtualNode.NextNodeIndex].IsPositionNode;
+        var positionIsTemporaryAhead = ActiveRoute.Points[PositionVirtualNode.NextNodeIndex].IsPositionNode;
 
-        var _thisIsDiscontinuity = false;
-        var _thisIsAfterDiscontinuity = false;
+        var thisIsDiscontinuity = false;
+        var thisIsAfterDiscontinuity = false;
 
-        var _linkedIndex = PositionVirtualNode.NextNodeIndex + (_positionIsTemporaryAhead ? 1 : 0);
-        var _pointIsValid = false;
-        RoutePoint _linkedPoint = null;
+        var linkedIndex = PositionVirtualNode.NextNodeIndex + (positionIsTemporaryAhead ? 1 : 0);
+        var pointIsValid = false;
+        RoutePoint linkedPoint = null;
 
-        for (var i = 0; i <= _totalLineIndex; i++)
+        for (var i = 0; i <= totalLineIndex; i++)
         {
-            _pointIsValid = VisibleRoute.GetPointAt(_linkedIndex, out _linkedPoint);
+            pointIsValid = VisibleRoute.GetPointAt(linkedIndex, out linkedPoint);
 
-            var _handled = false;
-            var _canIncrement = false;
-            while (!_handled)
+            var handled = false;
+            var canIncrement = false;
+            while (!handled)
             {
-                while (_pointIsValid && _linkedPoint.IsSkippable)
+                while (pointIsValid && linkedPoint.IsSkippable)
                 {
-                    _pointIsValid = VisibleRoute.GetPointAt(++_linkedIndex, out _linkedPoint);
+                    pointIsValid = VisibleRoute.GetPointAt(++linkedIndex, out linkedPoint);
                 }
 
-                if (!_pointIsValid)
+                if (!pointIsValid)
                 {
                     break;
                 }
 
 
-                if (_linkedPoint.IsAfterDiscontinuity)
+                if (linkedPoint.IsAfterDiscontinuity)
                 {
-                    if (!_thisIsDiscontinuity)
+                    if (!thisIsDiscontinuity)
                     {
-                        _thisIsDiscontinuity = true;
-                        _handled = true;
+                        thisIsDiscontinuity = true;
+                        handled = true;
                     }
-                    else if (!_thisIsAfterDiscontinuity)
+                    else if (!thisIsAfterDiscontinuity)
                     {
-                        _thisIsAfterDiscontinuity = true;
-                        _handled = true;
+                        thisIsAfterDiscontinuity = true;
+                        handled = true;
                     }
                     else
                     {
-                        _thisIsDiscontinuity = false;
-                        _thisIsAfterDiscontinuity = false;
-                        _pointIsValid = VisibleRoute.GetPointAt(++_linkedIndex, out _linkedPoint);
+                        thisIsDiscontinuity = false;
+                        thisIsAfterDiscontinuity = false;
+                        pointIsValid = VisibleRoute.GetPointAt(++linkedIndex, out linkedPoint);
                     }
                 }
                 else
                 {
-                    _thisIsDiscontinuity = false;
-                    _thisIsAfterDiscontinuity = false;
-                    _handled = true;
-                    _canIncrement = true;
+                    thisIsDiscontinuity = false;
+                    thisIsAfterDiscontinuity = false;
+                    handled = true;
+                    canIncrement = true;
                 }
             }
 
-            if (_canIncrement)
+            if (canIncrement)
             {
-                if (i < _totalLineIndex)
+                if (i < totalLineIndex)
                 {
-                    _linkedIndex++;
+                    linkedIndex++;
                 }
             }
         }
 
 
-        var _linkedId = _pointIsValid ? _linkedPoint.ID : -1;
+        var linkedId = pointIsValid ? linkedPoint.ID : -1;
 
-        var _isStartingPoint = _linkedIndex == PositionVirtualNode.NextNodeIndex;
+        var isStartingPoint = linkedIndex == PositionVirtualNode.NextNodeIndex;
 
         // Debug.Log(
         //     $"_linkedIndex:{_linkedIndex}  index:{_totalLineIndex} ");
 
         return new NodeSelection
         {
-            LinkedId = _linkedId,
-            IsAddedDiscontinuity = _thisIsDiscontinuity && !_thisIsAfterDiscontinuity,
-            IsEmpty = !_pointIsValid,
-            IsStartingPoint = _isStartingPoint
+            LinkedId = linkedId,
+            IsAddedDiscontinuity = thisIsDiscontinuity && !thisIsAfterDiscontinuity,
+            IsEmpty = !pointIsValid,
+            IsStartingPoint = isStartingPoint
         }; // not showing the first point as is NOW
     }
 }

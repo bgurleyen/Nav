@@ -42,7 +42,7 @@ public class GameManager : Singleton<GameManager>
         Drawer.Instance.Display();
         Drawer.Instance.ShowMapMode();
 
-        Aircraft.ResetOnActiveSet(270, 21600);
+        Aircraft.ResetOnActiveSet(170, 21600);
     }
     
     

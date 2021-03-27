@@ -186,10 +186,10 @@ public class Drawer : Singleton<Drawer>
             case DrawerMode.Center:
             case DrawerMode.Map:
                 //rotate compass
-                compasPivot.SetLocalRotationZ(GameManager.Instance.Aircraft.Heading);
+                compasPivot.SetLocalRotationZ(GameManager.Instance.Aircraft.HeadingDegrees);
                 if (GameManager.Instance.Aircraft.IsFreeFlight)
                 {
-                    freeFlightPivot.SetLocalRotationZ(GameManager.Instance.Aircraft.Heading - Calculator.RHeading);
+                    freeFlightPivot.SetLocalRotationZ(GameManager.Instance.Aircraft.HeadingDegrees - Calculator.RHeading);
                 }
 
                 break;
@@ -198,7 +198,7 @@ public class Drawer : Singleton<Drawer>
                 compasPivot.SetLocalRotationZ(0);
                 mobilePlaneIndicatorPivot.position =
                     GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath.ToDisplay();
-                mobilePlaneIndicatorPivot.SetLocalRotationZ(-GameManager.Instance.Aircraft.Heading);
+                mobilePlaneIndicatorPivot.SetLocalRotationZ(-GameManager.Instance.Aircraft.HeadingDegrees);
                 break;
             case DrawerMode.Suspeded:
                 break;

@@ -41,7 +41,7 @@ public class RoutePoint
     public void SetSpeedComputed(int lastRegulation) =>
         Speed.SetComputedValue(lastRegulation, (int) GetAcceptedAltitude);
 
-    public static RoutePoint ConstructFromPosition(Vector2 position, RoutePoint previousPoint)
+    public static RoutePoint ConstructFromPosition(Vector2 position, RoutePoint previousPoint, int newId = -1, string details = "", string name = "")
     {
         var rp = new RoutePoint{ CartesianPosition = position, ID = 0};
 
@@ -50,10 +50,20 @@ public class RoutePoint
             rp.Distance = 0;
             return rp;
         }
-
+        
+        rp.ID = newId < 0 ? previousPoint.ID + 1 : newId;
         rp.Distance = Vector2.Distance(position, previousPoint.CartesianPosition);
         rp.RawDegrees = Geometry.AngleOfPosition(position, previousPoint.CartesianPosition);
-        rp.ID = previousPoint.ID + 1;
+        if (details != "")
+        {
+            rp.Details = details;
+        }
+
+        if (name != "")
+        {
+            rp.Name = name;
+        }
+
 
         return rp;
     }

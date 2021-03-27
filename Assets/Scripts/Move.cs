@@ -122,7 +122,7 @@ public class Move : Singleton<Move>
     {
         float  Deviation = Mathf.DeltaAngle(course, TrackToPoint(16));
 
-        if (Mathf.Abs(Mathf.DeltaAngle(course, GameManager.Instance.Aircraft.Heading)) > 90) Deviation *=-1;
+        if (Mathf.Abs(Mathf.DeltaAngle(course, GameManager.Instance.Aircraft.HeadingDegrees)) > 90) Deviation *=-1;
         if (((Mathf.Abs(Deviation) < 35) && (DME() < 10)) || ((Mathf.Abs(Deviation) < 10) && (DME() < 25)))
         {
             LOCIndex.enabled = true;
