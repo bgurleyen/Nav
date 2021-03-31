@@ -714,49 +714,27 @@ public class Calculator : MonoBehaviour
         }
         Calculator.Instance.txtRSpeed_overTape.text = Calculator.Instance.txtRSpeed.text;
     }
-    public void Button_Click()
 
+    public void UpdatePFD()
     {
-        PFD_Animation Script2 = FindObjectOfType<PFD_Animation>();
+        
+        PFD_Animation pfdAnimation = FindObjectOfType<PFD_Animation>();
+        pfdAnimation.SpeedIndexUpdate_Click();
+        pfdAnimation.CheckAltitudeIndicator(RAltitude, (int) CAltitude);
+    }
 
-        result = EventSystem.current.currentSelectedGameObject.name; ;      //Speed
-        if (co.isOn)                                    //Mach
-        {
-            if (result == "Sup") RMach += 0.01;
-            if (result == "Sdown") RMach -= 0.01;
-        }
-        else
-        {                                               //IAS 
-            if (result == "Sup") RSpeed += 1;
-            if (result == "Sdown") RSpeed -= 1;
-        }
-        Check_LimitSpeed();
-        txtRSpeed_overTape.text = txtRSpeed.text;
-
-        if (result == "Aup") RAltitude += 1000;                              //Altitude
-        if (result == "Adown") RAltitude -= 1000;
-        if (RAltitude < 0) RAltitude = 0;
-        if (RAltitude > 43000) RAltitude = 43000;
-        txtRAltitude.text = "" + RAltitude; txtRAltitude_overTape.text = txtRAltitude.text;
-
-        if (VS_Toggle.isOn)                                                 //VS
-        {
-            if (result == "Vup") RVS += 100;
-            if (result == "Vdown") RVS -= 100;
-            if (RVS < -5000) RVS = -5000;
-            if (RVS > 5000) RVS = 5000;
-            txtRVS.text = "" + RVS;
-        }
-        if (result == "RHeading")                                           //Heading    
+    public void OnClick_HDG(bool positive)
+    {
+        if (positive) //Heading    
         {
             RHeading += 1;
             if (RHeading > 359) RHeading = 0;
-            if (Mathf.Abs(Mathf.DeltaAngle(RHeading, Move.Perpend)) < 90) 
+            if (Mathf.Abs(Mathf.DeltaAngle(RHeading, Move.Perpend)) < 90)
             {
                 Time.timeScale = 1;
             }
         }
-        if (result == "LHeading")
+        else
         {
             RHeading -= 1;
             if (RHeading < 0) RHeading = 359;
@@ -766,19 +744,66 @@ public class Calculator : MonoBehaviour
                 Time.timeScale = 1;
             }
         }
+
         McpUI.Instance.RefreshHS();
         CHeading = RHeading;
-        Script2.SpeedIndexUpdate_Click();
-        Script2.CheckAltitudeIndicator(RAltitude, (int)CAltitude);
+        
+        UpdatePFD();
     }
-    
+
+    public void OnClick_S(bool positive)
+    {
+        if (co.isOn) //Mach
+        {
+            if (positive) RMach += 0.01;
+            if (!positive) RMach -= 0.01;
+        }
+        else
+        {
+            //IAS 
+            if (positive) RSpeed += 1;
+            if (!positive) RSpeed -= 1;
+        }
+
+        Check_LimitSpeed();
+        txtRSpeed_overTape.text = txtRSpeed.text;
+        
+        
+        UpdatePFD();
+    }
+
+    public void OnClick_A(bool positive)
+    {
+        if (positive) RAltitude += 1000; //Altitude
+        if (!positive) RAltitude -= 1000;
+        if (RAltitude < 0) RAltitude = 0;
+        if (RAltitude > 43000) RAltitude = 43000;
+        txtRAltitude.text = "" + RAltitude;
+        txtRAltitude_overTape.text = txtRAltitude.text;
+    }
+
+    public void OnClick_V(bool positive)
+    {
+        if (VS_Toggle.isOn) //VS
+        {
+            if (positive) RVS += 100;
+            if (!positive) RVS -= 100;
+            if (RVS < -5000) RVS = -5000;
+            if (RVS > 5000) RVS = 5000;
+            txtRVS.text = "" + RVS;
+        }
+
+
+        UpdatePFD();
+    }
+
     public void Toggle_Change()
     {
         if (!VS_Toggle.isOn) txtRVS.enabled = false;
         else
         {
             txtRVS.enabled = true;
-            RVS = ((int)(CVS / 100)) * 100;
+            RVS = CVS / 100 * 100;
             txtRVS.text = "" + RVS;
         }
         if (AH_Toggle.isOn)
@@ -788,7 +813,8 @@ public class Calculator : MonoBehaviour
         }
 
     }
-    private void ToggleEnable()
+
+    void ToggleEnable()
     {
         if (RAltitude != CAltitude)
         {

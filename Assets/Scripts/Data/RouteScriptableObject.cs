@@ -594,9 +594,9 @@ public class RouteScriptableObject : ScriptableObject
     public void CreateLinearApproach(int toNodeId, int angle)
     {
         //execute shortcut node at [1] until toNode
-        ShortcutNodes(PositionVirtualNode.GetNodeTo.ID, toNodeId, out var _reducedPoint);
+        ShortcutNodes(PositionVirtualNode.GetNodeTo.ID, toNodeId, out var reducedPoint);
 
-        _reducedPoint.IndicateDirectApproach(angle);
+        reducedPoint.IndicateDirectApproach(angle);
 
         // insert fake node as linear approach beginning - very far
         AddRelativeNodeBefore(toNodeId, angle, -500, toNodeId, out var _veryFarNode);
@@ -620,15 +620,9 @@ public class RouteScriptableObject : ScriptableObject
 
     public void AddDisplayPositionNode()
     {
+        RoutePoint currentAddedPosition;
         // ! Position node is added in front of the actual position so that the aircraft can safely turn 
         RoutePoint lastAddedPositionNode;
-        
-
-        var routePreviousNodeIndex = PositionVirtualNode.PassedNodeIndex;
-        var routePreviousNode = Points[routePreviousNodeIndex];
-  
-        var angleTo = Geometry.GetHeadingOfDirection(Aircraft.PositionFreeOrOnRouteSegment);
-        RoutePoint currentAddedPosition;
 
         if (Aircraft.IsOnRoute)
         {
@@ -672,8 +666,6 @@ public class RouteScriptableObject : ScriptableObject
         {
             currentAddedPosition = RoutePoint.ConstructFromPosition(Aircraft.PositionFreeOrOnRouteSegment, Points[0],
                 GetNewId(), "P", "_Position_0");
-
-
 
 
             var futurePosition = Geometry.GetNextPosition(Aircraft.PositionFreeOrOnRouteSegment,

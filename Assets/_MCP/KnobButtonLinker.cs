@@ -10,6 +10,7 @@ public class KnobButtonLinker : MonoBehaviour
     [SerializeField] Transform rotatingMesh;
     [SerializeField] float stepDegrees = 5;
     [SerializeField] bool isPositive;
+    [SerializeField] Vector3 _rotatingAxis = Vector3.up;
 
     Sequence seq;
     LongPressEventTrigger button;
@@ -23,10 +24,10 @@ public class KnobButtonLinker : MonoBehaviour
 
     void ButtonClick()
     {
-        var _degrees = isPositive ? stepDegrees : -stepDegrees;
+        var degrees = isPositive ? stepDegrees : -stepDegrees;
         seq?.Kill();
         seq = DOTween.Sequence()
-            .Append(rotatingMesh.DOLocalRotate(Vector3.up * _degrees, 0.15f, RotateMode.LocalAxisAdd));
+            .Append(rotatingMesh.DOLocalRotate(_rotatingAxis * degrees, 0.15f, RotateMode.LocalAxisAdd));
     }
     
 }
