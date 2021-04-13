@@ -54,7 +54,7 @@ public class Calculator : MonoBehaviour
     public static string CWind;
     public Text FMA1, FMA2, FMA3;
     public Image windArrow, VSline, SpeedTrend;
-    public GameObject Progres, FlapNeedle, LGlever, SBlever;
+    public GameObject Progres, FlapNeedle, LGlever;
     int N1, FF, dispN1 = 77;
     double dispFF = 270;
     public static bool isHDG;
@@ -585,7 +585,8 @@ public class Calculator : MonoBehaviour
                     M[i + 4, j, k] = Mf[Flap_Idx, i, j, k];
                 }
         if (LGDown) LG_Click();
-        if (SBDown) SB_Click();
+        if (SBDown) SetSB(false);
+        
 
         if (FlapNeedle != null)
         {
@@ -659,15 +660,21 @@ public class Calculator : MonoBehaviour
             }
         }
     }
-    public void SB_Click()
+    
+    
+    public void SetSB(bool down, bool fromUI = false)
     {
+        if (!fromUI)
+        {
+            McpUI.Instance.SBLeverInteract(down, true);
+        }
+        
         double[,] Msb = new double[9, 2] { { -900, -600 }, { -900, -600 }, { -900, -500 }, { -900, -500 }, { -900, -400 }, { -900, -400 }, { -900, -400 }, { -900, -500 }, { -900, -400 } };
  
         int i;
-        SBDown = !SBDown;
+        SBDown = down;
         if (SBDown)
         {
-            SBlever.transform.localEulerAngles = new Vector3(-20, 0, 0);
             for (i = 0; i < 9; i++)
             {
                 M[i, 1, 0] += Msb[i, 0];
@@ -681,8 +688,6 @@ public class Calculator : MonoBehaviour
         }
         else
         {
-            SBlever.transform.localEulerAngles = new Vector3(-160, 0, 0);
-
             for (i = 0; i < 9; i++)
             {
                 M[i, 1, 0] -= Msb[i, 0];
@@ -692,9 +697,7 @@ public class Calculator : MonoBehaviour
                 M[i, 0, 3] -= 115;
                 M[i, 2, 3] -= 80;
             }
-
         }
-
     }
 
     public static void Check_LimitSpeed()

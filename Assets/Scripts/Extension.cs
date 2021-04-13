@@ -1,6 +1,7 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using Gamelogic.Extensions;
-using Lean.Pool;
+using Lean.Pool;using UnityEngine.Events;
 
 public static class Extension
 {
@@ -56,5 +57,8 @@ public static class Extension
     }
     
 }
+
+[Serializable]
+public class FloatUnityEvent : UnityEvent<float> { }
 
 public enum DrawerMode { Map, Center, Plan, Suspeded}

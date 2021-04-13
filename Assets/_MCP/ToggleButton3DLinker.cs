@@ -14,36 +14,36 @@ public class ToggleButton3DLinker : MonoBehaviour, IPointerUpHandler, IPointerDo
     [SerializeField] Material offMat;
     [SerializeField] AnimatorController meshAnimatorController;
 
-    Material[] materials;
-    Animator meshAnimator;
+    Material[] _materials;
+    Animator _meshAnimator;
 
     void Awake()
     {
-        materials = indicatorMesh.materials;
-        var _toggle = GetComponent<Toggle>();
-        _toggle.onValueChanged.AddListener(SetState);
-        meshAnimator = indicatorMesh.gameObject.GetComponent<Animator>();
-        if (meshAnimator == null)
+        _materials = indicatorMesh.materials;
+        var toggle = GetComponent<Toggle>();
+        toggle.onValueChanged.AddListener(SetState);
+        _meshAnimator = indicatorMesh.gameObject.GetComponent<Animator>();
+        if (_meshAnimator == null)
         {
-            meshAnimator = indicatorMesh.gameObject.AddComponent<Animator>();
-            meshAnimator.runtimeAnimatorController = meshAnimatorController;
+            _meshAnimator = indicatorMesh.gameObject.AddComponent<Animator>();
+            _meshAnimator.runtimeAnimatorController = meshAnimatorController;
         }
         
     }
 
     void SetState(bool on)
     {
-        materials[1] = on ? onMat : offMat;
-        indicatorMesh.materials = materials;
+        _materials[1] = on ? onMat : offMat;
+        indicatorMesh.materials = _materials;
     }
 
     public void OnPointerDown(PointerEventData eventData)
     {
-        meshAnimator.SetTrigger("Pressed");
+        _meshAnimator.SetTrigger("Pressed");
     }
 
     public void OnPointerUp(PointerEventData eventData)
     {
-        meshAnimator.SetTrigger("Normal");
+        _meshAnimator.SetTrigger("Normal");
     }
 }
