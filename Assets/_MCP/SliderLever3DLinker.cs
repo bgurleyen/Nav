@@ -31,6 +31,10 @@ public class SliderLever3DLinker : MonoBehaviour
         _lever3D.localRotation = _initialRotation *
                                  Quaternion.Euler(_rotateDirection * (_minAngle + _angleStep * _slider.value));
         _cachedOldSliderValue = _slider.value;
+    }
+
+    void Start()
+    {
         _sliderCallback?.Invoke(_slider.value);
     }
 

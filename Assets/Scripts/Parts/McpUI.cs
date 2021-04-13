@@ -12,9 +12,7 @@ public class McpUI : Singleton<McpUI>
     [SerializeField] Text headingText;
     [SerializeField] Slider _SBSlider;
 
-    public GameObject MCPSwitch;
     static bool CacheSilentSwitch;
-    byte _mode = 1;
 
     void Awake()
     {
@@ -23,26 +21,25 @@ public class McpUI : Singleton<McpUI>
     }
 
 
-    public void MCPSwitch_Click()
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="mode"> 0 = M, 1 = C, 2 = P</param>
+    public void MCPSwitch_Click(float mode)
     {
-        _mode += 1;
-        if (_mode > 3) _mode = 1;
-        if (_mode == 1)
+        if (mode == 0)
         {
             Drawer.Instance.ShowMapMode();
-            MCPSwitch.transform.localEulerAngles = new Vector3(-90, 0, -35);
         }
 
-        if (_mode == 2)
+        if (mode == 1)
         {
             Drawer.Instance.ShowCenterMode();
-            MCPSwitch.transform.localEulerAngles = new Vector3(-90, 0, 0);
         }
 
-        if (_mode == 3)
+        if (mode == 2)
         {
             Drawer.Instance.ShowPlanMode();
-            MCPSwitch.transform.localEulerAngles = new Vector3(-90, 0, 40);
         }
     }
 
