@@ -403,7 +403,7 @@ public class Move : Singleton<Move>
 
             float GS = WE.GS; // Convert the speed to Ground Speed
 
-            if (ACnr  == 3 ) Debug.Log("   A: " + AltitudeR +"    S: " + Speed + "    GS: " + GS + "  H:" + HeadingW);
+           // if (ACnr  == 3 ) Debug.Log("   A: " + AltitudeR +"    S: " + Speed + "    GS: " + GS + "  H:" + HeadingW);
             //if (ACnr == 3) Debug.Log("   F: " + finalPosition + "    pt: " + PtPos + "  Aci: " + HeadingW);
 
             if (!ACPositions.ContainsKey(_aircraftKey))
