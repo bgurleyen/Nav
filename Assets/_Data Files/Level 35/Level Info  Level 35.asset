@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: Level Info  Level 35
   m_EditorClassIdentifier: 
   LevelNumber: 35
-  Destination: LFPG
-  Star: DINA4E
-  Transition: LOR1H
-  Runway: 08L
-  FieldInfo: 13829FT4215M
-  Freq: 118.2
-  Course: 275
+  Destination: VIDP
+  Star: BASO1A
+  Transition: 
+  Runway: 28
+  FieldInfo: 12500FT3810M
+  Freq: 110.3
+  Course: 284
   ZFW: 48
   Fuel: 12
   CrzAltitude: 36000

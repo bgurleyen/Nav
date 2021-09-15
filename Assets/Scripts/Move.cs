@@ -67,14 +67,14 @@ public class Move : Singleton<Move>
 
             TempPtsPos[j] = Pos;
         } 
-        int base0;
-        for (int j = 1; j < 13; j++)                                                      //Locate Virtual points on EditMap
+        
+        for (int j = 1; j < 3; j++)                                                      //Locate Virtual points on EditMap
         {
-            base0 = j < 9 ? 50 : 81;
-             pt = GameObject.Find("pt (" + (j + base0) + ")");
-            VirtualPtsPos[j].x = virtualPoints[Level].VirtualPointsItems[j].x;
-            VirtualPtsPos[j].y = virtualPoints[Level].VirtualPointsItems[j].y;
-            pt.transform.localPosition = VirtualPtsPos[j];
+        
+             pt = GameObject.Find("pt (" + (j + 50) + ")");
+            VirtualPtsPos[j].x = Pos.x+ virtualPoints[Level].VirtualPointsItems[j-1].x;
+             VirtualPtsPos[j].y = Pos.y+virtualPoints[Level].VirtualPointsItems[j-1].y;
+            pt.transform.localPosition =  VirtualPtsPos[j];
         }
 
         for (int j = 0; j < 5; j++)
@@ -99,9 +99,7 @@ public class Move : Singleton<Move>
     Vector2 pointPos(int pt)
     {
         int ptCount = virtualPoints[Level].VirtualPointsItems.Length;
-        return  pt < 50 ? Route.GetCartesianPosition(pt) :
-                pt < 90 ? VirtualPtsPos[pt - 50] :
-               VirtualPtsPos[ptCount-(94 - pt)];
+        return  pt < 50 ? Route.GetCartesianPosition(pt) : VirtualPtsPos[pt - 50] ;
     }
     float TrackToPoint(int pt)
     {

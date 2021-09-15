@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: Level Info  Level 26
   m_EditorClassIdentifier: 
   LevelNumber: 26
-  Destination: LFPG
-  Star: DINA4E
-  Transition: LOR1H
-  Runway: 08L
-  FieldInfo: 13829FT4215M
-  Freq: 118.2
-  Course: 275
+  Destination: WIII
+  Star: CARLI2
+  Transition: NOKTA
+  Runway: 07R
+  FieldInfo: 12008FT3660
+  Freq: 110.5
+  Course: 68
   ZFW: 48
   Fuel: 12
   CrzAltitude: 36000

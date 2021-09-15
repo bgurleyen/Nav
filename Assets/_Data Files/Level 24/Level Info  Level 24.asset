@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: Level Info  Level 24
   m_EditorClassIdentifier: 
   LevelNumber: 24
-  Destination: LFPG
-  Star: DINA4E
-  Transition: LOR1H
-  Runway: 08L
-  FieldInfo: 13829FT4215M
-  Freq: 118.2
-  Course: 275
+  Destination: VTBS
+  Star: SILV1B
+  Transition: LYNDA
+  Runway: 19L
+  FieldInfo: 13123FT4000
+  Freq: 110.5
+  Course: 195
   ZFW: 48
   Fuel: 12
   CrzAltitude: 36000

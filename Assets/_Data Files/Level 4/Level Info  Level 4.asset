@@ -14,12 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   LevelNumber: 4
   Destination: LFPG
-  Star: DINA4E
-  Transition: LOR1H
-  Runway: 08L
-  FieldInfo: 13829FT4215M
-  Freq: 118.2
-  Course: 275
+  Star: SABLO4W
+  Transition: BALOD
+  Runway: 26L
+  FieldInfo: 8858FT2700M
+  Freq: 108.35
+  Course: 266
   ZFW: 48
   Fuel: 12
   CrzAltitude: 36000

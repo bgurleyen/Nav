@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: Level Info  Level 9
   m_EditorClassIdentifier: 
   LevelNumber: 9
-  Destination: LFPG
-  Star: DINA4E
-  Transition: LOR1H
-  Runway: 08L
-  FieldInfo: 13829FT4215M
-  Freq: 118.2
-  Course: 275
+  Destination: EKCH
+  Star: ALM3M
+  Transition: KAS
+  Runway: 04L
+  FieldInfo: 11811FT3600M
+  Freq: 110.5
+  Course: 38
   ZFW: 48
   Fuel: 12
   CrzAltitude: 36000

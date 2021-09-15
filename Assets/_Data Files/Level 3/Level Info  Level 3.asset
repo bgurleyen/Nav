@@ -18,8 +18,8 @@ MonoBehaviour:
   Transition: LOR1H
   Runway: 08L
   FieldInfo: 13829FT4215M
-  Freq: 118.2
-  Course: 275
+  Freq: 108.7
+  Course: 86
   ZFW: 48
   Fuel: 12
   CrzAltitude: 36000

@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: Level Info  Level 12
   m_EditorClassIdentifier: 
   LevelNumber: 12
-  Destination: LFPG
-  Star: DINA4E
-  Transition: LOR1H
-  Runway: 08L
-  FieldInfo: 13829FT4215M
-  Freq: 118.2
-  Course: 275
+  Destination: LIRF
+  Star: ELKA3A
+  Transition: TAQ
+  Runway: 25
+  FieldInfo: 10856FT3309M
+  Freq: 110.15
+  Course: 248
   ZFW: 48
   Fuel: 12
   CrzAltitude: 36000

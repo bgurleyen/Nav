@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: Level Info  Level 32
   m_EditorClassIdentifier: 
   LevelNumber: 32
-  Destination: LFPG
-  Star: DINA4E
-  Transition: LOR1H
-  Runway: 08L
-  FieldInfo: 13829FT4215M
-  Freq: 118.2
-  Course: 275
+  Destination: RJTT
+  Star: NYLON2
+  Transition: NYLON
+  Runway: 22
+  FieldInfo: 8202FT2500M
+  Freq: 108.1
+  Course: 222
   ZFW: 48
   Fuel: 12
   CrzAltitude: 36000

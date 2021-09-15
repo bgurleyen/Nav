@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: Level Info  Level 7
   m_EditorClassIdentifier: 
   LevelNumber: 7
-  Destination: LFPG
-  Star: DINA4E
-  Transition: LOR1H
-  Runway: 08L
-  FieldInfo: 13829FT4215M
-  Freq: 118.2
-  Course: 275
+  Destination: EGLL
+  Star: BNN1B
+  Transition: BNN
+  Runway: 09L
+  FieldInfo: 12798FT3901M
+  Freq: 110.3
+  Course: 91
   ZFW: 48
   Fuel: 12
   CrzAltitude: 36000

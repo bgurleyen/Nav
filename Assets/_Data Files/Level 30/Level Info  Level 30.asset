@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: Level Info  Level 30
   m_EditorClassIdentifier: 
   LevelNumber: 30
-  Destination: LFPG
-  Star: DINA4E
-  Transition: LOR1H
-  Runway: 08L
-  FieldInfo: 13829FT4215M
-  Freq: 118.2
-  Course: 275
+  Destination: GMMX
+  Star: BGA7A
+  Transition: 
+  Runway: 10
+  FieldInfo: 10171FT3100M
+  Freq: 109.7
+  Course: 99
   ZFW: 48
   Fuel: 12
   CrzAltitude: 36000

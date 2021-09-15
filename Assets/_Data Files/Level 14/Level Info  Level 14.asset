@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: Level Info  Level 14
   m_EditorClassIdentifier: 
   LevelNumber: 14
-  Destination: LFPG
-  Star: DINA4E
-  Transition: LOR1H
-  Runway: 08L
-  FieldInfo: 13829FT4215M
-  Freq: 118.2
-  Course: 275
+  Destination: LSZH
+  Star: BLM2G
+  Transition: GIPOL
+  Runway: 34
+  FieldInfo: 12139FT3700M
+  Freq: 110.75
+  Course: 334
   ZFW: 48
   Fuel: 12
   CrzAltitude: 36000

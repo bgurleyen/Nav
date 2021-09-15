@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: Level Info  Level 36
   m_EditorClassIdentifier: 
   LevelNumber: 36
-  Destination: LFPG
-  Star: DINA4E
-  Transition: LOR1H
-  Runway: 08L
-  FieldInfo: 13829FT4215M
-  Freq: 118.2
-  Course: 275
+  Destination: RPLL
+  Star: CAB1
+  Transition: MIA
+  Runway: 06
+  FieldInfo: 11188FT3410M
+  Freq: 109.1
+  Course: 61
   ZFW: 48
   Fuel: 12
   CrzAltitude: 36000

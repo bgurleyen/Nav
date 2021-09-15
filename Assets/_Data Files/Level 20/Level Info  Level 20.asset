@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: Level Info  Level 20
   m_EditorClassIdentifier: 
   LevelNumber: 20
-  Destination: LFPG
-  Star: DINA4E
-  Transition: LOR1H
-  Runway: 08L
-  FieldInfo: 13829FT4215M
-  Freq: 118.2
-  Course: 275
+  Destination: LOWW
+  Star: LANU5W
+  Transition: NER2V
+  Runway: 34
+  FieldInfo: 11811FT3600M
+  Freq: 108.1
+  Course: 341
   ZFW: 48
   Fuel: 12
   CrzAltitude: 36000

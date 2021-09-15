@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: Level Info  Level 5
   m_EditorClassIdentifier: 
   LevelNumber: 5
-  Destination: LFPG
-  Star: DINA4E
-  Transition: LOR1H
-  Runway: 08L
-  FieldInfo: 13829FT4215M
-  Freq: 118.2
-  Course: 275
+  Destination: EHAM
+  Star: REDF1A
+  Transition: SUGOL
+  Runway: 06
+  FieldInfo: 11483FT3500M
+  Freq: 110.55
+  Course: 59
   ZFW: 48
   Fuel: 12
   CrzAltitude: 36000

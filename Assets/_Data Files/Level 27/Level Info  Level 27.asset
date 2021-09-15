@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: Level Info  Level 27
   m_EditorClassIdentifier: 
   LevelNumber: 27
-  Destination: LFPG
-  Star: DINA4E
-  Transition: LOR1H
-  Runway: 08L
-  FieldInfo: 13829FT4215M
-  Freq: 118.2
-  Course: 275
+  Destination: VVTS
+  Star: T10
+  Transition: 
+  Runway: 25L
+  FieldInfo: 12467FT3800M
+  Freq: 108.3
+  Course: 249
   ZFW: 48
   Fuel: 12
   CrzAltitude: 36000

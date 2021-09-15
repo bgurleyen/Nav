@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: Level Info  Level 39
   m_EditorClassIdentifier: 
   LevelNumber: 39
-  Destination: LFPG
-  Star: DINA4E
-  Transition: LOR1H
-  Runway: 08L
-  FieldInfo: 13829FT4215M
-  Freq: 118.2
-  Course: 275
+  Destination: UUWW
+  Star: GIS24R
+  Transition: OSTIS
+  Runway: 24
+  FieldInfo: 9842FT3000M
+  Freq: 111.1
+  Course: 238
   ZFW: 48
   Fuel: 12
   CrzAltitude: 36000

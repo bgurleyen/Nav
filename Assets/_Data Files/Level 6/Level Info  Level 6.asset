@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: Level Info  Level 6
   m_EditorClassIdentifier: 
   LevelNumber: 6
-  Destination: LFPG
-  Star: DINA4E
-  Transition: LOR1H
-  Runway: 08L
-  FieldInfo: 13829FT4215M
-  Freq: 118.2
-  Course: 275
+  Destination: EHAM
+  Star: PESE2A
+  Transition: RIVER
+  Runway: 18R
+  FieldInfo: 12468FT3800M
+  Freq: 110.1
+  Course: 184
   ZFW: 48
   Fuel: 12
   CrzAltitude: 36000

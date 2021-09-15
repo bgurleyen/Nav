@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: Level Info  Level 13
   m_EditorClassIdentifier: 
   LevelNumber: 13
-  Destination: LFPG
-  Star: DINA4E
-  Transition: LOR1H
-  Runway: 08L
-  FieldInfo: 13829FT4215M
-  Freq: 118.2
-  Course: 275
+  Destination: LSZH
+  Star: NEGR1A
+  Transition: AMIKI
+  Runway: 14
+  FieldInfo: 10827FT3300M
+  Freq: 108.3
+  Course: 136
   ZFW: 48
   Fuel: 12
   CrzAltitude: 36000

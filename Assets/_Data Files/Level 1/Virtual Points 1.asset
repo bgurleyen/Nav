@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 7eed825a8d01b2f47ae748b672c62d57, type: 3}
-  m_Name: Virtual Points 0
+  m_Name: Virtual Points 1
   m_EditorClassIdentifier: 
   VirtualPointsItems:
   - Number: 51
-    x: 25.08
-    y: -5.72
+    x: 6.74
+    y: 5.84
   - Number: 52
-    x: 0
+    x: 9
     y: 0

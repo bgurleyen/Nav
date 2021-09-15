@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: Level Info  Level 23
   m_EditorClassIdentifier: 
   LevelNumber: 23
-  Destination: LFPG
-  Star: DINA4E
-  Transition: LOR1H
-  Runway: 08L
-  FieldInfo: 13829FT4215M
-  Freq: 118.2
-  Course: 275
+  Destination: VTBS
+  Star: CABI1B
+  Transition: LASER
+  Runway: 01L
+  FieldInfo: 12139FT3700M
+  Freq: 109.1
+  Course: 15
   ZFW: 48
   Fuel: 12
   CrzAltitude: 36000

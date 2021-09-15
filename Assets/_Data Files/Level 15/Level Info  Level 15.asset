@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: Level Info  Level 15
   m_EditorClassIdentifier: 
   LevelNumber: 15
-  Destination: LFPG
-  Star: DINA4E
-  Transition: LOR1H
-  Runway: 08L
-  FieldInfo: 13829FT4215M
-  Freq: 118.2
-  Course: 275
+  Destination: LEBL
+  Star: VERDB
+  Transition: VIBIM
+  Runway: 02
+  FieldInfo: 8294FT2528M
+  Freq: 108.75
+  Course: 19
   ZFW: 48
   Fuel: 12
   CrzAltitude: 36000

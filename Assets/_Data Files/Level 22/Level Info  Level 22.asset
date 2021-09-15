@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: Level Info  Level 22
   m_EditorClassIdentifier: 
   LevelNumber: 22
-  Destination: LFPG
-  Star: DINA4E
-  Transition: LOR1H
-  Runway: 08L
-  FieldInfo: 13829FT4215M
-  Freq: 118.2
-  Course: 275
+  Destination: LTFJ
+  Star: TETS1H
+  Transition: BEMKA
+  Runway: 24
+  FieldInfo: 9843FT3000M
+  Freq: 110.9
+  Course: 240
   ZFW: 48
   Fuel: 12
   CrzAltitude: 36000

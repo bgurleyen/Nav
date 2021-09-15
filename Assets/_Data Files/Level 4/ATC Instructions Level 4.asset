@@ -35,7 +35,7 @@ MonoBehaviour:
     Speed: 0
     Speed_nx: 0
   - point: 52
-    mode: 2
+    mode: 0
     Altitude: 20000
     VS: 0
     VS_nx: 0
@@ -56,7 +56,7 @@ MonoBehaviour:
     Speed: 210
     Speed_nx: 2
   - point: 54
-    mode: 2
+    mode: 0
     Altitude: 0
     VS: 0
     VS_nx: 4

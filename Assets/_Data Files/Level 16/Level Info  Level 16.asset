@@ -13,13 +13,13 @@ MonoBehaviour:
   m_Name: Level Info  Level 16
   m_EditorClassIdentifier: 
   LevelNumber: 16
-  Destination: LFPG
-  Star: DINA4E
-  Transition: LOR1H
-  Runway: 08L
-  FieldInfo: 13829FT4215M
-  Freq: 118.2
-  Course: 275
+  Destination: LEBL
+  Star: BIS2DD
+  Transition: LESBA
+  Runway: 25R
+  FieldInfo: 10997FT3352M
+  Freq: 109.5
+  Course: 246
   ZFW: 48
   Fuel: 12
   CrzAltitude: 36000

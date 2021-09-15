@@ -22,7 +22,7 @@ MonoBehaviour:
     Details: 
   - ID: 0
     Name: 'DINAN '
-    RawDegrees: 73
+    RawDegrees: 180
     Distance: 99
     RawSpeed: 0
     RawAltitude: 
