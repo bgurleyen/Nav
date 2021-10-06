@@ -27,5 +27,5 @@ MonoBehaviour:
   F30Speed: 121
   DesEconSpeed: 280
   DesEconMach: 78
-  GateIdx: 11
+  GateIdx: 16
   CheckPointTime: 0
