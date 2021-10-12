@@ -68,12 +68,12 @@ public class Move : Singleton<Move>
             TempPtsPos[j] = Pos;
         } 
         
-        for (int j = 1; j < 20; j++)                                                      //Locate Virtual points on EditMap
+        for (int j = 1; j < 21; j++)                                                      //Locate Virtual points on EditMap
         {
         
              pt = GameObject.Find("pt (" + (j + 50) + ")");
-            VirtualPtsPos[j].x = Pos.x+ virtualPoints[Level].VirtualPointsItems[j-1].x+29.3385f;
-             VirtualPtsPos[j].y = Pos.y+virtualPoints[Level].VirtualPointsItems[j-1].y-6.562393f;
+            VirtualPtsPos[j].x = Pos.x + virtualPoints[Level].VirtualPointsItems[j - 1].x - virtualPoints[Level].VirtualPointsItems[20].x;
+            VirtualPtsPos[j].y = Pos.y + virtualPoints[Level].VirtualPointsItems[j - 1].y - virtualPoints[Level].VirtualPointsItems[20].y;
             pt.transform.localPosition =  VirtualPtsPos[j];
         }
 
@@ -88,12 +88,12 @@ public class Move : Singleton<Move>
         Atc2.text = "";
         Atc3.text = "";
 
-        StartCoroutine(MoveAC(0));
-        StartCoroutine(MoveAC(1));
-        StartCoroutine(MoveAC(2));
-        StartCoroutine(MoveAC(3));
-        StartCoroutine(MoveAC(4));
-        StartCoroutine(MoveAC(5));
+        //StartCoroutine(MoveAC(0));
+        //StartCoroutine(MoveAC(1));
+        //StartCoroutine(MoveAC(2));
+        //StartCoroutine(MoveAC(3));
+        //StartCoroutine(MoveAC(4));
+        //StartCoroutine(MoveAC(5));
         //StartCoroutine(MoveAC(6));
 
 

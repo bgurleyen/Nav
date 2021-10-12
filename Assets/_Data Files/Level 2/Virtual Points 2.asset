@@ -12,4 +12,67 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7eed825a8d01b2f47ae748b672c62d57, type: 3}
   m_Name: Virtual Points 2
   m_EditorClassIdentifier: 
-  VirtualPointsItems: []
+  VirtualPointsItems:
+  - Number: 51
+    x: -0.7636
+    y: -48.995
+  - Number: 52
+    x: -3.9
+    y: -32.1
+  - Number: 53
+    x: 482.6286
+    y: -178.9521
+  - Number: 54
+    x: 0
+    y: 0
+  - Number: 55
+    x: 0
+    y: 0
+  - Number: 56
+    x: 0
+    y: 0
+  - Number: 57
+    x: 0
+    y: 0
+  - Number: 58
+    x: 0
+    y: 0
+  - Number: 59
+    x: 0
+    y: 0
+  - Number: 60
+    x: 0
+    y: 0
+  - Number: 61
+    x: 47.7
+    y: -78.327
+  - Number: 62
+    x: 53.9
+    y: -8.3668
+  - Number: 63
+    x: 32.3
+    y: -13.251
+  - Number: 64
+    x: -30.764
+    y: -11
+  - Number: 65
+    x: -41
+    y: -43.575
+  - Number: 66
+    x: -38.85
+    y: -84.5
+  - Number: 67
+    x: 0
+    y: 0
+  - Number: 68
+    x: 0
+    y: 0
+  - Number: 69
+    x: 0
+    y: 0
+  - Number: 70
+    x: 0
+    y: 0
+  - Number: 71
+    x: 15.02436
+    y: -43.43282

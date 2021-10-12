@@ -1,0 +1,78 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7eed825a8d01b2f47ae748b672c62d57, type: 3}
+  m_Name: Virtual Points 39
+  m_EditorClassIdentifier: 
+  VirtualPointsItems:
+  - Number: 51
+    x: 80.1
+    y: -99.987
+  - Number: 52
+    x: 75.5
+    y: -83.945
+  - Number: 53
+    x: 72.8
+    y: -61.377
+  - Number: 54
+    x: 0
+    y: 0
+  - Number: 55
+    x: 0
+    y: 0
+  - Number: 56
+    x: 0
+    y: 0
+  - Number: 57
+    x: 0
+    y: 0
+  - Number: 58
+    x: 0
+    y: 0
+  - Number: 59
+    x: 0
+    y: 0
+  - Number: 60
+    x: 0
+    y: 0
+  - Number: 61
+    x: 56.782
+    y: 1.660004
+  - Number: 62
+    x: -28.7
+    y: -58.34
+  - Number: 63
+    x: -27.6
+    y: -94.639
+  - Number: 64
+    x: -46.8
+    y: -94.639
+  - Number: 65
+    x: 144.5
+    y: -124.64
+  - Number: 66
+    x: 158.8
+    y: -133.3
+  - Number: 67
+    x: 172.1
+    y: -143.7
+  - Number: 68
+    x: 181.4
+    y: -86.934
+  - Number: 69
+    x: 171
+    y: -58.34
+  - Number: 70
+    x: 190.7
+    y: -59.5
+  - Number: 71
+    x: 54.68921
+    y: -52.84844

@@ -43,7 +43,7 @@ MonoBehaviour:
     Details: 
   - ID: 0
     Name: CI06
-    RawDegrees: 255
+    RawDegrees: 355
     Distance: 4.9
     RawSpeed: 0
     RawAltitude: 7500

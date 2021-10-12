@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6b87ed080338e4142be3b0f04a3db461, type: 3}
+  m_Name: Wind Data  Level 5
+  m_EditorClassIdentifier: 
+  WindInfoItems:
+  - Altitude: 40000
+    Degrees: 90
+    Knots: 81
+  - Altitude: 35000
+    Degrees: 80
+    Knots: 72
+  - Altitude: 30000
+    Degrees: 70
+    Knots: 53
+  - Altitude: 25000
+    Degrees: 110
+    Knots: 29
+  - Altitude: 20000
+    Degrees: 72
+    Knots: 30
+  - Altitude: 15000
+    Degrees: 81
+    Knots: 14
+  - Altitude: 10000
+    Degrees: 92
+    Knots: 16
+  - Altitude: 5000
+    Degrees: 73
+    Knots: 9
+  - Altitude: 0
+    Degrees: 50
+    Knots: 12

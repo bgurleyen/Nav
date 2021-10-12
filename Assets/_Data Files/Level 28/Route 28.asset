@@ -50,7 +50,7 @@ MonoBehaviour:
     Details: 
   - ID: 0
     Name: CI01
-    RawDegrees: 10
+    RawDegrees: 220
     Distance: 13.9
     RawSpeed: 0
     RawAltitude: 2000

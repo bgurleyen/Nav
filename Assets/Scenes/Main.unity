@@ -579,7 +579,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   __messageText: 
   isDebug: 0
-  initialRoute: {fileID: 11400000, guid: d58b5778af019184cbbb26304b282c64, type: 2}
+  initialRoute: {fileID: 11400000, guid: 433ed717470243f4d9f30156522e2a39, type: 2}
   ActiveRoute: {fileID: 0}
   ModRoute: {fileID: 0}
   ModeSetWithPosition: {fileID: 0}
@@ -6206,12 +6206,8 @@ MonoBehaviour:
     - {fileID: 11400000, guid: b784e007cb102d94b864c82ca5de26f7, type: 2}
     - {fileID: 11400000, guid: 629beea2d3cca0443978f795ce29a9e1, type: 2}
     - {fileID: 11400000, guid: 40346d384f1f5b147a35c17bfc3025df, type: 2}
-  - otherACnr:
-    - {fileID: 0}
-    - {fileID: 0}
-    - {fileID: 0}
   virtualPoints:
-  - {fileID: 11400000, guid: d7d5a8bef8738b44fb5356edd48e55d5, type: 2}
+  - {fileID: 11400000, guid: 34b5ce55003097646b2366622e674297, type: 2}
   aTCs:
   - {fileID: 11400000, guid: 6500ec8d4625a184fb5fdac3c274b627, type: 2}
   - {fileID: 0}
@@ -24717,7 +24713,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0.000015258789, y: 0.000015258789}
+  m_AnchoredPosition: {x: -0.1800003, y: 0.23999023}
   m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0, y: -0.6}
 --- !u!114 &1616959393

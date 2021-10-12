@@ -103,8 +103,8 @@ public class infoFMC : Singleton<infoFMC>
         
         Fmc.Rte.Destination = levelsInfoData[Level].Destination;
         Fmc.Rte.RW = levelsInfoData[Level].Runway;
-        Fmc.Des.RWAltitude = "" + RW_Alt;
-        Fmc.Des.WptAltFix = activePoints.Points[levelsInfoData[Level].GateIdx].Name+ "/" + (int)activePoints.Points[levelsInfoData[Level].GateIdx].Altitude.ComputedValue;
+        Fmc.Des.RWAltitude = "" + RW_Alt;                                    // Remove //
+        //Fmc.Des.WptAltFix = activePoints.Points[levelsInfoData[Level].GateIdx].Name+ "/" + (int)activePoints.Points[levelsInfoData[Level].GateIdx].Altitude.ComputedValue;
       
         Fmc.Des.FPA = "" + System.Math.Round(Mathf.Atan((float)(-Calculator.CVS / (Calculator.GS / 60 * 6076))) * Mathf.Rad2Deg, 2);
         Fmc.Des.VB = "" + System.Math.Round(Mathf.Atan((float)(Calculator.CAltitude - RW_Alt) / (DirectDistance * 6076)) * Mathf.Rad2Deg, 2);

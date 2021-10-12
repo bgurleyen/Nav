@@ -71,14 +71,14 @@ MonoBehaviour:
     Details: 
   - ID: 0
     Name: 'FI11 '
-    RawDegrees: 0
+    RawDegrees: 103
     Distance: 1.9
     RawSpeed: 0
     RawAltitude: 2000
     Details: 
   - ID: 0
     Name: RW11
-    RawDegrees: 0
+    RawDegrees: 103
     Distance: 3.9
     RawSpeed: 0
     RawAltitude: 773

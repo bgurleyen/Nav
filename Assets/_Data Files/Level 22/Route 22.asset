@@ -92,8 +92,8 @@ MonoBehaviour:
     Details: 
   - ID: 0
     Name: BEMKA
-    RawDegrees: 0
-    Distance: 0
+    RawDegrees: 270
+    Distance: 9
     RawSpeed: 0
     RawAltitude: 3500A
     Details: 

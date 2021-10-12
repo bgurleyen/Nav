@@ -71,36 +71,8 @@ MonoBehaviour:
     Details: 
   - ID: 0
     Name: WW525
-    RawDegrees: 172
-    Distance: 5.4
-    RawSpeed: 0
-    RawAltitude: 
-    Details: 
-  - ID: 0
-    Name: WW526
-    RawDegrees: 172
-    Distance: 5.4
-    RawSpeed: 0
-    RawAltitude: 
-    Details: 
-  - ID: 0
-    Name: WW527
-    RawDegrees: 172
-    Distance: 5.4
-    RawSpeed: 0
-    RawAltitude: 
-    Details: 
-  - ID: 0
-    Name: WW507
     RawDegrees: 82
     Distance: 6.5
-    RawSpeed: 0
-    RawAltitude: 
-    Details: 
-  - ID: 0
-    Name: WW506
-    RawDegrees: 352
-    Distance: 5.4
     RawSpeed: 0
     RawAltitude: 
     Details: 
