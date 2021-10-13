@@ -1,0 +1,45 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 686a3e082b8fa1242ad16fff883efb61, type: 3}
+  m_Name: Other AC 1 Level 18
+  m_EditorClassIdentifier: 
+  ACItems:
+  - Point: 61
+    Altitude: 33000
+    Speed: 250
+  - Point: 1
+    Altitude: 27000
+    Speed: 250
+  - Point: 2
+    Altitude: 24000
+    Speed: 230
+  - Point: 3
+    Altitude: 22000
+    Speed: 210
+  - Point: 4
+    Altitude: 12000
+    Speed: 210
+  - Point: 5
+    Altitude: 6500
+    Speed: 180
+  - Point: 6
+    Altitude: 3500
+    Speed: 180
+  - Point: 7
+    Altitude: 2000
+    Speed: 160
+  - Point: 8
+    Altitude: 1400
+    Speed: 140
+  - Point: 9
+    Altitude: 0
+    Speed: 0
