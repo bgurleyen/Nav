@@ -11,7 +11,7 @@ public class DoubleCurve : Curve
     public Vector2 o1OnSecondProjection;
     public Vector2 Q;
 
-    public DoubleCurve(RoutePoint linkedPoint) : base(linkedPoint) { }
+    public DoubleCurve(RoutePoint linkedPoint, float unitLegth) : base(linkedPoint, unitLegth) { }
 
     public void Init(Vector3 from, Vector3 offsetedFrom, RoutePoint middle, RoutePoint secondPoint, float angleBetween,
         float smallRadius, float bigRadius)

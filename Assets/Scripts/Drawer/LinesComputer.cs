@@ -3,6 +3,13 @@
 
     public static class LinesComputer
     {
+        private static float _unitLength;
+
+        public static void Init(GameSettingsScriptableObject settings)
+        {
+            _unitLength = settings.UnitLength;
+        }
+        
         public static bool GetNextLine(MarkLine lastLine, int fromDataPointIndex, RoutePoint[] points,
             out MarkLine line,
             out int toDataPointIndex)
@@ -96,7 +103,7 @@
         static bool GenerateLine(RoutePoint nextPoint, Vector3 lastEndPosition, Vector3 lastEndOffset,
             out MarkLine line)
         {
-            line = new MarkLine(nextPoint);
+            line = new MarkLine(nextPoint, _unitLength);
             return line.Init(lastEndPosition, lastEndOffset, nextPoint);
         }
 
@@ -108,7 +115,7 @@
             if (tangentToMiddle <= nextPoint.Distance && tangentToMiddle <= secondPoint.Distance &&
                 tangentToMiddle <= chosenRadius)
             {
-                var l = new Curve(nextPoint);
+                var l = new Curve(nextPoint, _unitLength);
                 l.Init(lastEndPosition, lastEndOffset, nextPoint, secondPoint, tangentToMiddle, chosenRadius);
                 line = l;
                 return true;
@@ -122,7 +129,7 @@
             RoutePoint secondPoint,
             float angleBetween, Vector3 lastEndPosition, Vector3 lastEndOffset, out MarkLine line)
         {
-            var l = new DoubleCurve(nextPoint);
+            var l = new DoubleCurve(nextPoint, _unitLength);
             l.Init(lastEndPosition, lastEndOffset, nextPoint, secondPoint, angleBetween, smallRadius, bigRadius);
             line = l;
         }

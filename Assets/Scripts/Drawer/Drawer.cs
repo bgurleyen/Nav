@@ -6,8 +6,8 @@ using Gamelogic.Extensions;
 
 public class Drawer : Singleton<Drawer>
 {
-    [SerializeField] Color cMagenta;
-    [SerializeField] Color cLightYellow;
+    [SerializeField] private GameConfigScriptableObject _gameConfig;
+
 
     public Animator cameraAnimator;
     [Space] [SerializeField] Transform dynamicHolder;
@@ -37,9 +37,9 @@ public class Drawer : Singleton<Drawer>
     [Header("Adjust")] [SerializeField] float mapReferenceLength80 = 1.6f;
     [SerializeField] float planReferenceLength80 = 1.6f;
 
-    public Color CMagenta => cMagenta;
+    public Color CMagenta => _gameConfig.Settings.cMagenta;
 
-    public Color CLightYellow => cLightYellow;
+    public Color CLightYellow => _gameConfig.Settings.cLightYellow;
 
     public DrawerMode Mode { get; private set; } = DrawerMode.Suspeded;
 

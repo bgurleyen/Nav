@@ -5,7 +5,7 @@ public class FixRay : Line
 {
     public FixedPointInfo LinkedInfo { get; private set; }
 
-    public FixRay(RoutePoint linkedPoint, FixedPointInfo linkedInfo) : base(linkedPoint)
+    public FixRay(RoutePoint linkedPoint, FixedPointInfo linkedInfo) : base(linkedPoint, 0)
     {
         LinkedInfo = linkedInfo;
 

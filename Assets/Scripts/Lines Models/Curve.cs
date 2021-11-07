@@ -6,7 +6,7 @@ public class Curve : MarkLine
     public Vector2 O1;
     public float CachedRadius;
 
-    public Curve(RoutePoint linkedPoint) : base(linkedPoint) { }
+    public Curve(RoutePoint linkedPoint, float unitLength) : base(linkedPoint, unitLength) { }
 
     public void Init( Vector3 from, Vector3 offsetedFrom, RoutePoint middle, RoutePoint secondPoint, float tangentToMiddle, float radius)
     {

@@ -583,12 +583,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   __messageText: 
-  isDebug: 0
+  _gameConfig: {fileID: 11400000, guid: 60965bfde451d46d184d23158024db97, type: 2}
   initialRoute: {fileID: 11400000, guid: 04536638290ae774f98d50347e06245c, type: 2}
-  ActiveRoute: {fileID: 0}
+  ActiveRoute: {fileID: 2120896182}
   ModRoute: {fileID: 0}
   ModeSetWithPosition: {fileID: 0}
-  FixedPoints: {fileID: 0}
+  FixedPoints: {fileID: 922731180}
+  isDebug: 0
 --- !u!4 &35611998
 Transform:
   m_ObjectHideFlags: 0
@@ -8055,6 +8056,7 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_renderer: {fileID: 418341851}
   m_maskType: 0
+  _SortingLayer: 0
   _SortingLayerID: 0
   _SortingOrder: 0
 --- !u!23 &418341851
@@ -13962,6 +13964,21 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5cf58a6f167d3794085572d72bae3cb4, type: 3}
+--- !u!114 &922731180
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ce31b191e9d3c44aa31c4c26896c013, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  Entries:
+  - Name: NORTA
+    Infos: []
 --- !u!1 &926853336
 GameObject:
   m_ObjectHideFlags: 0
@@ -15907,6 +15924,7 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_renderer: {fileID: 1102028199}
   m_maskType: 0
+  _SortingLayer: 0
   _SortingLayerID: 0
   _SortingOrder: 0
 --- !u!222 &1102028197
@@ -23514,6 +23532,7 @@ MonoBehaviour:
   m_hasFontAssetChanged: 0
   m_renderer: {fileID: 1710533656}
   m_maskType: 0
+  _SortingLayer: 0
   _SortingLayerID: 0
   _SortingOrder: 0
 --- !u!222 &1710533654
@@ -28400,8 +28419,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   __messageText: 
-  cMagenta: {r: 1, g: 0.20000002, b: 0.8000001, a: 1}
-  cLightYellow: {r: 0.9215687, g: 0.87843144, b: 0.78823537, a: 1}
+  _gameConfig: {fileID: 11400000, guid: 60965bfde451d46d184d23158024db97, type: 2}
   cameraAnimator: {fileID: 561176780}
   dynamicHolder: {fileID: 1049552508}
   dynamicHolderMod: {fileID: 1836103159}
@@ -28429,6 +28447,139 @@ MonoBehaviour:
   - {fileID: 1000632908}
   mapReferenceLength80: 2.82
   planReferenceLength80: 3.82
+--- !u!114 &2120896182
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba3b8b30b7d3d124482f44bf0dbbbfaf, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _gameConfig: {fileID: 0}
+  Points:
+  - ID: 0
+    Name: _START_
+    RawDegrees: 0
+    Distance: 0
+    RawSpeed: 270
+    RawAltitude: 40000
+    Details: 
+  - ID: 1
+    Name: ELNAT
+    RawDegrees: 20
+    Distance: 19
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 2
+    Name: NORTA
+    RawDegrees: 5
+    Distance: 40.1
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 3
+    Name: DLE-5
+    RawDegrees: 6
+    Distance: 18.1
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 4
+    Name: DLE
+    RawDegrees: 3
+    Distance: 5
+    RawSpeed: 0
+    RawAltitude: 8000A9000B
+    Details: 
+  - ID: 5
+    Name: DV581
+    RawDegrees: 2
+    Distance: 7.3
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 6
+    Name: DV582
+    RawDegrees: 91
+    Distance: 5.6
+    RawSpeed: 220
+    RawAltitude: 
+    Details: 
+  - ID: 7
+    Name: DV583
+    RawDegrees: 91
+    Distance: 4
+    RawSpeed: 0
+    RawAltitude: 
+    Details: C
+  - ID: 8
+    Name: DV584
+    RawDegrees: 91
+    Distance: 4
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 9
+    Name: DV585
+    RawDegrees: 91
+    Distance: 4
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 10
+    Name: DV575
+    RawDegrees: 1
+    Distance: 5
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 11
+    Name: DV574
+    RawDegrees: 271
+    Distance: 4
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 12
+    Name: DV573
+    RawDegrees: 271
+    Distance: 4.3
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 13
+    Name: DV572
+    RawDegrees: 271
+    Distance: 4.9
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 14
+    Name: XAVER
+    RawDegrees: 276
+    Distance: 4
+    RawSpeed: 179
+    RawAltitude: 3000
+    Details: 
+  - ID: 15
+    Name: HANB
+    RawDegrees: 271
+    Distance: 4
+    RawSpeed: 173
+    RawAltitude: 1440
+    Details: 
+  - ID: 16
+    Name: RW27R
+    RawDegrees: 271
+    Distance: 4
+    RawSpeed: 0
+    RawAltitude: 219
+    Details: 
 --- !u!1 &2124256481
 GameObject:
   m_ObjectHideFlags: 0

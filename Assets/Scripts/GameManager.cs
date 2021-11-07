@@ -1,30 +1,39 @@
-﻿using Gamelogic.Extensions;
+﻿using System;
+using Gamelogic.Extensions;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class GameManager : Singleton<GameManager>
 {
-    public delegate void OnOperationMadeDelegate();
-    public event OnOperationMadeDelegate OnOperationMade;
-
-    public bool isDebug;
+    [SerializeField] private GameConfigScriptableObject _gameConfig;
     [SerializeField] RouteScriptableObject initialRoute;
-
-    public readonly Aircraft Aircraft = new Aircraft();
 
     [Header("Computed")]
     public RouteScriptableObject ActiveRoute;
     public RouteScriptableObject ModRoute;
     public RouteScriptableObject ModeSetWithPosition;
     public FixedPointsScriptableObject FixedPoints;
+    
+    public bool isDebug;
 
+    public delegate void OnOperationMadeDelegate();
+    public event OnOperationMadeDelegate OnOperationMade;
+
+    public Aircraft Aircraft;
     public bool IsMod { get; private set; }
+    
     bool queueEraseMode;
 
     // if we detect that during MOD the current node has passed we reExecute all the commands until that point
     int modReExecutedForIndex = -1;
     
     List<ICommand> cachedCommands;
+
+    private void Awake()
+    {
+        LinesComputer.Init(_gameConfig.Settings);
+        Aircraft = new Aircraft(_gameConfig);
+    }
 
     void Start()
     {
@@ -113,7 +122,7 @@ public class GameManager : Singleton<GameManager>
 
     void OnDrawGizmos()
     {
-        Aircraft.DrawGizmos();
+        Aircraft?.DrawGizmos();
     }
 
     void CheckModForOperation()

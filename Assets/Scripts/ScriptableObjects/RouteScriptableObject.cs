@@ -1,17 +1,36 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using System.Linq;
 
 [CreateAssetMenu(fileName = "RouteData", menuName = "ScriptableObjects/RouteData")]
 public class RouteScriptableObject : ScriptableObject
 {
+    [SerializeField] private GameConfigScriptableObject _gameConfig;
+    public RoutePoint[] Points;
+    
     public bool ActiveDirectApproach { get; private set; }
     public int FirstSpeedRegulationNodeId { get; set; }
     public int FirstAltRegulationNodeId { get; set; }
 
-    public RoutePoint[] Points;
-    public PathLines PathLines { get; private set; } = new PathLines();
+    public PathLines PathLines { get; private set; }
 
     static Aircraft Aircraft => GameManager.Instance.Aircraft;
+    private GameSettingsScriptableObject _settings => _gameConfig.Settings;
+
+    private void Awake()
+    {
+        if (_gameConfig == null)
+        {
+            return;
+        }
+        PathLines = new PathLines(_gameConfig.Settings);
+    }
+
+    public void Init(GameConfigScriptableObject config)
+    {
+        _gameConfig = config;
+        Awake();
+    }
 
     public void ComputeCartesianPositions()
     {
@@ -95,6 +114,7 @@ public class RouteScriptableObject : ScriptableObject
     public RouteScriptableObject Clone()
     {
         var newSet = CreateInstance<RouteScriptableObject>(); // new DataSetScriptableObject();
+        newSet.Init(_gameConfig);
         newSet.ActiveDirectApproach = ActiveDirectApproach;
         newSet.FirstAltRegulationNodeId = FirstAltRegulationNodeId;
         newSet.FirstSpeedRegulationNodeId = FirstSpeedRegulationNodeId;
@@ -119,7 +139,7 @@ public class RouteScriptableObject : ScriptableObject
         var nan = new Vector2(-100, -100);
 
 
-        futurePosition = Geometry.GetNextPosition(Aircraft.PositionFreeOrOnCurvedPath, Aircraft.ForwardThreshold,
+        futurePosition = Geometry.GetNextPosition(Aircraft.PositionFreeOrOnCurvedPath, _settings.ForwardThreshold,
             -Aircraft.HeadingDegrees);
 
         exitPoint = nan;
@@ -160,11 +180,11 @@ public class RouteScriptableObject : ScriptableObject
         // just to be sure move the center of turn further to have space for turn
         // - @#$ todo will need to refine the scenarios here
         centerOfTurn = Vector2.Lerp(centerOfTurn, nextNextNodePosition,
-            (2*Aircraft.ForwardThreshold) / Vector2.Distance(centerOfTurn, nextNextNodePosition));
+            (2*_settings.ForwardThreshold) / Vector2.Distance(centerOfTurn, nextNextNodePosition));
 
         
         exitPoint = Vector2.Lerp(centerOfTurn, nextNextNodePosition,
-            Aircraft.ForwardThreshold / Vector2.Distance(centerOfTurn, nextNextNodePosition));
+            _settings.ForwardThreshold / Vector2.Distance(centerOfTurn, nextNextNodePosition));
         
         return true;
     }
@@ -173,7 +193,7 @@ public class RouteScriptableObject : ScriptableObject
     public bool FindFreeFlightNextNodeExitScenario(out Vector2 futurePosition, out Vector2 centerOfTurn, out Vector2 exitPoint,
         out int exitSegmentIndex)
     {
-        futurePosition = Geometry.GetNextPosition(Aircraft.PositionFreeOrOnCurvedPath, Aircraft.ForwardThreshold,
+        futurePosition = Geometry.GetNextPosition(Aircraft.PositionFreeOrOnCurvedPath, _settings.ForwardThreshold,
             -Aircraft.HeadingDegrees);
             
         var currentNodeIndex = GameManager.Instance.Aircraft.RoutePathLocalization.CurrentNodeIndex;
@@ -182,7 +202,7 @@ public class RouteScriptableObject : ScriptableObject
         // we rejoin after intersection
         var nextNextNodePosition = Points[currentNodeIndex + 1].CartesianPosition;
         exitPoint = Vector2.Lerp(centerOfTurn, nextNextNodePosition,
-            Aircraft.ForwardThreshold / Vector2.Distance(centerOfTurn, nextNextNodePosition));
+            _settings.ForwardThreshold / Vector2.Distance(centerOfTurn, nextNextNodePosition));
 
         exitSegmentIndex = currentNodeIndex + 1;
 
@@ -236,7 +256,7 @@ public class RouteScriptableObject : ScriptableObject
             var nextSegmentStart = currentSegmentEnd;
 
             var countCurrent = Geometry.CircleIntersects(currentSegmentStart, currentSegmentEnd, intersection,
-                Aircraft.ForwardThreshold,
+                _settings.ForwardThreshold,
                 true, out var intersectionCurrent1, out var intersectionCurrent2);
 
             var nextSegmentEnd = Vector2.zero;
@@ -249,7 +269,7 @@ public class RouteScriptableObject : ScriptableObject
             {
                 nextSegmentEnd = Points[exitSegmentIndex + 1].CartesianPosition;
                 countNext = Geometry.CircleIntersects(nextSegmentStart, nextSegmentEnd, intersection,
-                    Aircraft.ForwardThreshold,
+                    _settings.ForwardThreshold,
                     false, out intersectionNext1, out intersectionNext2);
             }
 
@@ -304,7 +324,7 @@ public class RouteScriptableObject : ScriptableObject
                                    Vector2.SqrMagnitude(nextSegmentEnd - nextExitPoint);
             if (exitIsBackwards)
             {
-                nextExitPoint = Vector2.MoveTowards(newCenter, nextSegmentEnd, Aircraft.ForwardThreshold);
+                nextExitPoint = Vector2.MoveTowards(newCenter, nextSegmentEnd, _settings.ForwardThreshold);
             }
 
             // todo: if newCenter is passed the next segment end ( when in U turn and bypasses the middle ) -> try next
@@ -481,7 +501,7 @@ public class RouteScriptableObject : ScriptableObject
         afterInsertion.Distance = returnDirection.magnitude;
 
         // simulate the curve to the the needed offset
-        var lastLine = new MarkLine(relativeFromNode);
+        var lastLine = new MarkLine(relativeFromNode, _settings.UnitLength);
         lastLine.InitBeginning();
 
         LinesComputer.ComputeLine(lastLine, out var testLine, insertionNode, afterInsertion);
@@ -646,13 +666,13 @@ public class RouteScriptableObject : ScriptableObject
             lastAddedPositionNode = new RoutePoint
             {
                 Name = "_Position_",
-                Distance = Aircraft.ForwardThreshold,
+                Distance = _settings.ForwardThreshold,
                 RawDegrees = activeNextNode.RawDegrees,
                 Details = "P",
                 ID = GetNewId() +1
             };
 
-            var newFuturePosition = Geometry.GetNextPosition(Aircraft.PositionFreeOrOnRouteSegment, Aircraft.ForwardThreshold,
+            var newFuturePosition = Geometry.GetNextPosition(Aircraft.PositionFreeOrOnRouteSegment, _settings.ForwardThreshold,
                 activeNextNode.Degrees);
             
             var differencePosition = routeNextNode.CartesianPosition - newFuturePosition;
@@ -669,7 +689,7 @@ public class RouteScriptableObject : ScriptableObject
 
 
             var futurePosition = Geometry.GetNextPosition(Aircraft.PositionFreeOrOnRouteSegment,
-                Aircraft.ForwardThreshold, -Aircraft.HeadingDegrees);
+                _settings.ForwardThreshold, -Aircraft.HeadingDegrees);
 
             lastAddedPositionNode =
                 RoutePoint.ConstructFromPosition(futurePosition, currentAddedPosition, GetNewId() + 1, "P",

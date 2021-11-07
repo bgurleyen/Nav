@@ -5,7 +5,7 @@ public class FixCircle : Line
 {
     public FixedPointInfo LinkedInfo { get; private set; }
 
-    public FixCircle(RoutePoint linkedPoint, FixedPointInfo linkedInfo) : base(linkedPoint)
+    public FixCircle(RoutePoint linkedPoint, FixedPointInfo linkedInfo) : base(linkedPoint, 100)
     {
         LinkedInfo = linkedInfo;
     }
@@ -14,7 +14,7 @@ public class FixCircle : Line
     {
         EndPosition = endPosition;
 
-        var arcPoints = ComputeArcPoints(0, 360, 100, LinkedInfo.NM ?? 0, EndPosition, Vector3.zero);
+        var arcPoints = ComputeArcPoints(0, 360, UnitLength, LinkedInfo.NM ?? 0, EndPosition, Vector3.zero);
 
         Vertexes = new Vector3[arcPoints.Length];
 
