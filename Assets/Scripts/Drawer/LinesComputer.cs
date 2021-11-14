@@ -7,7 +7,7 @@
 
         public static void Init(GameSettingsScriptableObject settings)
         {
-            _unitLength = settings.UnitLength;
+            _unitLength = settings.DrawerUnitLength;
         }
         
         public static bool GetNextLine(MarkLine lastLine, int fromDataPointIndex, RoutePoint[] points,

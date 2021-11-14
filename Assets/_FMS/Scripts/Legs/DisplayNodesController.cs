@@ -44,7 +44,7 @@ public class DisplayNodesController
 
     public NodeSelection GetNodeInfoAtLineIndex(int lineIndex, int currentPage)
     {
-        var totalLineIndex = lineIndex + currentPage * nodesPerPage;
+        var pagedLineIndex = lineIndex + currentPage * nodesPerPage;
 
         // when an insert have been made with the future position node and has been executed. happening until passing the new position
         var positionIsTemporaryAhead = ActiveRoute.Points[PositionVirtualNode.NextNodeIndex].IsPositionNode;
@@ -56,7 +56,7 @@ public class DisplayNodesController
         var pointIsValid = false;
         RoutePoint linkedPoint = null;
 
-        for (var i = 0; i <= totalLineIndex; i++)
+        for (var i = 0; i <= pagedLineIndex; i++)
         {
             pointIsValid = VisibleRoute.GetPointAt(linkedIndex, out linkedPoint);
 
@@ -105,7 +105,7 @@ public class DisplayNodesController
 
             if (canIncrement)
             {
-                if (i < totalLineIndex)
+                if (i < pagedLineIndex)
                 {
                     linkedIndex++;
                 }

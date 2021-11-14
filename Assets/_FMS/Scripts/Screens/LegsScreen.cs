@@ -71,16 +71,16 @@ public class LegsScreen : ScreenBase
         // Debug.Log("start");
         for (var i = 0; i < nodes.Length; i++)
         {
-            var _linkedSelection = nodesController.GetNodeInfoAtLineIndex(i, currentPage);
+            var linkedSelection = nodesController.GetNodeInfoAtLineIndex(i, currentPage);
 
-            if (_linkedSelection.IsInvalid || _linkedSelection.IsEmpty)
+            if (linkedSelection.IsInvalid || linkedSelection.IsEmpty)
             {
                 nodes[i].ShowEmpty();
             }
             else
             {
-                VisibleRoute.GetPoint(_linkedSelection.LinkedId, out var _node);
-                nodes[i].DisplayNodeDetails(_node, _linkedSelection);
+                VisibleRoute.GetPoint(linkedSelection.LinkedId, out var _node);
+                nodes[i].DisplayNodeDetails(_node, linkedSelection);
             }
         }
     }

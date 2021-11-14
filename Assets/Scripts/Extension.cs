@@ -34,7 +34,7 @@ public static class Extension
     }
 
 
-    public static void DespawnChildred<T>(Transform holder, LeanGameObjectPool pool) where T : MonoBehaviour
+    public static void DespawnChildren<T>(Transform holder, LeanGameObjectPool pool) where T : MonoBehaviour
     {
         var lines = holder.GetComponentsInChildren<T>();
         foreach (var l in lines)

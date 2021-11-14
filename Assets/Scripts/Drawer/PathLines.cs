@@ -27,7 +27,7 @@ public class PathLines
             ComputedRays = new List<FixRay>();
         }
 
-        var lastLine = new MarkLine(null, _settings.UnitLength);
+        var lastLine = new MarkLine(null, _settings.DrawerUnitLength);
         lastLine.InitBeginning();
         var currentIndex = 0;
 

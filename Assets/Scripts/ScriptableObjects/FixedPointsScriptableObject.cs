@@ -10,27 +10,26 @@ public class FixedPointsScriptableObject : ScriptableObject
 
     public static FixedPointsScriptableObject CreateDemo()
     {
-        return new FixedPointsScriptableObject
-        {
-            Entries = new[]
-            {
-                new FixedPointEntry
-                {
-                    Name = "NORTA", Infos = new[]
-                    {
-                        new FixedPointInfo {RawDegrees = 300, NM = 30},
-                        new FixedPointInfo {RawDegrees = 30, NM = 10},
-                    }
-                },
-                //new FixEntry { Name = "DV575", Infos = new []
-                //    {
-                //       new FixInfo { RawDegrees = 300, NM = 30},
-                //    }
-                //},
-            }
-        };
-    }
+        var demo = CreateInstance<FixedPointsScriptableObject>();
 
+        demo.Entries = new[]
+        {
+            new FixedPointEntry
+            {
+                Name = "NORTA", Infos = new[]
+                {
+                    new FixedPointInfo {RawDegrees = 300, NM = 30},
+                    new FixedPointInfo {RawDegrees = 30, NM = 10},
+                }
+            },
+            //new FixEntry { Name = "DV575", Infos = new []
+            //    {
+            //       new FixInfo { RawDegrees = 300, NM = 30},
+            //    }
+            //},
+        };
+        return demo;
+    }
 }
 
 [Serializable]

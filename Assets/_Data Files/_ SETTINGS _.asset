@@ -14,8 +14,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cMagenta: {r: 1, g: 0.2, b: 0.8, a: 1}
   cLightYellow: {r: 0.92156863, g: 0.8784314, b: 0.7882353, a: 1}
-  UnitLength: 0.6
-  DeltaTime: 0.0000057
-  MaxTurningSpeedPerUnitLength: 0.5
+  DrawerUnitLength: 0.6
+  MaxTurningSpeedPerNM: 1
+  deltaTime: 0.0057
   ForwardThreshold: 2
   RejoinDistance: 2.8
+  HGDAutoNextPointDistance: 1.3

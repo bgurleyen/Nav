@@ -1,6 +1,7 @@
 ﻿using System;
 using UnityEngine;
 using System.Linq;
+using UnityEngine.Assertions;
 
 [CreateAssetMenu(fileName = "RouteData", menuName = "ScriptableObjects/RouteData")]
 public class RouteScriptableObject : ScriptableObject
@@ -16,6 +17,14 @@ public class RouteScriptableObject : ScriptableObject
 
     static Aircraft Aircraft => GameManager.Instance.Aircraft;
     private GameSettingsScriptableObject _settings => _gameConfig.Settings;
+
+    private void OnValidate()
+    {
+        if (!Application.isPlaying && name.Length >0)
+        {
+            Assert.IsNotNull(_gameConfig, $"Please assign Config Reference to {name}");
+        }
+    }
 
     private void Awake()
     {
@@ -178,7 +187,7 @@ public class RouteScriptableObject : ScriptableObject
         var nextNextNodePosition = Points[exitSegmentIndex].CartesianPosition;
         
         // just to be sure move the center of turn further to have space for turn
-        // - @#$ todo will need to refine the scenarios here
+        // - $^% todo will need to refine the scenarios here
         centerOfTurn = Vector2.Lerp(centerOfTurn, nextNextNodePosition,
             (2*_settings.ForwardThreshold) / Vector2.Distance(centerOfTurn, nextNextNodePosition));
 
@@ -212,7 +221,6 @@ public class RouteScriptableObject : ScriptableObject
     // to be executed on ACTIVE route
     public bool FindFreeFlightDirectExitScenario(out Vector2 centerOfTurn, out Vector2 exitPoint, out int exitSegmentIndex)
     {
-
         var nan = new Vector2(-100, -100);
 
         exitPoint = nan;
@@ -232,7 +240,7 @@ public class RouteScriptableObject : ScriptableObject
             segmentEnd = Geometry.GetNextPosition(segmentStart, Points[i].Distance, Points[i].Degrees);
 
             if (Points[i].IsHiddenLine || Points[i].IsAfterDiscontinuity
-            ) //@#$ ask if we can join discontinuity segments
+            ) //$^% ask if we can join discontinuity segments
             {
                 continue;
             }
@@ -365,7 +373,7 @@ public class RouteScriptableObject : ScriptableObject
     }
 
     public void ShortcutNodes(int firstIdNodeToDissolve, int toId,
-        out RoutePoint reducedPoint) // @#$ refactor for passed nodes ?
+        out RoutePoint reducedPoint) // $^% refactor for passed nodes ?
     {
         var startIndex = Points.GetNodeIndex(firstIdNodeToDissolve);
         var endIndex = Points.GetNodeIndex(toId);
@@ -418,7 +426,7 @@ public class RouteScriptableObject : ScriptableObject
     }
 
     public void AddRelativeNodeOnDirection(int nodeId, int distance, int relativeNodeId, out RoutePoint insertionNode,
-        out RoutePoint afterInsertion) // @#$ todo refactor for passed nodes ?
+        out RoutePoint afterInsertion) // $^% todo refactor for passed nodes ?
     {
         var nodeIndex = Points.GetNodeIndex(nodeId);
         var node = Points[nodeIndex];
@@ -501,7 +509,7 @@ public class RouteScriptableObject : ScriptableObject
         afterInsertion.Distance = returnDirection.magnitude;
 
         // simulate the curve to the the needed offset
-        var lastLine = new MarkLine(relativeFromNode, _settings.UnitLength);
+        var lastLine = new MarkLine(relativeFromNode, _settings.DrawerUnitLength);
         lastLine.InitBeginning();
 
         LinesComputer.ComputeLine(lastLine, out var testLine, insertionNode, afterInsertion);
