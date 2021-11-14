@@ -6,8 +6,7 @@ using Gamelogic.Extensions;
 
 public class Drawer : Singleton<Drawer>
 {
-    [SerializeField] Color cMagenta;
-    [SerializeField] Color cLightYellow;
+    [SerializeField] private GameConfigScriptableObject _gameConfig;
 
     public Animator cameraAnimator;
     [Space] [SerializeField] Transform dynamicHolder;
@@ -36,21 +35,22 @@ public class Drawer : Singleton<Drawer>
 
     [Header("Adjust")] [SerializeField] float mapReferenceLength80 = 1.6f;
     [SerializeField] float planReferenceLength80 = 1.6f;
+    [SerializeField] private float _debugStarDistance = 1.3f;
 
-    public Color CMagenta => cMagenta;
-
-    public Color CLightYellow => cLightYellow;
+    public Color CMagenta => _gameConfig.Settings.cMagenta;
+    public Color CLightYellow => _gameConfig.Settings.cLightYellow;
 
     public DrawerMode Mode { get; private set; } = DrawerMode.Suspeded;
 
     public float Zoom => (Mode == DrawerMode.Plan
         ? planReferenceLength80
-        : zoomMultiplier * mapReferenceLength80) / 80f;
+        : _zoomMultiplier * mapReferenceLength80) / 80f;
 
-    float zoomMultiplier = 1f;
+    float _zoomMultiplier;
 
     public const float RelaxedRadius = 17;
 
+    Aircraft Aircraft => GameManager.Instance.Aircraft;
     const float FtToNm = 0.000164579f;
 
     // turn radius
@@ -63,6 +63,10 @@ public class Drawer : Singleton<Drawer>
     public static float GetMinRadius => Mathf.Pow(GS, 2) / (11.29f * Mathf.Tan(Bank)) * FtToNm;
     const bool WalkOnMod = false;
 
+    void Awake()
+    {
+        _zoomMultiplier = _gameConfig.Settings.StartingZoom;
+    }
 
     public void ResetMode()
     {
@@ -114,24 +118,24 @@ public class Drawer : Singleton<Drawer>
     public void OnZoomIn()
     {
         Clear();
-        zoomMultiplier += 0.2f;
+        _zoomMultiplier += 0.2f;
         Display();
     }
 
     public void OnZoomOut()
     {
         Clear();
-        zoomMultiplier -= 0.2f;
+        _zoomMultiplier -= 0.2f;
         Display();
     }
 
     public void Clear()
     {
-        Extension.DespawnChildred<LineDrawer>(dynamicHolder, linesPool);
-        Extension.DespawnChildred<LineDrawer>(dynamicHolderMod, linesPoolMod);
-        Extension.DespawnChildred<FixedCircleDrawer>(dynamicHolderCircles, circlePool);
-        Extension.DespawnChildred<FixedRayDrawer>(dynamicHolderRays, rayPool);
-        Extension.DespawnChildred<OtherAircrafIndicator>(dynamicHolderOtheriarcrafts, otherAircraftsPool);
+        Extension.DespawnChildren<LineDrawer>(dynamicHolder, linesPool);
+        Extension.DespawnChildren<LineDrawer>(dynamicHolderMod, linesPoolMod);
+        Extension.DespawnChildren<FixedCircleDrawer>(dynamicHolderCircles, circlePool);
+        Extension.DespawnChildren<FixedRayDrawer>(dynamicHolderRays, rayPool);
+        Extension.DespawnChildren<OtherAircrafIndicator>(dynamicHolderOtheriarcrafts, otherAircraftsPool);
     }
 
     public static bool GetCircleFix(RoutePoint linkedPoint, Vector3 from, FixedPointInfo linkedInfo,
@@ -171,12 +175,12 @@ public class Drawer : Singleton<Drawer>
 
         DisplayFixCircles();
         DisplayFixRays();
-        freeFlightPivot.gameObject.SetActive(GameManager.Instance.Aircraft.IsFreeFlight);
+        freeFlightPivot.gameObject.SetActive(Aircraft.IsFreeFlight);
         bananaIndicatorPivot.SetLocalY(Calculator.Instance.GetBananaPosition);
 
-        if (GameManager.Instance.Aircraft.TempPathLines != null)
+        if (Aircraft.IsRejoining && Aircraft.RejoinPathLines != null)
         {
-            DisplaySet(GameManager.Instance.Aircraft.TempPathLines.ComputedLines,  LinesType.Rejoin);
+            DisplaySet(Aircraft.RejoinPathLines.ComputedLines,  LinesType.Rejoin);
         }
         
         DisplayOtherTraffic();
@@ -186,10 +190,10 @@ public class Drawer : Singleton<Drawer>
             case DrawerMode.Center:
             case DrawerMode.Map:
                 //rotate compass
-                compasPivot.SetLocalRotationZ(GameManager.Instance.Aircraft.HeadingDegrees);
-                if (GameManager.Instance.Aircraft.IsFreeFlight)
+                compasPivot.SetLocalRotationZ(Aircraft.HeadingDegrees);
+                if (Aircraft.IsFreeFlight)
                 {
-                    freeFlightPivot.SetLocalRotationZ(GameManager.Instance.Aircraft.HeadingDegrees - Calculator.RHeading);
+                    freeFlightPivot.SetLocalRotationZ(Aircraft.HeadingDegrees - Calculator.RHeading);
                 }
 
                 break;
@@ -197,8 +201,8 @@ public class Drawer : Singleton<Drawer>
                 //rotate compass
                 compasPivot.SetLocalRotationZ(0);
                 mobilePlaneIndicatorPivot.position =
-                    GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath.ToDisplay();
-                mobilePlaneIndicatorPivot.SetLocalRotationZ(-GameManager.Instance.Aircraft.HeadingDegrees);
+                    Aircraft.PositionFreeOrOnCurvedPath.ToDisplay();
+                mobilePlaneIndicatorPivot.SetLocalRotationZ(-Aircraft.HeadingDegrees);
                 break;
             case DrawerMode.Suspeded:
                 break;
@@ -222,12 +226,21 @@ public class Drawer : Singleton<Drawer>
             drawer.transform.localPosition = positions[key].ToDisplay();
         }
 
-        // demo
+        // demo - shows a debug star for seeing the distance
         var objective = otherAircraftsPool.Spawn(Vector3.zero, Quaternion.identity, dynamicHolderOtheriarcrafts)
             .GetComponent<OtherAircrafIndicator>();
         objective.name = "My objective";
-        objective.Init("*", Color.red);
-        objective.transform.localPosition = new Vector2(100, 100).ToDisplay();
+        objective.Init("|", Color.yellow);
+        objective.transform.localPosition = (GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath +
+                                             Vector2.right * _debugStarDistance)
+            .ToDisplay();
+
+        // demo - shows a debug star for seeing the distance
+        objective = otherAircraftsPool.Spawn(Vector3.zero, Quaternion.identity, dynamicHolderOtheriarcrafts)
+            .GetComponent<OtherAircrafIndicator>();
+        objective.name = "origin";
+        objective.Init("o", Color.blue);
+        objective.transform.localPosition = Vector2.zero.ToDisplay();
     }
 
     void DisplaySet(IReadOnlyList<MarkLine> lines, LinesType linesType)
@@ -255,13 +268,12 @@ public class Drawer : Singleton<Drawer>
                 throw new ArgumentOutOfRangeException(nameof(linesType), linesType, null);
         }
 
-        var aircraft = GameManager.Instance.Aircraft;
         var rejoinSegmentIndex = 0;
         var rejoinPoint = Vector2.zero;
-        if (aircraft.IsRejoining)
+        if (Aircraft.IsRejoining)
         {
-            rejoinSegmentIndex = aircraft.CachedExitSegmentOfHeadingRejoinIntersection;
-            rejoinPoint = aircraft.CachedExitPointFromHeading;
+            rejoinSegmentIndex = Aircraft.CachedExitSegmentOfHeadingRejoinIntersection;
+            rejoinPoint = Aircraft.CachedExitPointFromHeading;
         }
 
         for (var i = 0; i < lines.Count; i++)
@@ -276,7 +288,9 @@ public class Drawer : Singleton<Drawer>
                 continue;
             }
 
-            if (linesType == LinesType.Active && aircraft.IsRejoining)
+            // $%^ this is bad. Ask if we need to keep the rejoin arc after rejoining
+            // we are offsetting the display start of the line to be just after the rejoin path
+            if (linesType == LinesType.Active && Aircraft.IsRejoining)
             {
                 if (i < rejoinSegmentIndex )
                 {
@@ -285,8 +299,6 @@ public class Drawer : Singleton<Drawer>
                 else if (i == rejoinSegmentIndex)
                 {
                     // find intersection vertex index of generated line with rejoin line.. 
-
-
                     if (line.Vertexes.Length > 4)
                     {
                         var dist = (line.Vertexes[0].To2DXY() - rejoinPoint).sqrMagnitude;
@@ -309,11 +321,11 @@ public class Drawer : Singleton<Drawer>
             var point = line.LinkedPoint;
 
             var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<LineDrawer>();
-            drawer.name = line.GetName + " " + point.Name;
+            drawer.name = $"{linesType} {line.GetName} {point.Name}";
 
             if (linesType == LinesType.Mod && GameManager.Instance.ActiveRoute.GetPoint(point.ID, out var activePoint))
             {
-                // @#$ error at cartesian position
+                // $^% error at cartesian position
                 if (RoutePoint.HaveSamePosition(activePoint, point))
                 {
                     hiddenLabel = true;
@@ -325,8 +337,7 @@ public class Drawer : Singleton<Drawer>
                 }
             }
 
-            
-            drawer.Display(line, point, hiddenLabel || linesType == LinesType.Rejoin , hiddenLine,fromPointIndex);
+            drawer.Display(line, point, hiddenLabel || linesType == LinesType.Rejoin, hiddenLine, fromPointIndex);
         }
     }
     
@@ -353,7 +364,7 @@ public class Drawer : Singleton<Drawer>
             var point = line.LinkedPoint;
 
             var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<FixedCircleDrawer>();
-            drawer.name = line.GetName + " " + point.Name;
+            drawer.name = $"{line.GetName} {point.Name}";
             drawer.Display(line);
         }
     }
@@ -376,7 +387,7 @@ public class Drawer : Singleton<Drawer>
             var point = ray.LinkedPoint;
 
             var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<FixedRayDrawer>();
-            drawer.name = ray.GetName + " " + point.Name;
+            drawer.name = $"{ray.GetName} {point.Name}";
             drawer.Display(ray);
         }
     }

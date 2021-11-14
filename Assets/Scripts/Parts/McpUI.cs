@@ -10,37 +10,43 @@ public class McpUI : Singleton<McpUI>
     [SerializeField] Toggle hsToggle;
     [SerializeField] Toggle lNavToggle;
     [SerializeField] Text headingText;
-    
-    byte mode = 1;
-    public GameObject MCPSwitch;
-    static bool cacheSilentSwitch;
+    [SerializeField] Slider _SBSlider;
+
+    static bool CacheSilentSwitch;
+
     void Awake()
     {
         hsToggle.onValueChanged.AddListener(OnHS);
         lNavToggle.onValueChanged.AddListener(OnLNav);
     }
 
-    public void MCPSwitch_Click()
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="mode"> 0 = M, 1 = C, 2 = P</param>
+    public void MCPSwitch_Click(float mode)
     {
-        mode += 1;
-        if (mode > 3) mode = 1;
-        if (mode == 1)
+        if (mode == 0)
         {
             Drawer.Instance.ShowMapMode();
-            MCPSwitch.transform.localEulerAngles = new Vector3(-90, 0, -35);
+        }
+
+        if (mode == 1)
+        {
+            Drawer.Instance.ShowCenterMode();
         }
 
         if (mode == 2)
         {
-            Drawer.Instance.ShowCenterMode();
-            MCPSwitch.transform.localEulerAngles = new Vector3(-90, 0, 0);
-        }
-
-        if (mode == 3)
-        {
             Drawer.Instance.ShowPlanMode();
-            MCPSwitch.transform.localEulerAngles = new Vector3(-90, 0, 40);
         }
+    }
+
+
+    public void RefreshHS()
+    {
+        headingText.text = Calculator.RHeading.ToString();
     }
 
     public void OnMapMode(bool toggle)
@@ -66,9 +72,9 @@ public class McpUI : Singleton<McpUI>
 
     static void OnHS(bool toggle)
     {
-        if (cacheSilentSwitch)
+        if (CacheSilentSwitch)
         {
-            cacheSilentSwitch = false;
+            CacheSilentSwitch = false;
         }
         else
         {
@@ -82,9 +88,9 @@ public class McpUI : Singleton<McpUI>
 
     static void OnLNav(bool toggle)
     {
-        if (cacheSilentSwitch)
+        if (CacheSilentSwitch)
         {
-            cacheSilentSwitch = false;
+            CacheSilentSwitch = false;
         }
         else
         {
@@ -97,20 +103,33 @@ public class McpUI : Singleton<McpUI>
     }
 
 
-    public void RefreshHS()
+    static void SilentSwitchHeading(bool value)
     {
-        headingText.text = Calculator.RHeading.ToString();
-    }
-
-    public static void SilentSwitchHeading(bool value)
-    {
-        cacheSilentSwitch = true;
+        CacheSilentSwitch = true;
         Instance.hsToggle.isOn = value;
     }
 
-    public static void SilentSwitchLNAV(bool value)
+    static void SilentSwitchLNAV(bool value)
     {
-        cacheSilentSwitch = true;
+        CacheSilentSwitch = true;
         Instance.lNavToggle.isOn = value;
+    }
+
+    public void SBLeverInteract(bool down, bool isSilent = false)
+    {
+        CacheSilentSwitch = isSilent;
+        _SBSlider.value = down ? 0 : 1;
+    }
+
+    
+    public void OnSBSliderChanged(float newValue)
+    {
+        if (CacheSilentSwitch)
+        {
+            CacheSilentSwitch = false;
+            return;
+        }
+
+        Calculator.Instance.SetSB(newValue == 0, true);
     }
 }

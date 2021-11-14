@@ -10,7 +10,7 @@ public class MarkLine : Line
     
     Vector3 lastPoint = Vector3.zero;
 
-    public MarkLine(RoutePoint linkedPoint): base(linkedPoint) { }
+    public MarkLine(RoutePoint linkedPoint, float unitLength): base(linkedPoint, unitLength) { }
 
     public void InitBeginning()
     {

@@ -330,7 +330,7 @@ public static class Geometry
         }
         else
         {
-            closest = new Vector2(p1.x + t * dx, p1.x + t * dy);
+            closest = new Vector2(p1.x + t * dx, p1.y + t * dy);
             dx = pt.x - closest.x;
             dy = pt.y - closest.y;
         }

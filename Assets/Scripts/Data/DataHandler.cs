@@ -324,7 +324,7 @@ public class DataHandler
 
         if (result.Count == 0)
         {
-            // @#$ also exclude leftovers 234AA234B : second A needs to flag error
+            // $^% also exclude leftovers 234AA234B : second A needs to flag error
             return false;
         }
 

@@ -41,6 +41,15 @@ public class RoutePoint
     public void SetSpeedComputed(int lastRegulation) =>
         Speed.SetComputedValue(lastRegulation, (int) GetAcceptedAltitude);
 
+    /// <summary>
+    /// Can be less precise than compute node with degrees and distance directly
+    /// </summary>
+    /// <param name="position"></param>
+    /// <param name="previousPoint"></param>
+    /// <param name="newId"></param>
+    /// <param name="details"></param>
+    /// <param name="name"></param>
+    /// <returns></returns>
     public static RoutePoint ConstructFromPosition(Vector2 position, RoutePoint previousPoint, int newId = -1, string details = "", string name = "")
     {
         var rp = new RoutePoint{ CartesianPosition = position, ID = 0};

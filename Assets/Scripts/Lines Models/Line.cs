@@ -8,13 +8,12 @@ public class Line
     public Vector3 EndPosition { get; protected set; }
     public RoutePoint LinkedPoint { get; private set; }
     public Vector3[] Vertexes;
-   
-    // frequency of points
-    protected const float UnitLength = 0.6f;
 
+    protected readonly float UnitLength;
 
-    protected Line(RoutePoint linkedPoint)
+    protected Line(RoutePoint linkedPoint, float unitLength)
     {
+        UnitLength = unitLength;
         LinkedPoint = linkedPoint;
     }
 
