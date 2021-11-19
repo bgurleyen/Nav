@@ -103,7 +103,7 @@ public class Move : Singleton<Move>
 
     Vector2 pointPos(int pt)
     {
-        int ptCount = virtualPoints[Level].VirtualPointsItems.Length;
+        int ptCount =  virtualPoints[Level].VirtualPointsItems.Length;
         return  pt < 50 ? Route.GetCartesianPosition(pt) : VirtualPtsPos[pt - 50] ;
     }
     float TrackToPoint(int pt)
