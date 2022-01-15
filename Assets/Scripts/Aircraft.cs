@@ -55,13 +55,13 @@ public class Aircraft
     }
 
     Vector2 CurrentDirection => Geometry.GetDirectionFromHeading(HeadingDegrees);
-    float FrameDistance => speed * _settings.DeltaTime * Calculator.Acceleration(); //change
+    float FrameDistance => _speed * _settings.DeltaTime * Calculator.Acceleration(); //change
 
-    float speed;
+    float _speed;
 
     public void ResetOnActiveSet(float aircraftSpeed, float altitude)
     {
-        speed = aircraftSpeed;
+        _speed = aircraftSpeed;
         PositionFreeOrOnCurvedPath = Vector2.zero;
         PositionFreeOrOnRouteSegment = Vector2.zero;
         WalkedDistanceOnSegment = 0;

@@ -290,33 +290,35 @@ public class Drawer : Singleton<Drawer>
 
             // $%^ this is bad. Ask if we need to keep the rejoin arc after rejoining
             // we are offsetting the display start of the line to be just after the rejoin path
-            if (linesType == LinesType.Active && Aircraft.IsRejoining)
-            {
-                if (i < rejoinSegmentIndex )
-                {
-                    hiddenLine = true;
-                }
-                else if (i == rejoinSegmentIndex)
-                {
-                    // find intersection vertex index of generated line with rejoin line.. 
-                    if (line.Vertexes.Length > 4)
-                    {
-                        var dist = (line.Vertexes[0].To2DXY() - rejoinPoint).sqrMagnitude;
-
-                        for (int p = 1; p < line.Vertexes.Length; p++)
-                        {
-                            var nextDist = (line.Vertexes[p].To2DXY() - rejoinPoint).sqrMagnitude;
-                            if (nextDist > dist)
-                            {
-                                fromPointIndex = p - 1;
-                                break;
-                            }
-
-                            dist = nextDist;
-                        }
-                    }
-                }
-            }
+            // Update: we want to keep displaying the active route as original so this is not needed
+            // if (linesType == LinesType.Active && Aircraft.IsRejoining)
+            // {
+            //     if (i < rejoinSegmentIndex )
+            //     {
+            //         // dont' hide line even if the aircraft is away rejoining
+            //         //hiddenLine = true;
+            //     }
+            //     else if (i == rejoinSegmentIndex)
+            //     {
+            //         // find intersection vertex index of generated line with rejoin line.. 
+            //         if (line.Vertexes.Length > 4)
+            //         {
+            //             var dist = (line.Vertexes[0].To2DXY() - rejoinPoint).sqrMagnitude;
+            //
+            //             for (int p = 1; p < line.Vertexes.Length; p++)
+            //             {
+            //                 var nextDist = (line.Vertexes[p].To2DXY() - rejoinPoint).sqrMagnitude;
+            //                 if (nextDist > dist)
+            //                 {
+            //                     fromPointIndex = p - 1;
+            //                     break;
+            //                 }
+            //
+            //                 dist = nextDist;
+            //             }
+            //         }
+            //     }
+            // }
 
             var point = line.LinkedPoint;
 
