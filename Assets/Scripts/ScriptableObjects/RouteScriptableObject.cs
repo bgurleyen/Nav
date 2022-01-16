@@ -205,7 +205,7 @@ public class RouteScriptableObject : ScriptableObject
         }
         
         
-        MakeSureForTurningSpace(ref tipOfTurn, out exitPoint, exitSegmentIndex);
+        MakeSureForTurningSpace(ref tipOfTurn, out exitPoint, ref exitSegmentIndex);
         
         
         return true;
@@ -254,19 +254,29 @@ public class RouteScriptableObject : ScriptableObject
         
         tipOfTurn = intersection;
 
-        MakeSureForTurningSpace(ref tipOfTurn, out exitPoint, exitSegmentIndex);
+        MakeSureForTurningSpace(ref tipOfTurn, out exitPoint, ref exitSegmentIndex);
 
         return true;
 
     }
 
     // move the tip of turn further to have space for turn
-    public bool MakeSureForTurningSpace(ref Vector2 tipOfTurn, out Vector2 exitPoint, int exitSegmentIndex)
+    public bool MakeSureForTurningSpace(ref Vector2 tipOfTurn, out Vector2 exitPoint, ref int exitSegmentIndex)
     {
         var neededTipOffset = 2;
         var neededExitPointOffset = 3;
         
+        
         var nextNextNodePosition = Points[exitSegmentIndex].CartesianPosition;
+        
+        while (Points.Length > exitSegmentIndex +1 && Vector2.SqrMagnitude(nextNextNodePosition - tipOfTurn) < _settings.ForwardThreshold * _settings.ForwardThreshold)
+        {
+            Debug.Log($"too close to corner exit in next segment ({Vector2.SqrMagnitude(nextNextNodePosition - tipOfTurn)})");
+            tipOfTurn = nextNextNodePosition;
+            exitSegmentIndex++;
+            nextNextNodePosition = Points[exitSegmentIndex].CartesianPosition;
+        }
+        
         tipOfTurn = Vector2.Lerp(tipOfTurn, nextNextNodePosition,
             (neededTipOffset * _settings.ForwardThreshold) / Vector2.Distance(tipOfTurn, nextNextNodePosition));
 

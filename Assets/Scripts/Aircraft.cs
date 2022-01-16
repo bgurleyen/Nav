@@ -119,6 +119,9 @@ public class Aircraft
         {
             Debug.LogError("No Intersection Point Found");
         }
+
+        displayExitPoint = _cachedExitPointFromHeading;
+        displayCenterOfTurn = tipOfTurn;
     }
 
     // when aircraft is in HDG and user applies a MOD
@@ -153,8 +156,10 @@ public class Aircraft
             IsFreeFlight = false;
     }
 
-    void ComputeTempPathForCloseToPath(Vector2 futurePosition, Vector2 centerOfTurn)
+    void ComputeTempPathForCloseToPath(Vector2 futurePosition, Vector2 tipOfTurn)
     {
+        
+                    
         Debug.Log("start LNAV - rejoin close path");
         RejoinPathLines = new PathLines(_settings);
 
@@ -165,7 +170,7 @@ public class Aircraft
         tempPoints[1] = lastPoint;
         lastPoint = RoutePoint.ConstructFromPosition(futurePosition, lastPoint);
         tempPoints[2] = lastPoint;
-        lastPoint = RoutePoint.ConstructFromPosition(centerOfTurn, lastPoint);
+        lastPoint = RoutePoint.ConstructFromPosition(tipOfTurn, lastPoint);
         tempPoints[3] = lastPoint;
         lastPoint = RoutePoint.ConstructFromPosition(_cachedExitPointFromHeading, lastPoint);
         tempPoints[4] = lastPoint;
@@ -183,10 +188,6 @@ public class Aircraft
     void ComputeRejoinPathForDirectIntersection(Vector2 tipOfTurn)
     {
             //compute rejoin path
-
-            displayExitPoint = _cachedExitPointFromHeading;
-            displayCenterOfTurn = tipOfTurn;
-            
             Debug.Log("start LNAV - rejoin direct intersection");
             RejoinPathLines = new PathLines(_settings);
 
