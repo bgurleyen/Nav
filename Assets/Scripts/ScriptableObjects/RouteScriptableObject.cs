@@ -136,8 +136,9 @@ public class RouteScriptableObject : ScriptableObject
         return newSet;
     }
 
-    public void OnPathRejoined()
+    public void OnPathRejoined(Vector3 oldPositionVertex)
     {
+        PathLines.oldPositionVertex = oldPositionVertex;
         ActiveDirectApproach = false;
     }
 
@@ -267,10 +268,13 @@ public class RouteScriptableObject : ScriptableObject
         var nextNextNodePosition = Points[exitSegmentIndex].CartesianPosition;
         var exitDirection = nextNextNodePosition - tipOfTurn;
         var headingDiff = Vector2.Dot( exitDirection, Geometry.GetDirectionFromHeading(Aircraft.HeadingDegrees));
-        
+
+        var minProduct = 0;
         // add more offset if the directions are opposite
-        var neededTipOffset = headingDiff <0 ? 3:2;
-        var neededExitPointOffset = headingDiff < 0 ? 1:0.5f;
+        var neededTipOffset = headingDiff <minProduct ? 3:2;
+        var neededExitPointOffset = headingDiff < minProduct ? 1:0.5f;
+        
+        Debug.Log($"dotProd: { headingDiff}");
 
         tipOfTurn = Vector2.Lerp(tipOfTurn, nextNextNodePosition,
             (neededTipOffset * _settings.ForwardThreshold) / Vector2.Distance(tipOfTurn, nextNextNodePosition));

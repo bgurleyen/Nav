@@ -92,7 +92,7 @@ public class PathLines
 
  
 
-    Vector3 oldPositionVertex = Vector3.zero;
+    public Vector3 oldPositionVertex = Vector3.zero;
 
     public void ResetOldPosition()
     {
@@ -113,7 +113,10 @@ public class PathLines
         {
             
             var vertex = ComputedLines[nextLine].Vertexes[nextPoint];
-            var heading = Geometry.GetHeadingOfDirection(vertex - oldPositionVertex);
+            var direction = vertex - oldPositionVertex;
+            var heading = direction == Vector3.zero
+                ? GameManager.Instance.Aircraft.HeadingDegrees
+                : Geometry.GetHeadingOfDirection(direction);
             oldPositionVertex = vertex;
             
             positionInfo = new PathPositionInfo

@@ -53,8 +53,6 @@ public class GameManager : Singleton<GameManager>
 
         Aircraft.ResetOnActiveSet(170, 21600);
     }
-    
-    
 
     void FixedUpdate()
     {

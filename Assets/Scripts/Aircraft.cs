@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
-//[Serializable]
+[Serializable]
 public class Aircraft
 {
     private GameSettingsScriptableObject _settings;
@@ -446,7 +446,7 @@ public class Aircraft
                 if (rejoined)
                 {
                     IsOnRoute = true;
-                    GameManager.Instance.ActiveRoute.OnPathRejoined();
+                    GameManager.Instance.ActiveRoute.OnPathRejoined(RejoinPathLines.oldPositionVertex);
 
                     if (GameManager.Instance.ActiveRoute.TransferPathToRoute(_cachedExitPointFromHeading, exitSegmentIndex,
                         out var intersectionInfo,
