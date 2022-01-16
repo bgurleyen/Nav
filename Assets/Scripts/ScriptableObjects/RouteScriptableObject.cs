@@ -141,18 +141,37 @@ public class RouteScriptableObject : ScriptableObject
         ActiveDirectApproach = false;
     }
 
-    public bool FindFreeFlightCloseToPathExitScenario(float maxDistance,out Vector2 futurePosition, out Vector2 centerOfTurn,
+    // to be executed on ACTIVE route
+    public bool FindFreeFlightNextNodeExitScenario(out Vector2 futurePosition, out Vector2 centerOfTurn, out Vector2 exitPoint,
+        out int exitSegmentIndex)
+    {
+        futurePosition = Geometry.GetNextPosition(Aircraft.PositionFreeOrOnCurvedPath, _settings.ForwardThreshold,
+            -Aircraft.HeadingDegrees);
+            
+        var currentNodeIndex = GameManager.Instance.Aircraft.RoutePathLocalization.CurrentNodeIndex;
+        centerOfTurn = Points[currentNodeIndex].CartesianPosition;
+        
+        // we rejoin after intersection
+        var nextNextNodePosition = Points[currentNodeIndex + 1].CartesianPosition;
+        exitPoint = Vector2.Lerp(centerOfTurn, nextNextNodePosition,
+            _settings.ForwardThreshold / Vector2.Distance(centerOfTurn, nextNextNodePosition));
+
+        exitSegmentIndex = currentNodeIndex + 1;
+
+        return true;
+    }
+
+    public bool FindFreeFlightCloseToPathExitScenario(float maxDistance,out Vector2 futurePosition, out Vector2 tipOfTurn,
         out Vector2 exitPoint,
         out int exitSegmentIndex)
     {
         var nan = new Vector2(-100, -100);
 
-
         futurePosition = Geometry.GetNextPosition(Aircraft.PositionFreeOrOnCurvedPath, _settings.ForwardThreshold,
             -Aircraft.HeadingDegrees);
 
         exitPoint = nan;
-        centerOfTurn = nan;
+        tipOfTurn = nan;
 
         var currentNodeIndex = GameManager.Instance.Aircraft.RoutePathLocalization.CurrentNodeIndex;
         var aircraftPosition =
@@ -174,7 +193,7 @@ public class RouteScriptableObject : ScriptableObject
                 out var intersection, out var distance) && distance <= maxDistance)
             {
                 exitSegmentIndex = i;
-                centerOfTurn = intersection;
+                tipOfTurn = intersection;
 
                 // don't break, keep computing to find the most forward segment that is withing max distance range
             }
@@ -184,47 +203,23 @@ public class RouteScriptableObject : ScriptableObject
         {
             return false;
         }
-        var nextNextNodePosition = Points[exitSegmentIndex].CartesianPosition;
         
-        // just to be sure move the center of turn further to have space for turn
-        // - $^% todo will need to refine the scenarios here
-        centerOfTurn = Vector2.Lerp(centerOfTurn, nextNextNodePosition,
-            (2*_settings.ForwardThreshold) / Vector2.Distance(centerOfTurn, nextNextNodePosition));
-
         
-        exitPoint = Vector2.Lerp(centerOfTurn, nextNextNodePosition,
-            _settings.ForwardThreshold / Vector2.Distance(centerOfTurn, nextNextNodePosition));
+        MakeSureForTurningSpace(ref tipOfTurn, out exitPoint, exitSegmentIndex);
+        
         
         return true;
     }
 
-    // to be executed on ACTIVE route
-    public bool FindFreeFlightNextNodeExitScenario(out Vector2 futurePosition, out Vector2 centerOfTurn, out Vector2 exitPoint,
-        out int exitSegmentIndex)
-    {
-        futurePosition = Geometry.GetNextPosition(Aircraft.PositionFreeOrOnCurvedPath, _settings.ForwardThreshold,
-            -Aircraft.HeadingDegrees);
-            
-        var currentNodeIndex = GameManager.Instance.Aircraft.RoutePathLocalization.CurrentNodeIndex;
-        centerOfTurn = Points[currentNodeIndex].CartesianPosition;
-        
-        // we rejoin after intersection
-        var nextNextNodePosition = Points[currentNodeIndex + 1].CartesianPosition;
-        exitPoint = Vector2.Lerp(centerOfTurn, nextNextNodePosition,
-            _settings.ForwardThreshold / Vector2.Distance(centerOfTurn, nextNextNodePosition));
 
-        exitSegmentIndex = currentNodeIndex + 1;
-
-        return true;
-    }
 
     // to be executed on ACTIVE route
-    public bool FindFreeFlightDirectExitScenario(out Vector2 centerOfTurn, out Vector2 exitPoint, out int exitSegmentIndex)
+    public bool FindFreeFlightDirectExitScenario(out Vector2 tipOfTurn, out Vector2 exitPoint, out int exitSegmentIndex)
     {
         var nan = new Vector2(-100, -100);
 
         exitPoint = nan;
-        centerOfTurn = nan;
+        tipOfTurn = nan;
         var aircraftPosition =
             GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath; // would be free since we are in free flight
         var aircraftDirection = Geometry.GetDirectionFromHeading(GameManager.Instance.Aircraft.HeadingDegrees);
@@ -236,117 +231,123 @@ public class RouteScriptableObject : ScriptableObject
         for (var i = 1; i < Points.Length; i++)
         {
             var segmentStart = segmentEnd;
-            // on could take the positions from PathLines
-            segmentEnd = Geometry.GetNextPosition(segmentStart, Points[i].Distance, Points[i].Degrees);
+            
+            segmentEnd = Points[i].CartesianPosition;
 
-            if (Points[i].IsHiddenLine || Points[i].IsAfterDiscontinuity
-            ) //$^% ask if we can join discontinuity segments
+            if (Points[i].IsHiddenLine || Points[i].IsAfterDiscontinuity )//$^% ask if we can join discontinuity segments
             {
                 continue;
             }
 
             if (Geometry.FindLineSegmentIntersection(aircraftPosition, aircraftDirection.x, aircraftDirection.y,
-                segmentStart, segmentEnd, out intersection))
+                    segmentStart, segmentEnd, out intersection))
             {
                 exitSegmentIndex = i;
                 break;
             }
         }
 
-        if (exitSegmentIndex >= 0)
+        if (exitSegmentIndex < 0)
         {
-            var currentSegmentStart = Points[exitSegmentIndex - 1].CartesianPosition;
-            var currentSegmentEnd = Points[exitSegmentIndex].CartesianPosition;
+            return false;
+        }
+        
+        var currentSegmentStart = Points[exitSegmentIndex - 1].CartesianPosition;
+        var currentSegmentEnd = Points[exitSegmentIndex].CartesianPosition;
 
-            var towardsBeginning = Vector2.SqrMagnitude(currentSegmentStart - intersection) <
-                                    Vector2.SqrMagnitude(currentSegmentEnd - intersection);
+        var towardsBeginning = Vector2.SqrMagnitude(currentSegmentStart - intersection) <
+                               Vector2.SqrMagnitude(currentSegmentEnd - intersection);
 
-            var nextSegmentStart = currentSegmentEnd;
+        var nextSegmentStart = currentSegmentEnd;
 
-            var countCurrent = Geometry.CircleIntersects(currentSegmentStart, currentSegmentEnd, intersection,
-                _settings.ForwardThreshold,
-                true, out var intersectionCurrent1, out var intersectionCurrent2);
-
-            var nextSegmentEnd = Vector2.zero;
-            var intersectionNext1 = Vector2.zero;
-            var intersectionNext2 = Vector2.zero;
-
-            int countNext;
-
-            if (Points.Length > exitSegmentIndex + 1)
-            {
-                nextSegmentEnd = Points[exitSegmentIndex + 1].CartesianPosition;
-                countNext = Geometry.CircleIntersects(nextSegmentStart, nextSegmentEnd, intersection,
-                    _settings.ForwardThreshold,
-                    false, out intersectionNext1, out intersectionNext2);
-            }
-
-            // find forward intersection
-
-            // if inside turn - prepare turn for corner on the other side of the circle of the aircraft and the exit of turn
-            // if not near turn - prepare turn for corner on circle center and the forward intersection
-
-            // create lines with computed vertexes for turns for scenario and return them 
-
-
-            // the intersections on the current segment are clamped to segment
-            if (countCurrent <= 0)
-            {
-                // should happen if the segment is smaller than the threshold ( go to the next segments ? )
-                Debug.LogError("no intersections - segment smaller than threshold?");
-                return false;
-            }
-
-            // we are not sure of the order of the circle intersections on the segment 
-            var firstIsBefore = Vector2.SqrMagnitude(currentSegmentStart - intersectionCurrent1) <
-                                 Vector2.SqrMagnitude(currentSegmentStart - intersection);
-
-            if (countCurrent == 2)
-            {
-                // --> the center of turn can be the intersection since is on the same line with the exit
-                centerOfTurn = intersection;
-                exitPoint = firstIsBefore ? intersectionCurrent2 : intersectionCurrent1;
-                return true;
-            }
-
-            if (towardsBeginning)
-            {
-                // --> the center of turn can be the intersection since is on the same line with the exit
-                centerOfTurn = intersection;
-                exitPoint = intersectionCurrent1;
-                return true;
-            }
-
-            // We are will be exiting on the next segment than the intersection
-            // --> find center of turn as the intersection between next segment and current direction
-            Geometry.FindLineSegmentIntersection(aircraftPosition, aircraftDirection.x, aircraftDirection.y,
-                nextSegmentStart, nextSegmentEnd, out var newCenter, false);
-
-            var nextExitPoint = Geometry.IsWithinSegment(nextSegmentStart.x, nextSegmentStart.y,
-                nextSegmentEnd.x, nextSegmentEnd.y, intersectionNext1.x, intersectionNext1.y)
-                ? intersectionNext1
-                : intersectionNext2;
-
-            //if the angle is inwards (meaning the center of turn of further than the exitpoint ) ( see reference image.. ) move exit point further
-            var exitIsBackwards = Vector2.SqrMagnitude(nextSegmentEnd - newCenter) <
-                                   Vector2.SqrMagnitude(nextSegmentEnd - nextExitPoint);
-            if (exitIsBackwards)
-            {
-                nextExitPoint = Vector2.MoveTowards(newCenter, nextSegmentEnd, _settings.ForwardThreshold);
-            }
-
-            // todo: if newCenter is passed the next segment end ( when in U turn and bypasses the middle ) -> try next
-            // todo: if exit point is near turn ( too close points) -> try next
-
-            centerOfTurn = newCenter;
-            exitPoint = nextExitPoint;
-
-            return true;
+        if (!Geometry.GetForwardCircleIntersects(currentSegmentStart, currentSegmentEnd, intersection,
+                _settings.ForwardThreshold, true, out var circleIntersection))
+        {
+            // should happen if the segment is smaller than the threshold ( go to the next segments ? )
+            // or if the intersection is too close to the next point
+            Debug.LogError("no intersections - segment smaller than threshold?");
+            return false;
         }
 
-        return false;
+        var nextSegmentEnd = Vector2.zero;
+        var futureCircleIntersection = Vector2.zero;
+        var intersectionNext2 = Vector2.zero;
+
+        int countNext;
+
+        if (Points.Length > exitSegmentIndex + 1)
+        {
+            nextSegmentEnd = Points[exitSegmentIndex + 1].CartesianPosition;
+            Geometry.GetForwardCircleIntersects(nextSegmentStart, nextSegmentEnd, intersection,
+                _settings.ForwardThreshold, false, out futureCircleIntersection);
+        }
+
+        // find forward intersection
+
+        // if inside turn - prepare turn for corner on the other side of the circle of the aircraft and the exit of turn
+        // if not near turn - prepare turn for corner on circle center and the forward intersection
+
+        // create lines with computed vertexes for turns for scenario and return them 
+
+
+        // --> the center of turn can be the intersection since is on the same line with the exit
+        tipOfTurn = intersection;
+        exitPoint = futureCircleIntersection;
+
+        MakeSureForTurningSpace(ref tipOfTurn, out exitPoint, exitSegmentIndex);
+
+        return true;
+           
+
+        // We are will be exiting on the next segment than the intersection
+        // --> find center of turn as the intersection between next segment and current direction
+        Geometry.FindLineSegmentIntersection(aircraftPosition, aircraftDirection.x, aircraftDirection.y,
+            nextSegmentStart, nextSegmentEnd, out var newCenter, false);
+
+        var nextExitPoint = Geometry.IsWithinSegment(nextSegmentStart.x, nextSegmentStart.y,
+            nextSegmentEnd.x, nextSegmentEnd.y, futureCircleIntersection.x, futureCircleIntersection.y)
+            ? futureCircleIntersection
+            : intersectionNext2;
+
+        //if the angle is inwards (meaning the center of turn of further than the exitpoint ) ( see reference image.. ) move exit point further
+        var exitIsBackwards = Vector2.SqrMagnitude(nextSegmentEnd - newCenter) <
+                              Vector2.SqrMagnitude(nextSegmentEnd - nextExitPoint);
+        if (exitIsBackwards)
+        {
+            nextExitPoint = Vector2.MoveTowards(newCenter, nextSegmentEnd, _settings.ForwardThreshold);
+        }
+
+        // todo: if newCenter is passed the next segment end ( when in U turn and bypasses the middle ) -> try next
+        // todo: if exit point is near turn ( too close points) -> try next
+
+        tipOfTurn = newCenter;
+        exitPoint = nextExitPoint;
+            
+        MakeSureForTurningSpace(ref tipOfTurn, ref exitPoint, exitSegmentIndex);
+
+
+        return true;
+
     }
 
+    // move the tip of turn further to have space for turn
+    public bool MakeSureForTurningSpace(ref Vector2 tipOfTurn, out Vector2 exitPoint, int exitSegmentIndex)
+    {
+        var neededTipOffset = 1;
+        var neededExitPointOffset = 1;
+        
+        
+        
+        var nextNextNodePosition = Points[exitSegmentIndex].CartesianPosition;
+        tipOfTurn = Vector2.Lerp(tipOfTurn, nextNextNodePosition,
+            (neededTipOffset * _settings.ForwardThreshold) / Vector2.Distance(tipOfTurn, nextNextNodePosition));
+
+        exitPoint = Vector2.Lerp(tipOfTurn, nextNextNodePosition,
+            neededExitPointOffset * _settings.ForwardThreshold / Vector2.Distance(tipOfTurn, nextNextNodePosition));
+
+        //todo indicate next node exit if not enough space
+        return true;
+    }
 
     public bool TransferPathToRoute(Vector2 exitPoint, int lineIndex, out PathPositionInfo  intersectionRoutePathInfo, out float segmentDistanceUntilIntersection)
     {

@@ -104,18 +104,23 @@ public class Aircraft
     void ChooseAutoRejoinMethod()
     {
         if (GameManager.Instance.ActiveRoute.FindFreeFlightCloseToPathExitScenario(_settings.RejoinDistance,
-            out var futurePosition, out var centerOfTurn,
-            out _cachedExitPointFromHeading, out _cachedExitSegmentOfHeadingRejoinIntersection))
+                out var futurePosition, out var tipOfTurn,
+                out _cachedExitPointFromHeading, out _cachedExitSegmentOfHeadingRejoinIntersection))
         {
-            ComputeTempPathForCloseToPath(futurePosition,centerOfTurn);
+            ComputeTempPathForCloseToPath(futurePosition, tipOfTurn);
+        }
+        else if (GameManager.Instance.ActiveRoute.FindFreeFlightDirectExitScenario(out tipOfTurn,
+                     out _cachedExitPointFromHeading,
+                     out _cachedExitSegmentOfHeadingRejoinIntersection))
+        {
+            ComputeRejoinPathForDirectIntersection(tipOfTurn);
         }
         else
         {
-            Debug.Log("Close scenario not found, proceed to direct intersection");
-            ComputeRejoinPathForDirectIntersection();
+            Debug.LogError("No Intersection Point Found");
         }
     }
-    
+
     // when aircraft is in HDG and user applies a MOD
     void ComputeTempPathForNextNode()
     {
@@ -175,13 +180,13 @@ public class Aircraft
     }
 
     // when aircraft is in heading and user switches to LNav ( and the case is straight intersection with the path )
-    void ComputeRejoinPathForDirectIntersection()
+    void ComputeRejoinPathForDirectIntersection(Vector2 tipOfTurn)
     {
-        if (GameManager.Instance.ActiveRoute.FindFreeFlightDirectExitScenario(out var centerOfTurn, out _cachedExitPointFromHeading,
-            out _cachedExitSegmentOfHeadingRejoinIntersection))
-        {
             //compute rejoin path
 
+            displayExitPoint = _cachedExitPointFromHeading;
+            displayCenterOfTurn = tipOfTurn;
+            
             Debug.Log("start LNAV - rejoin direct intersection");
             RejoinPathLines = new PathLines(_settings);
 
@@ -190,7 +195,7 @@ public class Aircraft
             tempPoints[0] = lastPoint;
             lastPoint = RoutePoint.ConstructFromPosition(PositionFreeOrOnCurvedPath, lastPoint);
             tempPoints[1] = lastPoint;
-            lastPoint = RoutePoint.ConstructFromPosition(centerOfTurn, lastPoint);
+            lastPoint = RoutePoint.ConstructFromPosition(tipOfTurn, lastPoint);
             tempPoints[2] = lastPoint;
             lastPoint = RoutePoint.ConstructFromPosition(_cachedExitPointFromHeading, lastPoint);
             tempPoints[3] = lastPoint;
@@ -201,11 +206,7 @@ public class Aircraft
                 out RejoinPathLocalization);
 
             IsFreeFlight = false;
-        }
-        else
-        {
-            Debug.LogError("No Intersection Point Found");
-        }
+       
     }
 
 
@@ -427,7 +428,7 @@ public class Aircraft
             AdvanceFreeFlight();
 
             // for display only
-            GameManager.Instance.ActiveRoute.FindFreeFlightDirectExitScenario(out displayCenterOfTurn, out displayExitPoint, out _);
+            //GameManager.Instance.ActiveRoute.FindFreeFlightDirectExitScenario(out displayCenterOfTurn, out displayExitPoint, out _);
 
         }
         else

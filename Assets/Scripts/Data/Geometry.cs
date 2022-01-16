@@ -22,12 +22,12 @@ public static class Geometry
     {
         return AngleBetween(direction, Vector2.up);
     }
-    
+
     public static Vector2 GetPreviousPosition(Vector2 start, float distance, float degrees)
     {
         return GetNextPosition(start, distance, ReverseParallelAngle(degrees));
     }
-    
+
     public static Vector2 GetPreviousPositionOfNode(RoutePoint node)
     {
         return GetPreviousPosition(node.CartesianPosition, node.Distance, ReverseParallelAngle(node.Degrees));
@@ -39,11 +39,11 @@ public static class Geometry
         var x2 = end.x;
         var y1 = start.y;
         var y2 = end.y;
-        var dot = x1 * x2 + y1 * y2;   // dot product between [x1, y1] and [x2, y2]
-        var det = x1 * y2 - y1 * x2;    // determinant
+        var dot = x1 * x2 + y1 * y2; // dot product between [x1, y1] and [x2, y2]
+        var det = x1 * y2 - y1 * x2; // determinant
         var angle = Mathf.Atan2(det, dot) * Mathf.Rad2Deg; // atan2(y, x) or atan2(sin, cos)
-        
-        if(angle <0)
+
+        if (angle < 0)
         {
             angle = 360 + angle;
         }
@@ -60,7 +60,7 @@ public static class Geometry
     /// <returns>Raw degrees</returns>
     public static float AngleOfPosition(Vector2 ofPosition, Vector2 fromPosition)
     {
-        return AngleBetween(ofPosition - fromPosition , Vector2.up);
+        return AngleBetween(ofPosition - fromPosition, Vector2.up);
     }
 
     static float AngleBetween(float degreesA, float degreesB)
@@ -84,13 +84,14 @@ public static class Geometry
         return AngleBetween(nodeADegrees + 180, nodeBDegrees);
     }
 
-    public static float ReverseParallelAngle( float rawDegrees)
+    public static float ReverseParallelAngle(float rawDegrees)
     {
-        return  rawDegrees > 180 ? rawDegrees - 180 : rawDegrees + 180;
+        return rawDegrees > 180 ? rawDegrees - 180 : rawDegrees + 180;
 
     }
 
-    public static bool FindLineSegmentIntersection(Vector2 from, float dx, float dy, Vector2 segmentA, Vector2 segmentB, out Vector2 intersection, bool clamToSegment = true)
+    public static bool FindLineSegmentIntersection(Vector2 from, float dx, float dy, Vector2 segmentA, Vector2 segmentB,
+        out Vector2 intersection, bool clamToSegment = true)
     {
         var x = from.x;
         var y = from.y;
@@ -134,14 +135,45 @@ public static class Geometry
     }
 
     static float Sq(float x)
-            {
-                return x * x;
-            }
-    
-        const float Eps = 0.1f;
+    {
+        return x * x;
+    }
+
+    const float Eps = 0.1f;
+
+
+
+    public static bool GetForwardCircleIntersects(Vector2 start, Vector2 end, Vector2 cp, float r, bool segment,
+        out Vector2 intersection)
+    {
+        intersection = Vector2.zero;
+        var count = CircleIntersects(start, end, cp, r, segment, out var intersection1, out var intersection2);
+        if (count == 0)
+        {
+            return false;
+        }
+
+        // if both intersection are found we take the forward one
+        if (count == 2)
+        {
+            // we are not sure of the order of the circle intersections on the segment 
+            var firstIsBefore = Vector2.SqrMagnitude(start - intersection1) <
+                                Vector2.SqrMagnitude(start - intersection2);
+
+            // --> the center of turn can be the intersection since is on the same line with the exit
+            intersection = firstIsBefore ? intersection2 : intersection1;
+            return true;
+        }
+
+        // if only 1 intersection is found we check if is forward oriented
+        bool isForward = Vector2.SqrMagnitude(start - intersection1) > Vector2.SqrMagnitude(start - cp);
+        intersection = intersection1;
+        return isForward;
+    }
+
     // Prints the intersection points (if any) of a circle, center 'cp' with radius 'r',
-// and either an infinite line containing the points 'p1' and 'p2'
-// or a segment drawn between those points.
+    // and either an infinite line containing the points 'p1' and 'p2'
+    // or a segment drawn between those points.
     public static int CircleIntersects(Vector2 p1, Vector2 p2, Vector2 cp, float r, bool segment, out Vector2 int1,
         out Vector2 int2)
     {
@@ -156,7 +188,7 @@ public static class Geometry
             return -(b * y + c) / a;
         }
 
-        
+
 
         bool Rxy(float cx1, float cy1, float cx2, float cy2, float x, float y, bool isSegment)
         {
@@ -285,8 +317,9 @@ public static class Geometry
 
         return 0;
     }
-    
-    
+
+
+
     /// <summary>
     /// Calculate the distance between point pt and the segment p1 --> p2. 
     /// </summary>
@@ -296,7 +329,8 @@ public static class Geometry
     /// <param name="closest"></param>
     /// <param name="distance"></param>
     /// <returns>if the point is in segments limits</returns>
-    public static bool FindDistanceToSegment(Vector2 pt, Vector2 p1, Vector2 p2, out Vector2 closest, out float distance)
+    public static bool FindDistanceToSegment(Vector2 pt, Vector2 p1, Vector2 p2, out Vector2 closest,
+        out float distance)
     {
         var dx = p2.x - p1.x;
         var dy = p2.y - p1.y;
@@ -306,7 +340,7 @@ public static class Geometry
             closest = p1;
             dx = pt.x - p1.x;
             dy = pt.y - p1.y;
-            distance =  Mathf.Sqrt(dx * dx + dy * dy);
+            distance = Mathf.Sqrt(dx * dx + dy * dy);
             return false;
         }
 
