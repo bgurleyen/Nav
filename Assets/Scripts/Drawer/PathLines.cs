@@ -110,6 +110,7 @@ public class PathLines
     {
         if (GetNextComputedVertex(ComputedLines, currentLineIndex, currentPointIndex, out var nextPoint, out var nextLine))
         {
+            
             var vertex = ComputedLines[nextLine].Vertexes[nextPoint];
             var heading = Geometry.GetHeadingOfDirection(vertex - oldPositionVertex);
             oldPositionVertex = vertex;
@@ -134,6 +135,12 @@ public class PathLines
         {
             nextPoint = pointIndex + 1;
             nextLineIndex = lineIndex;
+            if (ComputedLines[nextLineIndex] == null)
+            {
+                Debug.LogError("Found null line. skipping");
+                return false;
+            }
+
             return true;
         }
 
@@ -141,6 +148,12 @@ public class PathLines
         {
             nextPoint = 1;
             nextLineIndex = lineIndex + 1;
+            
+            if (ComputedLines[nextLineIndex] == null)
+            {
+                Debug.LogError("Found null line. skipping");
+                return false;
+            }
             return true;
         }
 

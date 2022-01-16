@@ -252,79 +252,9 @@ public class RouteScriptableObject : ScriptableObject
             return false;
         }
         
-        var currentSegmentStart = Points[exitSegmentIndex - 1].CartesianPosition;
-        var currentSegmentEnd = Points[exitSegmentIndex].CartesianPosition;
-
-        var towardsBeginning = Vector2.SqrMagnitude(currentSegmentStart - intersection) <
-                               Vector2.SqrMagnitude(currentSegmentEnd - intersection);
-
-        var nextSegmentStart = currentSegmentEnd;
-
-        if (!Geometry.GetForwardCircleIntersects(currentSegmentStart, currentSegmentEnd, intersection,
-                _settings.ForwardThreshold, true, out var circleIntersection))
-        {
-            // should happen if the segment is smaller than the threshold ( go to the next segments ? )
-            // or if the intersection is too close to the next point
-            Debug.LogError("no intersections - segment smaller than threshold?");
-            return false;
-        }
-
-        var nextSegmentEnd = Vector2.zero;
-        var futureCircleIntersection = Vector2.zero;
-        var intersectionNext2 = Vector2.zero;
-
-        int countNext;
-
-        if (Points.Length > exitSegmentIndex + 1)
-        {
-            nextSegmentEnd = Points[exitSegmentIndex + 1].CartesianPosition;
-            Geometry.GetForwardCircleIntersects(nextSegmentStart, nextSegmentEnd, intersection,
-                _settings.ForwardThreshold, false, out futureCircleIntersection);
-        }
-
-        // find forward intersection
-
-        // if inside turn - prepare turn for corner on the other side of the circle of the aircraft and the exit of turn
-        // if not near turn - prepare turn for corner on circle center and the forward intersection
-
-        // create lines with computed vertexes for turns for scenario and return them 
-
-
-        // --> the center of turn can be the intersection since is on the same line with the exit
         tipOfTurn = intersection;
-        exitPoint = futureCircleIntersection;
 
         MakeSureForTurningSpace(ref tipOfTurn, out exitPoint, exitSegmentIndex);
-
-        return true;
-           
-
-        // We are will be exiting on the next segment than the intersection
-        // --> find center of turn as the intersection between next segment and current direction
-        Geometry.FindLineSegmentIntersection(aircraftPosition, aircraftDirection.x, aircraftDirection.y,
-            nextSegmentStart, nextSegmentEnd, out var newCenter, false);
-
-        var nextExitPoint = Geometry.IsWithinSegment(nextSegmentStart.x, nextSegmentStart.y,
-            nextSegmentEnd.x, nextSegmentEnd.y, futureCircleIntersection.x, futureCircleIntersection.y)
-            ? futureCircleIntersection
-            : intersectionNext2;
-
-        //if the angle is inwards (meaning the center of turn of further than the exitpoint ) ( see reference image.. ) move exit point further
-        var exitIsBackwards = Vector2.SqrMagnitude(nextSegmentEnd - newCenter) <
-                              Vector2.SqrMagnitude(nextSegmentEnd - nextExitPoint);
-        if (exitIsBackwards)
-        {
-            nextExitPoint = Vector2.MoveTowards(newCenter, nextSegmentEnd, _settings.ForwardThreshold);
-        }
-
-        // todo: if newCenter is passed the next segment end ( when in U turn and bypasses the middle ) -> try next
-        // todo: if exit point is near turn ( too close points) -> try next
-
-        tipOfTurn = newCenter;
-        exitPoint = nextExitPoint;
-            
-        MakeSureForTurningSpace(ref tipOfTurn, ref exitPoint, exitSegmentIndex);
-
 
         return true;
 
@@ -333,10 +263,8 @@ public class RouteScriptableObject : ScriptableObject
     // move the tip of turn further to have space for turn
     public bool MakeSureForTurningSpace(ref Vector2 tipOfTurn, out Vector2 exitPoint, int exitSegmentIndex)
     {
-        var neededTipOffset = 1;
-        var neededExitPointOffset = 1;
-        
-        
+        var neededTipOffset = 2;
+        var neededExitPointOffset = 3;
         
         var nextNextNodePosition = Points[exitSegmentIndex].CartesianPosition;
         tipOfTurn = Vector2.Lerp(tipOfTurn, nextNextNodePosition,
