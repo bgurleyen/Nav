@@ -339,6 +339,11 @@ public class Drawer : Singleton<Drawer>
                 }
             }
 
+            if (linesType == LinesType.Rejoin && line.StartPosition == Vector3.zero)
+            {
+                hiddenLine = true;
+            }
+
             drawer.Display(line, point, hiddenLabel || linesType == LinesType.Rejoin, hiddenLine, fromPointIndex);
         }
     }
