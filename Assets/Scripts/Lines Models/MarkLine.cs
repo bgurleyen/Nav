@@ -41,7 +41,7 @@ public class MarkLine : Line
 
         var lineLength = (EndPosition - StartOffsetPosition).magnitude;
 
-        if (lineLength == 0)
+        if (lineLength < Mathf.Epsilon)
         {
             Debug.LogError("line has length 0");
             return false;

@@ -1,6 +1,7 @@
 ﻿using System;
 using UnityEngine;
 
+//[Serializable]
 public class Aircraft
 {
     private GameSettingsScriptableObject _settings;
@@ -10,9 +11,9 @@ public class Aircraft
     }
     
     // position that can be on the generated curved sections of the lines
-    public Vector2 PositionFreeOrOnCurvedPath { get; private set; }
-    
-    public Vector2 PositionFreeOrOnRouteSegment { get; private set; }
+    public Vector2 PositionFreeOrOnCurvedPath;
+
+    public Vector2 PositionFreeOrOnRouteSegment;
     
     /// <summary>
     /// If used for geometry should be used with '-' . see other places
@@ -120,8 +121,8 @@ public class Aircraft
             Debug.LogError("No Intersection Point Found");
         }
 
-        displayExitPoint = _cachedExitPointFromHeading;
-        displayCenterOfTurn = tipOfTurn;
+        _displayExitPoint = _cachedExitPointFromHeading;
+        _displayCenterOfTurn = tipOfTurn;
     }
 
     // when aircraft is in HDG and user applies a MOD
@@ -158,8 +159,6 @@ public class Aircraft
 
     void ComputeTempPathForCloseToPath(Vector2 futurePosition, Vector2 tipOfTurn)
     {
-        
-                    
         Debug.Log("start LNAV - rejoin close path");
         RejoinPathLines = new PathLines(_settings);
 
@@ -371,20 +370,23 @@ public class Aircraft
 
     void CheckAdvancePointOnHDGProximity()
     {
-        var nextNodePosition = PositionVirtualNode.GetNodeTo.CartesianPosition;
-        if (Vector2.Distance(nextNodePosition, PositionFreeOrOnRouteSegment) <= _settings.HGDAutoNextPointDistance)
+        for (int i = PositionVirtualNode.PassedNodeIndex+1; i < GameManager.Instance.ActiveRoute.Points.Length; i++)
         {
-            if (!GameManager.Instance.ActiveRoute.PathLines.GetNextDestination(
-                RoutePathLocalization.CurrentNodeIndex + 1,
-                0, out var newUnreachedPositionInfo))
+            var nodePosition = GameManager.Instance.ActiveRoute.Points[i].CartesianPosition;
+            if (Vector2.Distance(nodePosition, PositionFreeOrOnRouteSegment) <= _settings.HGDAutoNextPointDistance)
             {
-                Debug.LogError("No destination could be found");
-                return;
+                if (!GameManager.Instance.ActiveRoute.PathLines.GetNextDestination(
+                        i+1,
+                        0, out var newUnreachedPositionInfo))
+                {
+                    Debug.LogError("No destination could be found");
+                    return;
+                }
+
+                WalkedDistanceOnSegment = 0;
+
+                RoutePathLocalization = newUnreachedPositionInfo;
             }
-
-            WalkedDistanceOnSegment = 0;
-
-            RoutePathLocalization = newUnreachedPositionInfo;
         }
     }
 
@@ -461,15 +463,15 @@ public class Aircraft
         }
     }
 
-    static Vector2 displayCenterOfTurn;
-    static Vector2 displayExitPoint;
+    static Vector2 _displayCenterOfTurn;
+    static Vector2 _displayExitPoint;
 
 
     public void DrawGizmos()
     {
         Gizmos.color = Color.white;
-        Gizmos.DrawSphere(Drawer.Instance.transform.position + displayCenterOfTurn.ToDisplay(), 0.05f);
+        Gizmos.DrawSphere(Drawer.Instance.transform.position + _displayCenterOfTurn.ToDisplay(), 0.05f);
         Gizmos.color = Color.green;
-        Gizmos.DrawSphere(Drawer.Instance.transform.position + displayExitPoint.ToDisplay(), 0.05f);
+        Gizmos.DrawSphere(Drawer.Instance.transform.position + _displayExitPoint.ToDisplay(), 0.05f);
     }
 }

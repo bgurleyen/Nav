@@ -261,7 +261,7 @@ public class RouteScriptableObject : ScriptableObject
     }
 
     // move the tip of turn further to have space for turn
-    public bool MakeSureForTurningSpace(ref Vector2 tipOfTurn, out Vector2 exitPoint, ref int exitSegmentIndex)
+    void MakeSureForTurningSpace(ref Vector2 tipOfTurn, out Vector2 exitPoint, ref int exitSegmentIndex)
     {
         var neededTipOffset = 2;
         var neededExitPointOffset = 3;
@@ -282,9 +282,6 @@ public class RouteScriptableObject : ScriptableObject
 
         exitPoint = Vector2.Lerp(tipOfTurn, nextNextNodePosition,
             neededExitPointOffset * _settings.ForwardThreshold / Vector2.Distance(tipOfTurn, nextNextNodePosition));
-
-        //todo indicate next node exit if not enough space
-        return true;
     }
 
     public bool TransferPathToRoute(Vector2 exitPoint, int lineIndex, out PathPositionInfo  intersectionRoutePathInfo, out float segmentDistanceUntilIntersection)
@@ -294,8 +291,8 @@ public class RouteScriptableObject : ScriptableObject
         var segmentEnd = Points[lineIndex].CartesianPosition;
 
         segmentDistanceUntilIntersection = (exitPoint - segmentStart).magnitude;
-        if (GameManager.Instance.ActiveRoute.PathLines.FindClosestVertexToDistanceOnLineActive(
-            segmentDistanceUntilIntersection, lineIndex, out var targetVertexIndex,
+        if (GameManager.Instance.ActiveRoute.PathLines.FindClosestVertexToPositionOnLineActive(
+            exitPoint, lineIndex, out var targetVertexIndex,
             out var targetVertexPosition))
         {
             intersectionRoutePathInfo = new PathPositionInfo

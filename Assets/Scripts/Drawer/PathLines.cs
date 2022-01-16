@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Gamelogic.Extensions;
 using UnityEngine;
@@ -162,29 +163,44 @@ public class PathLines
         return false;
     }
 
-    public bool FindClosestVertexToDistanceOnLineActive(float distance, int lineIndex, out int vertexIndex, out Vector2 vertexPosition)
+    public bool FindClosestVertexToPositionOnLineActive(Vector2 position, int lineIndex, out int vertexIndex,
+        out Vector2 vertexPosition)
     {
         var line = ComputedLines[lineIndex];
-        var accumulated = 0f;
+        var minSqrDist = 1000f;
+        vertexIndex = -1;
+        vertexPosition = Vector2.zero;
         for (var i = 1; i < line.Vertexes.Length; i++)
         {
-            accumulated += (line.Vertexes[i] - line.Vertexes[i - 1]).magnitude;
+            var sqrDist = ((Vector2) line.Vertexes[i] - position).sqrMagnitude;
 
-            if (accumulated > distance)
+            if (minSqrDist > sqrDist)
             {
+
                 vertexIndex = i;
                 vertexPosition = line.Vertexes[i];
-                return true;
+                minSqrDist = sqrDist;
             }
         }
 
-        vertexIndex = 0;
-        vertexPosition = Vector2.zero;
+        if (vertexIndex >= 0)
+        {
+            if (((Vector2) line.Vertexes[0] - position).sqrMagnitude >
+                ((Vector2) line.Vertexes[0] - (Vector2) line.Vertexes[vertexIndex]).sqrMagnitude)
+            {
+                vertexIndex++;
+                vertexIndex = Mathf.Min(vertexIndex, line.Vertexes.Length - 1);
+            }
+
+            return true;
+        }
+
         return false;
     }
-    
+
 }
 
+[Serializable]
 public struct PathPositionInfo
 {
     public int CurrentNodeIndex;
