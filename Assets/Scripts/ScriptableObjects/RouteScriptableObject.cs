@@ -262,11 +262,11 @@ public class RouteScriptableObject : ScriptableObject
     }
 
     // move the tip of turn further to have space for turn
-    void MakeSureForTurningSpace(ref Vector2 tipOfTurn, out Vector2 exitPoint,
+    void MakeSureForTurningSpace(ref Vector2 intersectionPoint, out Vector2 exitPoint,
         ref int exitSegmentIndex)
     {
         var nextNextNodePosition = Points[exitSegmentIndex].CartesianPosition;
-        var exitDirection = nextNextNodePosition - tipOfTurn;
+        var exitDirection = nextNextNodePosition - intersectionPoint;
         var headingDiff = Vector2.Dot( exitDirection, Geometry.GetDirectionFromHeading(Aircraft.HeadingDegrees));
 
         var minProduct = 0;
@@ -276,30 +276,29 @@ public class RouteScriptableObject : ScriptableObject
         
         Debug.Log($"dotProd: { headingDiff}");
 
-        tipOfTurn = Vector2.Lerp(tipOfTurn, nextNextNodePosition,
-            (neededTipOffset * _settings.ForwardThreshold) / Vector2.Distance(tipOfTurn, nextNextNodePosition));
+        intersectionPoint = Vector2.Lerp(intersectionPoint, nextNextNodePosition,
+            (neededTipOffset * _settings.ForwardThreshold) / Vector2.Distance(intersectionPoint, nextNextNodePosition));
 
-        exitPoint = Vector2.Lerp(tipOfTurn, nextNextNodePosition,
-            neededExitPointOffset * _settings.ForwardThreshold / Vector2.Distance(tipOfTurn, nextNextNodePosition));
+        exitPoint = Vector2.Lerp(intersectionPoint, nextNextNodePosition,
+            neededExitPointOffset * _settings.ForwardThreshold / Vector2.Distance(intersectionPoint, nextNextNodePosition));
 
 
         // check if is to close to end of line - should exit in the next one
         while (Points.Length > exitSegmentIndex + 1 &&
                Vector2.SqrMagnitude(nextNextNodePosition - exitPoint) <
                _settings.ForwardThreshold * _settings.ForwardThreshold)
-
         {
             Debug.Log(
-                $"too close to corner exit in next segment ({Vector2.SqrMagnitude(nextNextNodePosition - tipOfTurn)})");
-            tipOfTurn = nextNextNodePosition;
+                $"too close to corner exit in next segment ({Vector2.SqrMagnitude(nextNextNodePosition - intersectionPoint)})");
+            intersectionPoint = nextNextNodePosition;
             exitSegmentIndex++;
             nextNextNodePosition = Points[exitSegmentIndex].CartesianPosition;
 
-            tipOfTurn = Vector2.Lerp(tipOfTurn, nextNextNodePosition,
-                (neededTipOffset * _settings.ForwardThreshold) / Vector2.Distance(tipOfTurn, nextNextNodePosition));
+            intersectionPoint = Vector2.Lerp(intersectionPoint, nextNextNodePosition,
+                (neededTipOffset * _settings.ForwardThreshold) / Vector2.Distance(intersectionPoint, nextNextNodePosition));
 
-            exitPoint = Vector2.Lerp(tipOfTurn, nextNextNodePosition,
-                neededExitPointOffset * _settings.ForwardThreshold / Vector2.Distance(tipOfTurn, nextNextNodePosition));
+            exitPoint = Vector2.Lerp(intersectionPoint, nextNextNodePosition,
+                neededExitPointOffset * _settings.ForwardThreshold / Vector2.Distance(intersectionPoint, nextNextNodePosition));
         }
 
     }

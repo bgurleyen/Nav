@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 using Gamelogic.Extensions;
 using System.Collections.Generic;
 
@@ -56,7 +57,13 @@ public class DoubleCurve : Curve
         var o1Q = (O1 - Q).magnitude;
 
 
-        var qO2 = Mathf.Sqrt(Mathf.Pow(smallRadius + bigRadius, 2) - o1Q * o1Q);
+        var val = Mathf.Pow(smallRadius + bigRadius, 2) - o1Q * o1Q;
+        if (val < 0)
+        {
+            Debug.LogError("Cannot compute line");
+            return;
+        }
+        var qO2 = Mathf.Sqrt(val);
         EndOffsetPosition = Vector3.Lerp(EndPosition, secondEndPosition, (c + qO2) / secondPoint.Distance);
 
         // SECOND TURN CENTER
