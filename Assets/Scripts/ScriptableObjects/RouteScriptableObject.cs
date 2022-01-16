@@ -254,34 +254,50 @@ public class RouteScriptableObject : ScriptableObject
         
         tipOfTurn = intersection;
 
-        MakeSureForTurningSpace(ref tipOfTurn, out exitPoint, ref exitSegmentIndex);
+        MakeSureForTurningSpace( ref tipOfTurn, out exitPoint, ref exitSegmentIndex);
 
         return true;
 
     }
 
     // move the tip of turn further to have space for turn
-    void MakeSureForTurningSpace(ref Vector2 tipOfTurn, out Vector2 exitPoint, ref int exitSegmentIndex)
+    void MakeSureForTurningSpace(ref Vector2 tipOfTurn, out Vector2 exitPoint,
+        ref int exitSegmentIndex)
     {
-        var neededTipOffset = 2;
-        var neededExitPointOffset = 3;
-        
-        
         var nextNextNodePosition = Points[exitSegmentIndex].CartesianPosition;
+        var exitDirection = nextNextNodePosition - tipOfTurn;
+        var headingDiff = Vector2.Dot( exitDirection, Geometry.GetDirectionFromHeading(Aircraft.HeadingDegrees));
         
-        while (Points.Length > exitSegmentIndex +1 && Vector2.SqrMagnitude(nextNextNodePosition - tipOfTurn) < _settings.ForwardThreshold * _settings.ForwardThreshold)
-        {
-            Debug.Log($"too close to corner exit in next segment ({Vector2.SqrMagnitude(nextNextNodePosition - tipOfTurn)})");
-            tipOfTurn = nextNextNodePosition;
-            exitSegmentIndex++;
-            nextNextNodePosition = Points[exitSegmentIndex].CartesianPosition;
-        }
-        
+        // add more offset if the directions are opposite
+        var neededTipOffset = headingDiff <0 ? 3:2;
+        var neededExitPointOffset = headingDiff < 0 ? 1:0.5f;
+
         tipOfTurn = Vector2.Lerp(tipOfTurn, nextNextNodePosition,
             (neededTipOffset * _settings.ForwardThreshold) / Vector2.Distance(tipOfTurn, nextNextNodePosition));
 
         exitPoint = Vector2.Lerp(tipOfTurn, nextNextNodePosition,
             neededExitPointOffset * _settings.ForwardThreshold / Vector2.Distance(tipOfTurn, nextNextNodePosition));
+
+
+        // check if is to close to end of line - should exit in the next one
+        while (Points.Length > exitSegmentIndex + 1 &&
+               Vector2.SqrMagnitude(nextNextNodePosition - exitPoint) <
+               _settings.ForwardThreshold * _settings.ForwardThreshold)
+
+        {
+            Debug.Log(
+                $"too close to corner exit in next segment ({Vector2.SqrMagnitude(nextNextNodePosition - tipOfTurn)})");
+            tipOfTurn = nextNextNodePosition;
+            exitSegmentIndex++;
+            nextNextNodePosition = Points[exitSegmentIndex].CartesianPosition;
+
+            tipOfTurn = Vector2.Lerp(tipOfTurn, nextNextNodePosition,
+                (neededTipOffset * _settings.ForwardThreshold) / Vector2.Distance(tipOfTurn, nextNextNodePosition));
+
+            exitPoint = Vector2.Lerp(tipOfTurn, nextNextNodePosition,
+                neededExitPointOffset * _settings.ForwardThreshold / Vector2.Distance(tipOfTurn, nextNextNodePosition));
+        }
+
     }
 
     public bool TransferPathToRoute(Vector2 exitPoint, int lineIndex, out PathPositionInfo  intersectionRoutePathInfo, out float segmentDistanceUntilIntersection)
