@@ -48,19 +48,9 @@ public class Drawer : Singleton<Drawer>
 
     float _zoomMultiplier;
 
-    public const float RelaxedRadius = 17;
 
     Aircraft Aircraft => GameManager.Instance.Aircraft;
-    const float FtToNm = 0.000164579f;
 
-    // turn radius
-    const float IAS = 240;
-    const float Altitude = 1000;
-    const float Headwind = 5;
-    static float TAS => IAS + Altitude / 1000 * 0.02f * IAS;
-    static float GS => TAS - Headwind;
-    static float Bank => Mathf.Deg2Rad * Mathf.Min(30, TAS * 0.15f);
-    public static float GetMinRadius => Mathf.Pow(GS, 2) / (11.29f * Mathf.Tan(Bank)) * FtToNm;
     const bool WalkOnMod = false;
 
     void Awake()
