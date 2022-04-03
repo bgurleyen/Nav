@@ -12,15 +12,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 87156d1d85bb4244793ffd45c46286cf, type: 3}
   m_Name: Level Info Level 0
   m_EditorClassIdentifier: 
-  LevelNumber: 0
+  LevelNumber: 1
   Destination: EDDV
-  Star: HLZ4R
-  Transition: CE09L
-  Runway: 09L
+  Star: ELNA2P
+  Transition: DL27R
+  Runway: 27R
   FieldInfo: 12467FT3800M
-  Freq: 118.1
+  Freq: 108.9
   Course: 272
-  ZFW: 49
+  ZFW: 174.6
   Fuel: 11
   CrzAltitude: 35000
   CrzSpeed: 270

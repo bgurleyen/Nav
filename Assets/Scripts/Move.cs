@@ -29,7 +29,7 @@ public class Move : Singleton<Move>
 
     public Text Atc1, Atc2, Atc3;
     public Text TimerText;
-    int ElapsedTime = 0;
+    float ElapsedTime = 0f;
 
     public string ATtc1; // maybe it's possible to use like this
     bool NewPoint = true;
@@ -40,7 +40,9 @@ public class Move : Singleton<Move>
     int ATCVS, ATCSpeed;
     bool isDescentChecked, isSpeedChecked;
     int modD = 0, modS = 0;
-
+    int RawSpeed = 0;
+    int AltAbove, AltBelow, AltExact;
+    double FuelPenalty=0;
     public static float Perpend;
 
     public Dictionary<string, Vector2> ACPositions = new Dictionary<string, Vector2>();
@@ -88,13 +90,13 @@ public class Move : Singleton<Move>
         Atc2.text = "";
         Atc3.text = "";
 
-        //StartCoroutine(MoveAC(0));
-        //StartCoroutine(MoveAC(1));
-        //StartCoroutine(MoveAC(2));
-        //StartCoroutine(MoveAC(3));
-        //StartCoroutine(MoveAC(4));
-        //StartCoroutine(MoveAC(5));
-        //StartCoroutine(MoveAC(6));
+        StartCoroutine(MoveAC(0));
+        StartCoroutine(MoveAC(1));
+        StartCoroutine(MoveAC(2));
+        StartCoroutine(MoveAC(3));
+        StartCoroutine(MoveAC(4));
+        StartCoroutine(MoveAC(5));
+        StartCoroutine(MoveAC(6));
 
 
         StartCoroutine(MoveMyAC());
@@ -163,11 +165,12 @@ public class Move : Singleton<Move>
     } // Distance from RW
     public IEnumerator MoveMyAC()
     {
+       
         float PrvTrackToPoint = 0, hyp;
         int i = 0, prvWptIdx = -1;
-        int point=1, mode, VS, VS_nx, Speed, Speed_nx;
+        int point=1, mode,Cmode=1, VS, VS_nx, Speed, Speed_nx;
         long Altitude;
-
+        
         string turnDirection(float newHdg)
         {
             return (Mathf.DeltaAngle(Calculator.RHeading, newHdg) >= 0) ? "Right " : "Left "; //change Rheading to C
@@ -180,72 +183,13 @@ public class Move : Singleton<Move>
         {
             return (Mathf.Abs(Mathf.Sin(Mathf.Abs(TrackToPoint(point) - PrvTrackToPoint) * Mathf.Deg2Rad)) * hyp);
         }
+         string RawAlt="";
+
+
         void ATCCall()
 
         {
-            void LocateSlidingPoint()
-            {
-            
-                 int nextPoint = aTCs[Level].ATCInstrucitonItems[i + 1].point;
-                int lastPoint = aTCs[Level].ATCInstrucitonItems[i + 2].point;
-                Vector2 Now = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath;
-
-                float NM;
-                int CheckPointTime= levelsInfoData[Level].CheckPointTime; 
-                //int CheckPointTime = 680;
-                int ptCount = virtualPoints[Level].VirtualPointsItems.Length; 
-
-                if (nextPoint == 92)
-                {
-                    float d = Vector2.Distance(Now, pointPos(point)) +
-                              Vector2.Distance(pointPos(point), pointPos(nextPoint))+
-                              Vector2.Distance(pointPos(nextPoint), pointPos(lastPoint));
-                    float a = Vector2.Distance(Now, pointPos(point + 1)) +
-                              Vector2.Distance(pointPos(point + 1), pointPos(nextPoint + 1))+
-                              Vector2.Distance(pointPos(nextPoint + 1), pointPos(lastPoint));
-
-                    float B1 = Vector2.Distance(pointPos(point), pointPos(point + 1));
-                    float B2 = Vector2.Distance(pointPos(nextPoint), pointPos(nextPoint + 1));
-
-                    NM = (float) (d + (CheckPointTime - ElapsedTime) * Calculator.GS / 3600);
-
-                    float x1 = (NM - d) / ((a - d)) * B1;
-                    if (Mathf.Abs(x1) > Mathf.Abs(B1)) x1 = B1 * Mathf.Sign(x1);  // Do not ecxeed half distance
-                    float x2 = (NM - d) / ((a - d)) * B2;
-                    if (Mathf.Abs(x2) > Mathf.Abs(B2)) x2 = B2 * Mathf.Sign(x2);
-
-
-
-                    VirtualPtsPos[ptCount-4] = Vector2.MoveTowards(pointPos(point), pointPos(point + 1), x1);
-                    VirtualPtsPos[ptCount-2] = Vector2.MoveTowards(pointPos(nextPoint), pointPos(nextPoint + 1), x2);
-
-                    GameObject pt = GameObject.Find("pt (" + 90 + ")");
-                    pt.transform.localPosition = VirtualPtsPos[ptCount-4];
-                    pt = GameObject.Find("pt (" + 92 + ")");
-                    pt.transform.localPosition = VirtualPtsPos[ptCount-2];                    
-                    
-                }
-                else
-                {
-                    float d = Vector2.Distance(Now, pointPos(point))+
-                              Vector2.Distance(pointPos(point), pointPos(nextPoint));
-                    float a = Vector2.Distance(Now, pointPos(point + 1))+
-                               Vector2.Distance(pointPos(point + 1), pointPos(nextPoint));
-                  
-                    float B1 = Vector2.Distance(pointPos(point), pointPos(point + 1));
-
-                    NM = (float)(d + (CheckPointTime - ElapsedTime) * Calculator.GS / 3600);
-
-                    float x1 = (NM - d) / ((a - d)) * B1;
-                    if (Mathf.Abs(x1) > Mathf.Abs(B1)) x1 = B1 * Mathf.Sign(x1);  // Do not ecxeed half distance
-
-                    VirtualPtsPos[ptCount - 4] = Vector2.MoveTowards(pointPos(point), pointPos(point + 1), x1);
-
-                    GameObject pt = GameObject.Find("pt (" + 90 + ")");
-                    pt.transform.localPosition = VirtualPtsPos[ptCount - 4];
-                }
-            }
-
+     
 
             point = aTCs[Level].ATCInstrucitonItems[i].point;
             mode = aTCs[Level].ATCInstrucitonItems[i] .mode;
@@ -254,26 +198,43 @@ public class Move : Singleton<Move>
             VS_nx = aTCs[Level].ATCInstrucitonItems[i].VS_nx;
             Speed = aTCs[Level].ATCInstrucitonItems[i].Speed;
             Speed_nx = aTCs[Level].ATCInstrucitonItems[i].Speed_nx;
+               
+            
 
             hyp = Vector2.Distance(GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath, pointPos(point));
 
-            //Debug.Log("Point :" + point + "  coo: " + pointPos(90) + "Mode " + mode);
+           
+            if (point < 50 && point > 1) RawSpeed = GameManager.Instance.ActiveRoute.Points[point - 1].RawSpeed;
+
+            if (point < 50 && point > 1) RawAlt = (GameManager.Instance.ActiveRoute.Points[point - 1].RawAltitude);
+             DataHandler.ParseAltRegulation(RawAlt,out AltAbove,out AltBelow,out AltExact); // FMS Altitude Limit
+
+
+
+
+            Debug.Log(point+ ".   " +RawSpeed + "   /  "+AltExact + "   " +AltAbove +"A  "+ AltBelow + "B" + 
+                      "    FP:" + FuelPenalty + "   MxSpd: " + ATCSpeed);
+
+         //   Debug.Log(" N:  " + LegsScreen.VisibleRoute.FirstSpeedRegulationNodeId); // Correct this
+
             if (NewPoint)
             {
-                if (point == 90) LocateSlidingPoint();
 
                 Atc1.text = mode == 1 ? "Proceed direct to  " + Route.Points[point].Name :
                             mode == 2 ? "Turn " + turnDirection(TrackToPoint(point)) + "Heading " + TrackToPoint(point) : "";
 
                 
+                  string s = VS < 0 ? ", ROD " + (-VS) + " fpm" + nxTostring(VS_nx) : "";
 
-                string s = VS < 0 ? ", ROD " + (-VS) + " fpm" + nxTostring(VS_nx) : "";
-                Atc2.text = Altitude > 0 ? "Descent altitude " + Altitude + " feet" + s : "";
+                 if (Altitude > 0)  Atc2.text ="Descent altitude " + Altitude + " feet" + s;
 
                 Atc3.text = Speed > 0 ? "Speed " + Speed + " knots " + nxTostring(Speed_nx) : Speed == 0 ? Atc3.text : "";
 
                 PrvTrackToPoint = TrackToPoint(point);
                 Atc1.color = Color.green;
+                if (mode > 0) Cmode = mode;
+                if (Cmode ==1) FuelPenaltyAtFMCAltConstain(); // Check  Alt constrains on point for penalty
+
                 NewPoint = false;
             }
             else  // Not New
@@ -286,12 +247,13 @@ public class Move : Singleton<Move>
 
                 float dev = LocDeviation(272);
                 float gsD = GsDeviation(3);
-                if (DistanceFromRoute() > 1) //Warning
+
+                if (DistanceFromRoute() > 1) //Warning   
                 {
                   
                     if (Mathf.Abs(Mathf.DeltaAngle(Calculator.RHeading, Perpend)) >= 90) // Hdg rota tracki ve +-90 arasinda
                     {
-                       // Time.timeScale = 0;
+                        //Time.timeScale = 0;
                     }
 
                     if (mode == 2) Atc1.text =  "Turn " + turnDirection(TrackToPoint(point)) + "Heading " + (int)TrackToPoint(point) ;
@@ -314,14 +276,16 @@ public class Move : Singleton<Move>
             }
             if (isDescentChecked) Atc2.color = Color.white;
 
-            if ((Speed > 0) && (Speed != ATCSpeed)) //Speed clr changed
+            if (((Speed > 0) && (Speed != ATCSpeed))
+                || ((RawSpeed > 0) && (RawSpeed < ATCSpeed) && Cmode==1)) //Speed clr changed
             {
                 Atc3.color = Color.green;
                 isSpeedChecked = false;
-                ATCSpeed = Speed;
-                modS = Speed_nx;
-                CancelInvoke("SpeedCheck");
-                InvokeRepeating("SpeedCheck", 10f, 1f);
+                if ((Speed > 0) && (Speed != ATCSpeed)) ATCSpeed = Speed;
+                if ((RawSpeed > 0) && (RawSpeed < ATCSpeed) && (Speed_nx != 1) && (Cmode == 1)) ATCSpeed = RawSpeed;
+                modS = ((RawSpeed > 0) && (RawSpeed < Speed) && (Speed_nx != 1) && (Cmode == 1)) ? 2: Speed_nx;
+                CancelInvoke("SpeedCheck"); 
+                InvokeRepeating("SpeedCheck", Mathf.Abs((float)Calculator.CSpeed - ATCSpeed) * 2.5f, 1f); //  secs before warning
             }
             if (isSpeedChecked) Atc3.color = Color.white;
 
@@ -333,7 +297,7 @@ public class Move : Singleton<Move>
         {
             yield return new WaitForSeconds(GameSpeed);
 
-            ElapsedTime += Calculator.Acceleration();
+            ElapsedTime +=  Calculator.Acceleration();
             TimerText.text = "" + ElapsedTime;
 
             ATCCall();
@@ -354,7 +318,6 @@ public class Move : Singleton<Move>
                 myAC.GetComponent<UnityEngine.UI.Text>().text = "#";
                 prvWptIdx =point;
             }
-
         }
     }
     private IEnumerator MoveAC(int ACnr)
@@ -383,8 +346,8 @@ public class Move : Singleton<Move>
 
             if ((D < 2) && (Mathf.Abs(myACAlt - ACAlt) < 700))
             {
-              //  AC.GetComponent<UnityEngine.UI.Text>().color = Color.clear;
-              //  ACTexts[_aircraftKey] = "";
+                AC.GetComponent<UnityEngine.UI.Text>().color = Color.clear;
+                ACTexts[_aircraftKey] = "";
 
             }
 
@@ -438,34 +401,42 @@ public class Move : Singleton<Move>
 
             s = (AltitudeC - Calculator.CAltitude < 0) ? "-" : "+";
             if (Mathf.Abs(AltitudeC - (float)Calculator.CAltitude) < 1000) s += "0";
-            if (Mathf.Abs((AltitudeC - (int)Calculator.CAltitude)) < 6000)
+            if ((AltitudeC - (int)Calculator.CAltitude < 3000) && ( (int)Calculator.CAltitude - AltitudeC < 6000))
             {
                 s += (int)(Mathf.Abs(AltitudeC - (float)Calculator.CAltitude) / 100);
-                AC.GetComponent<UnityEngine.UI.Text>().text = s;
+                AC.GetComponent<UnityEngine.UI.Text>().text = ""+ACnr;
             }
+            else s = "";
+
             ACTexts[_aircraftKey] = s;
             if ((hyp <= 1.5))
             {
                 i += 1;
                 AltitudeC = AltitudeR;
             }
-            CollisionCheck();
+            //CollisionCheck();
         }
         AC.GetComponent<UnityEngine.UI.Text>().text = "";
 
     }
     void DescentCheck()
     {
+        int AltAbove, AltBelow, AltExact,AltRef;  // First Altitude Restriction
+        string RawAlt = (GameManager.Instance.ActiveRoute.Points[LegsScreen.VisibleRoute.FirstAltRegulationNodeId].RawAltitude);
+        DataHandler.ParseAltRegulation(RawAlt, out AltAbove, out AltBelow, out AltExact);
 
-        if (Mathf.Abs((int)Calculator.CAltitude - ATCAltitude) > 200)
+        AltRef = AltBelow > AltExact ? AltBelow : AltExact;
+        
+        if ((Mathf.Abs((int)Calculator.CAltitude - ATCAltitude) > 300) && 
+            (Mathf.Abs((int)Calculator.CAltitude - AltRef) > 300))
         {
             if ((Calculator.CVS > -300) ||
 
-                   ((modD == 0) && ((Calculator.CVS > ATCVS + 200) || (Calculator.CVS < ATCVS - 200))) ||
+                   ((modD == 0) && ((Calculator.CVS > ATCVS + 300) || (Calculator.CVS < ATCVS - 300))) ||
 
-                   ((modD == 1) && (Calculator.CVS > ATCVS + 200)) ||
+                   ((modD == 1) && (Calculator.CVS > ATCVS + 300)) ||
 
-                   ((modD == 2) && (Calculator.CVS < ATCVS - 200))) Atc2.color = Color.red;
+                   ((modD == 2) && (Calculator.CVS < ATCVS - 300))) Atc2.color = Color.red;
         }
         else
         {
@@ -482,10 +453,24 @@ public class Move : Singleton<Move>
 
                ((modS == 1) && (Calculator.CSpeed < ATCSpeed - 10)) ||
 
-               ((modS == 2) && (Calculator.CSpeed > ATCSpeed + 10))) Atc3.color = Color.red;
+               ((modS == 2) && (Calculator.CSpeed > ATCSpeed + 10)))
+        {
+
+            Atc3.color = Color.red;
+            FuelPenalty += 0.001;
+        }
 
         isSpeedChecked = true;
+     
     }
+    void FuelPenaltyAtFMCAltConstain()
+    {
+        int CAltitude = (int)Calculator.CAltitude; 
 
+        if (((AltBelow > 0) && (CAltitude > AltBelow + 300)) ||
+       ((AltAbove > 0) && (CAltitude < AltAbove - 300)) ||
+       ((AltExact > 0) && (Mathf.Abs(CAltitude - AltExact) > 300))) FuelPenalty += 0.1; 
+
+    }
 }
 

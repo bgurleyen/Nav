@@ -16,7 +16,7 @@ MonoBehaviour:
   Points:
   - ID: 0
     Name: _START_
-    RawDegrees: 0
+    RawDegrees: 1
     Distance: 0
     RawSpeed: 0
     RawAltitude: 

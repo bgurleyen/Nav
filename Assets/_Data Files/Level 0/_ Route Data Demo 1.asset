@@ -7,7 +7,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 0}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ba3b8b30b7d3d124482f44bf0dbbbfaf, type: 3}
   m_Name: _ Route Data Demo 1
@@ -24,44 +24,44 @@ MonoBehaviour:
   - ID: 0
     Name: ELNAT
     RawDegrees: 20
-    Distance: 19
+    Distance: 9
     RawSpeed: 0
     RawAltitude: 
     Details: 
   - ID: 0
     Name: NORTA
     RawDegrees: 5
-    Distance: 40.1
-    RawSpeed: 0
-    RawAltitude: 
+    Distance: 9
+    RawSpeed: 180
+    RawAltitude: 3000A3500B
     Details: 
   - ID: 0
     Name: DLE-5
     RawDegrees: 6
-    Distance: 18.1
+    Distance: 9
     RawSpeed: 0
     RawAltitude: 
     Details: 
   - ID: 0
     Name: DLE
     RawDegrees: 3
-    Distance: 5
-    RawSpeed: 0
+    Distance: 9
+    RawSpeed: 250
     RawAltitude: 8000A9000B
     Details: 
   - ID: 0
     Name: DV581
     RawDegrees: 2
-    Distance: 7.3
+    Distance: 9
     RawSpeed: 0
     RawAltitude: 
     Details: 
   - ID: 0
     Name: DV582
     RawDegrees: 91
-    Distance: 5.6
-    RawSpeed: 220
-    RawAltitude: 
+    Distance: 4
+    RawSpeed: 230
+    RawAltitude: 5000
     Details: 
   - ID: 0
     Name: DV583
@@ -75,13 +75,13 @@ MonoBehaviour:
     RawDegrees: 91
     Distance: 4
     RawSpeed: 0
-    RawAltitude: 
+    RawAltitude: 4000
     Details: 
   - ID: 0
     Name: DV585
     RawDegrees: 91
     Distance: 4
-    RawSpeed: 0
+    RawSpeed: 200
     RawAltitude: 
     Details: 
   - ID: 0
@@ -89,13 +89,13 @@ MonoBehaviour:
     RawDegrees: 1
     Distance: 5
     RawSpeed: 0
-    RawAltitude: 
+    RawAltitude: 3500
     Details: 
   - ID: 0
     Name: DV574
     RawDegrees: 271
     Distance: 4
-    RawSpeed: 0
+    RawSpeed: 180
     RawAltitude: 
     Details: 
   - ID: 0

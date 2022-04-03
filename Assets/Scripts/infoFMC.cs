@@ -40,7 +40,7 @@ public class infoFMC : Singleton<infoFMC>
     FMC Fmc = new FMC();
     private void Start()
     {
-        InvokeRepeating("DisplayFields", 1f, 1f) ;
+       // InvokeRepeating("DisplayFields", 1f, 1f) ; Remove //
     }
 
     public FMC FMCFields()
@@ -122,7 +122,7 @@ public class infoFMC : Singleton<infoFMC>
         Fmc.Arr.RW = levelsInfoData[Level].Transition;
      
         
-        Fmc.Prog.PrvName = "" + activePoints.Points[prvWptIdx].Name; ;
+        Fmc.Prog.PrvName = "" + activePoints.Points[prvWptIdx].Name;  
         
         if (prvWptIdx != previousPrvIndex)   // Catch the actual info while passing the point
         {

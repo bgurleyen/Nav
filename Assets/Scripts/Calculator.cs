@@ -13,9 +13,9 @@ public class Calculator : MonoBehaviour
     public  Toggle Accelerate ;
 
     
-    public static  int Acceleration()
+    public static  float Acceleration()
     {
-        return  Calculator.Instance.Accelerate.isOn ? 10 : 1;
+        return  Calculator.Instance.Accelerate.isOn ? 10f : 2.4f;
     }
 
     public static int Level = 0;             // ***  Level
@@ -35,7 +35,7 @@ public class Calculator : MonoBehaviour
     public Transform VDI_Index;
 
 
-    public static double CSpeed = 220, CAltitude = 6000; // Currenr Altitude*************************
+    public static double CSpeed = 220, CAltitude = 13000; // Currenr Altitude*************************
     //                            ***              *****
     int RVS;
     public static int RSpeed = (int)CSpeed, RHeading, RAltitude, CVS;
@@ -216,7 +216,7 @@ public class Calculator : MonoBehaviour
             InterpolateVS();
             SetFMA();
             FuelandMach();
-            DrawVDI();
+            //DrawVDI();                 Remove // Causes error at DLE-5
             DisplayWindElements();
 
             yield return new WaitForSeconds(1);
@@ -364,12 +364,14 @@ public class Calculator : MonoBehaviour
     }
     private void Speed_Equalize()
     {
+        double C0Speed = CSpeed;
         void DrawSpeedTrend(float Time)
         {
-            int TrendDirection = RSpeed < CSpeed ? -1 : (RSpeed == CSpeed ? 0 : 1);
+            int TrendDirection = CSpeed < C0Speed ? -1 : (CSpeed == C0Speed ? 0 : 1);
             SpeedTrend.transform.localScale = new Vector3(1, TrendDirection * 10 / Time, 1);
         }
         int RRSpeed;
+
         float speedbandspeed = 1f;
         if (RSpeed > increasedSpeed) RRSpeed = RSpeed; else RRSpeed = increasedSpeed;
 
@@ -384,7 +386,7 @@ public class Calculator : MonoBehaviour
             txtCSpeed.text = "" + (int)CSpeed;
 
         }
-        txtDTG.text =  Move.Instance.DME().ToString("F1") ;
+        txtDTG.text = Move.Instance.DME().ToString("F1");
         Script2.SpeedTapeUpdate();
         Script2.SpeedIndexUpdate_Click();
 
@@ -659,9 +661,7 @@ public class Calculator : MonoBehaviour
                 M[i, 3, 3] = WOlg[i - 5, 1, 1];
             }
         }
-    }
-    
-    
+    } 
     public void SetSB(bool down, bool fromUI = false)
     {
         if (!fromUI)

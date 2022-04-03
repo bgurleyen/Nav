@@ -13,64 +13,113 @@ MonoBehaviour:
   m_Name: ATC Instructions Level 0
   m_EditorClassIdentifier: 
   ATCInstrucitonItems:
-  - point: 2
+  - point: 1
     mode: 1
-    Altitude: 9000
-    VS: -800
-    VS_nx: 0
-    Speed: 250
+    Altitude: 30000
+    VS: 0
+    VS_nx: 3
+    Speed: 200
     Speed_nx: 0
-  - point: 54
-    mode: 2
+  - point: 2
+    mode: 0
+    Altitude: 20000
+    VS: 0
+    VS_nx: 0
+    Speed: 0
+    Speed_nx: 0
+  - point: 3
+    mode: 0
     Altitude: 7000
-    VS: -400
+    VS: 0
     VS_nx: 0
-    Speed: 250
+    Speed: 0
     Speed_nx: 0
-  - point: 90
-    mode: 2
+  - point: 4
+    mode: 0
+    Altitude: 0
+    VS: 0
+    VS_nx: 0
+    Speed: 0
+    Speed_nx: 0
+  - point: 5
+    mode: 0
+    Altitude: 0
+    VS: 0
+    VS_nx: 0
+    Speed: 215
+    Speed_nx: 0
+  - point: 6
+    mode: 0
+    Altitude: 0
+    VS: 0
+    VS_nx: 0
+    Speed: 0
+    Speed_nx: 0
+  - point: 7
+    mode: 0
     Altitude: 6000
     VS: 0
     VS_nx: 0
-    Speed: 180
+    Speed: 205
     Speed_nx: 2
-  - point: 92
-    mode: 2
-    Altitude: 3000
+  - point: 8
+    mode: 0
+    Altitude: 0
     VS: 0
     VS_nx: 0
-    Speed: 160
-    Speed_nx: 1
-  - point: 12
+    Speed: 0
+    Speed_nx: 0
+  - point: 9
+    mode: 0
+    Altitude: 0
+    VS: 0
+    VS_nx: 0
+    Speed: 0
+    Speed_nx: 0
+  - point: 10
     mode: 1
+    Altitude: 0
+    VS: 0
+    VS_nx: 4
+    Speed: 0
+    Speed_nx: 0
+  - point: 11
+    mode: 0
+    Altitude: 0
+    VS: 0
+    VS_nx: 0
+    Speed: 0
+    Speed_nx: 0
+  - point: 12
+    mode: 0
     Altitude: 0
     VS: 0
     VS_nx: 0
     Speed: 0
     Speed_nx: 0
   - point: 13
-    mode: 1
+    mode: 0
     Altitude: 0
     VS: 0
     VS_nx: 0
     Speed: 0
     Speed_nx: 0
   - point: 14
-    mode: 1
+    mode: 0
     Altitude: 0
     VS: 0
     VS_nx: 0
     Speed: 0
     Speed_nx: 0
   - point: 15
-    mode: 1
+    mode: 0
     Altitude: 0
     VS: 0
     VS_nx: 0
     Speed: 0
     Speed_nx: 0
   - point: 16
-    mode: -1
+    mode: 0
     Altitude: 0
     VS: 0
     VS_nx: 0

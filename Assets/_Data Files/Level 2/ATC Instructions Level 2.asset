@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   ATCInstrucitonItems:
   - point: 1
-    mode: 0
+    mode: 1
     Altitude: 22000
     VS: 0
     VS_nx: 3
