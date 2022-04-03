@@ -138,6 +138,7 @@ public class DoubleCurve : Curve
             Vertexes[i] = (arcPoints2[i - straightPoints - arcPointsCountWithoutLast] + o2).To3DXY();
             ComputeDistanceForPoint(i);
         }
+  
     }
 
     public override string GetName => "double";

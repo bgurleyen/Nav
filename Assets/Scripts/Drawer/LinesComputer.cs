@@ -3,11 +3,11 @@
 
     public static class LinesComputer
     {
-        private static float _unitLength;
+        static GameSettingsScriptableObject _settings;
 
         public static void Init(GameSettingsScriptableObject settings)
         {
-            _unitLength = settings.DrawerUnitLength;
+            _settings = settings;
         }
         
         public static bool GetNextLine(MarkLine lastLine, int fromDataPointIndex, RoutePoint[] points,
@@ -38,9 +38,13 @@
             if (toDataPointIndex != points.Length - 1)
             {
                 var secondPoint = points[toDataPointIndex + 1];
-                if (secondPoint.Distance > 0.5f)
+                if (secondPoint.Distance > _settings.ForwardThreshold * 0.3f)
                 {
                     notToCloseSecondPoint = secondPoint;
+                }
+                else
+                {
+                    Debug.LogWarning($"Second Point too close skipped. {secondPoint.Name}");
                 }
             }
 
@@ -78,17 +82,17 @@
             else
             {
                 // try relaxed turn. Update: don't use relaxed as the radius can become very big, and there is no advantage to it. Just go with regular curve
-                if (true || !GenerateCurve(Drawer.RelaxedRadius, nextPoint, notTooCloseSecondPoint, angleBetween,
+                if (true || !GenerateCurve(GameSettingsScriptableObject.GetRelaxedRadius, nextPoint, notTooCloseSecondPoint, angleBetween,
                     lastLine.EndPosition,
                     lastEndOffset,
                     out line))
                 {
-                    if (!GenerateCurve(Drawer.GetMinRadius, nextPoint, notTooCloseSecondPoint, angleBetween,
+                    if (!GenerateCurve(GameSettingsScriptableObject.GetMinRadius, nextPoint, notTooCloseSecondPoint, angleBetween,
                         lastLine.EndPosition,
                         lastEndOffset,
                         out line))
                     {
-                        GenerateDoubleCurve(Drawer.GetMinRadius, Drawer.RelaxedRadius, nextPoint,
+                        GenerateDoubleCurve(GameSettingsScriptableObject.GetMinRadius, GameSettingsScriptableObject.GetRelaxedRadius, nextPoint,
                             notTooCloseSecondPoint,
                             angleBetween,
                             lastLine.EndPosition,
@@ -103,7 +107,7 @@
         static bool GenerateLine(RoutePoint nextPoint, Vector3 lastEndPosition, Vector3 lastEndOffset,
             out MarkLine line)
         {
-            line = new MarkLine(nextPoint, _unitLength);
+            line = new MarkLine(nextPoint, _settings.DrawerUnitLength);
             return line.Init(lastEndPosition, lastEndOffset, nextPoint);
         }
 
@@ -115,7 +119,7 @@
             if (tangentToMiddle <= nextPoint.Distance && tangentToMiddle <= secondPoint.Distance &&
                 tangentToMiddle <= chosenRadius)
             {
-                var l = new Curve(nextPoint, _unitLength);
+                var l = new Curve(nextPoint, _settings.DrawerUnitLength);
                 l.Init(lastEndPosition, lastEndOffset, nextPoint, secondPoint, tangentToMiddle, chosenRadius);
                 line = l;
                 return true;
@@ -129,7 +133,7 @@
             RoutePoint secondPoint,
             float angleBetween, Vector3 lastEndPosition, Vector3 lastEndOffset, out MarkLine line)
         {
-            var l = new DoubleCurve(nextPoint, _unitLength);
+            var l = new DoubleCurve(nextPoint, _settings.DrawerUnitLength);
             l.Init(lastEndPosition, lastEndOffset, nextPoint, secondPoint, angleBetween, smallRadius, bigRadius);
             line = l;
         }

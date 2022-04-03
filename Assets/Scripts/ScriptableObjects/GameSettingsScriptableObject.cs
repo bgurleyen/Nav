@@ -24,5 +24,21 @@ public class GameSettingsScriptableObject : ScriptableObject
     public float ForwardThreshold = 2f; // @$# this has to be in sync with the minimum turn radius 
     public float RejoinDistance = 2.8f;
     public float HGDAutoNextPointDistance = 1.3f;
+
+    #region Plane Speeds
+
+    const float FtToNm = 0.000164579f;
+
+    // turn radius
+    const float IAS = 240;
+    const float Altitude = 1000;
+    const float Headwind = 5;
+    static float TAS => IAS + Altitude / 1000 * 0.02f * IAS;
+    static float GS => TAS - Headwind;
+    static float Bank => Mathf.Deg2Rad * Mathf.Min(30, TAS * 0.15f);
+    public static float GetMinRadius => Mathf.Pow(GS, 2) / (11.29f * Mathf.Tan(Bank)) * FtToNm;
+
+    public static float GetRelaxedRadius = GetMinRadius * 3;
+    
+    #endregion
 }
-// 9:45

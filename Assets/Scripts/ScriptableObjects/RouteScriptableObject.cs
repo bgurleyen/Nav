@@ -155,7 +155,7 @@ public class RouteScriptableObject : ScriptableObject
         // we rejoin after intersection
         var nextNextNodePosition = Points[currentNodeIndex + 1].CartesianPosition;
         exitPoint = Vector2.Lerp(centerOfTurn, nextNextNodePosition,
-            _settings.ForwardThreshold / Vector2.Distance(centerOfTurn, nextNextNodePosition));
+            GameSettingsScriptableObject.GetMinRadius / Vector2.Distance(centerOfTurn, nextNextNodePosition));
 
         exitSegmentIndex = currentNodeIndex + 1;
 
@@ -262,25 +262,22 @@ public class RouteScriptableObject : ScriptableObject
     }
 
     // move the tip of turn further to have space for turn
-    void MakeSureForTurningSpace(ref Vector2 intersectionPoint, out Vector2 exitPoint,
+    void MakeSureForTurningSpace(ref Vector2 tipOfTurn, out Vector2 exitPoint,
         ref int exitSegmentIndex)
     {
         var nextNextNodePosition = Points[exitSegmentIndex].CartesianPosition;
-        var exitDirection = nextNextNodePosition - intersectionPoint;
+        var exitDirection = nextNextNodePosition - tipOfTurn;
         var headingDiff = Vector2.Dot( exitDirection, Geometry.GetDirectionFromHeading(Aircraft.HeadingDegrees));
 
         var minProduct = 0;
         // add more offset if the directions are opposite
-        var neededTipOffset = headingDiff <minProduct ? 3:2;
-        var neededExitPointOffset = headingDiff < minProduct ? 1:0.5f;
+        // var neededExitPointOffset = headingDiff < minProduct ? 1:0.5f;
+        var neededTipOffset = (headingDiff < minProduct ? 4 : 1f) * GameSettingsScriptableObject.GetMinRadius;
         
-        Debug.Log($"dotProd: { headingDiff}");
+        Debug.Log($"headingDiff: { headingDiff} < dotProd: {minProduct}");
 
-        intersectionPoint = Vector2.Lerp(intersectionPoint, nextNextNodePosition,
-            (neededTipOffset * _settings.ForwardThreshold) / Vector2.Distance(intersectionPoint, nextNextNodePosition));
-
-        exitPoint = Vector2.Lerp(intersectionPoint, nextNextNodePosition,
-            neededExitPointOffset * _settings.ForwardThreshold / Vector2.Distance(intersectionPoint, nextNextNodePosition));
+        exitPoint = Vector2.Lerp(tipOfTurn, nextNextNodePosition,
+            neededTipOffset  / Vector2.Distance(tipOfTurn, nextNextNodePosition));
 
 
         // check if is to close to end of line - should exit in the next one
@@ -289,16 +286,22 @@ public class RouteScriptableObject : ScriptableObject
                _settings.ForwardThreshold * _settings.ForwardThreshold)
         {
             Debug.Log(
-                $"too close to corner exit in next segment ({Vector2.SqrMagnitude(nextNextNodePosition - intersectionPoint)})");
-            intersectionPoint = nextNextNodePosition;
+                $"too close to corner exit in next segment ({Vector2.SqrMagnitude(nextNextNodePosition - tipOfTurn)})");
+            
+            tipOfTurn = nextNextNodePosition;
             exitSegmentIndex++;
             nextNextNodePosition = Points[exitSegmentIndex].CartesianPosition;
+            
+            
+            exitDirection = nextNextNodePosition - tipOfTurn;
+            headingDiff = Vector2.Dot( exitDirection, Geometry.GetDirectionFromHeading(Aircraft.HeadingDegrees));
+            neededTipOffset = (headingDiff < minProduct ? 4 : 1f) * GameSettingsScriptableObject.GetMinRadius;
 
-            intersectionPoint = Vector2.Lerp(intersectionPoint, nextNextNodePosition,
-                (neededTipOffset * _settings.ForwardThreshold) / Vector2.Distance(intersectionPoint, nextNextNodePosition));
+            tipOfTurn = Vector2.Lerp(tipOfTurn, nextNextNodePosition,
+                neededTipOffset / Vector2.Distance(tipOfTurn, nextNextNodePosition));
 
-            exitPoint = Vector2.Lerp(intersectionPoint, nextNextNodePosition,
-                neededExitPointOffset * _settings.ForwardThreshold / Vector2.Distance(intersectionPoint, nextNextNodePosition));
+            exitPoint = Vector2.Lerp(tipOfTurn, nextNextNodePosition,
+                neededTipOffset / Vector2.Distance(tipOfTurn, nextNextNodePosition));
         }
 
     }
