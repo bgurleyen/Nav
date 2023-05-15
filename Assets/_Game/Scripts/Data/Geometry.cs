@@ -20,7 +20,7 @@ public static class Geometry
 
     public static float GetHeadingOfDirection(Vector2 direction)
     {
-        return AngleBetween(direction, Vector2.up);
+        return PositiveAngleBetween(direction, Vector2.up);
     }
 
     public static Vector2 GetPreviousPosition(Vector2 start, float distance, float degrees)
@@ -32,8 +32,22 @@ public static class Geometry
     {
         return GetPreviousPosition(node.CartesianPosition, node.Distance, ReverseParallelAngle(node.Degrees));
     }
-
+    
     public static float AngleBetween(Vector2 start, Vector2 end)
+    {
+        var x1 = start.x;
+        var x2 = end.x;
+        var y1 = start.y;
+        var y2 = end.y;
+        var dot = x1 * x2 + y1 * y2; // dot product between [x1, y1] and [x2, y2]
+        var det = x1 * y2 - y1 * x2; // determinant
+        var angle = Mathf.Atan2(det, dot) * Mathf.Rad2Deg; // atan2(y, x) or atan2(sin, cos)
+
+        return angle;
+
+    }
+
+    public static float PositiveAngleBetween(Vector2 start, Vector2 end)
     {
         var x1 = start.x;
         var x2 = end.x;
@@ -47,7 +61,7 @@ public static class Geometry
         {
             angle = 360 + angle;
         }
-
+        
         return angle;
 
     }
@@ -60,10 +74,10 @@ public static class Geometry
     /// <returns>Raw degrees</returns>
     public static float AngleOfPosition(Vector2 ofPosition, Vector2 fromPosition)
     {
-        return AngleBetween(ofPosition - fromPosition, Vector2.up);
+        return PositiveAngleBetween(ofPosition - fromPosition, Vector2.up);
     }
 
-    private static float AngleBetween(float degreesA, float degreesB)
+    private static float PositiveAngleBetween(float degreesA, float degreesB)
     {
         while (degreesA > 360)
         {
@@ -81,7 +95,7 @@ public static class Geometry
 
     public static float AngleBetweenNodes(float nodeADegrees, float nodeBDegrees)
     {
-        return AngleBetween(nodeADegrees + 180, nodeBDegrees);
+        return PositiveAngleBetween(nodeADegrees + 180, nodeBDegrees);
     }
 
     public static float ReverseParallelAngle(float rawDegrees)

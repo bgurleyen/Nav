@@ -48,9 +48,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   NMPosition: {x: 0, y: 0}
   Height: 0
-  _actorProperties: {fileID: 11400000, guid: 04b8c19ca9d7b4587a287874b17862a3, type: 2}
-  Direction: {x: 0, y: 1}
-  Turning: 0
+  _actorProperties: {fileID: 11400000, guid: 36e2ebace3f8f41f4a85595bd8ab753e, type: 2}
+  CurrentTurningDegrees: 15
+  IsFreeFlight: 0
+  IsOnRoute: 1
 --- !u!120 &-4111294142607794477
 LineRenderer:
   m_ObjectHideFlags: 0

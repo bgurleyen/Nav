@@ -26,4 +26,5 @@ namespace Navigation
             return nmPosition / Session.Zoom;
         }
     }
+    
 }

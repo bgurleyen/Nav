@@ -47,8 +47,10 @@ public class MarkLine : Line
             return false;
         }
 
-        if(UnitLength ==0)
-        Debug.LogError(UnitLength);
+        if (UnitLength == 0)
+        {
+            Debug.LogError(UnitLength);
+        }
         var points = Mathf.CeilToInt(lineLength / UnitLength);
         Vertexes = new Vector3[points + 1];
 

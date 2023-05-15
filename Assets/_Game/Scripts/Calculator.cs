@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
+using Unyawn.Utils;
 
 
 //GW :56.4,ZFW:45,Fuel:12,CI:0,CG:23.3
@@ -672,7 +673,7 @@ public class Calculator : MonoBehaviour
     {
         if (!fromUI)
         {
-            McpUI.Instance.SBLeverInteract(down, true);
+            UYServiceLocator.Get<McpUI>().SBLeverInteract(down, true);
         }
         
         double[,] Msb = new double[9, 2] { { -900, -600 }, { -900, -600 }, { -900, -500 }, { -900, -500 }, { -900, -400 }, { -900, -400 }, { -900, -400 }, { -900, -500 }, { -900, -400 } };
@@ -754,7 +755,7 @@ public class Calculator : MonoBehaviour
             }
         }
 
-        McpUI.Instance.RefreshHS();
+        UYServiceLocator.Get<McpUI>().RefreshHS();
         CHeading = RHeading;
         
         UpdatePFD();

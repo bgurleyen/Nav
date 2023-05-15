@@ -364,7 +364,7 @@ namespace Legacy
             }
 
             //compute new angle
-            var angle = Geometry.AngleBetween(endPosition, Vector2.up);
+            var angle = Geometry.PositiveAngleBetween(endPosition, Vector2.up);
 
             reducedPoint = Points[endIndex].Clone();
             reducedPoint.ClearDetails();
@@ -474,7 +474,7 @@ namespace Legacy
             var originalToPosition =
                 Geometry.GetNextPosition(Vector2.zero, afterInsertion.Distance, afterInsertion.RawDegrees);
             var returnDirection = originalToPosition - insertPosition;
-            afterInsertion.RawDegrees = Geometry.AngleBetween(Vector2.up, returnDirection);
+            afterInsertion.RawDegrees = Geometry.PositiveAngleBetween(Vector2.up, returnDirection);
             afterInsertion.Distance = returnDirection.magnitude;
 
             // simulate the curve to the the needed offset
@@ -656,7 +656,7 @@ namespace Legacy
 
                 var differencePosition = routeNextNode.CartesianPosition - newFuturePosition;
 
-                var updatedAngle = Geometry.AngleBetween(differencePosition, Vector2.up);
+                var updatedAngle = Geometry.PositiveAngleBetween(differencePosition, Vector2.up);
 
                 routeNextNode.RawDegrees = updatedAngle;
                 routeNextNode.Distance = differencePosition.magnitude;
@@ -677,7 +677,7 @@ namespace Legacy
 
                 var routeNextNode = Points[1];
                 var differencePosition = routeNextNode.CartesianPosition - futurePosition;
-                var updatedAngle = Geometry.AngleBetween(differencePosition, Vector2.up);
+                var updatedAngle = Geometry.PositiveAngleBetween(differencePosition, Vector2.up);
                 routeNextNode.RawDegrees = updatedAngle;
                 routeNextNode.Distance = differencePosition.magnitude;
             }

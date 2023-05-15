@@ -3,6 +3,7 @@ using Gamelogic.Extensions;
 using System.Collections.Generic;
 using Legacy;
 using UnityEngine;
+using Unyawn.Utils;
 
 public class GameManager : Singleton<GameManager>
 {
@@ -195,10 +196,10 @@ public class GameManager : Singleton<GameManager>
         cachedCommands.Add(command);
         
         MainScreen.Instance.DisplayOperation("ERASE");
-        ModRoute.GetPoint(command.NodeId, out var _node);
+        ModRoute.GetPoint(command.NodeId, out var node);
         //maybe move this to route class to also do some tests?
-        _node.RawAltitude = command.Regulation;
-        _node.IsAltitudeModified = true;
+        node.RawAltitude = command.Regulation;
+        node.IsAltitudeModified = true;
         DataHandler.BuildSetDetails(ModRoute);
 
         OnOperationMade?.Invoke();
@@ -322,6 +323,6 @@ public class GameManager : Singleton<GameManager>
         Calculator.RHeading = (int) Aircraft.TargetHeading;
         PressSwitchFreeFlight(true);
         PressSwitchFreeFlight(false);
-        McpUI.Instance.RefreshHS();
+       UYServiceLocator.Get<McpUI>().RefreshHS();
     }
 }

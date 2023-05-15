@@ -1,23 +1,28 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using Gamelogic.Extensions;
 using UnityEngine;
 using UnityEngine.UI;
+using Unyawn.Utils;
 
-public class McpUI : Singleton<McpUI>
+public class McpUI : MonoBehaviour
 {
     [SerializeField] private Toggle hsToggle;
     [SerializeField] private Toggle lNavToggle;
     [SerializeField] private Text headingText;
     [SerializeField] private Slider _SBSlider;
 
-    private static bool CacheSilentSwitch;
+    public Action OnMapModeSet;
+    public Action OnCenterModeSet;
+    public Action OnPlanModeSet;
+    public Action<bool> OnFreeFlightToggle;
+
+    private bool _cacheSilentSwitch;
 
     private void Awake()
     {
         hsToggle.onValueChanged.AddListener(OnHS);
         lNavToggle.onValueChanged.AddListener(OnLNav);
+        
+        UYServiceLocator.Register(this);
     }
 
 
@@ -29,17 +34,20 @@ public class McpUI : Singleton<McpUI>
     {
         if (mode == 0)
         {
-            Drawer.Instance.ShowMapMode();
+            OnMapModeSet?.Invoke();
+            Drawer.Instance?.ShowMapMode();
         }
 
         if (mode == 1)
         {
-            Drawer.Instance.ShowCenterMode();
+            OnCenterModeSet?.Invoke();
+            Drawer.Instance?.ShowCenterMode();
         }
 
         if (mode == 2)
         {
-            Drawer.Instance.ShowPlanMode();
+            OnPlanModeSet?.Invoke();
+            Drawer.Instance?.ShowPlanMode();
         }
     }
 
@@ -49,87 +57,72 @@ public class McpUI : Singleton<McpUI>
         headingText.text = Calculator.RHeading.ToString();
     }
 
-    public void OnMapMode(bool toggle)
+
+
+    private void OnHS(bool toggle)
     {
-        if (!toggle) return;
-
-        Drawer.Instance.ShowMapMode();
-    }
-
-    public void OnCenterMode(bool toggle)
-    {
-        if (!toggle) return;
-
-        Drawer.Instance.ShowCenterMode();
-    }
-
-    public void OnPlanMode(bool toggle)
-    {
-        if (!toggle) return;
-
-        Drawer.Instance.ShowPlanMode();
-    }
-
-    private static void OnHS(bool toggle)
-    {
-        if (CacheSilentSwitch)
+        if (_cacheSilentSwitch)
         {
-            CacheSilentSwitch = false;
+            _cacheSilentSwitch = false;
         }
         else
         {
             if (toggle)
             {
-                GameManager.Instance.PressSwitchFreeFlight(true);
+                GameManager.Instance?.PressSwitchFreeFlight(true);
                 SilentSwitchLNAV(false);
+                
+                OnFreeFlightToggle?.Invoke(true);
             }
         }
     }
 
-    private static void OnLNav(bool toggle)
+    private void OnLNav(bool toggle)
     {
-        if (CacheSilentSwitch)
+        if (_cacheSilentSwitch)
         {
-            CacheSilentSwitch = false;
+            _cacheSilentSwitch = false;
         }
         else
         {
             if (toggle)
             {
-                GameManager.Instance.PressSwitchFreeFlight(false);
+                GameManager.Instance?.PressSwitchFreeFlight(false);
                 SilentSwitchHeading(false);
+                
+                OnFreeFlightToggle?.Invoke(false);
             }
         }
     }
 
 
-    private static void SilentSwitchHeading(bool value)
+    private void SilentSwitchHeading(bool value)
     {
-        CacheSilentSwitch = true;
-        Instance.hsToggle.isOn = value;
+        _cacheSilentSwitch = true;
+        hsToggle.isOn = value;
     }
 
-    private static void SilentSwitchLNAV(bool value)
+    private void SilentSwitchLNAV(bool value)
     {
-        CacheSilentSwitch = true;
-        Instance.lNavToggle.isOn = value;
+        _cacheSilentSwitch = true;
+        lNavToggle.isOn = value;
     }
 
     public void SBLeverInteract(bool down, bool isSilent = false)
     {
-        CacheSilentSwitch = isSilent;
+        _cacheSilentSwitch = isSilent;
         _SBSlider.value = down ? 0 : 1;
     }
 
     
     public void OnSBSliderChanged(float newValue)
     {
-        if (CacheSilentSwitch)
+        if (_cacheSilentSwitch)
         {
-            CacheSilentSwitch = false;
+            _cacheSilentSwitch = false;
             return;
         }
 
-        Calculator.Instance.SetSB(newValue == 0, true);
+        Calculator.Instance?.SetSB(newValue == 0, true);
     }
 }

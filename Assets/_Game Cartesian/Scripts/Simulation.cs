@@ -4,37 +4,97 @@ using Gamelogic.Extensions;
 using Lean.Pool;
 using Legacy;
 using UnityEngine;
-using UnityEngine.Serialization;
 using Unyawn.Utils;
 
 namespace Navigation
 {
-    public class Drawer : MonoBehaviour
+    public class Simulation : MonoBehaviour
     {
-        [SerializeField] private PlayerAircraft _centerAroundAircraft;
+        [SerializeField] private PlayerAircraft _playerAircraft;
         [SerializeField] private Actor[] _otherActors;
-        
+
         [SerializeField] private Transform _compasPivot;
+        [SerializeField] private Animator _cameraAnimator;
         [Space] [SerializeField] private Transform _dynamicHolder;
         [Space] [SerializeField] private LeanGameObjectPool _linesPool;
-        
+
+
+        private RouteScriptableObject _activeRoute;
+        private RouteScriptableObject _modRoute;
 
         private void Awake()
         {
             UYServiceLocator.Register(this);
+            var mcpUI = UYServiceLocator.Get<McpUI>();
+            mcpUI.OnCenterModeSet += OnUICenterModeSet;
+            mcpUI.OnMapModeSet += OnUIMapModeSet;
+            mcpUI.OnPlanModeSet += OnUIPlanModeSet;
+            mcpUI.OnFreeFlightToggle += OnUIFreeFlightToggle;
         }
 
-        public void SimulateTick(float deltaTime, RouteScriptableObject routeData)
+        private void OnDestroy()
         {
-            _centerAroundAircraft.SimulateTick(deltaTime);
+            var mcpUI = UYServiceLocator.Get<McpUI>();
+            mcpUI.OnCenterModeSet -= OnUICenterModeSet;
+            mcpUI.OnMapModeSet -= OnUIMapModeSet;
+            mcpUI.OnPlanModeSet -= OnUIPlanModeSet;
+            mcpUI.OnFreeFlightToggle -= OnUIFreeFlightToggle;
+        }
 
-            Session.PlayerNMPosition = _centerAroundAircraft.NMPosition;
-            Session.PlayerHeadingDegrees = _centerAroundAircraft.HeadingDegrees;
+        public void Init(RouteScriptableObject activeRoute)
+        {
+            _activeRoute = activeRoute;
+        }
+
+        private void OnUIFreeFlightToggle(bool state)
+        {
+            switch (state)
+            {
+                case true:
+                    _playerAircraft.StartHeadingMode();
+                    break;
+                default:
+                    if (!_playerAircraft.IsOnRoute)
+                    {
+                        _playerAircraft.StartLNavMode(Aircraft.RejoinRouteMode.Manual);
+                    }
+                    break;
+            }
+        }
+        
+        private void OnUIMapModeSet()
+        {
+            _cameraAnimator.SetTrigger("Map");
+            Session.Mode = DrawerMode.Map;
+        }
+
+        private void OnUICenterModeSet()
+        {
+            _cameraAnimator.SetTrigger("Center");
+            Session.Mode = DrawerMode.Center;
+        }
+
+        private void OnUIPlanModeSet()
+        {
+            _cameraAnimator.SetTrigger("Center");
+            Session.Mode = DrawerMode.Plan;
+        }
+
+
+        public void Tick(float deltaTime)
+        {
+            // Compute 
+            _playerAircraft.SimulateTick(deltaTime, _activeRoute);
+            
+            
+            Session.PlayerNMPosition = _playerAircraft.NMPosition;
+            Session.PlayerHeadingDegrees = _playerAircraft.HeadingDegrees;
 
             foreach (var actor in _otherActors)
             {
-                actor.SimulateTick(deltaTime);
+                actor.SimulateTick(deltaTime, _activeRoute);
             }
+
 
             // Display
             DisplayRotations();
@@ -43,10 +103,10 @@ namespace Navigation
             {
                 actor.Place();
             }
-            
+
 
             ClearPooledVisuals();
-            DisplaySet(routeData.PathLines.ComputedLines);
+            DisplaySet(_activeRoute.PathLines.ComputedLines);
         }
 
         private void ClearPooledVisuals()
@@ -63,9 +123,9 @@ namespace Navigation
                     //rotate compass
                     _compasPivot.SetLocalRotationZ(Session.PlayerHeadingDegrees);
                     //if (Aircraft.IsFreeFlight)
-                    {
-                       // freeFlightPivot.SetLocalRotationZ(Session.PlayerHeadingDegrees - Calculator.RHeading);
-                    }
+                {
+                    // freeFlightPivot.SetLocalRotationZ(Session.PlayerHeadingDegrees - Calculator.RHeading);
+                }
 
                     break;
                 case DrawerMode.Plan:
@@ -117,5 +177,7 @@ namespace Navigation
                 drawer.Display(line, point, hiddenLabel, hiddenLine, fromPointIndex);
             }
         }
+
+
     }
 }

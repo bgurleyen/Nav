@@ -581,7 +581,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 35611996}
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -0.02088441, y: -0.0874996, z: 0.29366684}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1.0000001, z: 1.0000001}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -3344,7 +3344,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bbb756f0138501d4ba0894e93ccb0aea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  __messageText: 
   hsToggle: {fileID: 1095616256}
   lNavToggle: {fileID: 605396507}
   headingText: {fileID: 926853338}
@@ -29143,10 +29142,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bff710339aa554a2a965ea98c46f0c8a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _centerAroundAircraft: {fileID: 380748623438198345}
+  _playerAircraft: {fileID: 380748623438198345}
   _otherActors:
   - {fileID: 858288891}
   _compasPivot: {fileID: 201148535}
+  _cameraAnimator: {fileID: 561176780}
   _dynamicHolder: {fileID: 1049552508}
   _linesPool: {fileID: 440527590}
 --- !u!1 &2124256481
@@ -29164,7 +29164,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &2124256482
 Transform:
   m_ObjectHideFlags: 0
@@ -29784,6 +29784,16 @@ PrefabInstance:
     - target: {fileID: 380748623757760282, guid: 56aa19d64298344958f1175fe91004ea,
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4636247267581919153, guid: 56aa19d64298344958f1175fe91004ea,
+        type: 3}
+      propertyPath: NMPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4636247267581919153, guid: 56aa19d64298344958f1175fe91004ea,
+        type: 3}
+      propertyPath: CurrentTurningDegrees
       value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []

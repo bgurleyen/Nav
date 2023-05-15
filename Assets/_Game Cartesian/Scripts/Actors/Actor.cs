@@ -4,7 +4,6 @@ namespace Navigation
 {
     public class Actor : MonoBehaviour
     {
-        
         public Vector2 NMPosition;
         public float Height;
 
@@ -15,7 +14,7 @@ namespace Navigation
             _tr = transform;
         }
 
-        public virtual void SimulateTick(float deltaTime)
+        public virtual void SimulateTick(float deltaTime, RouteScriptableObject activeRoute)
         {
             
         }

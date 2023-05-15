@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using Legacy;
 using UnityEngine;
 
@@ -11,6 +9,7 @@ public class GamePropertiesScriptableObject : ScriptableObject
 
     [Space]
     public float DrawerUnitLength = 0.6f;
+
 }
 
 public static class Session
@@ -18,5 +17,5 @@ public static class Session
     public static float Zoom;
     public static Vector2 PlayerNMPosition;
     public static float PlayerHeadingDegrees;
-    public static DrawerMode Mode { get; private set; } = DrawerMode.Center;
+    public static DrawerMode Mode { get; set; } = DrawerMode.Center;
 }

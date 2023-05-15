@@ -15,6 +15,7 @@ namespace Navigation
         public PathLines PathLines { get; private set; }
 
         private float _drawerUnitLength;
+        public float TotalSqrLenght { get; private set; }
 
         public void Init(float drawerUnitLength)
         {
@@ -44,6 +45,21 @@ namespace Navigation
         public void ComputeSet(bool isMod = false)
         {
             PathLines.ComputeSet(Points, !isMod);
+
+            TotalSqrLenght = 0;
+            var lastPoint = PathLines.ComputedLines[1].Vertexes[0];
+
+            for (int i = 1; i < PathLines.ComputedLines.Length; i++)
+            {
+                var computedLine = PathLines.ComputedLines[i];
+
+                for (int j = 0; j < computedLine.Vertexes.Length; j++)
+                {
+                    var vertex = computedLine.Vertexes[j];
+                    TotalSqrLenght += (vertex - lastPoint).sqrMagnitude;
+                    lastPoint = vertex;
+                }
+            }
         }
 
         public Vector2 GetCartesianPosition(int lineIndex)
@@ -91,6 +107,46 @@ namespace Navigation
             return newSet;
         }
 
-        
+
+        public bool FindFreeFlightCloseToPathExitScenario(float maxDistance, out Vector2 foundVertex)
+        {
+            int foundLine = -1;
+            int foundVertexIndex = -1;
+            foundVertex = Vector2.zero;
+            float foundDistance = -1;
+
+            var maxSqrDistance = maxDistance * maxDistance;
+            
+            // 0 = start line, empty
+            for (int i = 1; i < PathLines.ComputedLines.Length; i++)
+            {
+                var computedLine = PathLines.ComputedLines[i];
+
+                for (int j = 0; j < computedLine.Vertexes.Length; j++)
+                {
+                    var vertex = (Vector2)computedLine.Vertexes[j];
+
+                    var sqrDistance = (vertex - Session.PlayerNMPosition).sqrMagnitude;
+                    // if is further that max distance
+                    if (sqrDistance > maxSqrDistance)
+                    {
+                        continue;
+                    }
+
+                    // if is within maxDistance limits, but more forward
+                    foundVertex = vertex;
+                    foundLine = i;
+                    foundVertexIndex = j;
+                    foundDistance = sqrDistance;
+                }
+            }
+
+            if (foundDistance <= 0)
+            {
+                return false;
+            }
+            
+            return true;
+        }
     }
 }

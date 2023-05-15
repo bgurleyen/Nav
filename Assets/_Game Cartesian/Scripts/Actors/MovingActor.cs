@@ -2,23 +2,17 @@ using UnityEngine;
 
 namespace Navigation
 {
-    public class MovingActor : Actor
+    public class MovingActor<T> : Actor where T : MovingActorPropertiesScriptableObject
     {
-        [SerializeField] protected ActorPropertiesScriptableObject _actorProperties;
-        
-        public virtual Vector2 Direction => Vector2.up;
-        
-        public MovingActorPropertiesScriptableObject Properties { get; private set; }
-        
-        protected override void Awake()
-        {
-            base.Awake();
-            Properties = (MovingActorPropertiesScriptableObject)_actorProperties;
-        }
+        [SerializeField] protected T _actorProperties;
 
-        public override void SimulateTick(float deltaTime)
+        public virtual Vector2 Direction => Vector2.up;
+
+        public T Properties => _actorProperties;
+
+        public override void SimulateTick(float deltaTime, RouteScriptableObject activeRoute)
         {
-            base.SimulateTick(deltaTime);
+            base.SimulateTick(deltaTime, activeRoute);
 
             NMPosition += Direction * (Properties.NMSpeed * deltaTime);
         }
