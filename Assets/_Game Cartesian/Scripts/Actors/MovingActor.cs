@@ -6,7 +6,7 @@ namespace Navigation
     {
         [SerializeField] protected ActorPropertiesScriptableObject _actorProperties;
         
-        public Vector2 Direction = Vector2.up;
+        public virtual Vector2 Direction => Vector2.up;
         
         public MovingActorPropertiesScriptableObject Properties { get; private set; }
         

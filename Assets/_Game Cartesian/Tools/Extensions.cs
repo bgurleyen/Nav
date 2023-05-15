@@ -1,3 +1,5 @@
+using Gamelogic.Extensions;
+using Legacy;
 using UnityEngine;
 
 namespace Navigation
@@ -6,14 +8,22 @@ namespace Navigation
     {
         public static Vector3 ToDisplay(this Vector2 nmPosition)
         {
-            var relativeNmPosition = nmPosition - Session.PlayerNMPosition;
+            switch (Session.Mode)
+            {
+                case DrawerMode.Map:
+                case DrawerMode.Center:
+                    // walked
+                    nmPosition -= Session.PlayerNMPosition;
+                    // walked rotation
+                    nmPosition = nmPosition.Rotate(Session.PlayerHeadingDegrees);
+                    break;
+                case DrawerMode.Plan:
+                    // centered
+                    // nmPosition -= GameManager.Instance.ActiveRoute.PathLines.CenteredPosition;
+                    break;
+            }
 
-            var relativeWorldPosition = new Vector3(
-                relativeNmPosition.x,
-                relativeNmPosition.y,
-                0);
-
-            return relativeWorldPosition / Session.Zoom;
+            return nmPosition / Session.Zoom;
         }
     }
 }

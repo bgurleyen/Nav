@@ -3313,7 +3313,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!4 &195338238
 Transform:
   m_ObjectHideFlags: 0
@@ -29146,6 +29146,7 @@ MonoBehaviour:
   _centerAroundAircraft: {fileID: 380748623438198345}
   _otherActors:
   - {fileID: 858288891}
+  _compasPivot: {fileID: 201148535}
   _dynamicHolder: {fileID: 1049552508}
   _linesPool: {fileID: 440527590}
 --- !u!1 &2124256481
@@ -32069,12 +32070,12 @@ PrefabInstance:
     - target: {fileID: 7330376348444668427, guid: b5794f15c83f88842a1c994d7dcd80e1,
         type: 3}
       propertyPath: m_AnchorMax.x
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7330376348444668427, guid: b5794f15c83f88842a1c994d7dcd80e1,
         type: 3}
       propertyPath: m_AnchorMax.y
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b5794f15c83f88842a1c994d7dcd80e1, type: 3}

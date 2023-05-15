@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Legacy;
 using UnityEngine;
 
 [CreateAssetMenu]
@@ -16,4 +17,6 @@ public static class Session
 {
     public static float Zoom;
     public static Vector2 PlayerNMPosition;
+    public static float PlayerHeadingDegrees;
+    public static DrawerMode Mode { get; private set; } = DrawerMode.Center;
 }

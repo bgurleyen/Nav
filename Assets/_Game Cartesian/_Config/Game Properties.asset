@@ -12,4 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6b5379e5b8f4946d68c6c0358b6241e7, type: 3}
   m_Name: Game Properties
   m_EditorClassIdentifier: 
+  MinZoom: 4
   NMToUnit: 1
+  DrawerUnitLength: 0.6
