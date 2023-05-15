@@ -166,7 +166,7 @@ namespace Gamelogic.Extensions.Obsolete
 	}
 
 	[Obsolete("Use the static functions in Gamelogic.Generators.Generator instead.")]
-	class EnumeratorGenerator<T> : IGenerator<T>
+	internal class EnumeratorGenerator<T> : IGenerator<T>
 	{
 		#region Private Fields
 

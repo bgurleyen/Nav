@@ -123,7 +123,7 @@ namespace Lean.Common.Examples
 			public List<Vector3> Points;
 		}
 
-		class Node
+		private class Node
 		{
 			public Vector3 Point;
 			public int     Count;
