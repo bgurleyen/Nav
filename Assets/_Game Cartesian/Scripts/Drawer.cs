@@ -1,49 +1,86 @@
+using System.Collections.Generic;
+using Lean.Pool;
+using Legacy;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Unyawn.Utils;
 
 namespace Navigation
 {
     public class Drawer : MonoBehaviour
     {
-        [SerializeField] private CompassPropertiesScriptableObject _compassProperties;
         [SerializeField] private PlayerAircraft _centerAroundAircraft;
         [SerializeField] private Actor[] _otherActors;
+        [Space] [SerializeField] private Transform _dynamicHolder;
+        [Space] [SerializeField] private LeanGameObjectPool _linesPool;
 
-        private Vector3 _compassOrigin;
-        
-        private MovingActorPropertiesScriptableObject _aircraftProperties => _centerAroundAircraft.Properties;
-        
         private void Awake()
         {
-            _compassOrigin = transform.position;
             UYServiceLocator.Register(this);
         }
 
-        public void SimulateTick(float deltaTime)
+        public void SimulateTick(float deltaTime, RouteScriptableObject routeData)
         {
             _centerAroundAircraft.SimulateTick(deltaTime);
-            
+
+            Session.PlayerNMPosition = _centerAroundAircraft.NMPosition;
+
             foreach (var actor in _otherActors)
             {
                 actor.SimulateTick(deltaTime);
             }
-            
+
             // Display
-            
+
             foreach (var actor in _otherActors)
             {
-                Place(actor);
+                actor.Place();
             }
             
+
+            ClearPooledVisuals();
+            DisplaySet(routeData.PathLines?.ComputedLines);
         }
 
-        private void Place(Actor actor)
+        private void ClearPooledVisuals()
         {
-            var relativeNmPosition = actor.NMPosition - _centerAroundAircraft.NMPosition;
+            Extension.DespawnChildren<LineDrawer>(_dynamicHolder, _linesPool);
+        }
 
-            var worldCompassPosition = _compassOrigin + relativeNmPosition.ToDisplay(_compassProperties);
-            
-            actor.Place(worldCompassPosition);
+        private void DisplaySet(IReadOnlyList<MarkLine> lines)
+        {
+            if (lines == null)
+            {
+                return;
+            }
+
+            LeanGameObjectPool pool;
+            Transform holder;
+
+
+            pool = _linesPool;
+            holder = _dynamicHolder;
+
+
+            for (var i = 0; i < lines.Count; i++)
+            {
+                var hiddenLabel = false;
+                var hiddenLine = false;
+                var fromPointIndex = 0;
+                var line = lines[i];
+
+                if (line == null)
+                {
+                    continue;
+                }
+
+                var point = line.LinkedPoint;
+
+                var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<LineDrawer>();
+                drawer.name = $"{line.GetName} {point.Name}";
+
+                drawer.Display(line, point, hiddenLabel, hiddenLine, fromPointIndex);
+            }
         }
     }
 }

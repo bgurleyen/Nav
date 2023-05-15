@@ -1,4 +1,5 @@
 ﻿using System;
+using Legacy;
 using UnityEngine;
 
 [Serializable]
@@ -135,7 +136,7 @@ public class Aircraft
             //compute rejoin path
 
             Debug.Log("start LNAV - rejoin next node");
-            RejoinPathLines = new PathLines(_settings);
+            RejoinPathLines = new PathLines(_settings.DrawerUnitLength);
 
             var tempPoints = new RoutePoint[5];
             var lastPoint = RoutePoint.ConstructFromPosition(Vector2.zero, null);
@@ -160,7 +161,7 @@ public class Aircraft
     private void ComputeTempPathForCloseToPath(Vector2 futurePosition, Vector2 tipOfTurn)
     {
         Debug.Log("start LNAV - rejoin close path");
-        RejoinPathLines = new PathLines(_settings);
+        RejoinPathLines = new PathLines(_settings.DrawerUnitLength);
 
         var tempPoints = new RoutePoint[5];
         var lastPoint = RoutePoint.ConstructFromPosition(Vector2.zero, null);
@@ -188,7 +189,7 @@ public class Aircraft
     {
             //compute rejoin path
             Debug.Log("start LNAV - rejoin direct intersection");
-            RejoinPathLines = new PathLines(_settings);
+            RejoinPathLines = new PathLines(_settings.DrawerUnitLength);
 
             var tempPoints = new RoutePoint[4];
             var lastPoint = RoutePoint.ConstructFromPosition(Vector2.zero, null);

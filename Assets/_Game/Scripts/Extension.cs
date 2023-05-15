@@ -3,62 +3,74 @@ using UnityEngine;
 using Gamelogic.Extensions;
 using Lean.Pool;using UnityEngine.Events;
 
-public static class Extension
+namespace Legacy
 {
-    public static Vector3 ToDisplay(this Vector2 pos)
+
+    public static class Extension
     {
-        var finalPosition = new Vector2(pos.x, pos.y);
-
-        var walkedPosition = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath;
-        var walkedRotation = GameManager.Instance.Aircraft.HeadingDegrees;
-
-        switch (Drawer.Instance.Mode)
+        public static Vector3 ToDisplay(this Vector2 pos)
         {
-            case DrawerMode.Map:
-            case DrawerMode.Center:
-                // walked
-                finalPosition -= walkedPosition;
-                // walked rotation
-                finalPosition = finalPosition.Rotate(walkedRotation);
-                break;
-            case DrawerMode.Plan:
-                // centered
-                finalPosition -= GameManager.Instance.ActiveRoute.PathLines.CenteredPosition;
-                break;
-        }
+            var finalPosition = new Vector2(pos.x, pos.y);
 
-        // zoom
-        finalPosition *= Drawer.Instance.Zoom;
+            var walkedPosition = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath;
+            var walkedRotation = GameManager.Instance.Aircraft.HeadingDegrees;
 
-        return finalPosition;
-    }
-
-
-    public static void DespawnChildren<T>(Transform holder, LeanGameObjectPool pool) where T : MonoBehaviour
-    {
-        var lines = holder.GetComponentsInChildren<T>();
-        foreach (var l in lines)
-        {
-            pool.Despawn(l.gameObject);
-        }
-    }
-    
-    public static int GetNodeIndex(this RoutePoint[] points,int nodeId)
-    {
-        for (var i = 0; i < points.Length; i++)
-        {
-            if (points[i].ID == nodeId)
+            switch (Drawer.Instance.Mode)
             {
-                return i;
+                case DrawerMode.Map:
+                case DrawerMode.Center:
+                    // walked
+                    finalPosition -= walkedPosition;
+                    // walked rotation
+                    finalPosition = finalPosition.Rotate(walkedRotation);
+                    break;
+                case DrawerMode.Plan:
+                    // centered
+                    finalPosition -= GameManager.Instance.ActiveRoute.PathLines.CenteredPosition;
+                    break;
+            }
+
+            // zoom
+            finalPosition *= Drawer.Instance.Zoom;
+
+            return finalPosition;
+        }
+
+
+        public static void DespawnChildren<T>(Transform holder, LeanGameObjectPool pool) where T : MonoBehaviour
+        {
+            var lines = holder.GetComponentsInChildren<T>();
+            foreach (var l in lines)
+            {
+                pool.Despawn(l.gameObject);
             }
         }
 
-        return -1;
+        public static int GetNodeIndex(this RoutePoint[] points, int nodeId)
+        {
+            for (var i = 0; i < points.Length; i++)
+            {
+                if (points[i].ID == nodeId)
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
     }
-    
+
+    [Serializable]
+    public class FloatUnityEvent : UnityEvent<float>
+    {
+    }
+
+    public enum DrawerMode
+    {
+        Map,
+        Center,
+        Plan,
+        Suspeded
+    }
 }
-
-[Serializable]
-public class FloatUnityEvent : UnityEvent<float> { }
-
-public enum DrawerMode { Map, Center, Plan, Suspeded}

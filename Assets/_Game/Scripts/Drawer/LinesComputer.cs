@@ -3,11 +3,13 @@
 
     public static class LinesComputer
     {
-        private static GameSettingsScriptableObject _settings;
+        private static float _forwardThreshold;
+        private static float _drawerUnitLength;
 
-        public static void Init(GameSettingsScriptableObject settings)
+        public static void Init(float forwardThreshold, float drawerUnitLength)
         {
-            _settings = settings;
+            _forwardThreshold = forwardThreshold;
+            _drawerUnitLength = drawerUnitLength;
         }
         
         public static bool GetNextLine(MarkLine lastLine, int fromDataPointIndex, RoutePoint[] points,
@@ -38,7 +40,7 @@
             if (toDataPointIndex != points.Length - 1)
             {
                 var secondPoint = points[toDataPointIndex + 1];
-                if (secondPoint.Distance > _settings.ForwardThreshold * 0.3f)
+                if (secondPoint.Distance > _forwardThreshold * 0.3f)
                 {
                     notToCloseSecondPoint = secondPoint;
                 }
@@ -107,7 +109,7 @@
         private static bool GenerateLine(RoutePoint nextPoint, Vector3 lastEndPosition, Vector3 lastEndOffset,
             out MarkLine line)
         {
-            line = new MarkLine(nextPoint, _settings.DrawerUnitLength);
+            line = new MarkLine(nextPoint, _drawerUnitLength);
             return line.Init(lastEndPosition, lastEndOffset, nextPoint);
         }
 
@@ -119,7 +121,7 @@
             if (tangentToMiddle <= nextPoint.Distance && tangentToMiddle <= secondPoint.Distance &&
                 tangentToMiddle <= chosenRadius)
             {
-                var l = new Curve(nextPoint, _settings.DrawerUnitLength);
+                var l = new Curve(nextPoint, _drawerUnitLength);
                 l.Init(lastEndPosition, lastEndOffset, nextPoint, secondPoint, tangentToMiddle, chosenRadius);
                 line = l;
                 return true;
@@ -133,7 +135,7 @@
             RoutePoint secondPoint,
             float angleBetween, Vector3 lastEndPosition, Vector3 lastEndOffset, out MarkLine line)
         {
-            var l = new DoubleCurve(nextPoint, _settings.DrawerUnitLength);
+            var l = new DoubleCurve(nextPoint, _drawerUnitLength);
             l.Init(lastEndPosition, lastEndOffset, nextPoint, secondPoint, angleBetween, smallRadius, bigRadius);
             line = l;
         }

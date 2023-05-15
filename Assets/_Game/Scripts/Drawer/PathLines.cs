@@ -11,12 +11,12 @@ public class PathLines
     public List<FixRay> ComputedRays;
     public Vector2 CenteredPosition;
 
-    private static FixedPointsScriptableObject FixedPoints => GameManager.Instance.FixedPoints;
-    private GameSettingsScriptableObject _settings;
+    private static FixedPointsScriptableObject FixedPoints => GameManager.Instance?.FixedPoints;
+    private readonly float _drawerUnitLength;
 
-    public PathLines(GameSettingsScriptableObject settings)
+    public PathLines(float drawerUnitLength)
     {
-        _settings = settings;
+        _drawerUnitLength = drawerUnitLength;
     }
 
     public void ComputeSet(RoutePoint[] pointsArray, bool hasOtherMarkers = false)
@@ -28,7 +28,7 @@ public class PathLines
             ComputedRays = new List<FixRay>();
         }
 
-        var lastLine = new MarkLine(null, _settings.DrawerUnitLength);
+        var lastLine = new MarkLine(null, _drawerUnitLength);
         lastLine.InitBeginning();
         var currentIndex = 0;
 

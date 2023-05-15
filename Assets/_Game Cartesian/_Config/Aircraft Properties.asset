@@ -12,4 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7b0deb424ed4459098982caaaf1cc844, type: 3}
   m_Name: Aircraft Properties
   m_EditorClassIdentifier: 
-  NMSpeed: 0.1
+  NMSpeed: 0.2

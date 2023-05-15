@@ -1,6 +1,7 @@
 ﻿using System;
 using Gamelogic.Extensions;
 using System.Collections.Generic;
+using Legacy;
 using UnityEngine;
 
 public class GameManager : Singleton<GameManager>
@@ -31,7 +32,7 @@ public class GameManager : Singleton<GameManager>
 
     private void Awake()
     {
-        LinesComputer.Init(_gameConfig.Settings);
+        LinesComputer.Init(_gameConfig.Settings.ForwardThreshold, _gameConfig.Settings.DrawerUnitLength);
         Aircraft = new Aircraft(_gameConfig);
     }
 

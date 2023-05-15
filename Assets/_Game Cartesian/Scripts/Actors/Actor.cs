@@ -20,9 +20,9 @@ namespace Navigation
             
         }
 
-        public void Place(Vector3 worldPosition)
+        public void Place()
         {
-            _tr.position = worldPosition;
+            _tr.localPosition = NMPosition.ToDisplay();
         }
     }
 }
