@@ -12,7 +12,7 @@ namespace Navigation
         {
             var finalPosition = new Vector2(pos.x, pos.y);
 
-            var walkedPosition = Session.PlayerAircraft.PositionFreeOrOnCurvedPath;
+            var walkedPosition = Session.PlayerAircraft.NMPosition;
             var walkedRotation = Session.PlayerAircraft.HeadingDegrees;
 
             switch (Session.Mode)

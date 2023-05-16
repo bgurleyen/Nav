@@ -65,7 +65,7 @@ public class infoFMC : Singleton<infoFMC>
         double[] totalDistLeft = new double[WPTCount];
         double RW_Alt = activePoints.Points[WPTCount-1].Altitude.ComputedValue;
         double fuelBurn,fuelRemaining = Calculator.totalFuel / 100;  
-        float DirectDistance = (Vector2.Distance(Session.ActiveRoute.GetCartesianPosition(WPTCount - 1), Session.PlayerAircraft.PositionFreeOrOnCurvedPath));
+        float DirectDistance = (Vector2.Distance(Session.ActiveRoute.GetCartesianPosition(WPTCount - 1), Session.PlayerAircraft.NMPosition));
 
         for (int i = prvWptIdx + 1; i < activePoints.Points.Length; i++)
         {

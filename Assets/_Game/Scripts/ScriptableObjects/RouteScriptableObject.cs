@@ -153,48 +153,6 @@ namespace Navigation
         }
 
 
-        public bool FindFreeFlightCloseToPathExitScenario(float maxDistance, out Vector2 foundVertex)
-        {
-            int foundLine = -1;
-            int foundVertexIndex = -1;
-            foundVertex = Vector2.zero;
-            float foundDistance = -1;
-
-            var maxSqrDistance = maxDistance * maxDistance;
-
-            // 0 = start line, empty
-            for (int i = 1; i < PathLines.ComputedLines.Length; i++)
-            {
-                var computedLine = PathLines.ComputedLines[i];
-
-                for (int j = 0; j < computedLine.Vertexes.Length; j++)
-                {
-                    var vertex = (Vector2)computedLine.Vertexes[j];
-
-                    var sqrDistance = (vertex - Session.PlayerAircraft.NMPosition).sqrMagnitude;
-                    // if is further that max distance
-                    if (sqrDistance > maxSqrDistance)
-                    {
-                        continue;
-                    }
-
-                    // if is within maxDistance limits, but more forward
-                    foundVertex = vertex;
-                    foundLine = i;
-                    foundVertexIndex = j;
-                    foundDistance = sqrDistance;
-                }
-            }
-
-            if (foundDistance <= 0)
-            {
-                return false;
-            }
-
-            return true;
-        }
-
-
         // to be executed on ACTIVE route
         public bool FindFreeFlightDirectExitScenario(out Vector2 tipOfTurn, out Vector2 exitPoint,
             out int exitSegmentIndex)
@@ -203,8 +161,7 @@ namespace Navigation
 
             exitPoint = nan;
             tipOfTurn = nan;
-            var aircraftPosition =
-                Session.PlayerAircraft.PositionFreeOrOnCurvedPath; // would be free since we are in free flight
+            var aircraftPosition = Session.PlayerAircraft.NMPosition; // would be free since we are in free flight
             var aircraftDirection = Geometry.GetDirectionFromHeading(Session.PlayerAircraft.HeadingDegrees);
             var segmentEnd = Vector2.zero;
 

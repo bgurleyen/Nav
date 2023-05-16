@@ -200,7 +200,7 @@ public class Drawer : MonoBehaviour
                 //rotate compass
                 compasPivot.SetLocalRotationZ(0);
                 mobilePlaneIndicatorPivot.position =
-                    Session.PlayerAircraft.PositionFreeOrOnCurvedPath.ToDisplay();
+                    Session.PlayerAircraft.NMPosition.ToDisplay();
                 mobilePlaneIndicatorPivot.SetLocalRotationZ(-Session.PlayerAircraft.HeadingDegrees);
                 break;
             case DrawerMode.Suspeded:
@@ -230,7 +230,7 @@ public class Drawer : MonoBehaviour
             .GetComponent<OtherAircrafIndicator>();
         objective.name = "My objective";
         objective.Init("|", Color.yellow);
-        objective.transform.localPosition = Extension.ToDisplay((Session.PlayerAircraft.PositionFreeOrOnCurvedPath +
+        objective.transform.localPosition = Extension.ToDisplay((Session.PlayerAircraft.NMPosition +
                                                                  Vector2.right * _debugStarDistance));
 
         // demo - shows a debug star for seeing the distance

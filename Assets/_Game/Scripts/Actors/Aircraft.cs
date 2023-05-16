@@ -1,49 +1,41 @@
 ﻿using System;
+using Gamelogic.Extensions;
 using Navigation;
 using UnityEngine;
-using Unyawn.Utils;
 
 [Serializable]
 public class Aircraft : MovingActor
 {
-    public void Init(float aircraftSpeed, float altitude)
-    {
-        ResetOnActiveSet(aircraftSpeed, altitude);
-    }
+    [SerializeField, ReadOnly] private float _currentTurningDegrees;
     
-    // position that can be on the generated curved sections of the lines
-    public Vector2 PositionFreeOrOnCurvedPath;
-
-    public Vector2 PositionFreeOrOnRouteSegment;
-    
-    
-    public float CurrentTurningDegrees = 15;
     /// <summary>
     /// If used for geometry should be used with '-' . see other places
     /// </summary>
     public float HeadingDegrees { get; private set; } 
     public float TargetHeading { get; private set; }
     public float WalkedDistanceOnSegment { get; private set; }
+    public bool IsRejoining => !IsFreeFlight && !IsOnRoute;
+    public PathLines RejoinPathLines { get; private set; }
+    
+    public int CachedExitSegmentOfHeadingRejoinIntersection { get; }
+    public Vector2 CachedExitPointFromHeading { get; }
+
+    // position that can be on the generated curved sections of the lines
+    public Vector2 PositionFreeOrOnRouteSegment;
+    
     public PathPositionInfo RoutePathLocalization;
     public PathPositionInfo RejoinPathLocalization;
 
-    public PathLines RejoinPathLines { get; private set; }
     public bool IsFreeFlight;
     public bool IsOnRoute = true;
-
+    
+    private Vector2 CurrentDirection => Geometry.GetDirectionFromHeading(HeadingDegrees);
+    private float FrameDistance => _speed * Session.Settings.DeltaTime * Calculator.Acceleration(); //change
+    
     private Vector3 _upwardsHeaderLineTop = new(0, 1.2f, 0);
     private LineRenderer _turningHeaderLine;
-    
     private Vector2 _pathJoinFoundVertex;
-    
-    public int CachedExitSegmentOfHeadingRejoinIntersection => _cachedExitSegmentOfHeadingRejoinIntersection;
-    public Vector2 CachedExitPointFromHeading => _cachedExitPointFromHeading;
-
-    public bool IsRejoining => !IsFreeFlight && !IsOnRoute;
-
-    private int _cachedExitSegmentOfHeadingRejoinIntersection;
-    private Vector2 _cachedExitPointFromHeading;
-
+    private float _speed;
 
     protected override void Awake()
     {
@@ -57,81 +49,123 @@ public class Aircraft : MovingActor
     {
         DrawHeadingLine();
 
-        HeadingDegrees += CurrentTurningDegrees * deltaTime * 0.1f;
-
-        // We follow the path ( with the closest guide )
-        if (!IsFreeFlight)
-        {
-            if (!Session.ActiveRoute.FindFreeFlightCloseToPathExitScenario(
-                    Session.Settings.RejoinDistance,
-                    out _pathJoinFoundVertex))
-            {
-                Debug.LogError("No Intersection Point Found");
-                IsFreeFlight = true;
-            }
-            else
-            {
-                SteerToPathFoundVertex();
-            }
-        }
-    }
-
-
-    /// <summary>
-    /// This is called on FixedUpdate from GameManager
-    /// </summary>
-    public void Advance()
-    {
         if (IsFreeFlight)
         {
             IndicateTargetHeading(Calculator.RHeading);
-            AdvanceFreeFlight();
+
+            SimulateTickHeadingCorrection();
 
             // for display only
             //GameManager.Instance.ActiveRoute.FindFreeFlightDirectExitScenario(out displayCenterOfTurn, out displayExitPoint, out _);
-
         }
         else
         {
+            var foundClosePathDestination = Session.ActiveRoute.PathLines.FindCloseToPathDestination(
+                    Session.Settings.RejoinDistance,
+                    out _pathJoinFoundVertex, out var exitLineIndex, out var reachedEnd);
+
             if (IsOnRoute)
             {
-                AdvanceOnRoutePath();
+                if (!foundClosePathDestination)
+                {
+                    Debug.LogError("No Intersection Point Found");
+                    IsFreeFlight = true;
+
+                    return;
+                }
+
+                SteerToPathFoundVertex(deltaTime);
             }
             else
             {
-                AdvanceOnRejoinPath(out var rejoined, out var exitSegmentIndex, out var leftFrameDistanceToWalk);
+                var rejoined = foundClosePathDestination;
+
                 if (rejoined)
                 {
                     IsOnRoute = true;
                     Session.ActiveRoute.OnPathRejoined(RejoinPathLines.oldPositionVertex);
 
-                    if (Session.ActiveRoute.TransferPathToRoute(_cachedExitPointFromHeading, exitSegmentIndex,
-                        out var intersectionInfo,
-                        out var walkedDistanceOnSegment))
+                    if (Session.ActiveRoute.TransferPathToRoute(CachedExitPointFromHeading, exitLineIndex,
+                            out var intersectionInfo,
+                            out var walkedDistanceOnSegment))
                     {
 
                         RoutePathLocalization = intersectionInfo;
                         WalkedDistanceOnSegment = walkedDistanceOnSegment;
                     }
 
-                    AdvanceOnRoutePath(leftFrameDistanceToWalk);
                 }
+                else
+                {
+                    if (!RejoinPathLines.FindCloseToPathDestination(
+                            Session.Settings.RejoinDistance,
+                            out _pathJoinFoundVertex, out var foundLineIndex, out _))
+                    {
+                        Debug.LogError("No Intersection Point Found");
+                        IsFreeFlight = true;
+                        return;
+                    }
+                }
+                
+                SteerToPathFoundVertex(deltaTime);
             }
         }
+
+        SimulateTickMove();
     }
 
-
-    private void SteerToPathFoundVertex()
+    public void Init(float aircraftSpeed, float altitude)
     {
-        var difDegrees = Geometry.AngleBetween(_pathJoinFoundVertex - NMPosition, Direction);
+        ResetOnActiveSet(aircraftSpeed, altitude);
+    }
+    
+    // exactDistance will be provided when rejoining from rejoining path and there is some distance left to walk
+    
+    //private bool TickOrientToRoutePath(PathLines pathLines, float deltaTime, bool )
+  //  {
+    
+        
+            // PositionFreeOrOnCurvedPath = 
+            // WalkedDistanceOnSegment +=
+            // PositionFreeOrOnRouteSegment =
+            // PositionFreeOrOnRouteSegment = 
+       
 
-        var lerpDirection = CurrentTurningDegrees / 2f < difDegrees ? 1 : -1;
-        CurrentTurningDegrees += lerpDirection * 0.2f;
+// ---
+        // {
+        //     Debug.LogError("No destination could be found");
+        //     return;
+        // }
+
+        // // reset walked distance if the line has increased
+        // if (newUnreachedPositionInfo.CurrentNodeIndex != RoutePathLocalization.CurrentNodeIndex)
+        // {
+        //     WalkedDistanceOnSegment = 0;
+        //     if (Session.ActiveRoute.Points[newUnreachedPositionInfo.CurrentNodeIndex]
+        //         .IsAfterDiscontinuity)
+        //     {
+        //         UYServiceLocator.Get<GameManager>().SwitchThroughHeading();
+        //     }
+        // }
+
+        //RoutePathLocalization = newUnreachedPositionInfo;
+        //distanceLeftToNextVertex = (RoutePathLocalization.UnreachedVertexPosition - PositionFreeOrOnCurvedPath).magnitude;
+
+  //  }
+
+    private void SteerToPathFoundVertex(float deltaTime)
+    {
+        var difDegrees = Geometry.AngleBetween(_pathJoinFoundVertex - NMPosition, CurrentDirection);
+
+        var lerpDirection = _currentTurningDegrees / 2f < difDegrees ? 1 : -1;
+        _currentTurningDegrees += lerpDirection * 0.2f;
+
+        HeadingDegrees += _currentTurningDegrees * deltaTime * 0.1f;
     }
 
     private void DrawHeadingLine()
     {
-        var rotated = Quaternion.Euler(0, 0, -CurrentTurningDegrees) * _upwardsHeaderLineTop;
+        var rotated = Quaternion.Euler(0, 0, -_currentTurningDegrees) * _upwardsHeaderLineTop;
 
         _turningHeaderLine.SetPosition(1, rotated);
     }
@@ -155,15 +189,11 @@ public class Aircraft : MovingActor
         }
     }
 
-    private Vector2 CurrentDirection => Geometry.GetDirectionFromHeading(HeadingDegrees);
-    private float FrameDistance => _speed * Session.Settings.DeltaTime * Calculator.Acceleration(); //change
-
-    private float _speed;
-
+  
     public void ResetOnActiveSet(float aircraftSpeed, float altitude)
     {
         _speed = aircraftSpeed;
-        PositionFreeOrOnCurvedPath = Vector2.zero;
+        NMPosition = Vector2.zero;
         PositionFreeOrOnRouteSegment = Vector2.zero;
         WalkedDistanceOnSegment = 0;
 
@@ -267,13 +297,13 @@ public class Aircraft : MovingActor
         var tempPoints = new RoutePoint[5];
         var lastPoint = RoutePoint.ConstructFromPosition(Vector2.zero, null);
         tempPoints[0] = lastPoint;
-        lastPoint = RoutePoint.ConstructFromPosition(PositionFreeOrOnCurvedPath, lastPoint);
+        lastPoint = RoutePoint.ConstructFromPosition(NMPosition, lastPoint);
         tempPoints[1] = lastPoint;
         lastPoint = RoutePoint.ConstructFromPosition(futurePosition, lastPoint);
         tempPoints[2] = lastPoint;
         lastPoint = RoutePoint.ConstructFromPosition(tipOfTurn, lastPoint);
         tempPoints[3] = lastPoint;
-        lastPoint = RoutePoint.ConstructFromPosition(_cachedExitPointFromHeading, lastPoint);
+        lastPoint = RoutePoint.ConstructFromPosition(CachedExitPointFromHeading, lastPoint);
         tempPoints[4] = lastPoint;
 
         RejoinPathLines.ComputeSet(tempPoints);
@@ -295,11 +325,11 @@ public class Aircraft : MovingActor
             var tempPoints = new RoutePoint[4];
             var lastPoint = RoutePoint.ConstructFromPosition(Vector2.zero, null);
             tempPoints[0] = lastPoint;
-            lastPoint = RoutePoint.ConstructFromPosition(PositionFreeOrOnCurvedPath, lastPoint);
+            lastPoint = RoutePoint.ConstructFromPosition(NMPosition, lastPoint);
             tempPoints[1] = lastPoint;
             lastPoint = RoutePoint.ConstructFromPosition(tipOfTurn, lastPoint);
             tempPoints[2] = lastPoint;
-            lastPoint = RoutePoint.ConstructFromPosition(_cachedExitPointFromHeading, lastPoint);
+            lastPoint = RoutePoint.ConstructFromPosition(CachedExitPointFromHeading, lastPoint);
             tempPoints[3] = lastPoint;
 
             RejoinPathLines.ComputeSet(tempPoints);
@@ -312,37 +342,38 @@ public class Aircraft : MovingActor
 
 
     // on free flight
-    private void ExecuteStepMove()
+    private void SimulateTickMove()
     {
-        PositionFreeOrOnCurvedPath += CurrentDirection * FrameDistance;
-        PositionFreeOrOnRouteSegment = PositionFreeOrOnCurvedPath;
+        NMPosition += CurrentDirection * FrameDistance;
+        PositionFreeOrOnRouteSegment = NMPosition;
         
         CheckAdvancePointOnHDGProximity();
     }
 
-    private void ExecuteLerpMove(PathPositionInfo pathLocalisation ,float stepDistance, float distanceLeftToNextVertex)
-    {
-        if (distanceLeftToNextVertex > 0)
-        {
-            PositionFreeOrOnCurvedPath = Vector2.Lerp(PositionFreeOrOnCurvedPath,
-                pathLocalisation.UnreachedVertexPosition, stepDistance / distanceLeftToNextVertex);
-        }
+    // private void ExecuteLerpMove(PathPositionInfo pathLocalisation ,float stepDistance, float distanceLeftToNextVertex)
+    // {
+    //     if (distanceLeftToNextVertex > 0)
+    //     {
+    //         PositionFreeOrOnCurvedPath = Vector2.Lerp(PositionFreeOrOnCurvedPath,
+    //             pathLocalisation.UnreachedVertexPosition, stepDistance / distanceLeftToNextVertex);
+    //     }
+    //
+    //     if (IsOnRoute)
+    //     {
+    //         WalkedDistanceOnSegment += stepDistance;
+    //         PositionFreeOrOnRouteSegment = Vector2.Lerp(
+    //             PositionVirtualNode.CurrentSegment.StartPosition,
+    //             PositionVirtualNode.CurrentSegment.EndPosition,
+    //             WalkedDistanceOnSegment / PositionVirtualNode.GetNodeTo.Distance);
+    //     }
+    //     else
+    //     {
+    //         PositionFreeOrOnRouteSegment = PositionFreeOrOnCurvedPath;
+    //     }
+    // }
 
-        if (IsOnRoute)
-        {
-            WalkedDistanceOnSegment += stepDistance;
-            PositionFreeOrOnRouteSegment = Vector2.Lerp(
-                PositionVirtualNode.CurrentSegment.StartPosition,
-                PositionVirtualNode.CurrentSegment.EndPosition,
-                WalkedDistanceOnSegment / PositionVirtualNode.GetNodeTo.Distance);
-        }
-        else
-        {
-            PositionFreeOrOnRouteSegment = PositionFreeOrOnCurvedPath;
-        }
-    }
-
-    private void ExecuteStepHeadingCorrection()
+    // @£$
+    private void SimulateTickHeadingCorrection()
     {
         if (Math.Abs(TargetHeading - HeadingDegrees) > 0.01f)
         {
@@ -355,119 +386,7 @@ public class Aircraft : MovingActor
         TargetHeading = heading;
     }
 
-    private void AdvanceOnRejoinPath(out bool rejoined,out int exitSegmentIndex, out float leftFrameDistanceToWalk)
-    {
-        exitSegmentIndex = _cachedExitSegmentOfHeadingRejoinIntersection;
-        leftFrameDistanceToWalk = 0;
-        rejoined = false;
-        ExecuteStepHeadingCorrection();
 
-        var distanceLeftToNextVertex =
-            (RejoinPathLocalization.UnreachedVertexPosition - PositionFreeOrOnCurvedPath).magnitude;
-
-        var goesOver = distanceLeftToNextVertex <= FrameDistance;
-
-        // while within current segment there will be no change on state - just advance
-        if (!goesOver)
-        {
-            ExecuteLerpMove(RejoinPathLocalization, FrameDistance, distanceLeftToNextVertex);
-            return;
-        }
-
-
-        // Will break motion in two: corner, after corner
-
-        // move to the corner
-        ExecuteLerpMove(RejoinPathLocalization, distanceLeftToNextVertex, distanceLeftToNextVertex);
-        var leftToAdvance = FrameDistance - distanceLeftToNextVertex;
-
-        // advance to next point
-        if (RejoinPathLines.GetNextDestination(
-            RejoinPathLocalization.CurrentNodeIndex,
-            RejoinPathLocalization.UnreachedVertexIndex, out var newUnreachedPathLocalisation))
-        {
-            // reset walked distance if the line has increased
-            if (newUnreachedPathLocalisation.CurrentNodeIndex != RejoinPathLocalization.CurrentNodeIndex)
-            {
-                // is different than de other method here !
-                WalkedDistanceOnSegment = 0;
-            }
-
-            RejoinPathLocalization = newUnreachedPathLocalisation;
-            distanceLeftToNextVertex =
-                (RejoinPathLocalization.UnreachedVertexPosition - PositionFreeOrOnCurvedPath).magnitude;
-
-            // assume point heading
-            TargetHeading = RejoinPathLocalization.HeadingBefore;
-
-            // move the rest of the frameDistance
-            ExecuteLerpMove(RejoinPathLocalization, leftToAdvance, distanceLeftToNextVertex);
-        }
-        else
-        {
-            // no next segment exists on current path
-            // rejoining path is ended - signal route path,
-            leftFrameDistanceToWalk = leftToAdvance;
-            rejoined = true;
-        }
-    }
-
-    // exactDistance will be provided when rejoining from rejoining path and there is some distance left to walk
-    private void AdvanceOnRoutePath(float exactDistance = -1)
-    {
-        ExecuteStepHeadingCorrection();
-
-        var distanceToWalk = exactDistance > -1
-            ? exactDistance
-            : FrameDistance;
-
-        var distanceLeftToNextVertex =
-            (RoutePathLocalization.UnreachedVertexPosition - PositionFreeOrOnCurvedPath).magnitude;
-
-        var goesOver = distanceLeftToNextVertex <= distanceToWalk;
-
-        // while within current segment there will be no change on state - just advance
-        if (!goesOver)
-        {
-            ExecuteLerpMove(RoutePathLocalization, distanceToWalk, distanceLeftToNextVertex);
-            return;
-        }
-
-        // Will break motion in two: corner, after corner:
-
-        // 1: move to the corner
-        ExecuteLerpMove(RoutePathLocalization,distanceLeftToNextVertex, distanceLeftToNextVertex);
-        var leftToAdvance = distanceToWalk - distanceLeftToNextVertex;
-
-        // advance to next point
-        if (!Session.ActiveRoute.PathLines.GetNextDestination(
-            RoutePathLocalization.CurrentNodeIndex,
-            RoutePathLocalization.UnreachedVertexIndex, out var newUnreachedPositionInfo))
-        {
-            Debug.LogError("No destination could be found");
-            return;
-        }
-
-        // reset walked distance if the line has increased
-        if (newUnreachedPositionInfo.CurrentNodeIndex != RoutePathLocalization.CurrentNodeIndex)
-        {
-            WalkedDistanceOnSegment = 0;
-            if (Session.ActiveRoute.Points[newUnreachedPositionInfo.CurrentNodeIndex]
-                .IsAfterDiscontinuity)
-            {
-                UYServiceLocator.Get<GameManager>().SwitchThroughHeading();
-            }
-        }
-
-        RoutePathLocalization = newUnreachedPositionInfo;
-        distanceLeftToNextVertex = (RoutePathLocalization.UnreachedVertexPosition - PositionFreeOrOnCurvedPath).magnitude;
-
-        // assume point heading
-        TargetHeading = RoutePathLocalization.HeadingBefore;
-
-        // move the rest of the frameDistance
-        ExecuteLerpMove(RoutePathLocalization,leftToAdvance, distanceLeftToNextVertex);
-    }
 
     private void CheckAdvancePointOnHDGProximity()
     {
@@ -511,8 +430,6 @@ public class Aircraft : MovingActor
 
     private void AdvanceFreeFlight()
     {
-        ExecuteStepHeadingCorrection();
-        ExecuteStepMove();
     }
 
     private float GetWalkedDistanceLeftOnSegment()
@@ -525,6 +442,10 @@ public class Aircraft : MovingActor
 
     private void OnDrawGizmos()
     {
+        if (!Application.isPlaying)
+        {
+            return;
+        }
         
         if (!IsFreeFlight)
         {

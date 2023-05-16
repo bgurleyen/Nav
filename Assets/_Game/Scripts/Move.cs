@@ -114,8 +114,8 @@ public class Move : Singleton<Move>
 
 
 
-        float x1 = Session.PlayerAircraft.PositionFreeOrOnCurvedPath.x;
-        float y1 = Session.PlayerAircraft.PositionFreeOrOnCurvedPath.y;
+        float x1 = Session.PlayerAircraft.NMPosition.x;
+        float y1 = Session.PlayerAircraft.NMPosition.y;
         float x2 = pointPos(pt).x;
         float y2 = pointPos(pt).y;
 
@@ -162,7 +162,7 @@ public class Move : Singleton<Move>
     }
     public float DME()
     {
-        return Vector2.Distance(Session.PlayerAircraft.PositionFreeOrOnCurvedPath, pointPos(16));
+        return Vector2.Distance(Session.PlayerAircraft.NMPosition, pointPos(16));
     } // Distance from RW
 
     public IEnumerator MoveMyAC()
@@ -206,7 +206,7 @@ public class Move : Singleton<Move>
 
 
 
-            hyp = Vector2.Distance(Session.PlayerAircraft.PositionFreeOrOnCurvedPath, pointPos(point));
+            hyp = Vector2.Distance(Session.PlayerAircraft.NMPosition, pointPos(point));
 
 
             if (point < 50 && point > 1) RawSpeed = Session.ActiveRoute.Points[point - 1].RawSpeed;
@@ -316,12 +316,12 @@ public class Move : Singleton<Move>
 
             ATCCall();
 
-            OncekiPos = Session.PlayerAircraft.PositionFreeOrOnCurvedPath;
+            OncekiPos = Session.PlayerAircraft.NMPosition;
             OncekiAlt = (int)Calculator.CAltitude;
             myAC.transform.localPosition =
-                Session.PlayerAircraft.PositionFreeOrOnCurvedPath; //move AC on EditMap
+                Session.PlayerAircraft.NMPosition; //move AC on EditMap
 
-            float V = Vector2.Distance(Session.PlayerAircraft.PositionFreeOrOnCurvedPath, pointPos(point));
+            float V = Vector2.Distance(Session.PlayerAircraft.NMPosition, pointPos(point));
 
             //Debug.Log(" V :" + V+ " P :" +point);
             if ((point != prvWptIdx) && ((V < 1)))
@@ -360,7 +360,7 @@ public class Move : Singleton<Move>
         void CollisionCheck()
         {
 
-            float D = Vector2.Distance(Session.PlayerAircraft.PositionFreeOrOnCurvedPath, finalPosition);
+            float D = Vector2.Distance(Session.PlayerAircraft.NMPosition, finalPosition);
 
             int myACAlt = (int)Calculator.CAltitude;
             int ACAlt = (int)AltitudeC;

@@ -202,6 +202,53 @@ public class PathLines
         return false;
     }
 
+    public bool FindCloseToPathDestination(float maxDistance, out Vector2 foundVertex, out int foundLineIndex, out bool reachedEnd)
+    {
+        int foundVertexIndex = -1;
+        foundLineIndex = -1;
+        foundVertex = Vector2.zero;
+        reachedEnd = false;
+        float foundDistance = -1;
+
+        var maxSqrDistance = maxDistance * maxDistance;
+
+        // 0 = start line, empty
+        for (int i = 1; i < ComputedLines.Length; i++)
+        {
+            var computedLine = ComputedLines[i];
+
+            for (int j = 0; j < computedLine.Vertexes.Length; j++)
+            {
+                var vertex = (Vector2)computedLine.Vertexes[j];
+
+                var sqrDistance = (vertex - Session.PlayerAircraft.NMPosition).sqrMagnitude;
+                // if is further that max distance
+                if (sqrDistance > maxSqrDistance)
+                {
+                    continue;
+                }
+
+                // if is within maxDistance limits, but more forward
+                foundVertex = vertex;
+                foundLineIndex = i;
+                foundVertexIndex = j;
+                foundDistance = sqrDistance;
+
+                if (i == ComputedLines.Length - 1 && j == computedLine.Vertexes.Length - 1)
+                {
+                    reachedEnd = true;
+                }
+            }
+        }
+
+        if (foundDistance <= 0)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
 }
 
 [Serializable]
