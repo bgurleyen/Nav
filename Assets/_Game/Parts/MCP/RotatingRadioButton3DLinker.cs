@@ -1,5 +1,5 @@
 using DG.Tweening;
-using Legacy;
+using Navigation;
 using UnityEngine;
 using UnityEngine.UI;
 

@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using Gamelogic.Extensions;
-using Legacy;
 using Navigation;
 using UnityEngine;
 using UnityEngine.UI;

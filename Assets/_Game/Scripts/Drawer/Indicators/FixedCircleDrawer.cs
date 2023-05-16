@@ -1,7 +1,7 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using Gamelogic.Extensions;
-using Legacy;
+using Navigation;
 using UnityEngine;
 
 public class FixedCircleDrawer : MonoBehaviour

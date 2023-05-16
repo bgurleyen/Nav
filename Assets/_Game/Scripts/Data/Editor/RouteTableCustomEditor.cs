@@ -1,5 +1,5 @@
 ﻿using Helpers.ReorderableList;
-using Legacy;
+using Navigation;
 using UnityEditor;
 using UnityEngine;
 

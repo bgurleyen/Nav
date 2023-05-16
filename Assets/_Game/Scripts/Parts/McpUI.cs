@@ -66,7 +66,6 @@ public class McpUI : MonoBehaviour
         {
             if (toggle)
             {
-                GameManager.Instance?.PressSwitchFreeFlight(true);
                 SilentSwitchLNAV(false);
                 
                 OnFreeFlightToggle?.Invoke(true);
@@ -84,7 +83,6 @@ public class McpUI : MonoBehaviour
         {
             if (toggle)
             {
-                GameManager.Instance?.PressSwitchFreeFlight(false);
                 SilentSwitchHeading(false);
                 
                 OnFreeFlightToggle?.Invoke(false);

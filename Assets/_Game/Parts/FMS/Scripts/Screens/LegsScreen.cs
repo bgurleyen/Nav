@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Linq;
-using Legacy;
 using Navigation;
 using UnityEngine;
 using Unyawn.Utils;
@@ -10,6 +9,7 @@ public class LegsScreen : ScreenBase
     [SerializeField] private LegsNodeLine[] nodes;
     
     public Action OnLeftCornerPressErase;
+    public Action OnExecButtonPress;
     
     private static MainScreen Main => MainScreen.Instance;
 
@@ -191,10 +191,7 @@ public class LegsScreen : ScreenBase
 
     public override void OnExecPress()
     {
-        if (Session.IsMod)
-        {
-            GameManager.Instance.ApplyMod();
-        }
+        OnExecButtonPress?.Invoke();
 
         ClearCurrentOperation();
         ClearSelectionHistory();

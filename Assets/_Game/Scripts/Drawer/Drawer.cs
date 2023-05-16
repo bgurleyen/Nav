@@ -3,11 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using Lean.Pool;
 using Gamelogic.Extensions;
-using Legacy;
 using Navigation;
 using Unyawn.Utils;
 
-public class Drawer : Singleton<Drawer>
+public class Drawer : MonoBehaviour 
 {
     [SerializeField] private GameConfigScriptableObject _gameConfig;
 
@@ -35,25 +34,18 @@ public class Drawer : Singleton<Drawer>
     [SerializeField] private GameObject[] centerHolder;
     [SerializeField] private GameObject[] planHolder;
 
-    [Header("Adjust")] [SerializeField] private float mapReferenceLength80 = 1.6f;
-    [SerializeField] private float planReferenceLength80 = 1.6f;
-    [SerializeField] private float _debugStarDistance = 1.3f;
 
     public Color CMagenta => _gameConfig.Settings.cMagenta;
     public Color CLightYellow => _gameConfig.Settings.cLightYellow;
 
-    public float Zoom => (Session.Mode == DrawerMode.Plan
-        ? planReferenceLength80
-        : _zoomMultiplier * mapReferenceLength80) / 80f;
-
-    private float _zoomMultiplier;
-
+   
+    [SerializeField] private float _debugStarDistance = 1.3f;
 
     private const bool WalkOnMod = false;
 
     private void Awake()
     {
-        _zoomMultiplier = _gameConfig.Settings.StartingZoom;
+        Session.ZoomMultiplier = _gameConfig.Settings.StartingZoom;
         UYServiceLocator.Register(this);
         var mcpUI = UYServiceLocator.Get<McpUI>();
         mcpUI.OnCenterModeSet += OnUICenterModeSet;
@@ -119,14 +111,14 @@ public class Drawer : Singleton<Drawer>
     public void OnZoomIn()
     {
         Clear();
-        _zoomMultiplier += 0.2f;
+        Session.ZoomMultiplier += 0.2f;
         Display();
     }
 
     public void OnZoomOut()
     {
         Clear();
-        _zoomMultiplier -= 0.2f;
+        Session.ZoomMultiplier -= 0.2f;
         Display();
     }
 
@@ -405,15 +397,20 @@ public class Drawer : Singleton<Drawer>
 
     private void OnDrawGizmos()
     {
+        if (!Application.isPlaying)
+        {
+            return;
+        }
+        
         Gizmos.color = Color.green;
         var up = pivot.up;
-        Gizmos.DrawSphere(up * mapReferenceLength80, 0.05f);
+        Gizmos.DrawSphere(up * Session.Settings.MapReferenceLength80, 0.05f);
 
         Gizmos.color = Color.blue;
-        Gizmos.DrawWireSphere(up * planReferenceLength80, 0.065f);
+        Gizmos.DrawWireSphere(up * Session.Settings.PlanReferenceLength80, 0.065f);
 
         Gizmos.color = Color.cyan;
-        Gizmos.DrawWireSphere(up * planReferenceLength80 / 2f, 0.025f);
+        Gizmos.DrawWireSphere(up * Session.Settings.PlanReferenceLength80 / 2f, 0.025f);
 
 
         // if (GameManager.Instance.ActiveRoute?.PathLines?.ComputedLines == null)

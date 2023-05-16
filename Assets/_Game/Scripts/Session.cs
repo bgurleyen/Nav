@@ -1,12 +1,15 @@
-using Legacy;
-using UnityEngine;
+using System;
+using Gamelogic.Extensions;
+using Navigation;
 
 namespace Navigation
 {
     public static class Session
     {
-        public static Aircraft PlayerAircraft;
+        public static GameSettingsScriptableObject Settings;
         
+        public static Aircraft PlayerAircraft;
+
         public static ComputedRoutes Routes;
 
         public static RouteScriptableObject ActiveRoute
@@ -28,10 +31,23 @@ namespace Navigation
         }
 
         public static RouteScriptableObject VisibleRoute => IsMod ? ModRoute : ActiveRoute;
-        
-        public static float Zoom;
+
         public static DrawerMode Mode { get; set; } = DrawerMode.Suspeded;
         public static bool IsMod;
 
+        public static float Zoom => (Mode == DrawerMode.Plan
+            ? Settings.PlanReferenceLength80
+            : ZoomMultiplier * Settings.MapReferenceLength80) / 80f;
+
+        public static float ZoomMultiplier;
     }
+}
+
+[Serializable]
+public class ComputedRoutes
+{
+    [ReadOnly] public RouteScriptableObject ActiveRoute;
+    [ReadOnly] public RouteScriptableObject ModRoute;
+    [ReadOnly] public RouteScriptableObject ModeSetWithPosition;
+    [ReadOnly] public FixedPointsScriptableObject FixedPoints;
 }

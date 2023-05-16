@@ -9,8 +9,6 @@ public class GameSettingsScriptableObject : ScriptableObject
     public Color cLightYellow;
 
     [Space] public float StartingZoom = 2;
-    [Space] public float MinZoom = 1;
-    [Space] public float MAxZoom = 3;
     [Header("Aircraft navigation")]
     // frequency of points
     public float DrawerUnitLength = 0.6f;
@@ -27,6 +25,11 @@ public class GameSettingsScriptableObject : ScriptableObject
     public float ForwardThreshold = 2f; // @$# this has to be in sync with the minimum turn radius 
     public float RejoinDistance = 2.8f;
     public float HGDAutoNextPointDistance = 1.3f;
+    
+    
+    [Header("Map")]
+    public float MapReferenceLength80 = 2.82f;
+    public float PlanReferenceLength80 = 3.82f;
 
     #region Plane Speeds
 

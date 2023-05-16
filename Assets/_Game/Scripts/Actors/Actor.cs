@@ -1,4 +1,4 @@
-using Legacy;
+using Navigation;
 using UnityEngine;
 
 namespace Navigation

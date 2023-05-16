@@ -1,5 +1,4 @@
-﻿using Legacy;
-using Navigation;
+﻿using Navigation;
 using UnityEngine;
 
 public class DisplayNodesController

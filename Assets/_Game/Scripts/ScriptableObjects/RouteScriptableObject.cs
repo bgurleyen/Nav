@@ -4,7 +4,7 @@ using System.Linq;
 using Navigation;
 using UnityEngine.Assertions;
 
-namespace Legacy
+namespace Navigation
 {
 
     [CreateAssetMenu(fileName = "RouteData", menuName = "ScriptableObjects/RouteData")]

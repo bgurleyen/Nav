@@ -2,12 +2,10 @@
 using UnityEngine;
 using Gamelogic.Extensions;
 using Lean.Pool;
-using Navigation;
 using UnityEngine.Events;
 
-namespace Legacy
+namespace Navigation
 {
-
     public static class Extension
     {
         public static Vector3 ToDisplay(this Vector2 pos)
@@ -33,7 +31,7 @@ namespace Legacy
             }
 
             // zoom
-            finalPosition *= Drawer.Instance.Zoom;
+            finalPosition *= Session.Zoom;
 
             return finalPosition;
         }

@@ -26,18 +26,19 @@ namespace Navigation
             UYServiceLocator.Register(this);
         }
 
-        public void Init(GameSettingsScriptableObject gameSettings)
+        public void Init()
         {
-            LinesComputer.Init(gameSettings.ForwardThreshold, gameSettings.DrawerUnitLength);
+            LinesComputer.Init(Session.Settings.ForwardThreshold, Session.Settings.DrawerUnitLength);
             DataHandler.BuildSetDetails(Session.ActiveRoute);
 
+            Session.PlayerAircraft = _playerAircraft;
             Session.Routes.FixedPoints = FixedPointsScriptableObject.CreateDemo();
 
             Session.ActiveRoute.ComputeSet(false);
 
             ComputeMod();
 
-            _playerAircraft.Init(gameSettings, 170, 21600);
+            _playerAircraft.Init(170, 21600);
 
             _drawer.Display();
             _drawer.ResetMode();
@@ -52,24 +53,6 @@ namespace Navigation
 
         public void Tick(float deltaTime)
         {
-            // Compute 
-            _playerAircraft.SimulateTick(deltaTime);
-
-            Session.PlayerAircraft = _playerAircraft;
-
-            foreach (var actor in _otherActors)
-            {
-                actor.SimulateTick(deltaTime);
-            }
-
-            // Display
-
-            foreach (var actor in _otherActors)
-            {
-                actor.Place();
-            }
-
-            // --- 
             if (Session.IsMod && queueEraseMode)
             {
                 EraseMod();
@@ -80,7 +63,19 @@ namespace Navigation
             Session.ActiveRoute.ComputeSet(false);
             ComputeMod();
 
-            Session.PlayerAircraft.Advance();
+            //Session.PlayerAircraft.Advance();
+            
+            _playerAircraft.SimulateTick(deltaTime);
+
+            foreach (var actor in _otherActors)
+            {
+                actor.SimulateTick(deltaTime);
+            }
+            
+            foreach (var actor in _otherActors)
+            {
+                actor.Place();
+            }
 
             if (Session.Mode != DrawerMode.Suspeded)
             {

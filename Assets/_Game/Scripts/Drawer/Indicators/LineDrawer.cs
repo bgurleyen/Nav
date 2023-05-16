@@ -1,9 +1,6 @@
-﻿using System;
-using Gamelogic.Extensions;
-using Legacy;
+﻿using Gamelogic.Extensions;
 using Navigation;
 using UnityEngine;
-using UnityEngine.Serialization;
 
 public class LineDrawer : MonoBehaviour
 {
@@ -50,7 +47,7 @@ public class LineDrawer : MonoBehaviour
             markTransform.localPosition = line.EndPosition.To2DXY().ToDisplay();
             labelTransform.localPosition = line.EndPosition.To2DXY().ToDisplay();
             var color = !Session.IsMod && routePoint.GetIsDisplayCurrent
-                ? Drawer.Instance.CMagenta
+                ? Session.Settings.cMagenta
                 : Color.white;
             label.Init(routePoint.Name, color);
             mark.startColor = mark.endColor = color;
@@ -96,10 +93,10 @@ public class LineDrawer : MonoBehaviour
             case DoubleCurve doubleCurve:
                 Gizmos.color = Color.green;
                 Gizmos.DrawWireSphere(pos + doubleCurve.O1.ToDisplay(),
-                    GameSettingsScriptableObject.GetMinRadius * Drawer.Instance.Zoom);
+                    GameSettingsScriptableObject.GetMinRadius * Session.Zoom);
                 Gizmos.color = Color.blue;
                 Gizmos.DrawWireSphere(pos + doubleCurve.o2.ToDisplay(),
-                    GameSettingsScriptableObject.GetRelaxedRadius * Drawer.Instance.Zoom);
+                    GameSettingsScriptableObject.GetRelaxedRadius * Session.Zoom);
 
                 Gizmos.color = Color.gray;
                 Gizmos.DrawSphere(pos + doubleCurve.Ox.To2DXY().ToDisplay(), radius);
@@ -111,7 +108,7 @@ public class LineDrawer : MonoBehaviour
                 break;
             case Curve curve:
                 Gizmos.color = Color.green;
-                Gizmos.DrawWireSphere(pos + curve.O1.ToDisplay(), curve.CachedRadius * Drawer.Instance.Zoom);
+                Gizmos.DrawWireSphere(pos + curve.O1.ToDisplay(), curve.CachedRadius * Session.Zoom);
                 break;
         }
     }

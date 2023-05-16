@@ -1,5 +1,4 @@
 ﻿using System.Collections;
-using Legacy;
 using Navigation;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -163,7 +162,7 @@ public class Calculator : MonoBehaviour
     {
         get
         {
-            float oneNM = -Drawer.Instance.Zoom;
+            float oneNM = -Session.Zoom;
             if (CVS == 0)
                 return 0;
             else

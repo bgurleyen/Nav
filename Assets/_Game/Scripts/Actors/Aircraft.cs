@@ -1,15 +1,13 @@
 ﻿using System;
-using Legacy;
 using Navigation;
 using UnityEngine;
+using Unyawn.Utils;
 
 [Serializable]
 public class Aircraft : MovingActor
 {
-    private GameSettingsScriptableObject _settings;
-    public void Init(GameSettingsScriptableObject gameConfig, float aircraftSpeed, float altitude)
+    public void Init(float aircraftSpeed, float altitude)
     {
-        _settings = gameConfig;
         ResetOnActiveSet(aircraftSpeed, altitude);
     }
     
@@ -57,8 +55,6 @@ public class Aircraft : MovingActor
 
     public override void SimulateTick(float deltaTime)
     {
-        base.SimulateTick(deltaTime);
-
         DrawHeadingLine();
 
         HeadingDegrees += CurrentTurningDegrees * deltaTime * 0.1f;
@@ -67,7 +63,7 @@ public class Aircraft : MovingActor
         if (!IsFreeFlight)
         {
             if (!Session.ActiveRoute.FindFreeFlightCloseToPathExitScenario(
-                    _settings.RejoinDistance,
+                    Session.Settings.RejoinDistance,
                     out _pathJoinFoundVertex))
             {
                 Debug.LogError("No Intersection Point Found");
@@ -76,6 +72,50 @@ public class Aircraft : MovingActor
             else
             {
                 SteerToPathFoundVertex();
+            }
+        }
+    }
+
+
+    /// <summary>
+    /// This is called on FixedUpdate from GameManager
+    /// </summary>
+    public void Advance()
+    {
+        if (IsFreeFlight)
+        {
+            IndicateTargetHeading(Calculator.RHeading);
+            AdvanceFreeFlight();
+
+            // for display only
+            //GameManager.Instance.ActiveRoute.FindFreeFlightDirectExitScenario(out displayCenterOfTurn, out displayExitPoint, out _);
+
+        }
+        else
+        {
+            if (IsOnRoute)
+            {
+                AdvanceOnRoutePath();
+            }
+            else
+            {
+                AdvanceOnRejoinPath(out var rejoined, out var exitSegmentIndex, out var leftFrameDistanceToWalk);
+                if (rejoined)
+                {
+                    IsOnRoute = true;
+                    Session.ActiveRoute.OnPathRejoined(RejoinPathLines.oldPositionVertex);
+
+                    if (Session.ActiveRoute.TransferPathToRoute(_cachedExitPointFromHeading, exitSegmentIndex,
+                        out var intersectionInfo,
+                        out var walkedDistanceOnSegment))
+                    {
+
+                        RoutePathLocalization = intersectionInfo;
+                        WalkedDistanceOnSegment = walkedDistanceOnSegment;
+                    }
+
+                    AdvanceOnRoutePath(leftFrameDistanceToWalk);
+                }
             }
         }
     }
@@ -96,10 +136,6 @@ public class Aircraft : MovingActor
         _turningHeaderLine.SetPosition(1, rotated);
     }
 
-    
-    
-    
-    
     public float ComputedDistanceLeftOnSegment
     {
         get
@@ -120,7 +156,7 @@ public class Aircraft : MovingActor
     }
 
     private Vector2 CurrentDirection => Geometry.GetDirectionFromHeading(HeadingDegrees);
-    private float FrameDistance => _speed * _settings.DeltaTime * Calculator.Acceleration(); //change
+    private float FrameDistance => _speed * Session.Settings.DeltaTime * Calculator.Acceleration(); //change
 
     private float _speed;
 
@@ -226,7 +262,7 @@ public class Aircraft : MovingActor
     private void ComputeTempPathForCloseToPath(Vector2 futurePosition, Vector2 tipOfTurn)
     {
         Debug.Log("start LNAV - rejoin close path");
-        RejoinPathLines = new PathLines(_settings.DrawerUnitLength);
+        RejoinPathLines = new PathLines(Session.Settings.DrawerUnitLength);
 
         var tempPoints = new RoutePoint[5];
         var lastPoint = RoutePoint.ConstructFromPosition(Vector2.zero, null);
@@ -254,7 +290,7 @@ public class Aircraft : MovingActor
     {
             //compute rejoin path
             Debug.Log("start LNAV - rejoin direct intersection");
-            RejoinPathLines = new PathLines(_settings.DrawerUnitLength);
+            RejoinPathLines = new PathLines(Session.Settings.DrawerUnitLength);
 
             var tempPoints = new RoutePoint[4];
             var lastPoint = RoutePoint.ConstructFromPosition(Vector2.zero, null);
@@ -310,7 +346,7 @@ public class Aircraft : MovingActor
     {
         if (Math.Abs(TargetHeading - HeadingDegrees) > 0.01f)
         {
-            HeadingDegrees = Mathf.MoveTowardsAngle(HeadingDegrees, TargetHeading, _settings.MaxTurningSpeedPerUnitLength);
+            HeadingDegrees = Mathf.MoveTowardsAngle(HeadingDegrees, TargetHeading, Session.Settings.MaxTurningSpeedPerUnitLength);
         }
     }
 
@@ -419,7 +455,7 @@ public class Aircraft : MovingActor
             if (Session.ActiveRoute.Points[newUnreachedPositionInfo.CurrentNodeIndex]
                 .IsAfterDiscontinuity)
             {
-                GameManager.Instance.SwitchThroughHeading();
+                UYServiceLocator.Get<GameManager>().SwitchThroughHeading();
             }
         }
 
@@ -438,7 +474,7 @@ public class Aircraft : MovingActor
         for (int i = PositionVirtualNode.PassedNodeIndex+1; i < Session.ActiveRoute.Points.Length; i++)
         {
             var nodePosition = Session.ActiveRoute.Points[i].CartesianPosition;
-            if (Vector2.Distance(nodePosition, PositionFreeOrOnRouteSegment) <= _settings.HGDAutoNextPointDistance)
+            if (Vector2.Distance(nodePosition, PositionFreeOrOnRouteSegment) <= Session.Settings.HGDAutoNextPointDistance)
             {
                 if (!Session.ActiveRoute.PathLines.GetNextDestination(
                         i+1,
@@ -484,65 +520,20 @@ public class Aircraft : MovingActor
         return PositionVirtualNode.CurrentSegment.ComputedVertexLength -
                WalkedDistanceOnSegment;
     }
-
-    /// <summary>
-    /// This is called on FixedUpdate from GameManager
-    /// </summary>
-    public void Advance()
-    {
-        if (IsFreeFlight)
-        {
-            IndicateTargetHeading(Calculator.RHeading);
-            AdvanceFreeFlight();
-
-            // for display only
-            //GameManager.Instance.ActiveRoute.FindFreeFlightDirectExitScenario(out displayCenterOfTurn, out displayExitPoint, out _);
-
-        }
-        else
-        {
-            if (IsOnRoute)
-            {
-                AdvanceOnRoutePath();
-            }
-            else
-            {
-                AdvanceOnRejoinPath(out var rejoined, out var exitSegmentIndex, out var leftFrameDistanceToWalk);
-                if (rejoined)
-                {
-                    IsOnRoute = true;
-                    Session.ActiveRoute.OnPathRejoined(RejoinPathLines.oldPositionVertex);
-
-                    if (Session.ActiveRoute.TransferPathToRoute(_cachedExitPointFromHeading, exitSegmentIndex,
-                        out var intersectionInfo,
-                        out var walkedDistanceOnSegment))
-                    {
-
-                        RoutePathLocalization = intersectionInfo;
-                        WalkedDistanceOnSegment = walkedDistanceOnSegment;
-                    }
-
-                    AdvanceOnRoutePath(leftFrameDistanceToWalk);
-                }
-            }
-        }
-    }
-
     private static Vector2 _displayCenterOfTurn;
     private static Vector2 _displayExitPoint;
 
-
-    public void DrawGizmos()
+    private void OnDrawGizmos()
     {
-
+        
         if (!IsFreeFlight)
         {
             Gizmos.DrawSphere(transform.position + _pathJoinFoundVertex.ToDisplay(), 0.2f);
         }
 
         Gizmos.color = Color.white;
-        Gizmos.DrawSphere(Drawer.Instance.transform.position + Extension.ToDisplay(_displayCenterOfTurn), 0.05f);
+        Gizmos.DrawSphere(transform.position + _displayCenterOfTurn.ToDisplay(), 0.05f);
         Gizmos.color = Color.green;
-        Gizmos.DrawSphere(Drawer.Instance.transform.position + Extension.ToDisplay(_displayExitPoint), 0.05f);
+        Gizmos.DrawSphere(transform.position + _displayExitPoint.ToDisplay(), 0.05f);
     }
 }
