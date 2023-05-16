@@ -1,8 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Gamelogic.Extensions;
-using Lean.Pool;
-using Legacy;
 using UnityEngine;
 using Unyawn.Utils;
 
@@ -10,174 +7,270 @@ namespace Navigation
 {
     public class Simulation : MonoBehaviour
     {
-        [SerializeField] private PlayerAircraft _playerAircraft;
+        [SerializeField] private Aircraft _playerAircraft;
         [SerializeField] private Actor[] _otherActors;
 
-        [SerializeField] private Transform _compasPivot;
-        [SerializeField] private Animator _cameraAnimator;
-        [Space] [SerializeField] private Transform _dynamicHolder;
-        [Space] [SerializeField] private LeanGameObjectPool _linesPool;
+        [SerializeField] private Drawer _drawer;
+
+        public event Action OnOperationMade;
+
+        private bool queueEraseMode;
+        private List<ICommand> cachedCommands;
 
 
-        private RouteScriptableObject _activeRoute;
-        private RouteScriptableObject _modRoute;
+        // if we detect that during MOD the current node has passed we reExecute all the commands until that point
+        private int modReExecutedForIndex = -1;
 
         private void Awake()
         {
             UYServiceLocator.Register(this);
-            var mcpUI = UYServiceLocator.Get<McpUI>();
-            mcpUI.OnCenterModeSet += OnUICenterModeSet;
-            mcpUI.OnMapModeSet += OnUIMapModeSet;
-            mcpUI.OnPlanModeSet += OnUIPlanModeSet;
-            mcpUI.OnFreeFlightToggle += OnUIFreeFlightToggle;
         }
 
-        private void OnDestroy()
+        public void Init(GameSettingsScriptableObject gameSettings)
         {
-            var mcpUI = UYServiceLocator.Get<McpUI>();
-            mcpUI.OnCenterModeSet -= OnUICenterModeSet;
-            mcpUI.OnMapModeSet -= OnUIMapModeSet;
-            mcpUI.OnPlanModeSet -= OnUIPlanModeSet;
-            mcpUI.OnFreeFlightToggle -= OnUIFreeFlightToggle;
+            LinesComputer.Init(gameSettings.ForwardThreshold, gameSettings.DrawerUnitLength);
+            DataHandler.BuildSetDetails(Session.ActiveRoute);
+
+            Session.Routes.FixedPoints = FixedPointsScriptableObject.CreateDemo();
+
+            Session.ActiveRoute.ComputeSet(false);
+
+            ComputeMod();
+
+            _playerAircraft.Init(gameSettings, 170, 21600);
+
+            _drawer.Display();
+            _drawer.ResetMode();
         }
 
-        public void Init(RouteScriptableObject activeRoute)
+        public void EraseMod()
         {
-            _activeRoute = activeRoute;
+            Session.ModRoute = null;
+            Session.IsMod = false;
+            MainScreen.Instance.DisplayOperation("0k");
         }
-
-        private void OnUIFreeFlightToggle(bool state)
-        {
-            switch (state)
-            {
-                case true:
-                    _playerAircraft.StartHeadingMode();
-                    break;
-                default:
-                    if (!_playerAircraft.IsOnRoute)
-                    {
-                        _playerAircraft.StartLNavMode(Aircraft.RejoinRouteMode.Manual);
-                    }
-                    break;
-            }
-        }
-        
-        private void OnUIMapModeSet()
-        {
-            _cameraAnimator.SetTrigger("Map");
-            Session.Mode = DrawerMode.Map;
-        }
-
-        private void OnUICenterModeSet()
-        {
-            _cameraAnimator.SetTrigger("Center");
-            Session.Mode = DrawerMode.Center;
-        }
-
-        private void OnUIPlanModeSet()
-        {
-            _cameraAnimator.SetTrigger("Center");
-            Session.Mode = DrawerMode.Plan;
-        }
-
 
         public void Tick(float deltaTime)
         {
             // Compute 
-            _playerAircraft.SimulateTick(deltaTime, _activeRoute);
-            
-            
-            Session.PlayerNMPosition = _playerAircraft.NMPosition;
-            Session.PlayerHeadingDegrees = _playerAircraft.HeadingDegrees;
+            _playerAircraft.SimulateTick(deltaTime);
+
+            Session.PlayerAircraft = _playerAircraft;
 
             foreach (var actor in _otherActors)
             {
-                actor.SimulateTick(deltaTime, _activeRoute);
+                actor.SimulateTick(deltaTime);
             }
 
-
             // Display
-            DisplayRotations();
 
             foreach (var actor in _otherActors)
             {
                 actor.Place();
             }
 
-
-            ClearPooledVisuals();
-            DisplaySet(_activeRoute.PathLines.ComputedLines);
-        }
-
-        private void ClearPooledVisuals()
-        {
-            Extension.DespawnChildren<LineDrawer>(_dynamicHolder, _linesPool);
-        }
-
-        private void DisplayRotations()
-        {
-            switch (Session.Mode)
+            // --- 
+            if (Session.IsMod && queueEraseMode)
             {
-                case DrawerMode.Center:
-                case DrawerMode.Map:
-                    //rotate compass
-                    _compasPivot.SetLocalRotationZ(Session.PlayerHeadingDegrees);
-                    //if (Aircraft.IsFreeFlight)
-                {
-                    // freeFlightPivot.SetLocalRotationZ(Session.PlayerHeadingDegrees - Calculator.RHeading);
-                }
+                EraseMod();
+            }
 
-                    break;
-                case DrawerMode.Plan:
-                    // //rotate compass
-                    // _compasPivot.SetLocalRotationZ(0);
-                    // mobilePlaneIndicatorPivot.position =
-                    //     Aircraft.PositionFreeOrOnCurvedPath.ToDisplay();
-                    // mobilePlaneIndicatorPivot.SetLocalRotationZ(-Session.PlayerHeadingDegrees);
-                    break;
-                case DrawerMode.Suspeded:
-                    break;
-                default:
-                    throw new ArgumentOutOfRangeException();
+            queueEraseMode = false;
+
+            Session.ActiveRoute.ComputeSet(false);
+            ComputeMod();
+
+            Session.PlayerAircraft.Advance();
+
+            if (Session.Mode != DrawerMode.Suspeded)
+            {
+                _drawer.Clear();
+                _drawer.Display();
             }
         }
 
-        private void DisplaySet(IReadOnlyList<MarkLine> lines)
+        public void QueueEraseMode()
         {
-            if (lines == null)
+            queueEraseMode = true;
+        }
+
+
+        private void ComputeMod()
+        {
+            if (Session.ModRoute == null)
             {
+                modReExecutedForIndex = -1;
                 return;
             }
 
-            LeanGameObjectPool pool;
-            Transform holder;
-
-
-            pool = _linesPool;
-            holder = _dynamicHolder;
-
-
-            for (var i = 0; i < lines.Count; i++)
+            if (Session.PlayerAircraft.IsOnRoute)
             {
-                var hiddenLabel = false;
-                var hiddenLine = false;
-                var fromPointIndex = 0;
-                var line = lines[i];
+                // mod always has to include the last passed active node ( all the passed nodes ) 
+                // otherwise it is invalid - will reapply all the commands
+                var passedNodeIndex = PositionVirtualNode.PassedNodeIndex;
 
-                if (line == null)
+                if (passedNodeIndex != modReExecutedForIndex)
                 {
-                    continue;
+                    if (Session.ActiveRoute.Points[passedNodeIndex].ID != Session.ModRoute.Points[passedNodeIndex].ID)
+                    {
+                        ReExecuteCachedCommands();
+                        Debug.Log("Reapplied MOD");
+                    }
+
+                    modReExecutedForIndex = passedNodeIndex;
                 }
+            }
 
-                var point = line.LinkedPoint;
+            Session.ModeSetWithPosition = Session.ModRoute.CloneAndInit(); // refactor
 
-                var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<LineDrawer>();
-                drawer.name = $"{line.GetName} {point.Name}";
+            Session.ModeSetWithPosition.AddDisplayPositionNode();
 
-                drawer.Display(line, point, hiddenLabel, hiddenLine, fromPointIndex);
+            Session.ModeSetWithPosition.ComputeSet(true);
+        }
+
+        public void ReExecuteCachedCommands()
+        {
+            EraseMod();
+
+            for (var i = 0; i < cachedCommands.Count; i++)
+            {
+                var command = cachedCommands[i];
+                switch (command)
+                {
+                    case InsertRelativeCommand relativeCommand:
+                        ExecuteInsertRelativeOnMod(relativeCommand);
+                        break;
+                    case ExecuteShortcutOnModeCommand modeCommand:
+                        ExecuteShortcutOnMod(modeCommand);
+                        break;
+                    case ExecuteAddLinearApproachCommand approachCommand:
+                        ExecuteLinearApproachOnMod(approachCommand);
+                        break;
+                }
             }
         }
 
+        public void ExecuteDeleteRestrictions(DeleteRestrictionsCommand command)
+        {
+            CheckModForOperation();
+            cachedCommands.Add(command);
 
+            MainScreen.Instance.DisplayOperation("ERASE");
+
+            Session.ModRoute.GetPoint(command.NodeId, out var node);
+            node.RawAltitude = "";
+            node.RawSpeed = 0;
+
+            DataHandler.BuildSetDetails(Session.ModRoute);
+        }
+
+        public void ExecuteAddSpeedRegulation(AddSpeedRegulationCommand command)
+        {
+            CheckModForOperation();
+            cachedCommands.Add(command);
+
+            MainScreen.Instance.DisplayOperation("ERASE");
+            Session.ModRoute.GetPoint(command.NodeId, out var node);
+            node.RawSpeed = command.Regulation;
+            node.IsSpeedModified = true;
+            DataHandler.BuildSetDetails(Session.ModRoute);
+
+            OnOperationMade?.Invoke();
+        }
+
+        public void ExecuteAddAltitudeRegulation(AddAltitudeRegulationCommand command)
+        {
+            CheckModForOperation();
+            cachedCommands.Add(command);
+
+            MainScreen.Instance.DisplayOperation("ERASE");
+            Session.ModRoute.GetPoint(command.NodeId, out var node);
+            //maybe move this to route class to also do some tests?
+            node.RawAltitude = command.Regulation;
+            node.IsAltitudeModified = true;
+            DataHandler.BuildSetDetails(Session.ModRoute);
+
+            OnOperationMade?.Invoke();
+        }
+
+        public void ExecuteShortcutOnMod(ExecuteShortcutOnModeCommand command)
+        {
+            CheckModForOperation();
+            cachedCommands.Add(command);
+
+            Session.ModRoute.GetPoint(command.FromNodeId, out var node);
+            MainScreen.Instance.DisplayOperation("ERASE", ToDegreesDisplay(node.RawDegrees));
+            Session.ModRoute.ShortcutNodes(command.FromNodeId, command.ToNodeId, out var _);
+            DataHandler.BuildSetDetails(Session.ModRoute);
+
+            OnOperationMade?.Invoke();
+        }
+
+        private static string ToDegreesDisplay(float value)
+        {
+            return $"{value:000}°";
+        }
+
+        public void ExecuteInsertRelativeOnDirectionOnMod(ExecuteRelativeOnDirectionOnMod command)
+        {
+            CheckModForOperation();
+            cachedCommands.Add(command);
+
+            Session.ModRoute.AddRelativeNodeOnDirection(command.FromNodeId, command.Distance, command.RelativeNodeId,
+                out var _, out var _);
+            DataHandler.BuildSetDetails(Session.ModRoute);
+            MainScreen.Instance.DisplayOperation("ERASE");
+
+            OnOperationMade?.Invoke();
+        }
+
+
+        public void ExecuteInsertRelativeOnMod(InsertRelativeCommand command)
+        {
+            CheckModForOperation();
+            cachedCommands.Add(command);
+
+            Session.ModRoute.AddRelativeNodeBefore(command.BeforeNodeId, command.RawDegrees, command.Distance,
+                command.RelativeNodeId, out _, true);
+            DataHandler.BuildSetDetails(Session.ModRoute);
+            MainScreen.Instance.DisplayOperation(MainScreen.Keywords.ERASE);
+
+            OnOperationMade?.Invoke();
+        }
+
+        public void ExecuteLinearApproachOnMod(ExecuteAddLinearApproachCommand command)
+        {
+            CheckModForOperation();
+            cachedCommands.Add(command);
+
+            Session.ModRoute.CreateLinearApproach(command.ToNodeId, command.Angle);
+            DataHandler.BuildSetDetails(Session.ModRoute);
+            MainScreen.Instance.DisplayOperation(MainScreen.Keywords.ERASE, ToDegreesDisplay(command.Angle), true);
+
+            OnOperationMade?.Invoke();
+        }
+
+
+
+        private void CheckModForOperation()
+        {
+            if (Session.IsMod) return;
+
+            // if this is the first modification generate a new mod from current active
+            Session.ModRoute = Session.ActiveRoute.CloneAndInit();
+
+            cachedCommands = new List<ICommand>();
+            Session.IsMod = true;
+
+            // in case the aircraft was in free flight with intersection valid shortcut mod until the node after intersection
+            if (!Session.PlayerAircraft.IsOnRoute)
+            {
+                ExecuteShortcutOnMod(new ExecuteShortcutOnModeCommand
+                {
+                    FromNodeId = Session.ModRoute.Points[1].ID,
+                    ToNodeId = Session.ModRoute.Points[Session.PlayerAircraft.RoutePathLocalization.CurrentNodeIndex].ID
+                });
+            }
+        }
     }
 }

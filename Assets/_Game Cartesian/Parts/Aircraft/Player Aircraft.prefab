@@ -43,13 +43,25 @@ MonoBehaviour:
   m_GameObject: {fileID: 380748623757760281}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 37d4cbd7268934b7aa9555eb609f7180, type: 3}
+  m_Script: {fileID: 11500000, guid: e53da74248184fbf9188efe7f93ea275, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
   NMPosition: {x: 0, y: 0}
   Height: 0
-  _actorProperties: {fileID: 11400000, guid: 36e2ebace3f8f41f4a85595bd8ab753e, type: 2}
+  _nmSpeed: 0.1
+  PositionFreeOrOnCurvedPath: {x: 0, y: 0}
+  PositionFreeOrOnRouteSegment: {x: 0, y: 0}
   CurrentTurningDegrees: 15
+  RoutePathLocalization:
+    CurrentNodeIndex: 0
+    UnreachedVertexIndex: 0
+    HeadingBefore: 0
+    UnreachedVertexPosition: {x: 0, y: 0}
+  RejoinPathLocalization:
+    CurrentNodeIndex: 0
+    UnreachedVertexIndex: 0
+    HeadingBefore: 0
+    UnreachedVertexPosition: {x: 0, y: 0}
   IsFreeFlight: 0
   IsOnRoute: 1
 --- !u!120 &-4111294142607794477

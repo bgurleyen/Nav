@@ -35,19 +35,16 @@ public class McpUI : MonoBehaviour
         if (mode == 0)
         {
             OnMapModeSet?.Invoke();
-            Drawer.Instance?.ShowMapMode();
         }
 
         if (mode == 1)
         {
             OnCenterModeSet?.Invoke();
-            Drawer.Instance?.ShowCenterMode();
         }
 
         if (mode == 2)
         {
             OnPlanModeSet?.Invoke();
-            Drawer.Instance?.ShowPlanMode();
         }
     }
 

@@ -1,4 +1,5 @@
 ﻿using Gamelogic.Extensions;
+using Legacy;
 using UnityEngine;
 
 namespace Navigation

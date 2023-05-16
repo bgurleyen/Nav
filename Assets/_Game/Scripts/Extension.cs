@@ -1,7 +1,9 @@
 ﻿using System;
 using UnityEngine;
 using Gamelogic.Extensions;
-using Lean.Pool;using UnityEngine.Events;
+using Lean.Pool;
+using Navigation;
+using UnityEngine.Events;
 
 namespace Legacy
 {
@@ -12,10 +14,10 @@ namespace Legacy
         {
             var finalPosition = new Vector2(pos.x, pos.y);
 
-            var walkedPosition = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath;
-            var walkedRotation = GameManager.Instance.Aircraft.HeadingDegrees;
+            var walkedPosition = Session.PlayerAircraft.PositionFreeOrOnCurvedPath;
+            var walkedRotation = Session.PlayerAircraft.HeadingDegrees;
 
-            switch (Drawer.Instance.Mode)
+            switch (Session.Mode)
             {
                 case DrawerMode.Map:
                 case DrawerMode.Center:
@@ -26,7 +28,7 @@ namespace Legacy
                     break;
                 case DrawerMode.Plan:
                     // centered
-                    finalPosition -= GameManager.Instance.ActiveRoute.PathLines.CenteredPosition;
+                    finalPosition -= Session.ActiveRoute.PathLines.CenteredPosition;
                     break;
             }
 
@@ -66,11 +68,4 @@ namespace Legacy
     {
     }
 
-    public enum DrawerMode
-    {
-        Map,
-        Center,
-        Plan,
-        Suspeded
-    }
 }

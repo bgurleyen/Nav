@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using Legacy;
+using Navigation;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
@@ -415,10 +416,10 @@ public class Calculator : MonoBehaviour
         double DeltaAlt, Alt1, Alt0, d, D;
         float posY;
 
-        RouteScriptableObject activePoints = GameManager.Instance.ActiveRoute;
-        RouteScriptableObject modPoints = GameManager.Instance.ModRoute;
+        RouteScriptableObject activePoints = Session.ActiveRoute;
+        RouteScriptableObject modPoints = Session.ModRoute;
 
-        bool isMod = GameManager.Instance.IsMod;
+        bool isMod = Session.IsMod;
         RouteScriptableObject _route = isMod ? modPoints : activePoints;
 
 
@@ -430,8 +431,8 @@ public class Calculator : MonoBehaviour
         //DeltaAlt =  activeCurrentPosition.ComputedDistanceLeft * 318.43 + double.Parse(node.DisplayAltitude);
         Alt0 = double.Parse(node0.DisplayAltitude);
         Alt1 = double.Parse(node1.DisplayAltitude);
-        d = GameManager.Instance.Aircraft.ComputedDistanceLeftOnSegment;
-        D = (d + GameManager.Instance.Aircraft.WalkedDistanceOnSegment); // Daniel: this will behave bad while free flight
+        d = Session.PlayerAircraft.ComputedDistanceLeftOnSegment;
+        D = (d + Session.PlayerAircraft.WalkedDistanceOnSegment); // Daniel: this will behave bad while free flight
 
         DeltaAlt = CAltitude - (Alt1 + (d * (Alt0 - Alt1)) / D);
         VDI_Text.text = (((DeltaAlt) > 50) || ((DeltaAlt) < -50)) ? "" + (int)DeltaAlt : "";

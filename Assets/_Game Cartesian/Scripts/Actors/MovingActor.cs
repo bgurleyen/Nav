@@ -1,20 +1,19 @@
+using Legacy;
 using UnityEngine;
 
 namespace Navigation
 {
-    public class MovingActor<T> : Actor where T : MovingActorPropertiesScriptableObject
+    public class MovingActor : Actor
     {
-        [SerializeField] protected T _actorProperties;
-
+        [SerializeField] private float _nmSpeed = 0.1f;
+        
         public virtual Vector2 Direction => Vector2.up;
 
-        public T Properties => _actorProperties;
-
-        public override void SimulateTick(float deltaTime, RouteScriptableObject activeRoute)
+        public override void SimulateTick(float deltaTime)
         {
-            base.SimulateTick(deltaTime, activeRoute);
+            base.SimulateTick(deltaTime);
 
-            NMPosition += Direction * (Properties.NMSpeed * deltaTime);
+            NMPosition += Direction * (_nmSpeed * deltaTime);
         }
     }
 }

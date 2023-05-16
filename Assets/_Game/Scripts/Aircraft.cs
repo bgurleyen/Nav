@@ -1,14 +1,16 @@
 ﻿using System;
 using Legacy;
+using Navigation;
 using UnityEngine;
 
 [Serializable]
-public class Aircraft
+public class Aircraft : MovingActor
 {
     private GameSettingsScriptableObject _settings;
-    public Aircraft(GameConfigScriptableObject gameConfig)
+    public void Init(GameSettingsScriptableObject gameConfig, float aircraftSpeed, float altitude)
     {
-        _settings = gameConfig.Settings;
+        _settings = gameConfig;
+        ResetOnActiveSet(aircraftSpeed, altitude);
     }
     
     // position that can be on the generated curved sections of the lines
@@ -16,6 +18,8 @@ public class Aircraft
 
     public Vector2 PositionFreeOrOnRouteSegment;
     
+    
+    public float CurrentTurningDegrees = 15;
     /// <summary>
     /// If used for geometry should be used with '-' . see other places
     /// </summary>
@@ -29,6 +33,11 @@ public class Aircraft
     public bool IsFreeFlight;
     public bool IsOnRoute = true;
 
+    private Vector3 _upwardsHeaderLineTop = new(0, 1.2f, 0);
+    private LineRenderer _turningHeaderLine;
+    
+    private Vector2 _pathJoinFoundVertex;
+    
     public int CachedExitSegmentOfHeadingRejoinIntersection => _cachedExitSegmentOfHeadingRejoinIntersection;
     public Vector2 CachedExitPointFromHeading => _cachedExitPointFromHeading;
 
@@ -37,6 +46,60 @@ public class Aircraft
     private int _cachedExitSegmentOfHeadingRejoinIntersection;
     private Vector2 _cachedExitPointFromHeading;
 
+
+    protected override void Awake()
+    {
+        base.Awake();
+
+        _turningHeaderLine = GetComponent<LineRenderer>();
+        _upwardsHeaderLineTop = Vector3.up * _turningHeaderLine.GetPosition(1).magnitude;
+    }
+
+    public override void SimulateTick(float deltaTime)
+    {
+        base.SimulateTick(deltaTime);
+
+        DrawHeadingLine();
+
+        HeadingDegrees += CurrentTurningDegrees * deltaTime * 0.1f;
+
+        // We follow the path ( with the closest guide )
+        if (!IsFreeFlight)
+        {
+            if (!Session.ActiveRoute.FindFreeFlightCloseToPathExitScenario(
+                    _settings.RejoinDistance,
+                    out _pathJoinFoundVertex))
+            {
+                Debug.LogError("No Intersection Point Found");
+                IsFreeFlight = true;
+            }
+            else
+            {
+                SteerToPathFoundVertex();
+            }
+        }
+    }
+
+
+    private void SteerToPathFoundVertex()
+    {
+        var difDegrees = Geometry.AngleBetween(_pathJoinFoundVertex - NMPosition, Direction);
+
+        var lerpDirection = CurrentTurningDegrees / 2f < difDegrees ? 1 : -1;
+        CurrentTurningDegrees += lerpDirection * 0.2f;
+    }
+
+    private void DrawHeadingLine()
+    {
+        var rotated = Quaternion.Euler(0, 0, -CurrentTurningDegrees) * _upwardsHeaderLineTop;
+
+        _turningHeaderLine.SetPosition(1, rotated);
+    }
+
+    
+    
+    
+    
     public float ComputedDistanceLeftOnSegment
     {
         get
@@ -47,11 +110,11 @@ public class Aircraft
             }
 
             var nextViableNodeIndex = PositionVirtualNode.PassedNodeIndex + 1;
-            while (GameManager.Instance.ActiveRoute.Points[nextViableNodeIndex].IsSkippable)
+            while (Session.ActiveRoute.Points[nextViableNodeIndex].IsSkippable)
             {
                 nextViableNodeIndex++;
             }
-            return (GameManager.Instance.ActiveRoute.GetCartesianPosition(nextViableNodeIndex) -
+            return (Session.ActiveRoute.GetCartesianPosition(nextViableNodeIndex) -
                     PositionFreeOrOnRouteSegment).magnitude;
         }
     }
@@ -68,7 +131,7 @@ public class Aircraft
         PositionFreeOrOnRouteSegment = Vector2.zero;
         WalkedDistanceOnSegment = 0;
 
-        if (GameManager.Instance.ActiveRoute.PathLines.GetFirstDestination(out RoutePathLocalization))
+        if (Session.ActiveRoute.PathLines.GetFirstDestination(out RoutePathLocalization))
         {
             HeadingDegrees = RoutePathLocalization.HeadingBefore;
         }
@@ -105,57 +168,59 @@ public class Aircraft
 
     private void ChooseAutoRejoinMethod()
     {
-        if (GameManager.Instance.ActiveRoute.FindFreeFlightCloseToPathExitScenario(_settings.RejoinDistance,
-                out var futurePosition, out var tipOfTurn,
-                out _cachedExitPointFromHeading, out _cachedExitSegmentOfHeadingRejoinIntersection))
-        {
-            ComputeTempPathForCloseToPath(futurePosition, tipOfTurn);
-        }
-        else if (GameManager.Instance.ActiveRoute.FindFreeFlightDirectExitScenario(out tipOfTurn,
-                     out _cachedExitPointFromHeading,
-                     out _cachedExitSegmentOfHeadingRejoinIntersection))
-        {
-            ComputeRejoinPathForDirectIntersection(tipOfTurn);
-        }
-        else
-        {
-            Debug.LogError("No Intersection Point Found");
-        }
-
-        _displayExitPoint = _cachedExitPointFromHeading;
-        _displayCenterOfTurn = tipOfTurn;
+        // @£$
+        // if (Session.ActiveRoute.FindFreeFlightCloseToPathExitScenario(_settings.RejoinDistance,
+        //         out var futurePosition, out var tipOfTurn,
+        //         out _cachedExitPointFromHeading, out _cachedExitSegmentOfHeadingRejoinIntersection))
+        // {
+        //     ComputeTempPathForCloseToPath(futurePosition, tipOfTurn);
+        // }
+        // else if (GameManager.Instance.ActiveRoute.FindFreeFlightDirectExitScenario(out tipOfTurn,
+        //              out _cachedExitPointFromHeading,
+        //              out _cachedExitSegmentOfHeadingRejoinIntersection))
+        // {
+        //     ComputeRejoinPathForDirectIntersection(tipOfTurn);
+        // }
+        // else
+        // {
+        //     Debug.LogError("No Intersection Point Found");
+        // }
+        //
+        // _displayExitPoint = _cachedExitPointFromHeading;
+        // _displayCenterOfTurn = tipOfTurn;
     }
 
     // when aircraft is in HDG and user applies a MOD
     private void ComputeTempPathForNextNode()
     {
 
-        GameManager.Instance.ActiveRoute.FindFreeFlightNextNodeExitScenario(out var futurePosition, out var centerOfTurn, out _cachedExitPointFromHeading,
-            out _cachedExitSegmentOfHeadingRejoinIntersection);
-      
-            //compute rejoin path
-
-            Debug.Log("start LNAV - rejoin next node");
-            RejoinPathLines = new PathLines(_settings.DrawerUnitLength);
-
-            var tempPoints = new RoutePoint[5];
-            var lastPoint = RoutePoint.ConstructFromPosition(Vector2.zero, null);
-            tempPoints[0] = lastPoint;
-            lastPoint = RoutePoint.ConstructFromPosition(PositionFreeOrOnCurvedPath, lastPoint);
-            tempPoints[1] = lastPoint;
-            lastPoint = RoutePoint.ConstructFromPosition(futurePosition, lastPoint);
-            tempPoints[2] = lastPoint;
-            lastPoint = RoutePoint.ConstructFromPosition(centerOfTurn, lastPoint);
-            tempPoints[3] = lastPoint;
-            lastPoint = RoutePoint.ConstructFromPosition(_cachedExitPointFromHeading, lastPoint);
-            tempPoints[4] = lastPoint;
-
-            RejoinPathLines.ComputeSet(tempPoints);
-
-            GetFirstDestinationFromNode(RejoinPathLines, tempPoints[1], tempPoints,
-                out RejoinPathLocalization);
-
-            IsFreeFlight = false;
+        // £@$
+        // Session.ActiveRoute.FindFreeFlightNextNodeExitScenario(out var futurePosition, out var centerOfTurn, out _cachedExitPointFromHeading,
+        //     out _cachedExitSegmentOfHeadingRejoinIntersection);
+        //
+        //     //compute rejoin path
+        //
+        //     Debug.Log("start LNAV - rejoin next node");
+        //     RejoinPathLines = new PathLines(_settings.DrawerUnitLength);
+        //
+        //     var tempPoints = new RoutePoint[5];
+        //     var lastPoint = RoutePoint.ConstructFromPosition(Vector2.zero, null);
+        //     tempPoints[0] = lastPoint;
+        //     lastPoint = RoutePoint.ConstructFromPosition(PositionFreeOrOnCurvedPath, lastPoint);
+        //     tempPoints[1] = lastPoint;
+        //     lastPoint = RoutePoint.ConstructFromPosition(futurePosition, lastPoint);
+        //     tempPoints[2] = lastPoint;
+        //     lastPoint = RoutePoint.ConstructFromPosition(centerOfTurn, lastPoint);
+        //     tempPoints[3] = lastPoint;
+        //     lastPoint = RoutePoint.ConstructFromPosition(_cachedExitPointFromHeading, lastPoint);
+        //     tempPoints[4] = lastPoint;
+        //
+        //     RejoinPathLines.ComputeSet(tempPoints);
+        //
+        //     GetFirstDestinationFromNode(RejoinPathLines, tempPoints[1], tempPoints,
+        //         out RejoinPathLocalization);
+        //
+        //     IsFreeFlight = false;
     }
 
     private void ComputeTempPathForCloseToPath(Vector2 futurePosition, Vector2 tipOfTurn)
@@ -207,7 +272,6 @@ public class Aircraft
                 out RejoinPathLocalization);
 
             IsFreeFlight = false;
-       
     }
 
 
@@ -340,7 +404,7 @@ public class Aircraft
         var leftToAdvance = distanceToWalk - distanceLeftToNextVertex;
 
         // advance to next point
-        if (!GameManager.Instance.ActiveRoute.PathLines.GetNextDestination(
+        if (!Session.ActiveRoute.PathLines.GetNextDestination(
             RoutePathLocalization.CurrentNodeIndex,
             RoutePathLocalization.UnreachedVertexIndex, out var newUnreachedPositionInfo))
         {
@@ -352,7 +416,7 @@ public class Aircraft
         if (newUnreachedPositionInfo.CurrentNodeIndex != RoutePathLocalization.CurrentNodeIndex)
         {
             WalkedDistanceOnSegment = 0;
-            if (GameManager.Instance.ActiveRoute.Points[newUnreachedPositionInfo.CurrentNodeIndex]
+            if (Session.ActiveRoute.Points[newUnreachedPositionInfo.CurrentNodeIndex]
                 .IsAfterDiscontinuity)
             {
                 GameManager.Instance.SwitchThroughHeading();
@@ -371,12 +435,12 @@ public class Aircraft
 
     private void CheckAdvancePointOnHDGProximity()
     {
-        for (int i = PositionVirtualNode.PassedNodeIndex+1; i < GameManager.Instance.ActiveRoute.Points.Length; i++)
+        for (int i = PositionVirtualNode.PassedNodeIndex+1; i < Session.ActiveRoute.Points.Length; i++)
         {
-            var nodePosition = GameManager.Instance.ActiveRoute.Points[i].CartesianPosition;
+            var nodePosition = Session.ActiveRoute.Points[i].CartesianPosition;
             if (Vector2.Distance(nodePosition, PositionFreeOrOnRouteSegment) <= _settings.HGDAutoNextPointDistance)
             {
-                if (!GameManager.Instance.ActiveRoute.PathLines.GetNextDestination(
+                if (!Session.ActiveRoute.PathLines.GetNextDestination(
                         i+1,
                         0, out var newUnreachedPositionInfo))
                 {
@@ -447,9 +511,9 @@ public class Aircraft
                 if (rejoined)
                 {
                     IsOnRoute = true;
-                    GameManager.Instance.ActiveRoute.OnPathRejoined(RejoinPathLines.oldPositionVertex);
+                    Session.ActiveRoute.OnPathRejoined(RejoinPathLines.oldPositionVertex);
 
-                    if (GameManager.Instance.ActiveRoute.TransferPathToRoute(_cachedExitPointFromHeading, exitSegmentIndex,
+                    if (Session.ActiveRoute.TransferPathToRoute(_cachedExitPointFromHeading, exitSegmentIndex,
                         out var intersectionInfo,
                         out var walkedDistanceOnSegment))
                     {
@@ -470,9 +534,15 @@ public class Aircraft
 
     public void DrawGizmos()
     {
+
+        if (!IsFreeFlight)
+        {
+            Gizmos.DrawSphere(transform.position + _pathJoinFoundVertex.ToDisplay(), 0.2f);
+        }
+
         Gizmos.color = Color.white;
-        Gizmos.DrawSphere(Drawer.Instance.transform.position + _displayCenterOfTurn.ToDisplay(), 0.05f);
+        Gizmos.DrawSphere(Drawer.Instance.transform.position + Extension.ToDisplay(_displayCenterOfTurn), 0.05f);
         Gizmos.color = Color.green;
-        Gizmos.DrawSphere(Drawer.Instance.transform.position + _displayExitPoint.ToDisplay(), 0.05f);
+        Gizmos.DrawSphere(Drawer.Instance.transform.position + Extension.ToDisplay(_displayExitPoint), 0.05f);
     }
 }

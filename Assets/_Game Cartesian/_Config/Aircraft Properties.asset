@@ -13,4 +13,4 @@ MonoBehaviour:
   m_Name: Aircraft Properties
   m_EditorClassIdentifier: 
   NMSpeed: 0.2
-  MaxRejoinCloseNMDistance: 3.5
+  MaxRejoinCloseNMDistance: 2.57

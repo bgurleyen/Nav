@@ -1,4 +1,5 @@
 using Gamelogic.Extensions;
+using Legacy;
 using UnityEngine;
 using Unyawn.Utils;
 
@@ -6,11 +7,13 @@ namespace Navigation
 {
     public class GameManager : MonoBehaviour
     {
-        [SerializeField] private GamePropertiesScriptableObject _gameProperties;
+        [SerializeField] private GameSettingsScriptableObject _gameProperties;
 
         [SerializeField] private RouteScriptableObject _initialRoute;
 
-        [Header("Computed"), ReadOnly] public RouteScriptableObject _activeRoute;
+        [Header("Computed")]
+        [SerializeField, ReadOnly] private RouteScriptableObject _activeRoute;
+        
         private Simulation _simulation;
 
         private void Start()
@@ -18,13 +21,13 @@ namespace Navigation
             _simulation = UYServiceLocator.Get<Simulation>();
             LinesComputer.Init(2f, _gameProperties.DrawerUnitLength);
 
-            _initialRoute.Init(_gameProperties.DrawerUnitLength);
+            _initialRoute.Init(_gameProperties.DrawerUnitLength, _gameProperties.ForwardThreshold);
             _activeRoute = _initialRoute.CloneAndInit();
 
             DataHandler.BuildSetDetails(_activeRoute);
-            _activeRoute.ComputeSet();
+            _activeRoute.ComputeSet(Session.IsMod);
 
-            _simulation.Init(_activeRoute);
+            _simulation.Init(_gameProperties);
             Session.Zoom = _gameProperties.MinZoom;
             
         }
@@ -33,8 +36,5 @@ namespace Navigation
         {
             _simulation.Tick(Time.fixedDeltaTime);
         }
-
-
-       
     }
 }

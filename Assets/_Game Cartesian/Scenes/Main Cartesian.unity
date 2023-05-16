@@ -15138,8 +15138,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 963848562}
+  - component: {fileID: 963848563}
   m_Layer: 0
-  m_Name: Compas Drawer [Non UI]
+  m_Name: Simulation - Drawer [Non UI]
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -15163,6 +15164,22 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &963848563
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 963848561}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bff710339aa554a2a965ea98c46f0c8a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _playerAircraft: {fileID: 380748623438198345}
+  _otherActors:
+  - {fileID: 858288891}
+  _drawer: {fileID: 2120126761}
 --- !u!1 &973863442
 GameObject:
   m_ObjectHideFlags: 0
@@ -29139,16 +29156,16 @@ MonoBehaviour:
   m_GameObject: {fileID: 2120126759}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bff710339aa554a2a965ea98c46f0c8a, type: 3}
+  m_Script: {fileID: 11500000, guid: 690e38e13c7c442139208541a3da7568, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _playerAircraft: {fileID: 380748623438198345}
-  _otherActors:
-  - {fileID: 858288891}
   _compasPivot: {fileID: 201148535}
   _cameraAnimator: {fileID: 561176780}
   _dynamicHolder: {fileID: 1049552508}
   _linesPool: {fileID: 440527590}
+  linesPoolMod: {fileID: 2144574237}
+  circlePool: {fileID: 1778874877}
+  rayPool: {fileID: 1997814383}
 --- !u!1 &2124256481
 GameObject:
   m_ObjectHideFlags: 0

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Gamelogic.Extensions;
+using Navigation;
 using UnityEngine;
 
 public class PathLines
@@ -11,7 +12,7 @@ public class PathLines
     public List<FixRay> ComputedRays;
     public Vector2 CenteredPosition;
 
-    private static FixedPointsScriptableObject FixedPoints => GameManager.Instance?.FixedPoints;
+    private static FixedPointsScriptableObject FixedPoints => Session.Routes.FixedPoints;
     private readonly float _drawerUnitLength;
 
     public PathLines(float drawerUnitLength)
@@ -115,7 +116,7 @@ public class PathLines
             var vertex = ComputedLines[nextLine].Vertexes[nextPoint];
             var direction = vertex - oldPositionVertex;
             var heading = direction == Vector3.zero
-                ? GameManager.Instance.Aircraft.HeadingDegrees
+                ? Session.PlayerAircraft.HeadingDegrees
                 : Geometry.GetHeadingOfDirection(direction);
             oldPositionVertex = vertex;
             

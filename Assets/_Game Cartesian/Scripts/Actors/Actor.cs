@@ -1,3 +1,4 @@
+using Legacy;
 using UnityEngine;
 
 namespace Navigation
@@ -14,7 +15,7 @@ namespace Navigation
             _tr = transform;
         }
 
-        public virtual void SimulateTick(float deltaTime, RouteScriptableObject activeRoute)
+        public virtual void SimulateTick(float deltaTime)
         {
             
         }

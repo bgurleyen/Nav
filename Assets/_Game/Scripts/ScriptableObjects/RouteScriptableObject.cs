@@ -1,6 +1,7 @@
-﻿using System;
+using System;
 using UnityEngine;
 using System.Linq;
+using Navigation;
 using UnityEngine.Assertions;
 
 namespace Legacy
@@ -9,7 +10,6 @@ namespace Legacy
     [CreateAssetMenu(fileName = "RouteData", menuName = "ScriptableObjects/RouteData")]
     public class RouteScriptableObject : ScriptableObject
     {
-        [SerializeField] private GameConfigScriptableObject _gameConfig;
         public RoutePoint[] Points;
 
         public bool ActiveDirectApproach { get; private set; }
@@ -17,32 +17,22 @@ namespace Legacy
         public int FirstAltRegulationNodeId { get; set; }
 
         public PathLines PathLines { get; private set; }
+        public float TotalSqrLenght { get; private set; }
 
-        private static Aircraft Aircraft => GameManager.Instance.Aircraft;
-        private GameSettingsScriptableObject _settings => _gameConfig.Settings;
+        private float _drawerUnitLength;
+        private float _forwardThreshold;
 
-        private void OnValidate()
+
+        public void Init(float drawerUnitLength, float forwardThreshold)
         {
-            if (!Application.isPlaying && name.Length > 0)
+            _drawerUnitLength = drawerUnitLength;
+            _forwardThreshold = forwardThreshold;
+            PathLines = new PathLines(drawerUnitLength);
+            
+            for (var i = 0; i < Points.Length; i++)
             {
-                Assert.IsNotNull(_gameConfig, $"Please assign Config Reference to {name}");
+                Points[i].ID = i;
             }
-        }
-
-        private void Awake()
-        {
-            if (_gameConfig == null)
-            {
-                return;
-            }
-
-            PathLines = new PathLines(_gameConfig.Settings.DrawerUnitLength);
-        }
-
-        public void Init(GameConfigScriptableObject config)
-        {
-            _gameConfig = config;
-            Awake();
         }
 
         public void ComputeCartesianPositions()
@@ -62,6 +52,21 @@ namespace Legacy
         public void ComputeSet(bool isMod)
         {
             PathLines.ComputeSet(Points, !isMod);
+            
+            TotalSqrLenght = 0;
+            var lastPoint = PathLines.ComputedLines[1].Vertexes[0];
+
+            for (int i = 1; i < PathLines.ComputedLines.Length; i++)
+            {
+                var computedLine = PathLines.ComputedLines[i];
+
+                for (int j = 0; j < computedLine.Vertexes.Length; j++)
+                {
+                    var vertex = computedLine.Vertexes[j];
+                    TotalSqrLenght += (vertex - lastPoint).sqrMagnitude;
+                    lastPoint = vertex;
+                }
+            }
         }
 
         public void InitIds()
@@ -125,10 +130,9 @@ namespace Legacy
             return intro + index.ToString("00");
         }
 
-        public RouteScriptableObject Clone()
+        public RouteScriptableObject CloneAndInit()
         {
             var newSet = CreateInstance<RouteScriptableObject>(); // new DataSetScriptableObject();
-            newSet.Init(_gameConfig);
             newSet.ActiveDirectApproach = ActiveDirectApproach;
             newSet.FirstAltRegulationNodeId = FirstAltRegulationNodeId;
             newSet.FirstSpeedRegulationNodeId = FirstSpeedRegulationNodeId;
@@ -138,6 +142,7 @@ namespace Legacy
                 newSet.Points[i] = Points[i].Clone();
             }
 
+            newSet.Init(_drawerUnitLength,_forwardThreshold);
             return newSet;
         }
 
@@ -147,78 +152,47 @@ namespace Legacy
             ActiveDirectApproach = false;
         }
 
-        // to be executed on ACTIVE route
-        public bool FindFreeFlightNextNodeExitScenario(out Vector2 futurePosition, out Vector2 centerOfTurn,
-            out Vector2 exitPoint,
-            out int exitSegmentIndex)
+
+        public bool FindFreeFlightCloseToPathExitScenario(float maxDistance, out Vector2 foundVertex)
         {
-            futurePosition = Geometry.GetNextPosition(Aircraft.PositionFreeOrOnCurvedPath, _settings.ForwardThreshold,
-                -Aircraft.HeadingDegrees);
+            int foundLine = -1;
+            int foundVertexIndex = -1;
+            foundVertex = Vector2.zero;
+            float foundDistance = -1;
 
-            var currentNodeIndex = GameManager.Instance.Aircraft.RoutePathLocalization.CurrentNodeIndex;
-            centerOfTurn = Points[currentNodeIndex].CartesianPosition;
+            var maxSqrDistance = maxDistance * maxDistance;
 
-            // we rejoin after intersection
-            var nextNextNodePosition = Points[currentNodeIndex + 1].CartesianPosition;
-            exitPoint = Vector2.Lerp(centerOfTurn, nextNextNodePosition,
-                GameSettingsScriptableObject.GetMinRadius / Vector2.Distance(centerOfTurn, nextNextNodePosition));
-
-            exitSegmentIndex = currentNodeIndex + 1;
-
-            return true;
-        }
-
-        public bool FindFreeFlightCloseToPathExitScenario(float maxDistance, out Vector2 futurePosition,
-            out Vector2 tipOfTurn,
-            out Vector2 exitPoint,
-            out int exitSegmentIndex)
-        {
-            var nan = new Vector2(-100, -100);
-
-            futurePosition = Geometry.GetNextPosition(Aircraft.PositionFreeOrOnCurvedPath, _settings.ForwardThreshold,
-                -Aircraft.HeadingDegrees);
-
-            exitPoint = nan;
-            tipOfTurn = nan;
-
-            var currentNodeIndex = GameManager.Instance.Aircraft.RoutePathLocalization.CurrentNodeIndex;
-            var aircraftPosition =
-                GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath; // would be free since we are in free flight
-
-            exitSegmentIndex = -1;
-
-            for (var i = currentNodeIndex; i < Points.Length; i++)
+            // 0 = start line, empty
+            for (int i = 1; i < PathLines.ComputedLines.Length; i++)
             {
-                if (Points[i].IsHiddenLine || Points[i].IsAfterDiscontinuity)
+                var computedLine = PathLines.ComputedLines[i];
+
+                for (int j = 0; j < computedLine.Vertexes.Length; j++)
                 {
-                    continue;
-                }
+                    var vertex = (Vector2)computedLine.Vertexes[j];
 
-                var segmentStart = Points[i - 1].CartesianPosition;
-                var segmentEnd = Points[i].CartesianPosition;
+                    var sqrDistance = (vertex - Session.PlayerAircraft.NMPosition).sqrMagnitude;
+                    // if is further that max distance
+                    if (sqrDistance > maxSqrDistance)
+                    {
+                        continue;
+                    }
 
-                if (Geometry.FindDistanceToSegment(aircraftPosition, segmentStart, segmentEnd,
-                        out var intersection, out var distance) && distance <= maxDistance)
-                {
-                    exitSegmentIndex = i;
-                    tipOfTurn = intersection;
-
-                    // don't break, keep computing to find the most forward segment that is withing max distance range
+                    // if is within maxDistance limits, but more forward
+                    foundVertex = vertex;
+                    foundLine = i;
+                    foundVertexIndex = j;
+                    foundDistance = sqrDistance;
                 }
             }
 
-            if (exitSegmentIndex < 0)
+            if (foundDistance <= 0)
             {
                 return false;
             }
 
-
-            MakeSureForTurningSpace(ref tipOfTurn, out exitPoint, ref exitSegmentIndex);
-
-
             return true;
         }
-
 
 
         // to be executed on ACTIVE route
@@ -230,8 +204,8 @@ namespace Legacy
             exitPoint = nan;
             tipOfTurn = nan;
             var aircraftPosition =
-                GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath; // would be free since we are in free flight
-            var aircraftDirection = Geometry.GetDirectionFromHeading(GameManager.Instance.Aircraft.HeadingDegrees);
+                Session.PlayerAircraft.PositionFreeOrOnCurvedPath; // would be free since we are in free flight
+            var aircraftDirection = Geometry.GetDirectionFromHeading(Session.PlayerAircraft.HeadingDegrees);
             var segmentEnd = Vector2.zero;
 
             exitSegmentIndex = -1;
@@ -276,7 +250,7 @@ namespace Legacy
         {
             var nextNextNodePosition = Points[exitSegmentIndex].CartesianPosition;
             var exitDirection = nextNextNodePosition - tipOfTurn;
-            var headingDiff = Vector2.Dot(exitDirection, Geometry.GetDirectionFromHeading(Aircraft.HeadingDegrees));
+            var headingDiff = Vector2.Dot(exitDirection, Geometry.GetDirectionFromHeading(Session.PlayerAircraft.HeadingDegrees));
 
             var minProduct = 0;
             // add more offset if the directions are opposite
@@ -292,7 +266,7 @@ namespace Legacy
             // check if is to close to end of line - should exit in the next one
             while (Points.Length > exitSegmentIndex + 1 &&
                    Vector2.SqrMagnitude(nextNextNodePosition - exitPoint) <
-                   _settings.ForwardThreshold * _settings.ForwardThreshold)
+                   _forwardThreshold * _forwardThreshold)
             {
                 Debug.Log(
                     $"too close to corner exit in next segment ({Vector2.SqrMagnitude(nextNextNodePosition - tipOfTurn)})");
@@ -303,7 +277,7 @@ namespace Legacy
 
 
                 exitDirection = nextNextNodePosition - tipOfTurn;
-                headingDiff = Vector2.Dot(exitDirection, Geometry.GetDirectionFromHeading(Aircraft.HeadingDegrees));
+                headingDiff = Vector2.Dot(exitDirection, Geometry.GetDirectionFromHeading(Session.PlayerAircraft.HeadingDegrees));
                 neededTipOffset = (headingDiff < minProduct ? 4 : 1f) * GameSettingsScriptableObject.GetMinRadius;
 
                 tipOfTurn = Vector2.Lerp(tipOfTurn, nextNextNodePosition,
@@ -323,14 +297,14 @@ namespace Legacy
             var segmentEnd = Points[lineIndex].CartesianPosition;
 
             segmentDistanceUntilIntersection = (exitPoint - segmentStart).magnitude;
-            if (GameManager.Instance.ActiveRoute.PathLines.FindClosestVertexToPositionOnLineActive(
+            if (Session.ActiveRoute.PathLines.FindClosestVertexToPositionOnLineActive(
                     exitPoint, lineIndex, out var targetVertexIndex,
                     out var targetVertexPosition))
             {
                 intersectionRoutePathInfo = new PathPositionInfo
                 {
                     CurrentNodeIndex = lineIndex,
-                    HeadingBefore = GameManager.Instance.Aircraft.HeadingDegrees,
+                    HeadingBefore = Session.PlayerAircraft.HeadingDegrees,
                     UnreachedVertexIndex = targetVertexIndex,
                     UnreachedVertexPosition = targetVertexPosition
                 };
@@ -478,7 +452,7 @@ namespace Legacy
             afterInsertion.Distance = returnDirection.magnitude;
 
             // simulate the curve to the the needed offset
-            var lastLine = new MarkLine(relativeFromNode, _settings.DrawerUnitLength);
+            var lastLine = new MarkLine(relativeFromNode, _drawerUnitLength);
             lastLine.InitBeginning();
 
             LinesComputer.ComputeLine(lastLine, out var testLine, insertionNode, afterInsertion);
@@ -622,7 +596,7 @@ namespace Legacy
             // ! Position node is added in front of the actual position so that the aircraft can safely turn 
             RoutePoint lastAddedPositionNode;
 
-            if (Aircraft.IsOnRoute)
+            if (Session.PlayerAircraft.IsOnRoute)
             {
                 var activeNextNode = PositionVirtualNode.GetNodeTo;
 
@@ -630,11 +604,11 @@ namespace Legacy
                 currentAddedPosition = new RoutePoint
                 {
                     Name = "_Position_0",
-                    Distance = Aircraft.WalkedDistanceOnSegment,
+                    Distance = Session.PlayerAircraft.WalkedDistanceOnSegment,
                     RawDegrees = activeNextNode.RawDegrees,
                     Details = "P",
                     ID = GetNewId(),
-                    CartesianPosition = Aircraft.PositionFreeOrOnRouteSegment
+                    CartesianPosition = Session.PlayerAircraft.PositionFreeOrOnRouteSegment
                 };
 
 
@@ -644,14 +618,14 @@ namespace Legacy
                 lastAddedPositionNode = new RoutePoint
                 {
                     Name = "_Position_",
-                    Distance = _settings.ForwardThreshold,
+                    Distance = _forwardThreshold,
                     RawDegrees = activeNextNode.RawDegrees,
                     Details = "P",
                     ID = GetNewId() + 1
                 };
 
-                var newFuturePosition = Geometry.GetNextPosition(Aircraft.PositionFreeOrOnRouteSegment,
-                    _settings.ForwardThreshold,
+                var newFuturePosition = Geometry.GetNextPosition(Session.PlayerAircraft.PositionFreeOrOnRouteSegment,
+                    _forwardThreshold,
                     activeNextNode.Degrees);
 
                 var differencePosition = routeNextNode.CartesianPosition - newFuturePosition;
@@ -663,13 +637,13 @@ namespace Legacy
             }
             else
             {
-                currentAddedPosition = RoutePoint.ConstructFromPosition(Aircraft.PositionFreeOrOnRouteSegment,
+                currentAddedPosition = RoutePoint.ConstructFromPosition(Session.PlayerAircraft.PositionFreeOrOnRouteSegment,
                     Points[0],
                     GetNewId(), "P", "_Position_0");
 
 
-                var futurePosition = Geometry.GetNextPosition(Aircraft.PositionFreeOrOnRouteSegment,
-                    _settings.ForwardThreshold, -Aircraft.HeadingDegrees);
+                var futurePosition = Geometry.GetNextPosition(Session.PlayerAircraft.PositionFreeOrOnRouteSegment,
+                    _forwardThreshold, -Session.PlayerAircraft.HeadingDegrees);
 
                 lastAddedPositionNode =
                     RoutePoint.ConstructFromPosition(futurePosition, currentAddedPosition, GetNewId() + 1, "P",

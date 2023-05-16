@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Gamelogic.Extensions;
 using Legacy;
+using Navigation;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -58,7 +59,7 @@ public class Move : Singleton<Move>
         // Altitude computed: GameManager.Instance.ActiveSet.Points[4].Altitude.ComputedValue
 
         Vector2 Pos = new Vector2(0, 0);
-        Route = GameManager.Instance.ActiveRoute.Clone();
+        Route = Session.ActiveRoute.CloneAndInit();
     
         for (int j = 1; j < Route.Points.Length; j++)                                                    // Locate the points on EditMap
         {
@@ -114,8 +115,8 @@ public class Move : Singleton<Move>
 
 
 
-        float x1 = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath.x;
-        float y1 = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath.y;
+        float x1 = Session.PlayerAircraft.PositionFreeOrOnCurvedPath.x;
+        float y1 = Session.PlayerAircraft.PositionFreeOrOnCurvedPath.y;
         float x2 = pointPos(pt).x;
         float y2 = pointPos(pt).y;
 
@@ -128,7 +129,7 @@ public class Move : Singleton<Move>
     {
         float  Deviation = Mathf.DeltaAngle(course, TrackToPoint(16));
 
-        if (Mathf.Abs(Mathf.DeltaAngle(course, GameManager.Instance.Aircraft.HeadingDegrees)) > 90) Deviation *=-1;
+        if (Mathf.Abs(Mathf.DeltaAngle(course, Session.PlayerAircraft.HeadingDegrees)) > 90) Deviation *=-1;
         if (((Mathf.Abs(Deviation) < 35) && (DME() < 10)) || ((Mathf.Abs(Deviation) < 10) && (DME() < 25)))
         {
             LOCIndex.enabled = true;
@@ -162,7 +163,7 @@ public class Move : Singleton<Move>
     }
     public float DME()
     {
-        return Vector2.Distance(GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath, pointPos(16));
+        return Vector2.Distance(Session.PlayerAircraft.PositionFreeOrOnCurvedPath, pointPos(16));
     } // Distance from RW
 
     public IEnumerator MoveMyAC()
@@ -206,12 +207,12 @@ public class Move : Singleton<Move>
 
 
 
-            hyp = Vector2.Distance(GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath, pointPos(point));
+            hyp = Vector2.Distance(Session.PlayerAircraft.PositionFreeOrOnCurvedPath, pointPos(point));
 
 
-            if (point < 50 && point > 1) RawSpeed = GameManager.Instance.ActiveRoute.Points[point - 1].RawSpeed;
+            if (point < 50 && point > 1) RawSpeed = Session.ActiveRoute.Points[point - 1].RawSpeed;
 
-            if (point < 50 && point > 1) RawAlt = (GameManager.Instance.ActiveRoute.Points[point - 1].RawAltitude);
+            if (point < 50 && point > 1) RawAlt = (Session.ActiveRoute.Points[point - 1].RawAltitude);
             DataHandler.ParseAltRegulation(RawAlt, out AltAbove, out AltBelow, out AltExact); // FMS Altitude Limit
 
 
@@ -316,12 +317,12 @@ public class Move : Singleton<Move>
 
             ATCCall();
 
-            OncekiPos = GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath;
+            OncekiPos = Session.PlayerAircraft.PositionFreeOrOnCurvedPath;
             OncekiAlt = (int)Calculator.CAltitude;
             myAC.transform.localPosition =
-                GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath; //move AC on EditMap
+                Session.PlayerAircraft.PositionFreeOrOnCurvedPath; //move AC on EditMap
 
-            float V = Vector2.Distance(GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath, pointPos(point));
+            float V = Vector2.Distance(Session.PlayerAircraft.PositionFreeOrOnCurvedPath, pointPos(point));
 
             //Debug.Log(" V :" + V+ " P :" +point);
             if ((point != prvWptIdx) && ((V < 1)))
@@ -360,7 +361,7 @@ public class Move : Singleton<Move>
         void CollisionCheck()
         {
 
-            float D = Vector2.Distance(GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath, finalPosition);
+            float D = Vector2.Distance(Session.PlayerAircraft.PositionFreeOrOnCurvedPath, finalPosition);
 
             int myACAlt = (int)Calculator.CAltitude;
             int ACAlt = (int)AltitudeC;
@@ -451,7 +452,7 @@ public class Move : Singleton<Move>
     private void DescentCheck()
     {
         int AltAbove, AltBelow, AltExact,AltRef;  // First Altitude Restriction
-        string RawAlt = (GameManager.Instance.ActiveRoute.Points[LegsScreen.VisibleRoute.FirstAltRegulationNodeId].RawAltitude);
+        string RawAlt = (Session.ActiveRoute.Points[Session.VisibleRoute.FirstAltRegulationNodeId].RawAltitude);
         DataHandler.ParseAltRegulation(RawAlt, out AltAbove, out AltBelow, out AltExact);
 
         AltRef = AltBelow > AltExact ? AltBelow : AltExact;

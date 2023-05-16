@@ -1,6 +1,7 @@
 ﻿using System;
 using Gamelogic.Extensions;
 using Legacy;
+using Navigation;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -48,7 +49,7 @@ public class LineDrawer : MonoBehaviour
         {
             markTransform.localPosition = line.EndPosition.To2DXY().ToDisplay();
             labelTransform.localPosition = line.EndPosition.To2DXY().ToDisplay();
-            var color = !GameManager.Instance.IsMod && routePoint.GetIsDisplayCurrent
+            var color = !Session.IsMod && routePoint.GetIsDisplayCurrent
                 ? Drawer.Instance.CMagenta
                 : Color.white;
             label.Init(routePoint.Name, color);

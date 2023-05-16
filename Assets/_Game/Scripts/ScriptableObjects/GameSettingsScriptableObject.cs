@@ -9,6 +9,8 @@ public class GameSettingsScriptableObject : ScriptableObject
     public Color cLightYellow;
 
     [Space] public float StartingZoom = 2;
+    [Space] public float MinZoom = 1;
+    [Space] public float MAxZoom = 3;
     [Header("Aircraft navigation")]
     // frequency of points
     public float DrawerUnitLength = 0.6f;

@@ -1,5 +1,6 @@
 ﻿using System;
 using Legacy;
+using Navigation;
 using UnityEngine;
 
 [Serializable]
@@ -82,8 +83,6 @@ public class RoutePoint
     {
         get
         {
-            var activeRoute = GameManager.Instance.ActiveRoute;
-
             var nodeCursor = PositionVirtualNode.GetNodeTo;
             while (nodeCursor.IsPositionNode || nodeCursor.ID == ID)
             {
@@ -92,7 +91,7 @@ public class RoutePoint
                     return true;
                 }
 
-                nodeCursor = activeRoute.Points[activeRoute.Points.GetNodeIndex(nodeCursor.ID) + 1];
+                nodeCursor = Session.ActiveRoute.Points[Session.ActiveRoute.Points.GetNodeIndex(nodeCursor.ID) + 1];
             }
 
             return false;
