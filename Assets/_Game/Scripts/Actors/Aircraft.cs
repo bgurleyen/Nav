@@ -28,8 +28,8 @@ public class Aircraft : MovingActor
 
     public bool IsFreeFlight;
     public bool IsOnRoute = true;
-    
-    private Vector2 CurrentDirection => Geometry.GetDirectionFromHeading(HeadingDegrees);
+
+    public override Vector2 Direction => Geometry.GetDirectionFromHeading(HeadingDegrees);
     private float FrameDistance => _speed * Session.Settings.DeltaTime * Calculator.Acceleration(); //change
     
     private Vector3 _upwardsHeaderLineTop = new(0, 1.2f, 0);
@@ -155,12 +155,12 @@ public class Aircraft : MovingActor
 
     private void SteerToPathFoundVertex(float deltaTime)
     {
-        var difDegrees = Geometry.AngleBetween(_pathJoinFoundVertex - NMPosition, CurrentDirection);
+        var difDegrees = Geometry.AngleBetween(_pathJoinFoundVertex - NMPosition, Direction);
 
-        var lerpDirection = _currentTurningDegrees / 2f < difDegrees ? 1 : -1;
+        var lerpDirection = _currentTurningDegrees * 0.6f < difDegrees ? 1 : -1;
         _currentTurningDegrees += lerpDirection * 0.2f;
 
-        HeadingDegrees += _currentTurningDegrees * deltaTime * 0.1f;
+        HeadingDegrees += _currentTurningDegrees * deltaTime * 0.3f;
     }
 
     private void DrawHeadingLine()
@@ -344,7 +344,7 @@ public class Aircraft : MovingActor
     // on free flight
     private void SimulateTickMove()
     {
-        NMPosition += CurrentDirection * FrameDistance;
+        NMPosition += Direction * FrameDistance;
         PositionFreeOrOnRouteSegment = NMPosition;
         
         CheckAdvancePointOnHDGProximity();
@@ -449,7 +449,7 @@ public class Aircraft : MovingActor
         
         if (!IsFreeFlight)
         {
-            Gizmos.DrawSphere(transform.position + _pathJoinFoundVertex.ToDisplay(), 0.2f);
+            Gizmos.DrawSphere(transform.position + _pathJoinFoundVertex.ToDisplay(), 0.12f);
         }
 
         Gizmos.color = Color.white;

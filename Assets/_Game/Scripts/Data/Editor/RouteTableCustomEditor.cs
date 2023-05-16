@@ -18,7 +18,6 @@ public class RouteTableCustomEditor : Editor
 
     public override void OnInspectorGUI()
     {
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("_gameConfig"));
         EditorGUILayout.Space();
         routePoints?.DoLayoutList();
         

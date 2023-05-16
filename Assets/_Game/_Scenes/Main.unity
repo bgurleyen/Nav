@@ -586,7 +586,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 60764884d715c0a4fad74df5c37a82e0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  __messageText: 
   _gameConfig: {fileID: 11400000, guid: 60965bfde451d46d184d23158024db97, type: 2}
   _initialRoute: {fileID: 11400000, guid: 48239b5a0c22a6a4e9279c5f8c65626a, type: 2}
   _routes:
@@ -20152,6 +20151,11 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4636247267581919153, guid: 56aa19d64298344958f1175fe91004ea,
+        type: 3}
+      propertyPath: CurrentTurningDegrees
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 56aa19d64298344958f1175fe91004ea, type: 3}
 --- !u!4 &1342359669 stripped
@@ -29225,7 +29229,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e051e4cdd7719049a1e3925124c935b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  __messageText: 
   _gameConfig: {fileID: 11400000, guid: 60965bfde451d46d184d23158024db97, type: 2}
   cameraAnimator: {fileID: 561176780}
   dynamicHolder: {fileID: 1049552508}
@@ -29252,8 +29255,6 @@ MonoBehaviour:
   planHolder:
   - {fileID: 623872170}
   - {fileID: 1000632908}
-  mapReferenceLength80: 2.82
-  planReferenceLength80: 3.82
   _debugStarDistance: 1.3
 --- !u!1 &2124256481
 GameObject:
