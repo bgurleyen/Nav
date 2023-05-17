@@ -11,6 +11,7 @@ public class LineDrawer : MonoBehaviour
     [SerializeField] private bool showGuides;
 
     private MarkLine cacheLine;
+    private TracedLine cacheTracedLine;
     private Transform markTransform;
     private Transform labelTransform;
 
@@ -62,6 +63,47 @@ public class LineDrawer : MonoBehaviour
         }
     }
 
+public void Display(TracedLine line, RoutePoint routePoint, bool hiddenLabel, bool hiddenLine, int fromPoint)
+    {
+        if (!hiddenLine && !line.LinkedPoint.IsAfterDiscontinuity && !line.LinkedPoint.IsHiddenLine)
+        {
+            cacheTracedLine = line;
+            if (line.TraceVertices == null || line.TraceVertices.Length == 0)
+            {
+                lineRenderer.positionCount = 0;
+                return;
+            }
+
+            lineRenderer.positionCount = line.TraceVertices.Length - fromPoint;
+            for (var i = fromPoint; i < line.TraceVertices.Length; i++)
+            {
+                lineRenderer.SetPosition(i - fromPoint, line.TraceVertices[i].ToDisplay());
+            }
+        }
+        else
+        {
+            lineRenderer.positionCount = 0;
+        }
+
+        if (!line.LinkedPoint.IsSkippable && !hiddenLabel)
+        {
+            markTransform.localPosition = line.EndNMPosition.ToDisplay();
+            labelTransform.localPosition = line.EndNMPosition.ToDisplay();
+            var color = !Session.IsMod && routePoint.GetIsDisplayCurrent
+                ? Session.Settings.cMagenta
+                : Color.white;
+            label.Init(routePoint.Name, color);
+            mark.startColor = mark.endColor = color;
+            mark.gameObject.SetActive(true);
+            label.gameObject.SetActive(true);
+
+        }
+        else
+        {
+            mark.gameObject.SetActive(false);
+            label.gameObject.SetActive(false);
+        }
+    }
 
     private void OnDrawGizmosSelected()
     {

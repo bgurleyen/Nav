@@ -160,6 +160,8 @@ public class Drawer : MonoBehaviour
 
     public void Display()
     {
+        DisplayTracedSet(Session.ActiveRoute?.TracedRoute.TracedLines, LinesType.Active);
+        return;
         DisplaySet(Session.ActiveRoute?.PathLines?.ComputedLines, LinesType.Active);
         if (Session.ModRoute != null)
         {
@@ -345,8 +347,79 @@ public class Drawer : MonoBehaviour
             drawer.Display(line, point, hiddenLabel || linesType == LinesType.Rejoin, hiddenLine, fromPointIndex);
         }
     }
-    
-  
+
+    private void DisplayTracedSet(IReadOnlyList<TracedLine> lines, LinesType linesType)
+    {
+        if (lines == null)
+        {
+            return;
+        }
+
+        LeanGameObjectPool pool;
+        Transform holder;
+
+        switch (linesType)
+        {
+            case LinesType.Mod:
+                pool = linesPoolMod;
+                holder = dynamicHolderMod;
+                break;
+            case LinesType.Active:
+            case LinesType.Rejoin:
+                pool = linesPool;
+                holder = dynamicHolder;
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(linesType), linesType, null);
+        }
+
+        var rejoinSegmentIndex = 0;
+        var rejoinPoint = Vector2.zero;
+        if (Session.PlayerAircraft.IsRejoining)
+        {
+            rejoinSegmentIndex = Session.PlayerAircraft.CachedExitSegmentOfHeadingRejoinIntersection;
+            rejoinPoint = Session.PlayerAircraft.CachedExitPointFromHeading;
+        }
+
+        for (var i = 0; i < lines.Count; i++)
+        {
+            var hiddenLabel = false;
+            var hiddenLine = false;
+            var fromPointIndex = 0;
+            var line = lines[i];
+
+            if (line == null)
+            {
+                continue;
+            }
+
+            var point = line.LinkedPoint;
+
+            var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<LineDrawer>();
+            drawer.name = $"{linesType} {point.Name}";
+
+            if (linesType == LinesType.Mod && Session.ActiveRoute.GetPoint(point.ID, out var activePoint))
+            {
+                // $^% error at cartesian position
+                if (RoutePoint.HaveSamePosition(activePoint, point))
+                {
+                    hiddenLabel = true;
+                }
+                else
+                {
+                    Debug.LogWarning(activePoint.Name + " " +
+                                     (activePoint.CartesianPosition - point.CartesianPosition).magnitude);
+                }
+            }
+
+            if (linesType == LinesType.Rejoin && line.StartNMPosition == Vector2.zero)
+            {
+                hiddenLine = true;
+            }
+
+            drawer.Display(line, point, hiddenLabel || linesType == LinesType.Rejoin, hiddenLine, fromPointIndex);
+        }
+    }
 
     private void DisplayFixCircles()
     {

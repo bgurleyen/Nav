@@ -1,5 +1,4 @@
-﻿using System;
-using Navigation;
+﻿using Navigation;
 using UnityEngine;
 using Unyawn.Utils;
 
@@ -58,7 +57,7 @@ public class GameManager : MonoBehaviour
 
     private void FixedUpdate()
     {
-        _simulation.Tick(Time.fixedDeltaTime);
+        //_simulation.Tick(Time.fixedDeltaTime);
     }
 
     private void LEGS_OnLeftCornerPressErase()

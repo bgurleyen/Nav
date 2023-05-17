@@ -38,7 +38,7 @@ namespace Navigation
 
             ComputeMod();
 
-            _playerAircraft.Init(170, 21600);
+ //           _playerAircraft.Init(170, 21600);
 
             _drawer.Display();
             _drawer.ResetMode();

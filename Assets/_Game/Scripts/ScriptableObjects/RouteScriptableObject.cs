@@ -16,18 +16,23 @@ namespace Navigation
         public int FirstSpeedRegulationNodeId { get; set; }
         public int FirstAltRegulationNodeId { get; set; }
 
+        public TracedRoute TracedRoute { get; private set; }
+
         public PathLines PathLines { get; private set; }
         public float TotalSqrLenght { get; private set; }
 
         private float _drawerUnitLength;
         private float _forwardThreshold;
 
-
         public void Init(float drawerUnitLength, float forwardThreshold)
         {
+            ComputeCartesianPositions();
+            
             _drawerUnitLength = drawerUnitLength;
             _forwardThreshold = forwardThreshold;
-            PathLines = new PathLines(drawerUnitLength);
+            TracedRoute = new TracedRoute(drawerUnitLength);
+            
+            //PathLines = new PathLines(drawerUnitLength);
             
             for (var i = 0; i < Points.Length; i++)
             {
@@ -51,22 +56,23 @@ namespace Navigation
 
         public void ComputeSet(bool isMod)
         {
-            PathLines.ComputeSet(Points, !isMod);
+            TracedRoute.ComputeSet(Points);
+            //PathLines.ComputeSet(Points, !isMod);
             
-            TotalSqrLenght = 0;
-            var lastPoint = PathLines.ComputedLines[1].Vertexes[0];
-
-            for (int i = 1; i < PathLines.ComputedLines.Length; i++)
-            {
-                var computedLine = PathLines.ComputedLines[i];
-
-                for (int j = 0; j < computedLine.Vertexes.Length; j++)
-                {
-                    var vertex = computedLine.Vertexes[j];
-                    TotalSqrLenght += (vertex - lastPoint).sqrMagnitude;
-                    lastPoint = vertex;
-                }
-            }
+            // TotalSqrLenght = 0;
+            // var lastPoint = PathLines.ComputedLines[1].Vertexes[0];
+            //
+            // for (int i = 1; i < PathLines.ComputedLines.Length; i++)
+            // {
+            //     var computedLine = PathLines.ComputedLines[i];
+            //
+            //     for (int j = 0; j < computedLine.Vertexes.Length; j++)
+            //     {
+            //         var vertex = computedLine.Vertexes[j];
+            //         TotalSqrLenght += (vertex - lastPoint).sqrMagnitude;
+            //         lastPoint = vertex;
+            //     }
+            // }
         }
 
         public void InitIds()
