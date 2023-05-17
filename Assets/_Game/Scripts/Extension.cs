@@ -26,7 +26,7 @@ namespace Navigation
                     break;
                 case DrawerMode.Plan:
                     // centered
-                    finalPosition -= Session.ActiveRoute.PathLines.CenteredPosition;
+                    finalPosition -= Session.ActiveRoute.TracedRoute.CenteredPosition;
                     break;
             }
 

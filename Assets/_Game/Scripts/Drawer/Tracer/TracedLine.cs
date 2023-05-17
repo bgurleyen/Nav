@@ -12,7 +12,7 @@ namespace Navigation
         private readonly float _seekDistance;
         
         private readonly Vector2[] _straightVertices;
-        public Vector2[] TraceVertices;
+        public Vector2[] Vertexes;
 
         public TracedLine(float granularity, float seekDistance, Pilot pilot, Vector2 lastPointPosition, RoutePoint forPoint)
         {
@@ -60,7 +60,7 @@ namespace Navigation
 
             }
 
-            TraceVertices = tracePositions.ToArray();
+            Vertexes = tracePositions.ToArray();
         }
 
         private bool FindFurthestSeekTarget(Vector2 forPosition, out Vector2 foundVertex, out bool reachedEnd)
@@ -118,8 +118,6 @@ namespace Navigation
         {
              TickSteerToPathFoundVertex( toTarget);
              _nmPosition += Direction * _stepDistance;
-
-             Debug.Log(_nmPosition.ToDisplay());
         }
 
         private void TickSteerToPathFoundVertex( Vector2 seekTarget)

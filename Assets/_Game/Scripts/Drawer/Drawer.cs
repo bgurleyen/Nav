@@ -131,41 +131,39 @@ public class Drawer : MonoBehaviour
         Extension.DespawnChildren<OtherAircrafIndicator>(dynamicHolderOtheriarcrafts, otherAircraftsPool);
     }
 
-    public static bool GetCircleFix(RoutePoint linkedPoint, Vector3 from, FixedPointInfo linkedInfo,
-        out FixCircle circle)
-    {
-        if (linkedInfo.NM != null)
-        {
-            circle = new FixCircle(linkedPoint, linkedInfo);
-            circle.Init(from);
-            return true;
-        }
-
-        circle = null;
-        return false;
-    }
-
-    public static bool GetRayFix(RoutePoint linkedPoint, Vector3 from, FixedPointInfo linkedInfo, out FixRay ray)
-    {
-        if (linkedInfo.RawDegrees != null)
-        {
-            ray = new FixRay(linkedPoint, linkedInfo);
-            ray.Init(from);
-            return true;
-        }
-
-        ray = null;
-        return false;
-    }
+    // public static bool GetCircleFix(RoutePoint linkedPoint, Vector3 from, FixedPointInfo linkedInfo,
+    //     out FixCircle circle)
+    // {
+    //     if (linkedInfo.NM != null)
+    //     {
+    //         circle = new FixCircle(linkedPoint, linkedInfo);
+    //         circle.Init(from);
+    //         return true;
+    //     }
+    //
+    //     circle = null;
+    //     return false;
+    // }
+    //
+    // public static bool GetRayFix(RoutePoint linkedPoint, Vector3 from, FixedPointInfo linkedInfo, out FixRay ray)
+    // {
+    //     if (linkedInfo.RawDegrees != null)
+    //     {
+    //         ray = new FixRay(linkedPoint, linkedInfo);
+    //         ray.Init(from);
+    //         return true;
+    //     }
+    //
+    //     ray = null;
+    //     return false;
+    // }
 
     public void Display()
     {
-        DisplayTracedSet(Session.ActiveRoute?.TracedRoute.TracedLines, LinesType.Active);
-        return;
-        DisplaySet(Session.ActiveRoute?.PathLines?.ComputedLines, LinesType.Active);
+        DisplaySet(Session.ActiveRoute?.TracedRoute.ComputedLines, LinesType.Active);
         if (Session.ModRoute != null)
         {
-            DisplaySet(Session.ModeSetWithPosition?.PathLines?.ComputedLines, LinesType.Mod);
+            DisplaySet(Session.ModeSetWithPosition?.TracedRoute?.ComputedLines, LinesType.Mod);
         }
 
         DisplayFixCircles();
@@ -243,112 +241,9 @@ public class Drawer : MonoBehaviour
         objective.transform.localPosition = Extension.ToDisplay(Vector2.zero);
     }
 
-    private void DisplaySet(IReadOnlyList<MarkLine> lines, LinesType linesType)
-    {
-        if (lines == null)
-        {
-            return;
-        }
+ 
 
-        LeanGameObjectPool pool;
-        Transform holder;
-
-        switch (linesType)
-        {
-            case LinesType.Mod:
-                pool = linesPoolMod;
-                holder = dynamicHolderMod;
-                break;
-            case LinesType.Active:
-            case LinesType.Rejoin:
-                pool = linesPool;
-                holder = dynamicHolder;
-                break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(linesType), linesType, null);
-        }
-
-        var rejoinSegmentIndex = 0;
-        var rejoinPoint = Vector2.zero;
-        if (Session.PlayerAircraft.IsRejoining)
-        {
-            rejoinSegmentIndex = Session.PlayerAircraft.CachedExitSegmentOfHeadingRejoinIntersection;
-            rejoinPoint = Session.PlayerAircraft.CachedExitPointFromHeading;
-        }
-
-        for (var i = 0; i < lines.Count; i++)
-        {
-            var hiddenLabel = false;
-            var hiddenLine = false;
-            var fromPointIndex = 0;
-            var line = lines[i];
-
-            if (line == null)
-            {
-                continue;
-            }
-
-            // $%^ this is bad. Ask if we need to keep the rejoin arc after rejoining
-            // we are offsetting the display start of the line to be just after the rejoin path
-            // Update: we want to keep displaying the active route as original so this is not needed
-            // if (linesType == LinesType.Active && Aircraft.IsRejoining)
-            // {
-            //     if (i < rejoinSegmentIndex )
-            //     {
-            //         // dont' hide line even if the aircraft is away rejoining
-            //         //hiddenLine = true;
-            //     }
-            //     else if (i == rejoinSegmentIndex)
-            //     {
-            //         // find intersection vertex index of generated line with rejoin line.. 
-            //         if (line.Vertexes.Length > 4)
-            //         {
-            //             var dist = (line.Vertexes[0].To2DXY() - rejoinPoint).sqrMagnitude;
-            //
-            //             for (int p = 1; p < line.Vertexes.Length; p++)
-            //             {
-            //                 var nextDist = (line.Vertexes[p].To2DXY() - rejoinPoint).sqrMagnitude;
-            //                 if (nextDist > dist)
-            //                 {
-            //                     fromPointIndex = p - 1;
-            //                     break;
-            //                 }
-            //
-            //                 dist = nextDist;
-            //             }
-            //         }
-            //     }
-            // }
-
-            var point = line.LinkedPoint;
-
-            var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<LineDrawer>();
-            drawer.name = $"{linesType} {line.GetName} {point.Name}";
-
-            if (linesType == LinesType.Mod && Session.ActiveRoute.GetPoint(point.ID, out var activePoint))
-            {
-                // $^% error at cartesian position
-                if (RoutePoint.HaveSamePosition(activePoint, point))
-                {
-                    hiddenLabel = true;
-                }
-                else
-                {
-                    Debug.LogWarning(activePoint.Name + " " +
-                                     (activePoint.CartesianPosition - point.CartesianPosition).magnitude);
-                }
-            }
-
-            if (linesType == LinesType.Rejoin && line.StartPosition == Vector3.zero)
-            {
-                hiddenLine = true;
-            }
-
-            drawer.Display(line, point, hiddenLabel || linesType == LinesType.Rejoin, hiddenLine, fromPointIndex);
-        }
-    }
-
-    private void DisplayTracedSet(IReadOnlyList<TracedLine> lines, LinesType linesType)
+    private void DisplaySet(IReadOnlyList<TracedLine> lines, LinesType linesType)
     {
         if (lines == null)
         {
@@ -423,48 +318,48 @@ public class Drawer : MonoBehaviour
 
     private void DisplayFixCircles()
     {
-        var circles = Session.ActiveRoute.PathLines.ComputedCircles;
-        var pool = circlePool;
-        var holder = dynamicHolderCircles;
-
-        for (var i = 0; i < circles.Count; i++)
-        {
-            var line = circles[i];
-
-            if (line == null)
-            {
-                continue;
-            }
-
-            var point = line.LinkedPoint;
-
-            var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<FixedCircleDrawer>();
-            drawer.name = $"{line.GetName} {point.Name}";
-            drawer.Display(line);
-        }
+        // var circles = Session.ActiveRoute.TracedRoute.ComputedCircles;
+        // var pool = circlePool;
+        // var holder = dynamicHolderCircles;
+        //
+        // for (var i = 0; i < circles.Count; i++)
+        // {
+        //     var line = circles[i];
+        //
+        //     if (line == null)
+        //     {
+        //         continue;
+        //     }
+        //
+        //     var point = line.LinkedPoint;
+        //
+        //     var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<FixedCircleDrawer>();
+        //     drawer.name = $"{line.GetName} {point.Name}";
+        //     drawer.Display(line);
+        // }
     }
 
     private void DisplayFixRays()
     {
-        var rays = Session.ActiveRoute.PathLines.ComputedRays;
-        var pool = rayPool;
-        var holder = dynamicHolderRays;
-
-        for (var i = 0; i < rays.Count; i++)
-        {
-            var ray = rays[i];
-
-            if (ray == null)
-            {
-                continue;
-            }
-
-            var point = ray.LinkedPoint;
-
-            var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<FixedRayDrawer>();
-            drawer.name = $"{ray.GetName} {point.Name}";
-            drawer.Display(ray);
-        }
+        // var rays = Session.ActiveRoute.TracedRoute.ComputedRays;
+        // var pool = rayPool;
+        // var holder = dynamicHolderRays;
+        //
+        // for (var i = 0; i < rays.Count; i++)
+        // {
+        //     var ray = rays[i];
+        //
+        //     if (ray == null)
+        //     {
+        //         continue;
+        //     }
+        //
+        //     var point = ray.LinkedPoint;
+        //
+        //     var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<FixedRayDrawer>();
+        //     drawer.name = $"{ray.GetName} {point.Name}";
+        //     drawer.Display(ray);
+        // }
     }
 
 

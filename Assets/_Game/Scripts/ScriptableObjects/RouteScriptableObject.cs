@@ -18,7 +18,6 @@ namespace Navigation
 
         public TracedRoute TracedRoute { get; private set; }
 
-        public PathLines PathLines { get; private set; }
         public float TotalSqrLenght { get; private set; }
 
         private float _drawerUnitLength;
@@ -154,8 +153,8 @@ namespace Navigation
 
         public void OnPathRejoined(Vector3 oldPositionVertex)
         {
-            PathLines.oldPositionVertex = oldPositionVertex;
-            ActiveDirectApproach = false;
+            // PathLines.oldPositionVertex = oldPositionVertex;
+            // ActiveDirectApproach = false;
         }
 
 
@@ -260,7 +259,7 @@ namespace Navigation
             var segmentEnd = Points[lineIndex].CartesianPosition;
 
             segmentDistanceUntilIntersection = (exitPoint - segmentStart).magnitude;
-            if (Session.ActiveRoute.PathLines.FindClosestVertexToPositionOnLineActive(
+            if (Session.ActiveRoute.TracedRoute.FindClosestVertexToPositionOnLineActive(
                     exitPoint, lineIndex, out var targetVertexIndex,
                     out var targetVertexPosition))
             {
@@ -415,10 +414,11 @@ namespace Navigation
             afterInsertion.Distance = returnDirection.magnitude;
 
             // simulate the curve to the the needed offset
-            var lastLine = new MarkLine(relativeFromNode, _drawerUnitLength);
-            lastLine.InitBeginning();
+            // @£$
+           // var lastLine = new MarkLine(relativeFromNode, _drawerUnitLength);
+            //lastLine.InitBeginning();
 
-            LinesComputer.ComputeLine(lastLine, out var testLine, insertionNode, afterInsertion);
+            //LinesComputer.ComputeLine(lastLine, out var testLine, insertionNode, afterInsertion);
 
             // replace set with new set that also contains insertion node
             var newSet = new RoutePoint[Points.Length + 1];

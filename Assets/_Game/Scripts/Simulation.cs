@@ -28,7 +28,6 @@ namespace Navigation
 
         public void Init()
         {
-            LinesComputer.Init(Session.Settings.ForwardThreshold, Session.Settings.DrawerUnitLength);
             DataHandler.BuildSetDetails(Session.ActiveRoute);
 
             Session.PlayerAircraft = _playerAircraft;

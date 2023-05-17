@@ -13,5 +13,5 @@ public class PositionVirtualNode
         : Session.PlayerAircraft.RoutePathLocalization.CurrentNodeIndex;
     public static RoutePoint GetNodeFrom => Session.ActiveRoute.Points[PassedNodeIndex];
     public static RoutePoint GetNodeTo => Session.ActiveRoute.Points[PassedNodeIndex + 1]; // todo may need to be adjusted : line goes passed the node, sometimes with a lot
-    public static MarkLine CurrentSegment => Session.ActiveRoute.PathLines.ComputedLines[PassedNodeIndex + 1];
+    public static TracedLine CurrentSegment => Session.ActiveRoute.TracedRoute.ComputedLines[PassedNodeIndex + 1];
 }
