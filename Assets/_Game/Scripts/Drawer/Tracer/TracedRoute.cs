@@ -6,23 +6,16 @@ using UnityEngine;
 /// <summary>
 /// TracedLines will have the first element null and will be related to the end point ( at same index )
 /// </summary>
-public class TracedRoute 
+public class TracedRoute
 {
     public TracedLine[] ComputedLines { get; private set; }
     private static FixedPointsScriptableObject FixedPoints => Session.Routes.FixedPoints;
-    
-     public List<FixCircle> ComputedCircles;
+
+    public List<FixCircle> ComputedCircles;
     public List<FixRay> ComputedRays;
     public Vector2 CenteredPosition;
-    
-    private readonly float _drawerUnitLength;
-
-    public TracedRoute(float drawerUnitLength)
-    {
-        _drawerUnitLength = drawerUnitLength;
-    }
-
-    public void ComputeSet(RoutePoint[] pointsArray, bool hasOtherMarkers = false)
+        
+    public void Compute(RoutePoint[] pointsArray, bool hasOtherMarkers = false)
     {
         ComputedLines = new TracedLine[pointsArray.Length];
         // if (hasOtherMarkers)
@@ -34,12 +27,11 @@ public class TracedRoute
         var pilot = new Pilot(
             nmPosition: pointsArray[0].CartesianPosition,
             initialOrientationTarget: pointsArray[1].CartesianPosition,
-            
-            stepDistance: _drawerUnitLength );
+
+            stepDistance: Session.Settings.DrawerUnitLength);
 
         for (int i = 1; i < pointsArray.Length; i++)
         {
-            Debug.Log("alta linie");
             var line = new TracedLine(
                 0.1f,
                 1f,
@@ -49,8 +41,8 @@ public class TracedRoute
             ComputedLines[i] = line;
         }
     }
-    
-    
+
+
     /// <summary>
     ///  On Active Set
     /// </summary>
@@ -61,7 +53,7 @@ public class TracedRoute
         return GetNextDestination(1, 0, out positionInfo);
     }
 
- 
+
 
     public Vector2 oldPositionVertex = Vector2.zero;
 
@@ -78,18 +70,19 @@ public class TracedRoute
     /// <param name="currentPointIndex"></param>
     /// <param name="positionInfo"></param>
     /// <returns></returns>
-    public bool GetNextDestination( int currentLineIndex, int currentPointIndex, out PathPositionInfo positionInfo)
+    public bool GetNextDestination(int currentLineIndex, int currentPointIndex, out PathPositionInfo positionInfo)
     {
-        if (GetNextComputedVertex(ComputedLines, currentLineIndex, currentPointIndex, out var nextPoint, out var nextLine))
+        if (GetNextComputedVertex(ComputedLines, currentLineIndex, currentPointIndex, out var nextPoint,
+                out var nextLine))
         {
-            
+
             var vertex = ComputedLines[nextLine].Vertexes[nextPoint];
             var direction = vertex - oldPositionVertex;
             var heading = direction == Vector2.zero
                 ? Session.PlayerAircraft.HeadingDegrees
                 : Geometry.GetHeadingOfDirection(direction);
             oldPositionVertex = vertex;
-            
+
             positionInfo = new PathPositionInfo
             {
                 CurrentNodeIndex = nextLine,
@@ -104,7 +97,8 @@ public class TracedRoute
         return false;
     }
 
-    private bool GetNextComputedVertex(TracedLine[] lines,int lineIndex, int pointIndex, out int nextPoint, out int nextLineIndex)
+    private bool GetNextComputedVertex(TracedLine[] lines, int lineIndex, int pointIndex, out int nextPoint,
+        out int nextLineIndex)
     {
         if (lines[lineIndex].Vertexes.Length > pointIndex + 1)
         {
@@ -123,12 +117,13 @@ public class TracedRoute
         {
             nextPoint = 1;
             nextLineIndex = lineIndex + 1;
-            
+
             if (ComputedLines[nextLineIndex] == null)
             {
                 Debug.LogError("Found null line. skipping");
                 return false;
             }
+
             return true;
         }
 
@@ -146,7 +141,7 @@ public class TracedRoute
         vertexPosition = Vector2.zero;
         for (var i = 1; i < line.Vertexes.Length; i++)
         {
-            var sqrDist = ((Vector2) line.Vertexes[i] - position).sqrMagnitude;
+            var sqrDist = ((Vector2)line.Vertexes[i] - position).sqrMagnitude;
 
             if (minSqrDist > sqrDist)
             {
@@ -159,8 +154,8 @@ public class TracedRoute
 
         if (vertexIndex >= 0)
         {
-            if (((Vector2) line.Vertexes[0] - position).sqrMagnitude >
-                ((Vector2) line.Vertexes[0] - (Vector2) line.Vertexes[vertexIndex]).sqrMagnitude)
+            if (((Vector2)line.Vertexes[0] - position).sqrMagnitude >
+                ((Vector2)line.Vertexes[0] - (Vector2)line.Vertexes[vertexIndex]).sqrMagnitude)
             {
                 vertexIndex++;
                 vertexIndex = Mathf.Min(vertexIndex, line.Vertexes.Length - 1);
@@ -172,7 +167,8 @@ public class TracedRoute
         return false;
     }
 
-    public bool FindCloseToPathDestination(float maxDistance, out Vector2 foundVertex, out int foundLineIndex, out bool reachedEnd)
+    public bool FindCloseToPathDestination(float maxDistance, out Vector2 foundVertex, out int foundLineIndex,
+        out bool reachedEnd)
     {
         int foundVertexIndex = -1;
         foundLineIndex = -1;

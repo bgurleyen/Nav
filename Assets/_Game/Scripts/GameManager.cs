@@ -33,7 +33,7 @@ public class GameManager : MonoBehaviour
         
         _simulation = UYServiceLocator.Get<Simulation>();
 
-        _initialRoute.Init(_gameConfig.Settings.DrawerUnitLength, _gameConfig.Settings.ForwardThreshold);
+        _initialRoute.Init();
 
         _routes.ActiveRoute = _initialRoute.CloneAndInit();
         
@@ -57,7 +57,7 @@ public class GameManager : MonoBehaviour
 
     private void FixedUpdate()
     {
-        //_simulation.Tick(Time.fixedDeltaTime);
+        _simulation.Tick(Time.fixedDeltaTime);
     }
 
     private void LEGS_OnLeftCornerPressErase()

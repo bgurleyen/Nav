@@ -18,20 +18,12 @@ namespace Navigation
 
         public TracedRoute TracedRoute { get; private set; }
 
-        public float TotalSqrLenght { get; private set; }
 
-        private float _drawerUnitLength;
-        private float _forwardThreshold;
-
-        public void Init(float drawerUnitLength, float forwardThreshold)
+        public void Init()
         {
             ComputeCartesianPositions();
             
-            _drawerUnitLength = drawerUnitLength;
-            _forwardThreshold = forwardThreshold;
-            TracedRoute = new TracedRoute(drawerUnitLength);
-            
-            //PathLines = new PathLines(drawerUnitLength);
+            TracedRoute = new TracedRoute();
             
             for (var i = 0; i < Points.Length; i++)
             {
@@ -39,7 +31,7 @@ namespace Navigation
             }
         }
 
-        public void ComputeCartesianPositions()
+        private void ComputeCartesianPositions()
         {
             var currentPosition = Vector2.zero;
             for (var i = 0; i < Points.Length; i++)
@@ -53,25 +45,9 @@ namespace Navigation
             }
         }
 
-        public void ComputeSet(bool isMod)
+        public void ComputeTrace()
         {
-            TracedRoute.ComputeSet(Points);
-            //PathLines.ComputeSet(Points, !isMod);
-            
-            // TotalSqrLenght = 0;
-            // var lastPoint = PathLines.ComputedLines[1].Vertexes[0];
-            //
-            // for (int i = 1; i < PathLines.ComputedLines.Length; i++)
-            // {
-            //     var computedLine = PathLines.ComputedLines[i];
-            //
-            //     for (int j = 0; j < computedLine.Vertexes.Length; j++)
-            //     {
-            //         var vertex = computedLine.Vertexes[j];
-            //         TotalSqrLenght += (vertex - lastPoint).sqrMagnitude;
-            //         lastPoint = vertex;
-            //     }
-            // }
+            TracedRoute.Compute(Points);
         }
 
         public void InitIds()
@@ -147,7 +123,7 @@ namespace Navigation
                 newSet.Points[i] = Points[i].Clone();
             }
 
-            newSet.Init(_drawerUnitLength,_forwardThreshold);
+            newSet.Init();
             return newSet;
         }
 
@@ -228,7 +204,7 @@ namespace Navigation
             // check if is to close to end of line - should exit in the next one
             while (Points.Length > exitSegmentIndex + 1 &&
                    Vector2.SqrMagnitude(nextNextNodePosition - exitPoint) <
-                   _forwardThreshold * _forwardThreshold)
+                   Session.Settings.ForwardThreshold * Session.Settings.ForwardThreshold)
             {
                 Debug.Log(
                     $"too close to corner exit in next segment ({Vector2.SqrMagnitude(nextNextNodePosition - tipOfTurn)})");
@@ -581,14 +557,14 @@ namespace Navigation
                 lastAddedPositionNode = new RoutePoint
                 {
                     Name = "_Position_",
-                    Distance = _forwardThreshold,
+                    Distance = Session.Settings.ForwardThreshold,
                     RawDegrees = activeNextNode.RawDegrees,
                     Details = "P",
                     ID = GetNewId() + 1
                 };
 
                 var newFuturePosition = Geometry.GetNextPosition(Session.PlayerAircraft.PositionFreeOrOnRouteSegment,
-                    _forwardThreshold,
+                    Session.Settings.ForwardThreshold,
                     activeNextNode.Degrees);
 
                 var differencePosition = routeNextNode.CartesianPosition - newFuturePosition;
@@ -606,7 +582,7 @@ namespace Navigation
 
 
                 var futurePosition = Geometry.GetNextPosition(Session.PlayerAircraft.PositionFreeOrOnRouteSegment,
-                    _forwardThreshold, -Session.PlayerAircraft.HeadingDegrees);
+                    Session.Settings.ForwardThreshold, -Session.PlayerAircraft.HeadingDegrees);
 
                 lastAddedPositionNode =
                     RoutePoint.ConstructFromPosition(futurePosition, currentAddedPosition, GetNewId() + 1, "P",

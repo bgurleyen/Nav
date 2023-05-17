@@ -8,10 +8,7 @@ public class GameSettingsScriptableObject : ScriptableObject
 
     [Space] public float StartingZoom = 2;
     [Header("Aircraft navigation")]
-    // frequency of points
-    public float DrawerUnitLength = 0.6f;
     public float MaxTurningSpeedPerNM = 1f;
-    public float MaxTurningSpeedPerUnitLength => MaxTurningSpeedPerNM * DrawerUnitLength;
 
     [Space]
     [SerializeField]
@@ -28,6 +25,11 @@ public class GameSettingsScriptableObject : ScriptableObject
     [Header("Map")]
     public float MapReferenceLength80 = 2.82f;
     public float PlanReferenceLength80 = 3.82f;
+    
+    
+    [Header("Route Lines generation")]
+    public float DrawerUnitLength = 0.6f;
+    public float MaxTurningSpeedPerUnitLength => MaxTurningSpeedPerNM * DrawerUnitLength;
 
     #region Plane Speeds
 

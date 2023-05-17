@@ -33,11 +33,11 @@ namespace Navigation
             Session.PlayerAircraft = _playerAircraft;
             Session.Routes.FixedPoints = FixedPointsScriptableObject.CreateDemo();
 
-            Session.ActiveRoute.ComputeSet(false);
+            Session.ActiveRoute.ComputeTrace();
 
             ComputeMod();
 
- //           _playerAircraft.Init(170, 21600);
+            _playerAircraft.Init(170, 21600);
 
             _drawer.Display();
             _drawer.ResetMode();
@@ -59,11 +59,9 @@ namespace Navigation
 
             queueEraseMode = false;
 
-            Session.ActiveRoute.ComputeSet(false);
+            Session.ActiveRoute.ComputeTrace();
             ComputeMod();
 
-            //Session.PlayerAircraft.Advance();
-            
             _playerAircraft.SimulateTick(deltaTime);
 
             foreach (var actor in _otherActors)
@@ -119,7 +117,7 @@ namespace Navigation
 
             Session.ModeSetWithPosition.AddDisplayPositionNode();
 
-            Session.ModeSetWithPosition.ComputeSet(true);
+            Session.ModeSetWithPosition.ComputeTrace();
         }
 
         public void ReExecuteCachedCommands()
