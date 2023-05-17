@@ -295,13 +295,13 @@ public class Drawer : MonoBehaviour
 
             if (linesType == LinesType.Mod && Session.ActiveRoute.GetPoint(point.ID, out var activePoint))
             {
-                // $^% error at cartesian position
                 if (RoutePoint.HaveSamePosition(activePoint, point))
                 {
                     hiddenLabel = true;
                 }
                 else
                 {
+                    // $^% error at cartesian position
                     Debug.LogWarning(activePoint.Name + " " +
                                      (activePoint.CartesianPosition - point.CartesianPosition).magnitude);
                 }

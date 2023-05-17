@@ -7,31 +7,35 @@ using UnityEngine;
 public class Aircraft : MovingActor
 {
     [SerializeField, ReadOnly] private float _currentTurningDegrees;
-    
+
     /// <summary>
     /// If used for geometry should be used with '-' . see other places
     /// </summary>
-    public float HeadingDegrees { get; private set; } 
+    public float HeadingDegrees { get; private set; }
+
     public float TargetHeading { get; private set; }
-    public float WalkedDistanceOnSegment { get; private set; }
     public bool IsRejoining => !IsFreeFlight && !IsOnRoute;
     public TracedRoute RejoinPathLines { get; private set; }
-    
+
     public int CachedExitSegmentOfHeadingRejoinIntersection { get; }
     public Vector2 CachedExitPointFromHeading { get; }
 
     // position that can be on the generated curved sections of the lines
-    public Vector2 PositionFreeOrOnRouteSegment;
-    
-    public PathPositionInfo RoutePathLocalization;
-    public PathPositionInfo RejoinPathLocalization;
+    /// <summary>
+    /// (nmPosition, walkedDistanceOnSegment)
+    /// </summary>
+    public RoutePosition PositionFreeOrClosestOnRouteSegment;
+
+    // public PathPositionInfo RoutePathLocalization;
+    // public PathPositionInfo RejoinPathLocalization;
 
     public bool IsFreeFlight;
     public bool IsOnRoute = true;
+    public bool IsJoining => !IsFreeFlight && !IsOnRoute;
 
     public override Vector2 Direction => Geometry.GetDirectionFromHeading(HeadingDegrees);
     private float FrameDistance => _speed * Session.Settings.DeltaTime * Calculator.Acceleration(); //change
-    
+
     private Vector3 _upwardsHeaderLineTop = new(0, 1.2f, 0);
     private LineRenderer _turningHeaderLine;
     private Vector2 _pathJoinFoundVertex;
@@ -54,15 +58,23 @@ public class Aircraft : MovingActor
             IndicateTargetHeading(Calculator.RHeading);
 
             SimulateTickHeadingCorrection();
+            
+            NMPosition += Direction * FrameDistance;
 
+            PositionFreeOrClosestOnRouteSegment.NMPositionOnSegment = NMPosition;
+            
+            CheckAdvancePointOnHDGProximity();
             // for display only
             //GameManager.Instance.ActiveRoute.FindFreeFlightDirectExitScenario(out displayCenterOfTurn, out displayExitPoint, out _);
         }
         else
         {
-            var foundClosePathDestination = Session.ActiveRoute.TracedRoute.FindCloseToPathDestination(
-                    Session.Settings.RejoinDistance,
-                    out _pathJoinFoundVertex, out var exitLineIndex, out var reachedEnd);
+            var foundClosePathDestination = Session.ActiveRoute.TracedRoute.FindCloseToRouteDestination(
+                Session.Settings.RejoinDistance * 0.3f,
+                out _pathJoinFoundVertex,
+                out var exitLineIndex, 
+                out var foundAtDistanceOnTracedLine,
+                out var reachedEnd);
 
             if (IsOnRoute)
             {
@@ -75,6 +87,16 @@ public class Aircraft : MovingActor
                 }
 
                 SteerToPathFoundVertex(deltaTime);
+                
+                NMPosition += Direction * FrameDistance;
+                
+                Session.ActiveRoute.TracedRoute.FindClosestRoutePoint(
+                    exitLineIndex,
+                    Session.PlayerAircraft.NMPosition,
+                    out PositionFreeOrClosestOnRouteSegment);
+
+                PositionFreeOrClosestOnRouteSegment.CurrentNodeIndex = exitLineIndex;
+
             }
             else
             {
@@ -82,85 +104,97 @@ public class Aircraft : MovingActor
 
                 if (rejoined)
                 {
-                    IsOnRoute = true;
-                    Session.ActiveRoute.OnPathRejoined(RejoinPathLines.oldPositionVertex);
-
-                    if (Session.ActiveRoute.TransferPathToRoute(CachedExitPointFromHeading, exitLineIndex,
-                            out var intersectionInfo,
-                            out var walkedDistanceOnSegment))
-                    {
-
-                        RoutePathLocalization = intersectionInfo;
-                        WalkedDistanceOnSegment = walkedDistanceOnSegment;
-                    }
-
+                    // IsOnRoute = true;
+                    // Session.ActiveRoute.OnPathRejoined(RejoinPathLines.oldPositionVertex);
+                    //
+                    // if (Session.ActiveRoute.TransferPathToRoute(CachedExitPointFromHeading, exitLineIndex,
+                    //         out var intersectionInfo,
+                    //         out var walkedDistanceOnSegment))
+                    // {
+                    //
+                    //     RoutePathLocalization = intersectionInfo;
+                    // }
+                    //
+                    // Session.ActiveRoute.TracedRoute.FindClosestRoutePoint(
+                    //                     exitLineIndex,
+                    //                     Session.PlayerAircraft.NMPosition,
+                    //                     out PositionFreeOrClosestOnRouteSegment);
                 }
                 else
                 {
-                    if (!RejoinPathLines.FindCloseToPathDestination(
+                    if (!RejoinPathLines.FindCloseToRouteDestination(
                             Session.Settings.RejoinDistance,
-                            out _pathJoinFoundVertex, out var foundLineIndex, out _))
+                            out _pathJoinFoundVertex, 
+                            out var foundLineIndex, 
+                            out _,
+                            out _))
                     {
                         Debug.LogError("No Intersection Point Found");
                         IsFreeFlight = true;
                         return;
                     }
                 }
-                
+
                 SteerToPathFoundVertex(deltaTime);
             }
         }
 
-        SimulateTickMove();
     }
 
     public void Init(float aircraftSpeed, float altitude)
     {
         ResetOnActiveSet(aircraftSpeed, altitude);
     }
-    
+
     // exactDistance will be provided when rejoining from rejoining path and there is some distance left to walk
-    
+
     //private bool TickOrientToRoutePath(PathLines pathLines, float deltaTime, bool )
-  //  {
-    
-        
-            // PositionFreeOrOnCurvedPath = 
-            // WalkedDistanceOnSegment +=
-            // PositionFreeOrOnRouteSegment =
-            // PositionFreeOrOnRouteSegment = 
-       
+    //  {
+
+
+    // PositionFreeOrOnCurvedPath = 
+    // WalkedDistanceOnSegment +=
+    // PositionFreeOrOnRouteSegment =
+    // PositionFreeOrOnRouteSegment = 
+
 
 // ---
-        // {
-        //     Debug.LogError("No destination could be found");
-        //     return;
-        // }
+    // {
+    //     Debug.LogError("No destination could be found");
+    //     return;
+    // }
 
-        // // reset walked distance if the line has increased
-        // if (newUnreachedPositionInfo.CurrentNodeIndex != RoutePathLocalization.CurrentNodeIndex)
-        // {
-        //     WalkedDistanceOnSegment = 0;
-        //     if (Session.ActiveRoute.Points[newUnreachedPositionInfo.CurrentNodeIndex]
-        //         .IsAfterDiscontinuity)
-        //     {
-        //         UYServiceLocator.Get<GameManager>().SwitchThroughHeading();
-        //     }
-        // }
+    // // reset walked distance if the line has increased
+    // if (newUnreachedPositionInfo.CurrentNodeIndex != RoutePathLocalization.CurrentNodeIndex)
+    // {
+    //     WalkedDistanceOnSegment = 0;
+    //     if (Session.ActiveRoute.Points[newUnreachedPositionInfo.CurrentNodeIndex]
+    //         .IsAfterDiscontinuity)
+    //     {
+    //         UYServiceLocator.Get<GameManager>().SwitchThroughHeading();
+    //     }
+    // }
 
-        //RoutePathLocalization = newUnreachedPositionInfo;
-        //distanceLeftToNextVertex = (RoutePathLocalization.UnreachedVertexPosition - PositionFreeOrOnCurvedPath).magnitude;
+    //RoutePathLocalization = newUnreachedPositionInfo;
+    //distanceLeftToNextVertex = (RoutePathLocalization.UnreachedVertexPosition - PositionFreeOrOnCurvedPath).magnitude;
 
-  //  }
+    //  }
 
     private void SteerToPathFoundVertex(float deltaTime)
     {
         var difDegrees = Geometry.AngleBetween(_pathJoinFoundVertex - NMPosition, Direction);
 
-        var lerpDirection = _currentTurningDegrees * 0.6f < difDegrees ? 1 : -1;
-        _currentTurningDegrees += lerpDirection * 0.2f;
+        var lerpDirection = difDegrees < 0 ? -1 : 1;
+        _currentTurningDegrees += lerpDirection;
 
-        HeadingDegrees += _currentTurningDegrees * deltaTime * 0.3f;
+        HeadingDegrees += lerpDirection * Mathf.Min(20, Mathf.Abs(difDegrees)) * deltaTime * 1.5f;
+
+        // var difDegrees = Geometry.AngleBetween(_pathJoinFoundVertex - NMPosition, Direction);
+        //
+        // var lerpDirection = _currentTurningDegrees * 0.6f < difDegrees ? 1 : -1;
+        // _currentTurningDegrees += lerpDirection * 0.2f;
+        //
+        // HeadingDegrees += _currentTurningDegrees * deltaTime * 0.3f;
     }
 
     private void DrawHeadingLine()
@@ -170,11 +204,14 @@ public class Aircraft : MovingActor
         _turningHeaderLine.SetPosition(1, rotated);
     }
 
+    /// <summary>
+    /// Distance to show to the next Point
+    /// </summary>
     public float ComputedDistanceLeftOnSegment
     {
         get
         {
-            if (!IsFreeFlight && IsOnRoute)
+            if (IsOnRoute)
             {
                 return GetWalkedDistanceLeftOnSegment();
             }
@@ -184,27 +221,20 @@ public class Aircraft : MovingActor
             {
                 nextViableNodeIndex++;
             }
+
             return (Session.ActiveRoute.GetCartesianPosition(nextViableNodeIndex) -
-                    PositionFreeOrOnRouteSegment).magnitude;
+                    PositionFreeOrClosestOnRouteSegment.NMPositionOnSegment).magnitude;
         }
     }
 
-  
+
     public void ResetOnActiveSet(float aircraftSpeed, float altitude)
     {
         _speed = aircraftSpeed;
         NMPosition = Vector2.zero;
-        PositionFreeOrOnRouteSegment = Vector2.zero;
-        WalkedDistanceOnSegment = 0;
+        PositionFreeOrClosestOnRouteSegment.Reset();
 
-        if (Session.ActiveRoute.TracedRoute.GetFirstDestination(out RoutePathLocalization))
-        {
-            HeadingDegrees = RoutePathLocalization.HeadingBefore;
-        }
-        else
-        {
-            throw new Exception("Could not reset to data set");
-        }
+        HeadingDegrees = Session.ActiveRoute.Points[1].Degrees;
     }
 
 
@@ -214,7 +244,11 @@ public class Aircraft : MovingActor
         IsOnRoute = false;
     }
 
-    public enum RejoinRouteMode { Manual, NextRouteNode}
+    public enum RejoinRouteMode
+    {
+        Manual,
+        NextRouteNode
+    }
 
     public void StartLNavMode(RejoinRouteMode mode)
     {
@@ -319,36 +353,33 @@ public class Aircraft : MovingActor
     // when aircraft is in heading and user switches to LNav ( and the case is straight intersection with the path )
     private void ComputeRejoinPathForDirectIntersection(Vector2 tipOfTurn)
     {
-            // //compute rejoin path
-            // Debug.Log("start LNAV - rejoin direct intersection");
-            // RejoinPathLines = new PathLines(Session.Settings.DrawerUnitLength);
-            //
-            // var tempPoints = new RoutePoint[4];
-            // var lastPoint = RoutePoint.ConstructFromPosition(Vector2.zero, null);
-            // tempPoints[0] = lastPoint;
-            // lastPoint = RoutePoint.ConstructFromPosition(NMPosition, lastPoint);
-            // tempPoints[1] = lastPoint;
-            // lastPoint = RoutePoint.ConstructFromPosition(tipOfTurn, lastPoint);
-            // tempPoints[2] = lastPoint;
-            // lastPoint = RoutePoint.ConstructFromPosition(CachedExitPointFromHeading, lastPoint);
-            // tempPoints[3] = lastPoint;
-            //
-            // RejoinPathLines.ComputeSet(tempPoints);
-            //
-            // GetFirstDestinationFromNode(RejoinPathLines, tempPoints[1], tempPoints,
-            //     out RejoinPathLocalization);
-            //
-            // IsFreeFlight = false;
+        // //compute rejoin path
+        // Debug.Log("start LNAV - rejoin direct intersection");
+        // RejoinPathLines = new PathLines(Session.Settings.DrawerUnitLength);
+        //
+        // var tempPoints = new RoutePoint[4];
+        // var lastPoint = RoutePoint.ConstructFromPosition(Vector2.zero, null);
+        // tempPoints[0] = lastPoint;
+        // lastPoint = RoutePoint.ConstructFromPosition(NMPosition, lastPoint);
+        // tempPoints[1] = lastPoint;
+        // lastPoint = RoutePoint.ConstructFromPosition(tipOfTurn, lastPoint);
+        // tempPoints[2] = lastPoint;
+        // lastPoint = RoutePoint.ConstructFromPosition(CachedExitPointFromHeading, lastPoint);
+        // tempPoints[3] = lastPoint;
+        //
+        // RejoinPathLines.ComputeSet(tempPoints);
+        //
+        // GetFirstDestinationFromNode(RejoinPathLines, tempPoints[1], tempPoints,
+        //     out RejoinPathLocalization);
+        //
+        // IsFreeFlight = false;
     }
 
 
     // on free flight
     private void SimulateTickMove()
     {
-        NMPosition += Direction * FrameDistance;
-        PositionFreeOrOnRouteSegment = NMPosition;
-        
-        CheckAdvancePointOnHDGProximity();
+       
     }
 
     // private void ExecuteLerpMove(PathPositionInfo pathLocalisation ,float stepDistance, float distanceLeftToNextVertex)
@@ -378,7 +409,8 @@ public class Aircraft : MovingActor
     {
         if (Math.Abs(TargetHeading - HeadingDegrees) > 0.01f)
         {
-            HeadingDegrees = Mathf.MoveTowardsAngle(HeadingDegrees, TargetHeading, Session.Settings.MaxTurningSpeedPerUnitLength);
+            HeadingDegrees = Mathf.MoveTowardsAngle(HeadingDegrees, TargetHeading,
+                Session.Settings.MaxTurningSpeedPerUnitLength);
         }
     }
 
@@ -391,43 +423,26 @@ public class Aircraft : MovingActor
 
     private void CheckAdvancePointOnHDGProximity()
     {
-        for (int i = PositionVirtualNode.PassedNodeIndex+1; i < Session.ActiveRoute.Points.Length; i++)
+        for (int i = PositionVirtualNode.PassedNodeIndex + 1; i < Session.ActiveRoute.Points.Length; i++)
         {
             var nodePosition = Session.ActiveRoute.Points[i].CartesianPosition;
-            if (Vector2.Distance(nodePosition, PositionFreeOrOnRouteSegment) <= Session.Settings.HGDAutoNextPointDistance)
+            if (Vector2.Distance(nodePosition, PositionFreeOrClosestOnRouteSegment.NMPositionOnSegment) <=
+                Session.Settings.HGDAutoNextPointDistance)
             {
-                if (!Session.ActiveRoute.TracedRoute.GetNextDestination(
-                        i+1,
-                        0, out var newUnreachedPositionInfo))
-                {
-                    Debug.LogError("No destination could be found");
-                    return;
-                }
-
-                WalkedDistanceOnSegment = 0;
-
-                RoutePathLocalization = newUnreachedPositionInfo;
+                // if (!Session.ActiveRoute.TracedRoute.GetNextDestination(
+                //         i + 1,
+                //         0, out var newUnreachedPositionInfo))
+                // {
+                //     Debug.LogError("No destination could be found");
+                //     return;
+                // }
+                //
+                // RoutePathLocalization = newUnreachedPositionInfo;
             }
         }
     }
 
-    private static void GetFirstDestinationFromNode(TracedRoute lines, RoutePoint node, RoutePoint[] nodes, out PathPositionInfo positionInfo)
-    {
-        lines.ResetOldPosition();
-
-        var nodeIndex = nodes.GetNodeIndex(node.ID);
-        var heading = node.Degrees; // Not sure if matters, but it's not correct
-
-        positionInfo = new PathPositionInfo
-        {
-            // set destination as next node
-            CurrentNodeIndex = nodeIndex + 1,
-            UnreachedVertexIndex = 0,
-            HeadingBefore = heading,
-            // set position in the just passed node
-            UnreachedVertexPosition = lines.ComputedLines[nodeIndex+1].Vertexes[0] 
-        };
-    }
+   
 
     private void AdvanceFreeFlight()
     {
@@ -435,9 +450,9 @@ public class Aircraft : MovingActor
 
     private float GetWalkedDistanceLeftOnSegment()
     {
-        return 0;// PositionVirtualNode.CurrentSegment.ComputedVertexLength -
-               //WalkedDistanceOnSegment;
+        return PositionVirtualNode.CurrentTracedLine.LinkedPoint.Distance - PositionFreeOrClosestOnRouteSegment.NMWalkedOnCurrentSegment;
     }
+
     private static Vector2 _displayCenterOfTurn;
     private static Vector2 _displayExitPoint;
 
@@ -447,15 +462,17 @@ public class Aircraft : MovingActor
         {
             return;
         }
-        
+
         if (!IsFreeFlight)
         {
-            Gizmos.DrawSphere(transform.position + _pathJoinFoundVertex.ToDisplay(), 0.12f);
+            Gizmos.DrawWireSphere(transform.position + _pathJoinFoundVertex.ToDisplay(), 0.12f);
         }
 
         Gizmos.color = Color.white;
         Gizmos.DrawSphere(transform.position + _displayCenterOfTurn.ToDisplay(), 0.05f);
         Gizmos.color = Color.green;
         Gizmos.DrawSphere(transform.position + _displayExitPoint.ToDisplay(), 0.05f);
+        
+        Gizmos.DrawWireSphere(transform.position + PositionFreeOrClosestOnRouteSegment.NMPositionOnSegment.ToDisplay(), 0.05f);
     }
 }

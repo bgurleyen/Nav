@@ -30,6 +30,7 @@ public class GameSettingsScriptableObject : ScriptableObject
     [Header("Route Lines generation")]
     public float DrawerUnitLength = 0.6f;
     public float MaxTurningSpeedPerUnitLength => MaxTurningSpeedPerNM * DrawerUnitLength;
+    public float SegmentGranularity = 0.1f;
 
     #region Plane Speeds
 

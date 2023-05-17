@@ -8,13 +8,15 @@ namespace Navigation
         public Vector2 StartNMPosition;
         public Vector2 EndNMPosition;
         public RoutePoint LinkedPoint { get; private set; }
+        public Vector2[] Vertexes;
+        public float TracedNMLength { get; private set; }
 
         private readonly float _seekDistance;
         
-        private readonly Vector2[] _straightVertices;
-        public Vector2[] Vertexes;
+        public readonly Vector2[] SegmentVertices;
+        
 
-        public TracedLine(float granularity, float seekDistance, Pilot pilot, Vector2 lastPointPosition, RoutePoint forPoint)
+        public TracedLine( float seekDistance, Pilot pilot, Vector2 lastPointPosition, RoutePoint forPoint)
         {
             _seekDistance = seekDistance;
             StartNMPosition = lastPointPosition;
@@ -24,18 +26,20 @@ namespace Navigation
             var lineLenght = (EndNMPosition - StartNMPosition).magnitude;
 
             // compute granular intervals on the straight line to prevent calculations everytime
-            var vertexCount = Mathf.CeilToInt(lineLenght / granularity);
-            _straightVertices = new Vector2[vertexCount];
+            var vertexCount = Mathf.CeilToInt(lineLenght / Session.Settings.SegmentGranularity);
+            SegmentVertices = new Vector2[vertexCount];
             var straightTracerPosition = lastPointPosition;
-            for (var i = 0; i < _straightVertices.Length; i++)
+            for (var i = 0; i < SegmentVertices.Length; i++)
             {
-                _straightVertices[i] = straightTracerPosition;
+                SegmentVertices[i] = straightTracerPosition;
 
-                straightTracerPosition += lineDirection * granularity;
+                straightTracerPosition += lineDirection * Session.Settings.SegmentGranularity;
             }
 
 
             TraceFromPilot(pilot);
+
+            TracedNMLength = (Vertexes.Length - 1) * Session.Settings.DrawerUnitLength;
         }
 
         /// <summary>
@@ -71,9 +75,9 @@ namespace Navigation
         
             var maxSqrDistance = _seekDistance *_seekDistance;
             
-            for (var i = 0; i < _straightVertices.Length; i++)
+            for (var i = 0; i < SegmentVertices.Length; i++)
             {
-                var vertex = _straightVertices[i];
+                var vertex = SegmentVertices[i];
                 var sqrDistance = (vertex - forPosition).sqrMagnitude;
 
                 if (sqrDistance > maxSqrDistance)
@@ -84,7 +88,7 @@ namespace Navigation
                 foundVertex = vertex;
                 foundSqrDistance = sqrDistance;
 
-                if (i == _straightVertices.Length - 1)
+                if (i == SegmentVertices.Length - 1)
                 {
                     reachedEnd = true;
                 }
@@ -101,15 +105,12 @@ namespace Navigation
         private Vector2 Direction => Geometry.GetDirectionFromHeading(_headingDegrees);
         private Vector2 _nmPosition;
 
-        private readonly float _stepDistance;
-        
         private float _currentTurningDegrees;
         private float _headingDegrees;
 
-        public Pilot(Vector2 nmPosition, Vector2 initialOrientationTarget, float stepDistance)
+        public Pilot(Vector2 nmPosition, Vector2 initialOrientationTarget)
         {
             _nmPosition = nmPosition;
-            _stepDistance = stepDistance;
 
             _currentTurningDegrees = Geometry.GetHeadingOfDirection(initialOrientationTarget - nmPosition);
         }
@@ -117,7 +118,7 @@ namespace Navigation
         public void TickAdvance( Vector2 toTarget)
         {
              TickSteerToPathFoundVertex( toTarget);
-             _nmPosition += Direction * _stepDistance;
+             _nmPosition += Direction * Session.Settings.DrawerUnitLength;
         }
 
         private void TickSteerToPathFoundVertex( Vector2 seekTarget)

@@ -431,7 +431,7 @@ public class Calculator : MonoBehaviour
         Alt0 = double.Parse(node0.DisplayAltitude);
         Alt1 = double.Parse(node1.DisplayAltitude);
         d = Session.PlayerAircraft.ComputedDistanceLeftOnSegment;
-        D = (d + Session.PlayerAircraft.WalkedDistanceOnSegment); // Daniel: this will behave bad while free flight
+        D = (d + Session.PlayerAircraft.PositionFreeOrClosestOnRouteSegment.NMWalkedOnCurrentSegment); // Daniel: this will behave bad while free flight
 
         DeltaAlt = CAltitude - (Alt1 + (d * (Alt0 - Alt1)) / D);
         VDI_Text.text = (((DeltaAlt) > 50) || ((DeltaAlt) < -50)) ? "" + (int)DeltaAlt : "";

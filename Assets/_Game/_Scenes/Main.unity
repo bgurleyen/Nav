@@ -587,7 +587,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _gameConfig: {fileID: 11400000, guid: 60965bfde451d46d184d23158024db97, type: 2}
-  _initialRoute: {fileID: 11400000, guid: 48239b5a0c22a6a4e9279c5f8c65626a, type: 2}
+  _initialRoute: {fileID: 11400000, guid: 5da69c372eddf482ba8207f0565573bd, type: 2}
   _routes:
     ActiveRoute: {fileID: 0}
     ModRoute: {fileID: 0}

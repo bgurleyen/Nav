@@ -33,7 +33,7 @@ public class GameManager : MonoBehaviour
         
         _simulation = UYServiceLocator.Get<Simulation>();
 
-        _initialRoute.Init();
+        _initialRoute.Init(true);
 
         _routes.ActiveRoute = _initialRoute.CloneAndInit();
         
@@ -55,7 +55,7 @@ public class GameManager : MonoBehaviour
         legsScreen.OnExecButtonPress -= LEGS_OnExecButtonPress;
     }
 
-    private void FixedUpdate()
+    private void Update()
     {
         _simulation.Tick(Time.fixedDeltaTime);
     }

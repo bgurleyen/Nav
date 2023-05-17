@@ -35,8 +35,6 @@ namespace Navigation
 
             Session.ActiveRoute.ComputeTrace();
 
-            ComputeMod();
-
             _playerAircraft.Init(170, 21600);
 
             _drawer.Display();
@@ -260,7 +258,7 @@ namespace Navigation
                 ExecuteShortcutOnMod(new ExecuteShortcutOnModeCommand
                 {
                     FromNodeId = Session.ModRoute.Points[1].ID,
-                    ToNodeId = Session.ModRoute.Points[Session.PlayerAircraft.RoutePathLocalization.CurrentNodeIndex].ID
+                    ToNodeId = Session.ModRoute.Points[Session.PlayerAircraft.PositionFreeOrClosestOnRouteSegment.CurrentNodeIndex].ID
                 });
             }
         }
