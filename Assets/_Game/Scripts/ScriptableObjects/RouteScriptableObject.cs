@@ -13,14 +13,12 @@ namespace Navigation
         public int FirstSpeedRegulationNodeId { get; set; }
         public int FirstAltRegulationNodeId { get; set; }
 
-        public void Init(bool regeneratePositionsAndIds)
+        public void Init(bool regenerateIds)
         {
-            
             TracedRoute = new TracedRoute();
 
-            if (regeneratePositionsAndIds)
+            if (regenerateIds)
             {
-                ComputeCartesianPositions();
             
                 for (var i = 0; i < Points.Length; i++)
                 {
@@ -29,7 +27,7 @@ namespace Navigation
             }
         }
 
-        private void ComputeCartesianPositions()
+        public void ComputeCartesianPositions()
         {
             var currentPosition = Vector2.zero;
             for (var i = 0; i < Points.Length; i++)

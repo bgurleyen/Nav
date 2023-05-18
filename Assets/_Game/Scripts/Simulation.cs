@@ -111,7 +111,7 @@ namespace Navigation
                 }
             }
 
-            Session.ModeSetWithPosition = Session.ModRoute.CloneAndInit(); // refactor
+            Session.ModeSetWithPosition = Session.ModRoute.CloneAndInit(); // refactor use the existing modwithposition to avoid reinstantiating
 
             Session.ModeSetWithPosition.AddDisplayPositionNode();
 
@@ -203,11 +203,12 @@ namespace Navigation
 
         public void ExecuteInsertRelativeOnDirectionOnMod(ExecuteRelativeOnDirectionOnMod command)
         {
+            Debug.Log("=execute relative insert on direction=");
             CheckModForOperation();
             cachedCommands.Add(command);
 
             Session.ModRoute.AddRelativeNodeOnDirection(command.FromNodeId, command.Distance, command.RelativeNodeId,
-                out var _, out var _);
+                out _, out _);
             DataHandler.BuildSetDetails(Session.ModRoute);
             MainScreen.Instance.DisplayOperation("ERASE");
 
@@ -217,6 +218,7 @@ namespace Navigation
 
         public void ExecuteInsertRelativeOnMod(InsertRelativeCommand command)
         {
+            Debug.Log("=execute relative insert simple=");
             CheckModForOperation();
             cachedCommands.Add(command);
 
@@ -230,6 +232,7 @@ namespace Navigation
 
         public void ExecuteLinearApproachOnMod(ExecuteAddLinearApproachCommand command)
         {
+            Debug.Log("=linear approach=");
             CheckModForOperation();
             cachedCommands.Add(command);
 
@@ -239,8 +242,6 @@ namespace Navigation
 
             OnOperationMade?.Invoke();
         }
-
-
 
         private void CheckModForOperation()
         {

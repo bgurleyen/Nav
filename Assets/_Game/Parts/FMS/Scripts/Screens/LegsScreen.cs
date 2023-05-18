@@ -155,17 +155,17 @@ public class LegsScreen : ScreenBase
         GetSelectedPoint.IsSelected = false;
 
         if (!string.IsNullOrEmpty(_scratchPadBuffer) &&
-            _scratchPadInterpreter.IsRelativeNodeOnDirection(out var distanceOnDirection, out var _relativeNodeId))
+            _scratchPadInterpreter.IsRelativeNodeOnDirection(out var distanceOnDirection, out var relativeNodeId))
         {
             _simulation.ExecuteInsertRelativeOnDirectionOnMod(new ExecuteRelativeOnDirectionOnMod
-                {FromNodeId = clickedInfo.LinkedId, Distance = distanceOnDirection, RelativeNodeId = _relativeNodeId});
+                {FromNodeId = clickedInfo.LinkedId, Distance = distanceOnDirection, RelativeNodeId = relativeNodeId});
         }
         else if (!string.IsNullOrEmpty(_scratchPadBuffer) &&
-                 _scratchPadInterpreter.IsRelativeNode(out var angle, out var distance, out _relativeNodeId))
+                 _scratchPadInterpreter.IsRelativeNode(out var angle, out var distance, out relativeNodeId))
         {
             // if this is a relative insert command
             _simulation.ExecuteInsertRelativeOnMod(new InsertRelativeCommand
-                {BeforeNodeId = clickedInfo.LinkedId, RawDegrees = angle, Distance = distance, RelativeNodeId = _relativeNodeId});
+                {BeforeNodeId = clickedInfo.LinkedId, RawDegrees = angle, Distance = distance, RelativeNodeId = relativeNodeId});
         }
         else
         {

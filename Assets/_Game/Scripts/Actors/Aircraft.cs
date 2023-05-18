@@ -20,10 +20,7 @@ public class Aircraft : MovingActor
     public int CachedExitSegmentOfHeadingRejoinIntersection { get; }
     public Vector2 CachedExitPointFromHeading { get; }
 
-    // position that can be on the generated curved sections of the lines
-    /// <summary>
-    /// (nmPosition, walkedDistanceOnSegment)
-    /// </summary>
+    // position that can be on the straight segment
     public RoutePosition PositionFreeOrClosestOnRouteSegment;
 
     // public PathPositionInfo RoutePathLocalization;
@@ -213,7 +210,7 @@ public class Aircraft : MovingActor
         {
             if (IsOnRoute)
             {
-                return GetWalkedDistanceLeftOnSegment();
+                return PositionVirtualNode.CurrentTracedLine.LinkedPoint.Distance - PositionFreeOrClosestOnRouteSegment.NMWalkedOnCurrentSegment;
             }
 
             var nextViableNodeIndex = PositionVirtualNode.PassedNodeIndex + 1;
@@ -376,12 +373,6 @@ public class Aircraft : MovingActor
     }
 
 
-    // on free flight
-    private void SimulateTickMove()
-    {
-       
-    }
-
     // private void ExecuteLerpMove(PathPositionInfo pathLocalisation ,float stepDistance, float distanceLeftToNextVertex)
     // {
     //     if (distanceLeftToNextVertex > 0)
@@ -442,20 +433,6 @@ public class Aircraft : MovingActor
         }
     }
 
-   
-
-    private void AdvanceFreeFlight()
-    {
-    }
-
-    private float GetWalkedDistanceLeftOnSegment()
-    {
-        return PositionVirtualNode.CurrentTracedLine.LinkedPoint.Distance - PositionFreeOrClosestOnRouteSegment.NMWalkedOnCurrentSegment;
-    }
-
-    private static Vector2 _displayCenterOfTurn;
-    private static Vector2 _displayExitPoint;
-
     private void OnDrawGizmos()
     {
         if (!Application.isPlaying)
@@ -468,10 +445,7 @@ public class Aircraft : MovingActor
             Gizmos.DrawWireSphere(transform.position + _pathJoinFoundVertex.ToDisplay(), 0.12f);
         }
 
-        Gizmos.color = Color.white;
-        Gizmos.DrawSphere(transform.position + _displayCenterOfTurn.ToDisplay(), 0.05f);
         Gizmos.color = Color.green;
-        Gizmos.DrawSphere(transform.position + _displayExitPoint.ToDisplay(), 0.05f);
         
         Gizmos.DrawWireSphere(transform.position + PositionFreeOrClosestOnRouteSegment.NMPositionOnSegment.ToDisplay(), 0.05f);
     }
