@@ -35,7 +35,7 @@ namespace Navigation
 
             Session.ActiveRoute.ComputeTrace();
 
-            _playerAircraft.Init(170, 21600);
+            _playerAircraft.Init(Session.Settings.AirplaneInitialSpeed, 21600);
 
             _drawer.Display();
             _drawer.ResetMode();

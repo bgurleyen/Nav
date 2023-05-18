@@ -11,14 +11,15 @@ namespace Navigation
         public Vector2[] Vertexes;
         public float TracedNMLength { get; private set; }
 
-        private readonly float _seekDistance;
+        private float _seekDistance;
         
         public readonly Vector2[] SegmentVertices;
         
 
         public TracedLine( float seekDistance, Pilot pilot, Vector2 lastPointPosition, RoutePoint forPoint)
         {
-            _seekDistance = seekDistance;
+           _seekDistance = seekDistance;
+            
             StartNMPosition = lastPointPosition;
             EndNMPosition = forPoint.CartesianPosition;
             LinkedPoint = forPoint;
@@ -49,12 +50,16 @@ namespace Navigation
         private void TraceFromPilot(Pilot pilot)
         {
             var tracePositions = new List<Vector2> { pilot.NMPosition };
-            while (FindFurthestSeekTarget(
+            int seekFromIndex = 0;
+            while (tracePositions.Count < 200 && FindFurthestSeekTargetOnSegment(
                        pilot.NMPosition,
                        out var foundVertex,
-                       out var reachedEnd))
+                       out seekFromIndex,
+                       out var reachedEnd,
+                       seekFromIndex))
             {
-                pilot.TickAdvance( foundVertex);
+                pilot.TickSteerToPathFoundVertex(foundVertex);
+                pilot.TickAdvance();
                 tracePositions.Add(pilot.NMPosition);
 
                 if (reachedEnd)
@@ -64,29 +69,53 @@ namespace Navigation
 
             }
 
+            if (tracePositions.Count == 200)
+            {
+                Debug.LogError("Cannot reach trace destination");
+            }
+
             Vertexes = tracePositions.ToArray();
         }
 
-        private bool FindFurthestSeekTarget(Vector2 forPosition, out Vector2 foundVertex, out bool reachedEnd)
+        /// <summary>
+        /// traces a path with initial curve ( from the last segment trance ) and ends straight.
+        /// </summary>
+        /// <param name="forPosition"></param>
+        /// <param name="foundVertex"></param>
+        /// <param name="foundVertexIndex"></param>
+        /// <param name="reachedEnd"></param>
+        /// <param name="startFromIndex"></param>
+        /// <returns></returns>
+        private bool FindFurthestSeekTargetOnSegment(Vector2 forPosition, out Vector2 foundVertex, out int foundVertexIndex, out bool reachedEnd, int startFromIndex = 0)
         {
             foundVertex = Vector2.zero;
+            foundVertexIndex = -1;
             reachedEnd = false;
-            var foundSqrDistance = -1f;
-        
-            var maxSqrDistance = _seekDistance *_seekDistance;
             
-            for (var i = 0; i < SegmentVertices.Length; i++)
+            var maxSqrDistance = _seekDistance *_seekDistance;
+        
+            for (var i = startFromIndex; i < SegmentVertices.Length; i++)
             {
                 var vertex = SegmentVertices[i];
                 var sqrDistance = (vertex - forPosition).sqrMagnitude;
 
                 if (sqrDistance > maxSqrDistance)
                 {
+
+                    // if pilot is already very far from the beginning, consider it a valid target until it gets closed
+                    if (i == startFromIndex)
+                    {
+                        foundVertex = vertex;
+                        foundVertexIndex = i;
+
+                        return true;
+                    }
+                    
                     continue;
                 }
 
                 foundVertex = vertex;
-                foundSqrDistance = sqrDistance;
+                foundVertexIndex = i;
 
                 if (i == SegmentVertices.Length - 1)
                 {
@@ -94,41 +123,43 @@ namespace Navigation
                 }
             }
 
-            return !(foundSqrDistance <= 0);
+            return foundVertexIndex > 0;
         }
     }
 
     public class Pilot
     {
-        public Vector2 NMPosition => _nmPosition;
+        private Vector2 Direction => Geometry.GetDirectionFromHeading(HeadingDegrees);
         
-        private Vector2 Direction => Geometry.GetDirectionFromHeading(_headingDegrees);
-        private Vector2 _nmPosition;
+        public Vector2 NMPosition;
+        public float HeadingDegrees;
 
         private float _currentTurningDegrees;
-        private float _headingDegrees;
+        private bool _isTracer;
 
-        public Pilot(Vector2 nmPosition, Vector2 initialOrientationTarget)
+        public Pilot(Vector2 nmPosition, Vector2 initialOrientationTarget, bool isTracer)
         {
-            _nmPosition = nmPosition;
+            _isTracer = isTracer;
+            NMPosition = nmPosition;
 
             _currentTurningDegrees = Geometry.GetHeadingOfDirection(initialOrientationTarget - nmPosition);
         }
         
-        public void TickAdvance( Vector2 toTarget)
+        public void TickAdvance()
         {
-             TickSteerToPathFoundVertex( toTarget);
-             _nmPosition += Direction * Session.Settings.DrawerUnitLength;
+            NMPosition += Direction * (_isTracer
+                ? Session.Settings.StepDistanceTracer
+                : Session.Settings.StepDistanceDeltaTime);
         }
 
-        private void TickSteerToPathFoundVertex( Vector2 seekTarget)
+        public void TickSteerToPathFoundVertex( Vector2 seekTarget)
         {
-            var difDegrees = Geometry.AngleBetween(seekTarget - _nmPosition, Direction);
+            var difDegrees = Geometry.AngleBetween(seekTarget - NMPosition, Direction);
 
             var lerpDirection = difDegrees < 0 ? -1 : 1;
             _currentTurningDegrees += lerpDirection ;
 
-            _headingDegrees += lerpDirection * Mathf.Min(20, Mathf.Abs(difDegrees));
+            HeadingDegrees += lerpDirection * Mathf.Min(Session.Settings.PilotMaxDegreesPathFollow, Mathf.Abs(difDegrees)) ;
         }
     }
 }

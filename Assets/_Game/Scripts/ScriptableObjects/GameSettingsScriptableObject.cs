@@ -1,3 +1,4 @@
+using Navigation;
 using UnityEngine;
 
 [CreateAssetMenu]
@@ -10,16 +11,22 @@ public class GameSettingsScriptableObject : ScriptableObject
     [Header("Aircraft navigation")]
     public float MaxTurningSpeedPerNM = 1f;
 
-    [Space]
-    [SerializeField]
-    private float deltaTime = 0.0057f;
-    // const float DeltaTime = 0.0000003f;
-    public float DeltaTime => deltaTime /1000f;
+    public float AirplaneInitialSpeed = 170;
 
-    [Header("Route distances(NM)")]
-    public float ForwardThreshold = 2f; // @$# this has to be in sync with the minimum turn radius 
-    public float RejoinDistance = 2.8f;
-    public float HGDAutoNextPointDistance = 1.3f;
+    
+    public float StepDistanceDeltaTime => 
+        Session.PlayerAircraft.AircraftSpeed *
+        //Calculator.Acceleration() * 
+        Session.Settings.DeltaTime;
+    
+    public float StepDistanceTracer =>
+        Session.PlayerAircraft.AircraftSpeed *
+        //Calculator.Acceleration() * 
+        Session.Settings.TracerTickDuration;
+    
+    [Space, Range(0, 0.0002f)]
+    public float DeltaTime = 0.002f;
+
     
     
     [Header("Map")]
@@ -28,6 +35,17 @@ public class GameSettingsScriptableObject : ScriptableObject
     
     
     [Header("Route Lines generation")]
+    
+    [Range(0.0015f, 0.005f)]
+    public float TracerTickDuration = 0.002f;
+    public float ForwardThreshold = 2f; // @$# this has to be in sync with the minimum turn radius 
+    public float RejoinDistance = 2.8f;
+    public float PilotSeekDistancePathFollow = 1.2f;
+    public float PilotMaxDegreesPathFollow = 20;
+    
+    public float HGDAutoNextPointDistance = 1.3f;
+    
+    [Space]
     public float DrawerUnitLength = 0.6f;
     public float MaxTurningSpeedPerUnitLength => MaxTurningSpeedPerNM * DrawerUnitLength;
     public float SegmentGranularity = 0.1f;

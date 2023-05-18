@@ -15,6 +15,7 @@ public class GameManager : MonoBehaviour
     private void Awake()
     {
         UYServiceLocator.Register(this);
+        Session.Settings = _gameConfig.Settings;
     }
 
     private void Start()
@@ -29,7 +30,6 @@ public class GameManager : MonoBehaviour
         legsScreen.OnLeftCornerPressErase += LEGS_OnLeftCornerPressErase;
         legsScreen.OnExecButtonPress += LEGS_OnExecButtonPress;
 
-        Session.Settings = _gameConfig.Settings;
         
         _simulation = UYServiceLocator.Get<Simulation>();
 
@@ -111,7 +111,16 @@ public class GameManager : MonoBehaviour
         Session.ModeSetWithPosition.ClearModifiedFlags();
 
         // if it's free flight, aircraft will switch to the temp path computed until rejoining active path
-        Session.ActiveRoute = Session.PlayerAircraft.IsFreeFlight ? Session.ModRoute : Session.ModeSetWithPosition;
+        if (Session.PlayerAircraft.IsFreeFlight)
+        {
+            Session.ActiveRoute = Session.ModRoute;
+        }
+        else
+        {
+            Session.ActiveRoute = Session.ModeSetWithPosition;
+            Session.PlayerAircraft.ResetSeekProgress(1,0);
+        }
+
 
         if (!Session.PlayerAircraft.IsOnRoute)
         {

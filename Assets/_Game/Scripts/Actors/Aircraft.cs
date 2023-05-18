@@ -7,11 +7,11 @@ using UnityEngine;
 public class Aircraft : MovingActor
 {
     [SerializeField, ReadOnly] private float _currentTurningDegrees;
-
+    private Pilot _pilot;
+    
     /// <summary>
     /// If used for geometry should be used with '-' . see other places
     /// </summary>
-    public float HeadingDegrees { get; private set; }
 
     public float TargetHeading { get; private set; }
     public bool IsRejoining => !IsFreeFlight && !IsOnRoute;
@@ -22,7 +22,11 @@ public class Aircraft : MovingActor
 
     // position that can be on the straight segment
     public RoutePosition PositionFreeOrClosestOnRouteSegment;
+    [ReadOnly]
+    public float AircraftSpeed;
 
+    public override Vector2 NMPosition => _pilot.NMPosition;
+    
     // public PathPositionInfo RoutePathLocalization;
     // public PathPositionInfo RejoinPathLocalization;
 
@@ -30,18 +34,21 @@ public class Aircraft : MovingActor
     public bool IsOnRoute = true;
     public bool IsJoining => !IsFreeFlight && !IsOnRoute;
 
-    public override Vector2 Direction => Geometry.GetDirectionFromHeading(HeadingDegrees);
-    private float FrameDistance => _speed * Session.Settings.DeltaTime * Calculator.Acceleration(); //change
 
     private Vector3 _upwardsHeaderLineTop = new(0, 1.2f, 0);
     private LineRenderer _turningHeaderLine;
-    private Vector2 _pathJoinFoundVertex;
-    private float _speed;
+    private Vector2 _segmentPathJoinFoundVertex;
 
+    int lastFoundVertexIndex = 0;
+    int lastFoundLineIndex = 1;
+    
     protected override void Awake()
     {
         base.Awake();
 
+        _pilot = new Pilot(Vector2.zero, Vector2.up, false);
+        AircraftSpeed = Session.Settings.AirplaneInitialSpeed;
+        
         _turningHeaderLine = GetComponent<LineRenderer>();
         _upwardsHeaderLineTop = Vector3.up * _turningHeaderLine.GetPosition(1).magnitude;
     }
@@ -56,7 +63,7 @@ public class Aircraft : MovingActor
 
             SimulateTickHeadingCorrection();
             
-            NMPosition += Direction * FrameDistance;
+            _pilot.TickAdvance();
 
             PositionFreeOrClosestOnRouteSegment.NMPositionOnSegment = NMPosition;
             
@@ -66,12 +73,16 @@ public class Aircraft : MovingActor
         }
         else
         {
-            var foundClosePathDestination = Session.ActiveRoute.TracedRoute.FindCloseToRouteDestination(
-                Session.Settings.RejoinDistance * 0.3f,
-                out _pathJoinFoundVertex,
-                out var exitLineIndex, 
+            var foundClosePathDestination = Session.ActiveRoute.TracedRoute.FindCloseToRouteSegmentDestination(
+                Session.Settings.PilotSeekDistancePathFollow,
+                out _segmentPathJoinFoundVertex,
+                out lastFoundVertexIndex,
+                out lastFoundLineIndex, 
                 out var foundAtDistanceOnTracedLine,
-                out var reachedEnd);
+                out var reachedEnd,
+                startFromSegmentIndex: lastFoundLineIndex,
+                startFromVertexIndex: lastFoundVertexIndex,
+                breakAfterMaxDistance: true);
 
             if (IsOnRoute)
             {
@@ -83,16 +94,15 @@ public class Aircraft : MovingActor
                     return;
                 }
 
-                SteerToPathFoundVertex(deltaTime);
-                
-                NMPosition += Direction * FrameDistance;
+                _pilot.TickSteerToPathFoundVertex(_segmentPathJoinFoundVertex);
+                _pilot.TickAdvance();
                 
                 Session.ActiveRoute.TracedRoute.FindClosestRoutePoint(
-                    exitLineIndex,
+                    lastFoundLineIndex,
                     Session.PlayerAircraft.NMPosition,
                     out PositionFreeOrClosestOnRouteSegment);
 
-                PositionFreeOrClosestOnRouteSegment.CurrentNodeIndex = exitLineIndex;
+                PositionFreeOrClosestOnRouteSegment.CurrentNodeIndex = lastFoundLineIndex;
 
             }
             else
@@ -121,10 +131,12 @@ public class Aircraft : MovingActor
                 {
                     if (!RejoinPathLines.FindCloseToRouteDestination(
                             Session.Settings.RejoinDistance,
-                            out _pathJoinFoundVertex, 
-                            out var foundLineIndex, 
+                            out _segmentPathJoinFoundVertex, 
+                            out lastFoundVertexIndex,
+                            out lastFoundLineIndex, 
                             out _,
-                            out _))
+                            out _,
+                            breakAfterMaxDistance: true))
                     {
                         Debug.LogError("No Intersection Point Found");
                         IsFreeFlight = true;
@@ -132,11 +144,12 @@ public class Aircraft : MovingActor
                     }
                 }
 
-                SteerToPathFoundVertex(deltaTime);
+                _pilot.TickSteerToPathFoundVertex(_segmentPathJoinFoundVertex);
             }
         }
-
     }
+    
+    
 
     public void Init(float aircraftSpeed, float altitude)
     {
@@ -177,22 +190,7 @@ public class Aircraft : MovingActor
 
     //  }
 
-    private void SteerToPathFoundVertex(float deltaTime)
-    {
-        var difDegrees = Geometry.AngleBetween(_pathJoinFoundVertex - NMPosition, Direction);
-
-        var lerpDirection = difDegrees < 0 ? -1 : 1;
-        _currentTurningDegrees += lerpDirection;
-
-        HeadingDegrees += lerpDirection * Mathf.Min(20, Mathf.Abs(difDegrees)) * deltaTime * 1.5f;
-
-        // var difDegrees = Geometry.AngleBetween(_pathJoinFoundVertex - NMPosition, Direction);
-        //
-        // var lerpDirection = _currentTurningDegrees * 0.6f < difDegrees ? 1 : -1;
-        // _currentTurningDegrees += lerpDirection * 0.2f;
-        //
-        // HeadingDegrees += _currentTurningDegrees * deltaTime * 0.3f;
-    }
+   
 
     private void DrawHeadingLine()
     {
@@ -224,16 +222,25 @@ public class Aircraft : MovingActor
         }
     }
 
+    public float HeadingDegrees => _pilot.HeadingDegrees;
+
 
     public void ResetOnActiveSet(float aircraftSpeed, float altitude)
     {
-        _speed = aircraftSpeed;
-        NMPosition = Vector2.zero;
+        AircraftSpeed = aircraftSpeed;
+        _pilot.NMPosition = Vector2.zero;
         PositionFreeOrClosestOnRouteSegment.Reset();
 
-        HeadingDegrees = Session.ActiveRoute.Points[1].Degrees;
+        ResetSeekProgress(1, 0);
+
+        _pilot.HeadingDegrees = Session.ActiveRoute.Points[1].Degrees;
     }
 
+    public void ResetSeekProgress(int atLine, int atVertex)
+    {
+        lastFoundVertexIndex = atVertex;
+        lastFoundLineIndex = atLine;
+    }
 
     public void StartHeadingMode()
     {
@@ -398,9 +405,9 @@ public class Aircraft : MovingActor
     // @£$
     private void SimulateTickHeadingCorrection()
     {
-        if (Math.Abs(TargetHeading - HeadingDegrees) > 0.01f)
+        if (Math.Abs(TargetHeading - _pilot.HeadingDegrees) > 0.01f)
         {
-            HeadingDegrees = Mathf.MoveTowardsAngle(HeadingDegrees, TargetHeading,
+            _pilot.HeadingDegrees = Mathf.MoveTowardsAngle(_pilot.HeadingDegrees, TargetHeading,
                 Session.Settings.MaxTurningSpeedPerUnitLength);
         }
     }
@@ -433,7 +440,7 @@ public class Aircraft : MovingActor
         }
     }
 
-    private void OnDrawGizmos()
+    private void OnDrawGizmosSelected()
     {
         if (!Application.isPlaying)
         {
@@ -442,7 +449,7 @@ public class Aircraft : MovingActor
 
         if (!IsFreeFlight)
         {
-            Gizmos.DrawWireSphere(transform.position + _pathJoinFoundVertex.ToDisplay(), 0.12f);
+            Gizmos.DrawWireSphere(transform.position + _segmentPathJoinFoundVertex.ToDisplay(), 0.12f);
         }
 
         Gizmos.color = Color.green;

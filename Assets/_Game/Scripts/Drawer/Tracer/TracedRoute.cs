@@ -26,12 +26,13 @@ public class TracedRoute
 
         var pilot = new Pilot(
             nmPosition: pointsArray[0].CartesianPosition,
-            initialOrientationTarget: pointsArray[1].CartesianPosition );
+            initialOrientationTarget: pointsArray[1].CartesianPosition,
+            true);
 
         for (int i = 1; i < pointsArray.Length; i++)
         {
             var line = new TracedLine(
-                1f,
+                Session.Settings.PilotSeekDistancePathFollow,
                 pilot,
                 pointsArray[i - 1].CartesianPosition,
                 pointsArray[i]);
@@ -101,29 +102,104 @@ public class TracedRoute
             }
         }
     }
+public bool FindCloseToRouteSegmentDestination(
+        float maxDistance, 
+        out Vector2 foundSegmentVertex, 
+        out int foundSegmentVertexIndex, 
+        out int foundSegmentIndex,
+        out float foundAtDistanceOnTracedLine,
+        out bool reachedEnd,
+        int startFromSegmentIndex = 1,
+        int startFromVertexIndex = 0,
+        bool breakAfterMaxDistance = false)
+    {
+        foundSegmentVertexIndex = -1;
+        foundAtDistanceOnTracedLine = -1;
+        foundSegmentIndex = -1;
+        foundSegmentVertex = Vector2.zero;
+        reachedEnd = false;
+
+        var maxSqrDistance = maxDistance * maxDistance;
+        bool breakPending = false;
+
+        // 0 = start line, empty
+        for (int i = startFromSegmentIndex; i < ComputedLines.Length; i++)
+        {
+            var computedLine = ComputedLines[i];
+
+            for (int j = startFromVertexIndex; j < computedLine.SegmentVertices.Length; j++)
+            {
+                var vertex = computedLine.SegmentVertices[j];
+
+                var sqrDistance = (vertex - Session.PlayerAircraft.NMPosition).sqrMagnitude;
+                // if is further that max distance
+                if (sqrDistance > maxSqrDistance)
+                {
+                    // if pilot is already very far from the beginning, consider it a valid target until it gets closed
+                    if (i == startFromVertexIndex)
+                    {
+                        foundSegmentVertex = vertex;
+                        foundSegmentVertexIndex = i;
+
+                        return true;
+                    }
+
+                    if (foundSegmentVertexIndex > -1 && breakAfterMaxDistance)
+                    {
+                        breakPending = true;
+                        break;
+                    }
+                    continue;
+                }
+
+                // if is within maxDistance limits, but more forward
+                foundSegmentVertex = vertex;
+                foundSegmentIndex = i;
+                foundSegmentVertexIndex = j;
+
+                if (i == ComputedLines.Length - 1 && j == computedLine.SegmentVertices.Length - 1)
+                {
+                    reachedEnd = true;
+                }
+            }
+
+            if (breakPending)
+            {
+                break;
+            }
+        }
+        
+        foundAtDistanceOnTracedLine = Mathf.Max(0, foundSegmentVertexIndex -1) * Session.Settings.DrawerUnitLength;
+
+        return foundSegmentVertexIndex > 0;
+    }
 
     public bool FindCloseToRouteDestination(
         float maxDistance, 
         out Vector2 foundVertex, 
+        out int foundVertexIndex, 
         out int foundLineIndex,
         out float foundAtDistanceOnTracedLine,
-        out bool reachedEnd)
+        out bool reachedEnd,
+        int startFromLine = 1,
+        int startFromVertex = 0,
+        bool breakAfterMaxDistance = false)
     {
-        int foundVertexIndex = -1;
+        foundVertexIndex = -1;
         foundAtDistanceOnTracedLine = -1;
         foundLineIndex = -1;
         foundVertex = Vector2.zero;
         reachedEnd = false;
-        float foundDistance = -1;
 
         var maxSqrDistance = maxDistance * maxDistance;
+        bool breakPending = false;
 
         // 0 = start line, empty
-        for (int i = 1; i < ComputedLines.Length; i++)
+        for (int i = startFromLine; i < ComputedLines.Length; i++)
         {
             var computedLine = ComputedLines[i];
 
-            for (int j = 0; j < computedLine.Vertexes.Length; j++)
+            for (int j = startFromVertex; j < computedLine.Vertexes.Length; j++)
             {
                 var vertex = computedLine.Vertexes[j];
 
@@ -131,6 +207,11 @@ public class TracedRoute
                 // if is further that max distance
                 if (sqrDistance > maxSqrDistance)
                 {
+                    if (foundVertexIndex > -1 && breakAfterMaxDistance)
+                    {
+                        breakPending = true;
+                        break;
+                    }
                     continue;
                 }
 
@@ -138,22 +219,22 @@ public class TracedRoute
                 foundVertex = vertex;
                 foundLineIndex = i;
                 foundVertexIndex = j;
-                foundDistance = sqrDistance;
 
                 if (i == ComputedLines.Length - 1 && j == computedLine.Vertexes.Length - 1)
                 {
                     reachedEnd = true;
                 }
             }
-        }
 
-        if (foundDistance <= 0)
-        {
-            return false;
+            if (breakPending)
+            {
+                break;
+            }
         }
-
+        
         foundAtDistanceOnTracedLine = Mathf.Max(0, foundVertexIndex -1) * Session.Settings.DrawerUnitLength;
-        return true;
+
+        return foundVertexIndex > 0;
     }
 
 }

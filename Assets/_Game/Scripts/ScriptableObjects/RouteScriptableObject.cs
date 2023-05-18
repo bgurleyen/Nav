@@ -617,5 +617,9 @@ namespace Navigation
             
             ComputeCartesianPositions();
         }
+        
+        
+        
+    
     }
 }

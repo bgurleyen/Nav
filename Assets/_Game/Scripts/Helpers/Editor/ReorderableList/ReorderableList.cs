@@ -320,7 +320,6 @@ namespace Helpers.ReorderableList
 
         public void DoLayoutList()
         {
-
             Rect position = EditorGUILayout.GetControlRect(false, GetHeight(), EditorStyles.largeLabel);
 
             DoList(EditorGUI.IndentedRect(position), label);

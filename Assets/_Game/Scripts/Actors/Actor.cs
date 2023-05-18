@@ -5,7 +5,7 @@ namespace Navigation
 {
     public class Actor : MonoBehaviour
     {
-        public Vector2 NMPosition;
+        public virtual Vector2 NMPosition => Vector2.zero;
         public float Height;
 
         private Transform _tr;
