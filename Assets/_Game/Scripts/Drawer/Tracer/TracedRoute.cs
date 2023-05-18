@@ -102,141 +102,66 @@ public class TracedRoute
             }
         }
     }
-public bool FindCloseToRouteSegmentDestination(
-        float maxDistance, 
-        out Vector2 foundSegmentVertex, 
-        out int foundSegmentVertexIndex, 
-        out int foundSegmentIndex,
-        out float foundAtDistanceOnTracedLine,
-        out bool reachedEnd,
+
+    public bool FindCloseToRouteSegmentDestination(
+        out Vector2 lastFoundSegmentVertex,
+        out int lastFoundSegmentVertexIndex,
+        out int lastFoundSegmentIndex,
+        out float foundAtDistanceOnSegment,
+        out bool reachedRouteEnd,
         int startFromSegmentIndex = 1,
         int startFromVertexIndex = 0,
-        bool breakAfterMaxDistance = false)
+        bool breakOnFistSolution = false)
     {
-        foundSegmentVertexIndex = -1;
-        foundAtDistanceOnTracedLine = -1;
-        foundSegmentIndex = -1;
-        foundSegmentVertex = Vector2.zero;
-        reachedEnd = false;
+        lastFoundSegmentVertexIndex = -1;
+        foundAtDistanceOnSegment = -1;
+        lastFoundSegmentIndex = -1;
+        lastFoundSegmentVertex = Vector2.zero;
+        var reachedSegmentEnd = false;
+        reachedRouteEnd = false;
 
-        var maxSqrDistance = maxDistance * maxDistance;
-        bool breakPending = false;
 
         // 0 = start line, empty
         for (int i = startFromSegmentIndex; i < ComputedLines.Length; i++)
         {
             var computedLine = ComputedLines[i];
 
-            for (int j = startFromVertexIndex; j < computedLine.SegmentVertices.Length; j++)
+            if (!computedLine.FindFurthestSeekTargetOnSegment(
+                    Session.PlayerAircraft.NMPosition,
+                    out lastFoundSegmentVertex,
+                    out lastFoundSegmentVertexIndex,
+                    out reachedSegmentEnd,
+                    startFromVertexIndex,
+                    breakOnFistSolution))
             {
-                var vertex = computedLine.SegmentVertices[j];
+                Debug.LogError("not found destination on segment");
+                continue;
+            }
 
-                var sqrDistance = (vertex - Session.PlayerAircraft.NMPosition).sqrMagnitude;
-                // if is further that max distance
-                if (sqrDistance > maxSqrDistance)
+            
+            // another solution was found 
+            if (!reachedSegmentEnd)
+            {
+                lastFoundSegmentIndex = i;
+
+                if (breakOnFistSolution)
                 {
-                    // if pilot is already very far from the beginning, consider it a valid target until it gets closed
-                    if (i == startFromVertexIndex)
-                    {
-                        foundSegmentVertex = vertex;
-                        foundSegmentVertexIndex = i;
-
-                        return true;
-                    }
-
-                    if (foundSegmentVertexIndex > -1 && breakAfterMaxDistance)
-                    {
-                        breakPending = true;
-                        break;
-                    }
-                    continue;
-                }
-
-                // if is within maxDistance limits, but more forward
-                foundSegmentVertex = vertex;
-                foundSegmentIndex = i;
-                foundSegmentVertexIndex = j;
-
-                if (i == ComputedLines.Length - 1 && j == computedLine.SegmentVertices.Length - 1)
-                {
-                    reachedEnd = true;
+                    break;
                 }
             }
 
-            if (breakPending)
-            {
-                break;
-            }
+            startFromVertexIndex = 0;
         }
-        
-        foundAtDistanceOnTracedLine = Mathf.Max(0, foundSegmentVertexIndex -1) * Session.Settings.DrawerUnitLength;
 
-        return foundSegmentVertexIndex > 0;
-    }
-
-    public bool FindCloseToRouteDestination(
-        float maxDistance, 
-        out Vector2 foundVertex, 
-        out int foundVertexIndex, 
-        out int foundLineIndex,
-        out float foundAtDistanceOnTracedLine,
-        out bool reachedEnd,
-        int startFromLine = 1,
-        int startFromVertex = 0,
-        bool breakAfterMaxDistance = false)
-    {
-        foundVertexIndex = -1;
-        foundAtDistanceOnTracedLine = -1;
-        foundLineIndex = -1;
-        foundVertex = Vector2.zero;
-        reachedEnd = false;
-
-        var maxSqrDistance = maxDistance * maxDistance;
-        bool breakPending = false;
-
-        // 0 = start line, empty
-        for (int i = startFromLine; i < ComputedLines.Length; i++)
+        if (lastFoundSegmentIndex == ComputedLines.Length - 1 && reachedSegmentEnd)
         {
-            var computedLine = ComputedLines[i];
-
-            for (int j = startFromVertex; j < computedLine.Vertexes.Length; j++)
-            {
-                var vertex = computedLine.Vertexes[j];
-
-                var sqrDistance = (vertex - Session.PlayerAircraft.NMPosition).sqrMagnitude;
-                // if is further that max distance
-                if (sqrDistance > maxSqrDistance)
-                {
-                    if (foundVertexIndex > -1 && breakAfterMaxDistance)
-                    {
-                        breakPending = true;
-                        break;
-                    }
-                    continue;
-                }
-
-                // if is within maxDistance limits, but more forward
-                foundVertex = vertex;
-                foundLineIndex = i;
-                foundVertexIndex = j;
-
-                if (i == ComputedLines.Length - 1 && j == computedLine.Vertexes.Length - 1)
-                {
-                    reachedEnd = true;
-                }
-            }
-
-            if (breakPending)
-            {
-                break;
-            }
+            reachedRouteEnd = true;
         }
-        
-        foundAtDistanceOnTracedLine = Mathf.Max(0, foundVertexIndex -1) * Session.Settings.DrawerUnitLength;
+ 
+        foundAtDistanceOnSegment = Mathf.Max(0, lastFoundSegmentVertexIndex - 1) * Session.Settings.SegmentGranularity;
+        return lastFoundSegmentIndex > -1;
 
-        return foundVertexIndex > 0;
     }
-
 }
 
 [Serializable]

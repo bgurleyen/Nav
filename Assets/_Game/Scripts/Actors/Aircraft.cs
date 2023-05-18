@@ -74,15 +74,14 @@ public class Aircraft : MovingActor
         else
         {
             var foundClosePathDestination = Session.ActiveRoute.TracedRoute.FindCloseToRouteSegmentDestination(
-                Session.Settings.PilotSeekDistancePathFollow,
                 out _segmentPathJoinFoundVertex,
                 out lastFoundVertexIndex,
                 out lastFoundLineIndex, 
-                out var foundAtDistanceOnTracedLine,
+                out var foundAtDistanceOnSegmentLine,
                 out var reachedEnd,
                 startFromSegmentIndex: lastFoundLineIndex,
                 startFromVertexIndex: lastFoundVertexIndex,
-                breakAfterMaxDistance: true);
+                breakOnFistSolution: true);
 
             if (IsOnRoute)
             {
@@ -129,14 +128,15 @@ public class Aircraft : MovingActor
                 }
                 else
                 {
-                    if (!RejoinPathLines.FindCloseToRouteDestination(
-                            Session.Settings.RejoinDistance,
-                            out _segmentPathJoinFoundVertex, 
+                    if (!RejoinPathLines.FindCloseToRouteSegmentDestination(
+                            out _segmentPathJoinFoundVertex,
                             out lastFoundVertexIndex,
-                            out lastFoundLineIndex, 
-                            out _,
-                            out _,
-                            breakAfterMaxDistance: true))
+                            out lastFoundLineIndex,
+                            out  foundAtDistanceOnSegmentLine,
+                            out  reachedEnd,
+                            startFromSegmentIndex: lastFoundLineIndex,
+                            startFromVertexIndex: lastFoundVertexIndex,
+                            breakOnFistSolution: true))
                     {
                         Debug.LogError("No Intersection Point Found");
                         IsFreeFlight = true;
