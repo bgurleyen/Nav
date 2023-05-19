@@ -20,6 +20,7 @@ public class Aircraft : MovingActor
 
     // position that can be on the straight segment
     public RoutePosition PositionFreeOrClosestOnRouteSegment;
+    public RoutePosition PositionOnRejoinPath;
     [ReadOnly]
     public float AircraftSpeed;
 
@@ -57,7 +58,7 @@ public class Aircraft : MovingActor
     
         if (IsFreeFlight)
         {
-            IndicateTargetHeading(Calculator.RHeading);
+            TargetHeading = Calculator.RHeading;
 
             _pilot.TickSteerToTargetHeading(TargetHeading);
             
@@ -72,6 +73,7 @@ public class Aircraft : MovingActor
         else
         {
             var foundClosePathDestination = Session.ActiveRoute.TracedRoute.FindCloseToRouteSegmentDestination(
+                Session.Settings.PilotSeekDistancePathFollow,
                 out _lastFoundSegmentVertex,
                 out _lastFoundSegmentVertexIndex,
                 out _lastFoundSegmentIndex, 
@@ -128,6 +130,7 @@ public class Aircraft : MovingActor
                 else
                 {
                     if (!RejoinPathLines.FindCloseToRouteSegmentDestination(
+                            Session.Settings.PilotSeekDistancePathFollow,
                             out _lastFoundSegmentVertex,
                             out _lastFoundSegmentVertexIndex,
                             out _lastFoundSegmentIndex,
@@ -243,20 +246,22 @@ public class Aircraft : MovingActor
             case RejoinRouteMode.NextRouteNode:
                 ComputeTempPathForNextNode();
                 break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(mode), mode, null);
         }
     }
 
     private void ChooseAutoRejoinMethod()
     {
-        // @£$
-        // if (Session.ActiveRoute.FindFreeFlightCloseToPathExitScenario(_settings.RejoinDistance,
-        //         out var futurePosition, out var tipOfTurn,
-        //         out _cachedExitPointFromHeading, out _cachedExitSegmentOfHeadingRejoinIntersection))
+        // if (Session.ActiveRoute.TracedRoute.FindCloseToRouteSegmentDestination(
+        //         Session.Settings.RejoinDistance,
+        //         out var lastFoundSegmentVertex,
+        //         out var lastFoundSegmentVertexIndex,
+        //         out var lastFoundSegmentIndex,
+        //         out var foundAtDistanceOnSegment,
+        //         out var reachedRouteEnd))
         // {
         //     ComputeTempPathForCloseToPath(futurePosition, tipOfTurn);
         // }
+        //
         // else if (GameManager.Instance.ActiveRoute.FindFreeFlightDirectExitScenario(out tipOfTurn,
         //              out _cachedExitPointFromHeading,
         //              out _cachedExitSegmentOfHeadingRejoinIntersection))
@@ -305,31 +310,29 @@ public class Aircraft : MovingActor
         //     IsFreeFlight = false;
     }
 
-    private void ComputeTempPathForCloseToPath(Vector2 futurePosition, Vector2 tipOfTurn)
+    private void ComputeTempPathForCloseToPath(Vector2 futurePosition, Vector2 intersectionPoint)
     {
         Debug.Log("start LNAV - rejoin close path");
-        // @£$
-        // RejoinPathLines = new PathLines(Session.Settings.DrawerUnitLength);
-        //
-        // var tempPoints = new RoutePoint[5];
-        // var lastPoint = RoutePoint.ConstructFromPosition(Vector2.zero, null);
-        // tempPoints[0] = lastPoint;
-        // lastPoint = RoutePoint.ConstructFromPosition(NMPosition, lastPoint);
-        // tempPoints[1] = lastPoint;
-        // lastPoint = RoutePoint.ConstructFromPosition(futurePosition, lastPoint);
-        // tempPoints[2] = lastPoint;
-        // lastPoint = RoutePoint.ConstructFromPosition(tipOfTurn, lastPoint);
-        // tempPoints[3] = lastPoint;
-        // lastPoint = RoutePoint.ConstructFromPosition(CachedExitPointFromHeading, lastPoint);
-        // tempPoints[4] = lastPoint;
+        RejoinPathLines = new TracedRoute();
+        
+        var tempPoints = new RoutePoint[5];
+        var lastPoint = RoutePoint.ConstructFromPosition(Vector2.zero, null);
+        tempPoints[0] = lastPoint;
+        lastPoint = RoutePoint.ConstructFromPosition(NMPosition, lastPoint);
+        tempPoints[1] = lastPoint;
+        lastPoint = RoutePoint.ConstructFromPosition(futurePosition, lastPoint);
+        tempPoints[2] = lastPoint;
+        lastPoint = RoutePoint.ConstructFromPosition(intersectionPoint, lastPoint);
+        tempPoints[3] = lastPoint;
+        lastPoint = RoutePoint.ConstructFromPosition(CachedExitPointFromHeading, lastPoint);
+        tempPoints[4] = lastPoint;
 
-        // RejoinPathLines.ComputeSet(tempPoints);
+        RejoinPathLines.Compute(tempPoints);
         //
         // GetFirstDestinationFromNode(RejoinPathLines, tempPoints[1], tempPoints,
         //     out RejoinPathLocalization);
-        //
-        // IsFreeFlight = false;
-
+        
+        IsFreeFlight = false;
     }
 
     // when aircraft is in heading and user switches to LNav ( and the case is straight intersection with the path )
@@ -384,7 +387,6 @@ public class Aircraft : MovingActor
 
     private void IndicateTargetHeading(float heading)
     {
-        TargetHeading = heading;
     }
 
 

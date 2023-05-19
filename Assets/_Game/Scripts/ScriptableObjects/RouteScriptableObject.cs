@@ -523,48 +523,45 @@ namespace Navigation
             ActiveDirectApproach = true;
         }
 
-        public void AddDisplayPositionNode()
+        public void AddCloseRejoinIntersectionNode()
         {
             
-            RoutePoint airplanePositionNodeToAdd;
-            
+        }
+
+        public void AddDisplayPositionNode()
+        {
             // ! Position node is added in front of the actual position so that the aircraft can safely turn 
-            RoutePoint frontOfAirplanePositionNodeToAdd;
+
+            var nodeBeforePosition = Session.PlayerAircraft.IsOnRoute
+                ? PositionVirtualNode.GetNodeFrom
+                : Points[0];
+            
+             var airplanePositionNodeToAdd = RoutePoint.ConstructFromPosition(
+                 Session.PlayerAircraft.PositionFreeOrClosestOnRouteSegment.NMPositionOnSegment,
+                 nodeBeforePosition,
+                 GetNewId(true),
+                 "P",
+                 "_Position_0");
+
+             var futurePosition = Geometry.GetNextPosition(
+                 Session.PlayerAircraft.PositionFreeOrClosestOnRouteSegment.NMPositionOnSegment,
+                 Session.Settings.ForwardThreshold,
+                 -Session.PlayerAircraft.HeadingDegrees);
+
+             var frontOfAirplanePositionNodeToAdd = RoutePoint.ConstructFromPosition(
+                 futurePosition,
+                 airplanePositionNodeToAdd,
+                 GetNewId(true) + 1,
+                 "P",
+                 "_Position_");
 
             if (Session.PlayerAircraft.IsOnRoute)
             {
-                var activeNextNode = PositionVirtualNode.GetNodeTo;
-
-                // add position node on path
-                airplanePositionNodeToAdd = new RoutePoint
-                {
-                    Name = "_Position_0",
-                    Distance = Session.PlayerAircraft.PositionFreeOrClosestOnRouteSegment.NMWalkedOnCurrentSegment,
-                    RawDegrees = activeNextNode.RawDegrees,
-                    Details = "P",
-                    ID = GetNewId(true),
-                    CartesianPosition = Session.PlayerAircraft.PositionFreeOrClosestOnRouteSegment.NMPositionOnSegment
-                };
-
-
                 var activeNextNodeIndex = PositionVirtualNode.PassedNodeIndex + 1;
                 var activeNextNodeOnMode = Points[activeNextNodeIndex];
-                
-                // add future position
-                frontOfAirplanePositionNodeToAdd = new RoutePoint
-                {
-                    Name = "_Position_",
-                    Distance = Session.Settings.ForwardThreshold,
-                    RawDegrees = activeNextNode.RawDegrees,
-                    Details = "P",
-                    ID = GetNewId(true) + 1
-                };
 
-                var newFuturePosition = Geometry.GetNextPosition(Session.PlayerAircraft.PositionFreeOrClosestOnRouteSegment.NMPositionOnSegment,
-                    Session.Settings.ForwardThreshold,
-                    activeNextNode.Degrees);
 
-                var differencePosition = activeNextNodeOnMode.CartesianPosition - newFuturePosition;
+                var differencePosition = activeNextNodeOnMode.CartesianPosition - futurePosition;
 
                 var updatedAngle = Geometry.PositiveAngleBetween(differencePosition, Vector2.up);
 
@@ -573,18 +570,6 @@ namespace Navigation
             }
             else
             {
-                airplanePositionNodeToAdd = RoutePoint.ConstructFromPosition(Session.PlayerAircraft.PositionFreeOrClosestOnRouteSegment.NMPositionOnSegment,
-                    Points[0],
-                    GetNewId(), "P", "_Position_0");
-
-
-                var futurePosition = Geometry.GetNextPosition(Session.PlayerAircraft.PositionFreeOrClosestOnRouteSegment.NMPositionOnSegment,
-                    Session.Settings.ForwardThreshold, -Session.PlayerAircraft.HeadingDegrees);
-
-                frontOfAirplanePositionNodeToAdd =
-                    RoutePoint.ConstructFromPosition(futurePosition, airplanePositionNodeToAdd, GetNewId() + 1, "P",
-                        "_Position_");
-
                 var routeNextNode = Points[1];
                 var differencePosition = routeNextNode.CartesianPosition - futurePosition;
                 var updatedAngle = Geometry.PositiveAngleBetween(differencePosition, Vector2.up);
@@ -617,9 +602,5 @@ namespace Navigation
             
             ComputeCartesianPositions();
         }
-        
-        
-        
-    
     }
 }

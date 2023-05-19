@@ -104,6 +104,7 @@ public class TracedRoute
     }
 
     public bool FindCloseToRouteSegmentDestination(
+        float seekDistance,
         out Vector2 lastFoundSegmentVertex,
         out int lastFoundSegmentVertexIndex,
         out int lastFoundSegmentIndex,
@@ -128,6 +129,7 @@ public class TracedRoute
 
             if (!computedLine.FindFurthestSeekTargetOnSegment(
                     Session.PlayerAircraft.NMPosition,
+                    seekDistance,
                     out lastFoundSegmentVertex,
                     out lastFoundSegmentVertexIndex,
                     out reachedSegmentEnd,

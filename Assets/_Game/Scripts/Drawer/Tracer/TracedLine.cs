@@ -11,15 +11,11 @@ namespace Navigation
         public Vector2[] Vertexes;
         public float TracedNMLength { get; private set; }
 
-        private float _seekDistance;
-        
         public readonly Vector2[] SegmentVertices;
         
 
         public TracedLine( float seekDistance, Pilot pilot, Vector2 lastPointPosition, RoutePoint forPoint)
         {
-           _seekDistance = seekDistance;
-            
             StartNMPosition = lastPointPosition;
             EndNMPosition = forPoint.CartesianPosition;
             LinkedPoint = forPoint;
@@ -37,7 +33,7 @@ namespace Navigation
                 straightTracerPosition += lineDirection * Session.Settings.SegmentGranularity;
             }
 
-            TraceFromPilot(pilot);
+            TraceFromPilot(pilot, seekDistance);
 
             TracedNMLength = (Vertexes.Length - 1) * Session.Settings.TickStepDistance(true);
         }
@@ -46,7 +42,7 @@ namespace Navigation
         /// Continues the trace from where the pilot is
         /// </summary>
         /// <param name="pilot"></param>
-        public void TraceFromPilot(Pilot pilot)
+        public void TraceFromPilot(Pilot pilot, float seekDistance)
         {
             var tracePositions = new List<Vector2> { pilot.NMPosition };
             
@@ -54,6 +50,7 @@ namespace Navigation
             
             while (tracePositions.Count < 200 && FindFurthestSeekTargetOnSegment(
                        pilot.NMPosition,
+                       seekDistance,
                        out var foundVertex,
                        out lastFoundVertexIndex,
                        out var reachedEnd,
@@ -83,8 +80,9 @@ namespace Navigation
         /// </summary>
 
         /// <returns></returns>
-        public bool FindFurthestSeekTargetOnSegment(Vector2 forPosition, out Vector2 foundVertex,
+        public bool FindFurthestSeekTargetOnSegment(Vector2 forPosition, float _seekDistance, out Vector2 foundVertex,
             out int foundVertexIndex, out bool reachedEnd, int startFromIndex = 0, bool breakOnFirstSolution = false)
+
         {
             foundVertex = Vector2.zero;
             foundVertexIndex = -1;
