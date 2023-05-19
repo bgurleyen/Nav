@@ -251,9 +251,23 @@ public class Aircraft : MovingActor
 
     private void ChooseAutoRejoinMethod()
     {
-        Session.ActiveRoute.AddCloseRejoinIntersectionNode();
-        
-        // if (Session.ActiveRoute.TracedRoute.FindCloseToRouteSegmentDestination(
+         // insert intersection node
+         if (Session.ActiveRoute.TracedRoute.FindCloseToRouteSegmentDestination(
+                 Session.Settings.RejoinDistance,
+                 out var lastFoundSegmentVertex,
+                 out _,
+                 out var lastFoundSegmentIndex,
+                 out _,
+                 out _,
+                 segmentBeginningIsAlwaysValid: false))
+         {
+             Session.ActiveRoute.AddCloseRejoinIntersectionNode(lastFoundSegmentVertex, lastFoundSegmentIndex);
+             ResetSeekProgress(lastFoundSegmentIndex+1, 0);
+             IsOnRoute = true;
+             IsFreeFlight = false;
+         }
+
+         // if (Session.ActiveRoute.TracedRoute.FindCloseToRouteSegmentDestination(
         //         Session.Settings.RejoinDistance,
         //         out var lastFoundSegmentVertex,
         //         out var lastFoundSegmentVertexIndex,
