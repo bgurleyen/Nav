@@ -15,15 +15,15 @@ MonoBehaviour:
   cMagenta: {r: 1, g: 0.2, b: 0.8, a: 1}
   cLightYellow: {r: 0.92156863, g: 0.8784314, b: 0.7882353, a: 1}
   StartingZoom: 2
-  MaxTurningSpeedPerNM: 1
-  AirplaneInitialSpeed: 170
-  DeltaTime: 0.002
   MapReferenceLength80: 2.82
   PlanReferenceLength80: 3.82
   ForwardThreshold: 1
   RejoinDistance: 2.8
   PilotSeekDistancePathFollow: 1.2
+  MaxTurningDegreesPerNM: 1
   PilotMaxDegreesPathFollow: 20
-  HGDAutoNextPointDistance: 1.3
-  DrawerUnitLength: 0.3
+  AirplaneInitialSpeed: 170
+  FlyingTickDuration: 0.000018
   SegmentGranularity: 0.1
+  TracerTickDuration: 0.00179
+  HGDAutoNextPointDistance: 1.3

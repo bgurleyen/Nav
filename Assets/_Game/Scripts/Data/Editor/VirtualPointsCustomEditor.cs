@@ -1,23 +1,14 @@
-﻿using Helpers.ReorderableList;
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 
 [CustomEditor(typeof(VirtualPointsScriptableObject))]
 public class VirtualPointsCustomEditor : Editor
 {
-    ReorderableList virtualPointItems;
-
-    void OnEnable()
-    {
-        virtualPointItems = new ReorderableList(serializedObject.FindProperty("VirtualPointsItems"))
-        {
-            draggable = false
-        };
-    }
+ 
 
     public override void OnInspectorGUI()
     {
-        virtualPointItems?.DoLayoutList();
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("VirtualPointsItems"));
         
         serializedObject.ApplyModifiedProperties();
     }

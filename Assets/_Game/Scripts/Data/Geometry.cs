@@ -93,6 +93,19 @@ public static class Geometry
         return dif;
     }
 
+    private static float AbsAngle(float a)
+    {
+        return (360 + a % 360) % 360;
+    }
+
+    public static float AngleDelta(float target, float current)
+    {
+        var positiveDiff = AbsAngle(target - current);
+        var minimisedDiff = positiveDiff > 180 ? positiveDiff - 360 : positiveDiff;
+
+        return minimisedDiff;
+    }
+
     public static float AngleBetweenNodes(float nodeADegrees, float nodeBDegrees)
     {
         return PositiveAngleBetween(nodeADegrees + 180, nodeBDegrees);

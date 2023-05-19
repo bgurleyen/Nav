@@ -27,6 +27,7 @@ public class GameSettingsScriptableObject : ScriptableObject
     public float ForwardThreshold = 2f; // @$# this has to be in sync with the minimum turn radius 
     public float RejoinDistance = 2.8f;
     public float PilotSeekDistancePathFollow = 1.2f;
+    public float MaxTurningDegreesPerNM = 1f;
     public float PilotMaxDegreesPathFollow = 20;
     
     [Space]
@@ -36,7 +37,7 @@ public class GameSettingsScriptableObject : ScriptableObject
     public float FlyingTickDuration = 0.00017f;
     
     
-    [Header("Tracer")]
+    [Header("Tracer - Do Not Edit")]
     public float SegmentGranularity = 0.1f;
     [Range(0.0015f, 0.005f)]
     public float TracerTickDuration = 0.002f;
@@ -46,9 +47,8 @@ public class GameSettingsScriptableObject : ScriptableObject
     private const float FtToNm = 0.000164579f;
 
     [Header("===pending===")]
-    public float MaxTurningSpeedPerNM = 1f;
     public float HGDAutoNextPointDistance = 1.3f;
-    public float MaxTurningSpeedPerUnitLength => MaxTurningSpeedPerNM * 0.6f;
+    public float MaxTurningSpeedPerUnitLength => MaxTurningDegreesPerNM * 0.6f;
     
 
     // turn radius

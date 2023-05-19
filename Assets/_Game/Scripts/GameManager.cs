@@ -118,7 +118,7 @@ public class GameManager : MonoBehaviour
         else
         {
             Session.ActiveRoute = Session.ModeSetWithPosition;
-            Session.PlayerAircraft.ResetSeekProgress(1,0);
+            Session.PlayerAircraft.ResetSeekProgress(2,0);
         }
 
 

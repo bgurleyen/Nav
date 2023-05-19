@@ -1,23 +1,12 @@
-﻿using Helpers.ReorderableList;
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 
 [CustomEditor(typeof(OtherACScriptableObject))]
 public class OtherACTableCustomEditor : Editor
 {
-    ReorderableList ACInfoItems;
-
-    void OnEnable()
-    {
-        ACInfoItems = new ReorderableList(serializedObject.FindProperty("ACItems"))
-        {
-            draggable = false
-        };
-    }
-
     public override void OnInspectorGUI()
     {
-        ACInfoItems?.DoLayoutList();
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("ACItems"));
         
         serializedObject.ApplyModifiedProperties();
     }
