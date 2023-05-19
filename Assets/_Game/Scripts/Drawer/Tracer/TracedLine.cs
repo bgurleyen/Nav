@@ -39,7 +39,7 @@ namespace Navigation
 
             TraceFromPilot(pilot);
 
-            TracedNMLength = (Vertexes.Length - 1) * Session.Settings.StepDistanceTracer;
+            TracedNMLength = (Vertexes.Length - 1) * Session.Settings.TickStepDistance(true);
         }
 
         /// <summary>

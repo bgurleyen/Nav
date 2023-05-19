@@ -189,10 +189,10 @@ public class Drawer : MonoBehaviour
             case DrawerMode.Center:
             case DrawerMode.Map:
                 //rotate compass
-                compasPivot.SetLocalRotationZ(Session.PlayerAircraft.HeadingDegrees);
+                compasPivot.SetLocalRotationZ(Session.PlayerAircraft.DisplayHeadingDegrees);
                 if (Session.PlayerAircraft.IsFreeFlight)
                 {
-                    freeFlightPivot.SetLocalRotationZ(Session.PlayerAircraft.HeadingDegrees - Calculator.RHeading);
+                    freeFlightPivot.SetLocalRotationZ(Session.PlayerAircraft.DisplayHeadingDegrees - Calculator.RHeading);
                 }
 
                 break;
@@ -201,7 +201,7 @@ public class Drawer : MonoBehaviour
                 compasPivot.SetLocalRotationZ(0);
                 mobilePlaneIndicatorPivot.position =
                     Session.PlayerAircraft.NMPosition.ToDisplay();
-                mobilePlaneIndicatorPivot.SetLocalRotationZ(-Session.PlayerAircraft.HeadingDegrees);
+                mobilePlaneIndicatorPivot.SetLocalRotationZ(-Session.PlayerAircraft.DisplayHeadingDegrees);
                 break;
             case DrawerMode.Suspeded:
                 break;

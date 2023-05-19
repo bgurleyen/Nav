@@ -8,8 +8,9 @@ namespace Navigation
 
         public Vector2 NMPosition;
         public float HeadingDegrees;
+        public float DisplayHeadingDegrees;
 
-        public float CurrentTurningDegrees { get; private set; }
+        public float CachedDisplayLastAngleDiff { get; private set; }
         private readonly bool _isTracer;
 
         public Pilot(Vector2 nmPosition, Vector2 initialOrientationTarget, bool isTracer)
@@ -17,48 +18,45 @@ namespace Navigation
             _isTracer = isTracer;
             NMPosition = nmPosition;
 
-            HeadingDegrees = Geometry.GetHeadingOfDirection(initialOrientationTarget - nmPosition);
-            CurrentTurningDegrees = 0;
+           DisplayHeadingDegrees = HeadingDegrees = Geometry.GetHeadingOfDirection(initialOrientationTarget - nmPosition);
         }
 
         public void TickAdvance()
         {
-            NMPosition += Direction * (_isTracer
-                ? Session.Settings.StepDistanceTracer
-                : Session.Settings.StepDistanceDeltaTime);
+            NMPosition += Direction * Session.Settings.TickStepDistance(_isTracer);
+            if (!_isTracer)
+            {
+                DisplayHeadingDegrees = Mathf.LerpAngle(DisplayHeadingDegrees, HeadingDegrees,
+                    Session.Settings.TickFlyingRotationDelayMultiplier);
+            }
         }
 
         public void TickSteerToPathFoundVertex(Vector2 seekTarget)
         {
-            var difDegrees = Geometry.AngleBetween(seekTarget - NMPosition, Direction);
+            var targetHeading = Geometry.GetHeadingOfDirection(seekTarget - NMPosition);
 
-            UpdateHeadingTowardsAngleDiff(difDegrees);
+            TickSteerToTargetHeading(targetHeading);
         }
 
         public void TickSteerToTargetHeading(float targetHeading)
         {
-            var a = -Geometry.AngleDelta(HeadingDegrees, targetHeading);
+            var difDegrees = -Geometry.AngleDelta(HeadingDegrees, targetHeading);
 
-            if (Mathf.Abs(a) > 0.01f)
+            UpdateHeadingTowardsAngleDiff(difDegrees);
+            
+            if (!_isTracer)
             {
-                UpdateHeadingTowardsAngleDiff(a);
+                CachedDisplayLastAngleDiff = -Geometry.AngleDelta(DisplayHeadingDegrees, targetHeading);
             }
         }
 
         private void UpdateHeadingTowardsAngleDiff(float difDegrees)
         {
             var lerpDirection = difDegrees < 0 ? -1 : 1;
+            var currentTurningDegrees = lerpDirection *
+                                        Mathf.Min(Session.Settings.TickMaxRotation(_isTracer), Mathf.Abs(difDegrees));
 
-            var targetCurrentTurningDegrees =
-                lerpDirection * Mathf.Min(Session.Settings.PilotMaxDegreesPathFollow, Mathf.Abs(difDegrees))
-                              * (_isTracer
-                                  ? 1
-                                  : Session.Settings.FlyingTickDuration / Session.Settings.TracerTickDuration);
-
-            CurrentTurningDegrees = Mathf.MoveTowards(CurrentTurningDegrees, targetCurrentTurningDegrees,
-                Session.Settings.PilotMaxDegreesPathFollow);
-
-            HeadingDegrees += CurrentTurningDegrees;
+            HeadingDegrees += currentTurningDegrees;
 
             HeadingDegrees %= 360;
         }

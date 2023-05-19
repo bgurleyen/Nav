@@ -20,7 +20,7 @@ public static class Geometry
 
     public static float GetHeadingOfDirection(Vector2 direction)
     {
-        return PositiveAngleBetween(direction, Vector2.up);
+        return  PositiveAngleBetween(direction, Vector2.up);
     }
 
     public static Vector2 GetPreviousPosition(Vector2 start, float distance, float degrees)
@@ -57,12 +57,9 @@ public static class Geometry
         var det = x1 * y2 - y1 * x2; // determinant
         var angle = Mathf.Atan2(det, dot) * Mathf.Rad2Deg; // atan2(y, x) or atan2(sin, cos)
 
-        if (angle < 0)
-        {
-            angle = 360 + angle;
-        }
+
         
-        return angle;
+        return AbsAngle( angle);
 
     }
 
@@ -93,7 +90,7 @@ public static class Geometry
         return dif;
     }
 
-    private static float AbsAngle(float a)
+    public static float AbsAngle(float a)
     {
         return (360 + a % 360) % 360;
     }

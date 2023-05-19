@@ -17,13 +17,12 @@ MonoBehaviour:
   StartingZoom: 2
   MapReferenceLength80: 2.82
   PlanReferenceLength80: 3.82
-  ForwardThreshold: 1
   RejoinDistance: 2.8
-  PilotSeekDistancePathFollow: 1.2
-  MaxTurningDegreesPerNM: 1
-  PilotMaxDegreesPathFollow: 20
+  _pilotMaxTurningDegreesPerNM: 2.39
   AirplaneInitialSpeed: 170
-  FlyingTickDuration: 0.000018
+  _flyingTickDurationMs: 0
+  ForwardThreshold: 1
+  PilotSeekDistancePathFollow: 1.2
   SegmentGranularity: 0.1
-  TracerTickDuration: 0.00179
+  _tracerTickDuration: 7634
   HGDAutoNextPointDistance: 1.3

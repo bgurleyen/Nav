@@ -155,50 +155,21 @@ public class Aircraft : MovingActor
         ResetOnActiveSet(aircraftSpeed, altitude);
     }
 
-    // exactDistance will be provided when rejoining from rejoining path and there is some distance left to walk
-
-    //private bool TickOrientToRoutePath(PathLines pathLines, float deltaTime, bool )
-    //  {
-
-
-    // PositionFreeOrOnCurvedPath = 
-    // WalkedDistanceOnSegment +=
-    // PositionFreeOrOnRouteSegment =
-    // PositionFreeOrOnRouteSegment = 
-
-
-// ---
-    // {
-    //     Debug.LogError("No destination could be found");
-    //     return;
-    // }
-
-    // // reset walked distance if the line has increased
-    // if (newUnreachedPositionInfo.CurrentNodeIndex != RoutePathLocalization.CurrentNodeIndex)
-    // {
-    //     WalkedDistanceOnSegment = 0;
-    //     if (Session.ActiveRoute.Points[newUnreachedPositionInfo.CurrentNodeIndex]
-    //         .IsAfterDiscontinuity)
-    //     {
-    //         UYServiceLocator.Get<GameManager>().SwitchThroughHeading();
-    //     }
-    // }
-
-    //RoutePathLocalization = newUnreachedPositionInfo;
-    //distanceLeftToNextVertex = (RoutePathLocalization.UnreachedVertexPosition - PositionFreeOrOnCurvedPath).magnitude;
-
-    //  }
-
-   
 
     private void DrawHeadingLine()
     {
+        var lerp = (float)1 / _turningHeaderLine.positionCount;
+        var vectorStep = Vector2.Lerp(Vector2.zero, _upwardsHeaderLineTop, lerp);
+
         for (int i = 0; i < _turningHeaderLine.positionCount; i++)
         {
-            var lerp =(float) (i+1) / _turningHeaderLine.positionCount ;
-            var vectorStep = Vector2.Lerp(Vector2.zero, _upwardsHeaderLineTop, lerp);
-            var rotated = Quaternion.Euler(0, 0, -_pilot.CurrentTurningDegrees * (i + 1) *30) * vectorStep;
-            _turningHeaderLine.SetPosition(i, rotated);
+            var rotatedStep = Quaternion.Euler(0, 0, -_pilot.CachedDisplayLastAngleDiff * i) * vectorStep;
+            if (i > 0)
+            {
+                rotatedStep += _turningHeaderLine.GetPosition(i - 1);
+            }
+
+            _turningHeaderLine.SetPosition(i, rotatedStep);
         }
 
     }
@@ -227,6 +198,7 @@ public class Aircraft : MovingActor
     }
 
     public float HeadingDegrees => _pilot.HeadingDegrees;
+    public float DisplayHeadingDegrees => _pilot.DisplayHeadingDegrees;
 
 
     public void ResetOnActiveSet(float aircraftSpeed, float altitude)
@@ -234,7 +206,7 @@ public class Aircraft : MovingActor
         AircraftSpeed = aircraftSpeed;
         
         _pilot.NMPosition = Vector2.zero;
-        _pilot.HeadingDegrees = Session.ActiveRoute.Points[1].Degrees;
+        _pilot.HeadingDegrees = -Session.ActiveRoute.Points[1].Degrees;
         
         PositionFreeOrClosestOnRouteSegment.Reset();
 

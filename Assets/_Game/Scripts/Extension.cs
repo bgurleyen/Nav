@@ -13,7 +13,7 @@ namespace Navigation
             var finalPosition = new Vector2(pos.x, pos.y);
 
             var walkedPosition = Session.PlayerAircraft.NMPosition;
-            var walkedRotation = Session.PlayerAircraft.HeadingDegrees;
+            var aircraftHeadingRotation = Session.PlayerAircraft.DisplayHeadingDegrees;
 
             switch (Session.Mode)
             {
@@ -22,7 +22,7 @@ namespace Navigation
                     // walked
                     finalPosition -= walkedPosition;
                     // walked rotation
-                    finalPosition = finalPosition.Rotate(walkedRotation);
+                    finalPosition = finalPosition.Rotate(aircraftHeadingRotation);
                     break;
                 case DrawerMode.Plan:
                     // centered
