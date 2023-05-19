@@ -251,6 +251,8 @@ public class Aircraft : MovingActor
 
     private void ChooseAutoRejoinMethod()
     {
+        Session.ActiveRoute.AddCloseRejoinIntersectionNode();
+        
         // if (Session.ActiveRoute.TracedRoute.FindCloseToRouteSegmentDestination(
         //         Session.Settings.RejoinDistance,
         //         out var lastFoundSegmentVertex,
@@ -384,12 +386,6 @@ public class Aircraft : MovingActor
     // }
 
    
-
-    private void IndicateTargetHeading(float heading)
-    {
-    }
-
-
 
     private void CheckAdvancePointOnHDGProximity()
     {

@@ -81,7 +81,7 @@ namespace Navigation
 
         /// <returns></returns>
         public bool FindFurthestSeekTargetOnSegment(Vector2 forPosition, float _seekDistance, out Vector2 foundVertex,
-            out int foundVertexIndex, out bool reachedEnd, int startFromIndex = 0, bool breakOnFirstSolution = false)
+            out int foundVertexIndex, out bool reachedEnd, int startFromIndex = 0, bool breakOnFirstSolution = false, bool beginingIsAlwaysValid = true)
 
         {
             foundVertex = Vector2.zero;
@@ -98,7 +98,7 @@ namespace Navigation
                 if (sqrDistance > maxSqrDistance)
                 {
                     // if pilot is already very far from the beginning, consider it a valid target until it gets closed
-                    if (i == startFromIndex)
+                    if (beginingIsAlwaysValid && i == startFromIndex)
                     {
                         foundVertex = vertex;
                         foundVertexIndex = i;

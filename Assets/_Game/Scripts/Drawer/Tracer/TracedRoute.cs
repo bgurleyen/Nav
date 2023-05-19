@@ -112,7 +112,8 @@ public class TracedRoute
         out bool reachedRouteEnd,
         int startFromSegmentIndex = 1,
         int startFromVertexIndex = 0,
-        bool breakOnFistSolution = false)
+        bool breakOnFistSolution = false,
+        bool segmentBeginningIsAlwaysValid = true)
     {
         lastFoundSegmentVertexIndex = -1;
         foundAtDistanceOnSegment = -1;
@@ -130,17 +131,23 @@ public class TracedRoute
             if (!computedLine.FindFurthestSeekTargetOnSegment(
                     Session.PlayerAircraft.NMPosition,
                     seekDistance,
-                    out lastFoundSegmentVertex,
-                    out lastFoundSegmentVertexIndex,
+                    out var foundSegmentVertex,
+                    out var foundSegmentVertexIndex,
                     out reachedSegmentEnd,
                     startFromVertexIndex,
-                    breakOnFistSolution))
+                    breakOnFistSolution,
+                    segmentBeginningIsAlwaysValid))
             {
-                Debug.LogError("not found destination on segment");
+                if (segmentBeginningIsAlwaysValid)
+                {
+                    Debug.LogError("not found destination on segment with constraint");
+                }
                 continue;
             }
 
-            
+            lastFoundSegmentVertex = foundSegmentVertex;
+            lastFoundSegmentVertexIndex = foundSegmentVertexIndex;
+
             // another solution was found 
             if (!reachedSegmentEnd)
             {
@@ -159,7 +166,7 @@ public class TracedRoute
         {
             reachedRouteEnd = true;
         }
- 
+
         foundAtDistanceOnSegment = Mathf.Max(0, lastFoundSegmentVertexIndex - 1) * Session.Settings.SegmentGranularity;
         return lastFoundSegmentIndex > -1;
 

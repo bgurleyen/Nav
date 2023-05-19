@@ -525,7 +525,95 @@ namespace Navigation
 
         public void AddCloseRejoinIntersectionNode()
         {
-            
+            // insert intersection node
+            if (TracedRoute.FindCloseToRouteSegmentDestination(
+                    Session.Settings.RejoinDistance,
+                    out var lastFoundSegmentVertex,
+                    out var lastFoundSegmentVertexIndex,
+                    out var lastFoundSegmentIndex,
+                    out var foundAtDistanceOnSegment,
+                    out var reachedRouteEnd,
+                    segmentBeginningIsAlwaysValid: false))
+            {
+                var intersectionNodeToAdd = RoutePoint.ConstructFromPosition(
+                    lastFoundSegmentVertex,
+                    Points[lastFoundSegmentIndex - 1],
+                    GetNewId(true),
+                    "",
+                    "_Close_rejoin");
+
+                // replace set with new set that also contains insertion node
+                var newSet = new RoutePoint[Points.Length + 1];
+                var offset = 0;
+                for (var i = 0; i < Points.Length; i++)
+                {
+                    if (i == lastFoundSegmentIndex)
+                    {
+                        newSet[i] = intersectionNodeToAdd;
+                        offset = 1;
+                    }
+
+                    newSet[i + offset] = Points[i];
+                }
+
+                Points = newSet;
+            }
+
+            var nodeBeforePosition = Session.PlayerAircraft.IsOnRoute
+                ? PositionVirtualNode.GetNodeFrom
+                : Points[0];
+
+            var airplanePositionNodeToAdd = RoutePoint.ConstructFromPosition(
+                Session.PlayerAircraft.NMPosition,
+                nodeBeforePosition,
+                GetNewId(true),
+                "P",
+                "_Position_0");
+
+            var futurePosition = Geometry.GetNextPosition(
+                Session.PlayerAircraft.NMPosition,
+                Session.Settings.ForwardThreshold,
+                -Session.PlayerAircraft.HeadingDegrees);
+
+            var frontOfAirplanePositionNodeToAdd = RoutePoint.ConstructFromPosition(
+                futurePosition,
+                airplanePositionNodeToAdd,
+                GetNewId(true) + 1,
+                "P",
+                "_Position_");
+
+
+            var activeNextNodeIndex = PositionVirtualNode.PassedNodeIndex + 1;
+            var activeNextNodeOnMode = Points[activeNextNodeIndex];
+
+
+            var differencePosition = activeNextNodeOnMode.CartesianPosition - futurePosition;
+
+            var updatedAngle = Geometry.PositiveAngleBetween(differencePosition, Vector2.up);
+
+            activeNextNodeOnMode.RawDegrees = updatedAngle;
+            activeNextNodeOnMode.Distance = differencePosition.magnitude;
+
+            // replace set with new set that also contains insertion node
+            var newSet2 = new RoutePoint[Points.Length + 2];
+            var offset2 = 0;
+            for (var i = 0; i < Points.Length; i++)
+            {
+                if (i == PositionVirtualNode.NextNodeIndex)
+                {
+                    newSet2[i] = airplanePositionNodeToAdd;
+                    newSet2[i + 1] = frontOfAirplanePositionNodeToAdd;
+                    offset2 = 2;
+                }
+
+                newSet2[i + offset2] = Points[i];
+            }
+
+            Points = newSet2;
+
+            ComputeCartesianPositions();
+
+            ComputeTrace();
         }
 
         public void AddDisplayPositionNode()
@@ -537,14 +625,14 @@ namespace Navigation
                 : Points[0];
             
              var airplanePositionNodeToAdd = RoutePoint.ConstructFromPosition(
-                 Session.PlayerAircraft.PositionFreeOrClosestOnRouteSegment.NMPositionOnSegment,
+                 Session.PlayerAircraft.NMPosition,
                  nodeBeforePosition,
                  GetNewId(true),
                  "P",
                  "_Position_0");
 
              var futurePosition = Geometry.GetNextPosition(
-                 Session.PlayerAircraft.PositionFreeOrClosestOnRouteSegment.NMPositionOnSegment,
+                 Session.PlayerAircraft.NMPosition,
                  Session.Settings.ForwardThreshold,
                  -Session.PlayerAircraft.HeadingDegrees);
 
