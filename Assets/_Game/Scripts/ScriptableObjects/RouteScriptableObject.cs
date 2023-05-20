@@ -124,18 +124,17 @@ namespace Navigation
         }
 
         // to be executed on ACTIVE route
-        public bool FindFreeFlightDirectExitScenario(out Vector2 tipOfTurn, out Vector2 exitPoint,
-            out int exitSegmentIndex)
+        public bool FindFreeFlightDirectExitScenario(out Vector2 intersectionPoint,
+            out int intersectionSegmentIndex)
         {
             var nan = new Vector2(-100, -100);
 
-            exitPoint = nan;
-            tipOfTurn = nan;
+            intersectionPoint = nan;
             var aircraftPosition = Session.PlayerAircraft.NMPosition; // would be free since we are in free flight
             var aircraftDirection = Geometry.GetDirectionFromHeading(Session.PlayerAircraft.HeadingDegrees);
             var segmentEnd = Vector2.zero;
 
-            exitSegmentIndex = -1;
+            intersectionSegmentIndex = -1;
             var intersection = Vector2.zero;
 
             for (var i = 1; i < Points.Length; i++)
@@ -153,22 +152,19 @@ namespace Navigation
                 if (Geometry.FindLineSegmentIntersection(aircraftPosition, aircraftDirection.x, aircraftDirection.y,
                         segmentStart, segmentEnd, out intersection))
                 {
-                    exitSegmentIndex = i;
+                    intersectionSegmentIndex = i;
                     break;
                 }
             }
 
-            if (exitSegmentIndex < 0)
+            if (intersectionSegmentIndex < 0)
             {
                 return false;
             }
 
-            tipOfTurn = intersection;
-
-            //MakeSureForTurningSpace(ref tipOfTurn, out exitPoint, ref exitSegmentIndex);
+            intersectionPoint = intersection;
 
             return true;
-
         }
 
 
@@ -472,22 +468,42 @@ namespace Navigation
             ActiveDirectApproach = true;
         }
 
-        public void AddCloseRejoinIntersectionNode(Vector2 lastFoundSegmentVertex, int lastFoundSegmentIndex)
+        public void AddRejoinIntersectionNode(Vector2 segmentVertex, int segmentIndex)
         {
             var intersectionNodeToAdd = RoutePoint.ConstructFromPosition(
-                lastFoundSegmentVertex,
-                Points[lastFoundSegmentIndex - 1],
+                segmentVertex,
+                Points[segmentIndex - 1],
                 GetNewId(true),
                 "",
                 "_Close_rejoin");
 
-            InsertNodes(lastFoundSegmentIndex, intersectionNodeToAdd);
+            InsertNodes(segmentIndex, intersectionNodeToAdd);
             
-            InsertPositionNodes(PositionVirtualNode.GetNodeFrom, PositionVirtualNode.GetNodeTo);
+            //InsertPositionNodes(Points[segmentIndex], Points[segmentIndex+1]);
 
             ComputeTrace();
         }
 
+        public void AddModPositionNodes()
+        {
+            var nodeBeforePosition = Session.PlayerAircraft.IsOnRoute
+                ? PositionVirtualNode.GetNodeFrom
+                : Points[0];
+
+            RoutePoint routeNextNode;
+            if (Session.PlayerAircraft.IsOnRoute)
+            {
+                var nextNodeIndexOnActive = PositionVirtualNode.PassedNodeIndex + 1;
+                routeNextNode = Points[nextNodeIndexOnActive];
+            }
+            else
+            {
+                routeNextNode = Points[1];
+
+            }
+
+            InsertPositionNodes(nodeBeforePosition, routeNextNode);
+        }
 
         private void InsertPositionNodes(RoutePoint nodeBeforePosition, RoutePoint routeNextNode)
         {
@@ -552,25 +568,6 @@ namespace Navigation
             Points = newSet;
         }
 
-        public void AddDisplayPositionNode()
-        {
-            var nodeBeforePosition = Session.PlayerAircraft.IsOnRoute
-                ? PositionVirtualNode.GetNodeFrom
-                : Points[0];
-
-            RoutePoint routeNextNode;
-            if (Session.PlayerAircraft.IsOnRoute)
-            {
-                var nextNodeIndexOnActive = PositionVirtualNode.PassedNodeIndex + 1;
-                routeNextNode = Points[nextNodeIndexOnActive];
-            }
-            else
-            {
-                routeNextNode = Points[1];
-
-            }
-
-            InsertPositionNodes(nodeBeforePosition, routeNextNode);
-        }
+      
     }
 }

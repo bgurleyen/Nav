@@ -253,35 +253,33 @@ public class Aircraft : MovingActor
 
     private void ChooseAutoRejoinMethod()
     {
-         if (Session.ActiveRoute.TracedRoute.FindCloseToRouteSegmentDestination(
-                 Session.Settings.RejoinDistance,
-                 out var lastFoundSegmentVertex,
-                 out _,
-                 out var lastFoundSegmentIndex,
-                 out _,
-                 out _,
-                 segmentBeginningIsAlwaysValid: false))
-         {
-             Session.ActiveRoute.AddCloseRejoinIntersectionNode(lastFoundSegmentVertex, lastFoundSegmentIndex);
-             ResetSeekProgress(lastFoundSegmentIndex+1, 0);
-             IsOnRoute = true;
-             IsFreeFlight = false;
-         }
-
-       
-        // else if (GameManager.Instance.ActiveRoute.FindFreeFlightDirectExitScenario(out tipOfTurn,
-        //              out _cachedExitPointFromHeading,
-        //              out _cachedExitSegmentOfHeadingRejoinIntersection))
-        // {
-        //     ComputeRejoinPathForDirectIntersection(tipOfTurn);
-        // }
-        // else
-        // {
-        //     Debug.LogError("No Intersection Point Found");
-        // }
-        //
-        // _displayExitPoint = _cachedExitPointFromHeading;
-        // _displayCenterOfTurn = tipOfTurn;
+        if ( Session.ActiveRoute.TracedRoute.FindCloseToRouteSegmentDestination(
+                Session.Settings.RejoinDistance,
+                out var lastFoundSegmentVertex,
+                out _,
+                out var lastFoundSegmentIndex,
+                out _,
+                out _,
+                segmentBeginningIsAlwaysValid: false))
+        {
+            Session.ActiveRoute.AddRejoinIntersectionNode(lastFoundSegmentVertex, lastFoundSegmentIndex);
+            ResetSeekProgress(lastFoundSegmentIndex + 1, 0);
+            IsOnRoute = true;
+            IsFreeFlight = false;
+        }
+        
+        else if (Session.ActiveRoute.FindFreeFlightDirectExitScenario(out var intersectionSegmentVertex,
+                     out var intersectionSegmentIndex))
+        {
+            Session.ActiveRoute.AddRejoinIntersectionNode(intersectionSegmentVertex, intersectionSegmentIndex);
+            ResetSeekProgress(intersectionSegmentIndex+1, 0);
+            IsOnRoute = true;
+            IsFreeFlight = false;
+        }
+        else
+        {
+            Debug.LogError("No Intersection Point Found");
+        }
     }
 
     // when aircraft is in HDG and user applies a MOD

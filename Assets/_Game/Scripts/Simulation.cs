@@ -113,7 +113,7 @@ namespace Navigation
 
             Session.ModeSetWithPosition = Session.ModRoute.CloneAndInit(); // refactor use the existing modwithposition to avoid reinstantiating
 
-            Session.ModeSetWithPosition.AddDisplayPositionNode();
+            Session.ModeSetWithPosition.AddModPositionNodes();
 
             Session.ModeSetWithPosition.ComputeTrace();
         }
