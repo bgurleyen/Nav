@@ -123,13 +123,6 @@ namespace Navigation
             return newSet;
         }
 
-        public void OnPathRejoined(Vector3 oldPositionVertex)
-        {
-            // PathLines.oldPositionVertex = oldPositionVertex;
-            // ActiveDirectApproach = false;
-        }
-
-
         // to be executed on ACTIVE route
         public bool FindFreeFlightDirectExitScenario(out Vector2 tipOfTurn, out Vector2 exitPoint,
             out int exitSegmentIndex)
@@ -172,56 +165,12 @@ namespace Navigation
 
             tipOfTurn = intersection;
 
-            MakeSureForTurningSpace(ref tipOfTurn, out exitPoint, ref exitSegmentIndex);
+            //MakeSureForTurningSpace(ref tipOfTurn, out exitPoint, ref exitSegmentIndex);
 
             return true;
 
         }
 
-        // move the tip of turn further to have space for turn
-        private void MakeSureForTurningSpace(ref Vector2 tipOfTurn, out Vector2 exitPoint,
-            ref int exitSegmentIndex)
-        {
-            var nextNextNodePosition = Points[exitSegmentIndex].CartesianPosition;
-            var exitDirection = nextNextNodePosition - tipOfTurn;
-            var headingDiff = Vector2.Dot(exitDirection, Geometry.GetDirectionFromHeading(Session.PlayerAircraft.HeadingDegrees));
-
-            var minProduct = 0;
-            // add more offset if the directions are opposite
-            // var neededExitPointOffset = headingDiff < minProduct ? 1:0.5f;
-            var neededTipOffset = (headingDiff < minProduct ? 4 : 1f) * GameSettingsScriptableObject.GetMinRadius;
-
-            Debug.Log($"headingDiff: {headingDiff} < dotProd: {minProduct}");
-
-            exitPoint = Vector2.Lerp(tipOfTurn, nextNextNodePosition,
-                neededTipOffset / Vector2.Distance(tipOfTurn, nextNextNodePosition));
-
-
-            // check if is to close to end of line - should exit in the next one
-            while (Points.Length > exitSegmentIndex + 1 &&
-                   Vector2.SqrMagnitude(nextNextNodePosition - exitPoint) <
-                   Session.Settings.ForwardThreshold * Session.Settings.ForwardThreshold)
-            {
-                Debug.Log(
-                    $"too close to corner exit in next segment ({Vector2.SqrMagnitude(nextNextNodePosition - tipOfTurn)})");
-
-                tipOfTurn = nextNextNodePosition;
-                exitSegmentIndex++;
-                nextNextNodePosition = Points[exitSegmentIndex].CartesianPosition;
-
-
-                exitDirection = nextNextNodePosition - tipOfTurn;
-                headingDiff = Vector2.Dot(exitDirection, Geometry.GetDirectionFromHeading(Session.PlayerAircraft.HeadingDegrees));
-                neededTipOffset = (headingDiff < minProduct ? 4 : 1f) * GameSettingsScriptableObject.GetMinRadius;
-
-                tipOfTurn = Vector2.Lerp(tipOfTurn, nextNextNodePosition,
-                    neededTipOffset / Vector2.Distance(tipOfTurn, nextNextNodePosition));
-
-                exitPoint = Vector2.Lerp(tipOfTurn, nextNextNodePosition,
-                    neededTipOffset / Vector2.Distance(tipOfTurn, nextNextNodePosition));
-            }
-
-        }
 
         // public bool TransferPathToRoute(Vector2 exitPoint, int lineIndex,
         //     out PathPositionInfo intersectionRoutePathInfo, out float segmentDistanceUntilIntersection)
@@ -532,22 +481,8 @@ namespace Navigation
                 "",
                 "_Close_rejoin");
 
-            // replace set with new set that also contains insertion node
-            var newSet = new RoutePoint[Points.Length + 1];
-            var offset = 0;
-            for (var i = 0; i < Points.Length; i++)
-            {
-                if (i == lastFoundSegmentIndex)
-                {
-                    newSet[i] = intersectionNodeToAdd;
-                    offset = 1;
-                }
-
-                newSet[i + offset] = Points[i];
-            }
-
-            Points = newSet;
-
+            InsertNodes(lastFoundSegmentIndex, intersectionNodeToAdd);
+            
             InsertPositionNodes(PositionVirtualNode.GetNodeFrom, PositionVirtualNode.GetNodeTo);
 
             ComputeTrace();
@@ -588,24 +523,33 @@ namespace Navigation
                 frontOfAirplanePositionNodeToAdd.IndicateHiddenLine();
             }
 
-            // replace set with new set that also contains insertion node
-            var newSet = new RoutePoint[Points.Length + 2];
+            InsertNodes(PositionVirtualNode.NextNodeIndex, airplanePositionNodeToAdd, frontOfAirplanePositionNodeToAdd);
+
+            ComputeCartesianPositions();
+        }
+
+        private void InsertNodes(int atIndex, params RoutePoint[] nodes)
+        {
+
+            var newSet = new RoutePoint[Points.Length + nodes.Length];
             var offset = 0;
             for (var i = 0; i < Points.Length; i++)
             {
-                if (i == PositionVirtualNode.NextNodeIndex)
+                if (i == atIndex)
                 {
-                    newSet[i] = airplanePositionNodeToAdd;
-                    newSet[i + 1] = frontOfAirplanePositionNodeToAdd;
-                    offset = 2;
+                    for (int j = 0; j < nodes.Length; j++)
+                    {
+                        newSet[i + j] = nodes[j];
+                    }
+
+                    offset = nodes.Length;
+
                 }
 
                 newSet[i + offset] = Points[i];
             }
 
             Points = newSet;
-
-            ComputeCartesianPositions();
         }
 
         public void AddDisplayPositionNode()

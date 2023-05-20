@@ -4,7 +4,7 @@ using UnityEngine;
 [CreateAssetMenu]
 public class GameSettingsScriptableObject : ScriptableObject
 {
-    public float TickStepDistance(bool isTracer) => Session.PlayerAircraft.AircraftSpeed  / 60 / 60 * TickDuration(isTracer);
+    public float TickStepDistance(bool isTracer) => Session.PlayerAircraft.Speed  / 60 / 60 * TickDuration(isTracer);
 
     public float TickMaxRotation(bool isTracer) => _pilotMaxTurningDegreesPerNM  * TickDuration(isTracer);
 

@@ -86,7 +86,7 @@ public class TracedRoute
         foundVertexOnSegment = new RoutePosition();
 
         var minFoundSqrDistance = computedLine.LinkedPoint.Distance * computedLine.LinkedPoint.Distance;
-        foundVertexOnSegment.NMPositionOnSegment = computedLine.SegmentVertices[0];
+        foundVertexOnSegment.NMPosition = computedLine.SegmentVertices[0];
         
         for (int j = 0; j < computedLine.SegmentVertices.Length; j++)
         {
@@ -97,7 +97,7 @@ public class TracedRoute
             if (sqrDistance < minFoundSqrDistance)
             {
                 minFoundSqrDistance = sqrDistance;
-                foundVertexOnSegment.NMPositionOnSegment = segmentVertex;
+                foundVertexOnSegment.NMPosition = segmentVertex;
                 foundVertexOnSegment.NMWalkedOnCurrentSegment = j * Session.Settings.SegmentGranularity;
             }
         }
@@ -176,13 +176,7 @@ public class TracedRoute
 [Serializable]
 public struct RoutePosition
 {
-    public Vector2 NMPositionOnSegment;
+    public Vector2 NMPosition;
     public float NMWalkedOnCurrentSegment;
     public int CurrentNodeIndex;
-
-    public void Reset()
-    {
-        NMPositionOnSegment = Vector2.zero;
-        NMWalkedOnCurrentSegment = 0;
-    }
 }
