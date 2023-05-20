@@ -51,16 +51,17 @@ public class RoutePoint
     /// <param name="details"></param>
     /// <param name="name"></param>
     /// <returns></returns>
-    public static RoutePoint ConstructFromPosition(Vector2 position, RoutePoint previousPoint, int newId = -1, string details = "", string name = "")
+    public static RoutePoint ConstructFromPosition(Vector2 position, RoutePoint previousPoint,
+        RoutePoint nextNodeToAdjust, int newId = -1, string details = "", string name = "")
     {
-        var rp = new RoutePoint{ CartesianPosition = position, ID = 0};
+        var rp = new RoutePoint { CartesianPosition = position, ID = 0 };
 
         if (previousPoint == null)
         {
             rp.Distance = 0;
             return rp;
         }
-        
+
         rp.ID = newId < 0 ? previousPoint.ID + 1 : newId;
         rp.Distance = Vector2.Distance(position, previousPoint.CartesianPosition);
         rp.RawDegrees = Geometry.AngleOfPosition(position, previousPoint.CartesianPosition);
@@ -74,6 +75,15 @@ public class RoutePoint
             rp.Name = name;
         }
 
+
+        if (nextNodeToAdjust != null)
+        {
+            // adjustNextNode distance and degrees
+            var differencePosition = nextNodeToAdjust.CartesianPosition - position;
+            var updatedAngle = Geometry.PositiveAngleBetween(differencePosition, Vector2.up);
+            nextNodeToAdjust.RawDegrees = updatedAngle;
+            nextNodeToAdjust.Distance = differencePosition.magnitude;
+        }
 
         return rp;
     }

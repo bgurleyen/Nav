@@ -166,9 +166,11 @@ public class Aircraft : MovingActor
         var lerp = (float)1 / _turningHeaderLine.positionCount;
         var vectorStep = Vector2.Lerp(Vector2.zero, _upwardsHeaderLineTop, lerp);
 
+        var clampedAngleDiff = Mathf.Clamp(_pilot.CachedDisplayLastAngleDiff, -20, 20);
+
         for (int i = 0; i < _turningHeaderLine.positionCount; i++)
         {
-            var rotatedStep = Quaternion.Euler(0, 0, -_pilot.CachedDisplayLastAngleDiff * i) * vectorStep;
+            var rotatedStep = Quaternion.Euler(0, 0, -clampedAngleDiff * i) * vectorStep;
             if (i > 0)
             {
                 rotatedStep += _turningHeaderLine.GetPosition(i - 1);

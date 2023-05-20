@@ -473,13 +473,21 @@ namespace Navigation
             var intersectionNodeToAdd = RoutePoint.ConstructFromPosition(
                 segmentVertex,
                 Points[segmentIndex - 1],
+                Points[segmentIndex],
                 GetNewId(true),
                 "",
-                "_Close_rejoin");
+                "_rejoin_");
 
-            InsertNodes(segmentIndex, intersectionNodeToAdd);
-            
-            //InsertPositionNodes(Points[segmentIndex], Points[segmentIndex+1]);
+
+            // If we want active route to contain also the path from the current position we can also insert position nodes
+            ConstructPositionNodes(Points[segmentIndex - 1], intersectionNodeToAdd,
+                out var airplanePositionNodeToAdd, out var frontOfAirplanePositionNodeToAdd);
+
+
+            InsertNodes(segmentIndex,
+                airplanePositionNodeToAdd,
+                frontOfAirplanePositionNodeToAdd,
+                intersectionNodeToAdd);
 
             ComputeTrace();
         }
@@ -490,63 +498,63 @@ namespace Navigation
                 ? PositionVirtualNode.GetNodeFrom
                 : Points[0];
 
-            RoutePoint routeNextNode;
+            int routeNextNodeIndex;
             if (Session.PlayerAircraft.IsOnRoute)
             {
                 var nextNodeIndexOnActive = PositionVirtualNode.PassedNodeIndex + 1;
-                routeNextNode = Points[nextNodeIndexOnActive];
+                routeNextNodeIndex = nextNodeIndexOnActive;
             }
             else
             {
-                routeNextNode = Points[1];
+                routeNextNodeIndex = 1;
 
             }
 
-            InsertPositionNodes(nodeBeforePosition, routeNextNode);
+            ConstructPositionNodes(nodeBeforePosition, Points[routeNextNodeIndex],
+                out var airplanePositionNodeToAdd, out var frontOfAirplanePositionNodeToAdd);
+            
+            InsertNodes(routeNextNodeIndex, 
+                airplanePositionNodeToAdd, 
+                frontOfAirplanePositionNodeToAdd);
+
+            ComputeCartesianPositions();
         }
 
-        private void InsertPositionNodes(RoutePoint nodeBeforePosition, RoutePoint routeNextNode)
+        private void ConstructPositionNodes(RoutePoint nodeBeforePosition, RoutePoint routeNextNode,
+            out RoutePoint airplanePositionNodeToAdd, out RoutePoint frontOfAirplanePositionNodeToAdd )
         {
-            // ! Position node is added in front of the actual position so that the aircraft can safely turn 
-            var airplanePositionNodeToAdd = RoutePoint.ConstructFromPosition(
+            airplanePositionNodeToAdd = RoutePoint.ConstructFromPosition(
                 Session.PlayerAircraft.NMPosition,
                 nodeBeforePosition,
+                null,
                 GetNewId(true),
                 "P",
                 "_Position_0");
 
+            // ! another Position node is added in front of the actual position so that the aircraft can safely turn 
             var futurePosition = Geometry.GetNextPosition(
                 Session.PlayerAircraft.NMPosition,
                 Session.Settings.ForwardThreshold,
                 -Session.PlayerAircraft.HeadingDegrees);
 
-            var frontOfAirplanePositionNodeToAdd = RoutePoint.ConstructFromPosition(
+            frontOfAirplanePositionNodeToAdd = RoutePoint.ConstructFromPosition(
                 futurePosition,
                 airplanePositionNodeToAdd,
+                routeNextNode,
                 GetNewId(true) + 1,
                 "P",
                 "_Position_");
 
-
-            var differencePosition = routeNextNode.CartesianPosition - futurePosition;
-            var updatedAngle = Geometry.PositiveAngleBetween(differencePosition, Vector2.up);
-            routeNextNode.RawDegrees = updatedAngle;
-            routeNextNode.Distance = differencePosition.magnitude;
 
             airplanePositionNodeToAdd.IndicateHiddenLine();
             if (ActiveDirectApproach)
             {
                 frontOfAirplanePositionNodeToAdd.IndicateHiddenLine();
             }
-
-            InsertNodes(PositionVirtualNode.NextNodeIndex, airplanePositionNodeToAdd, frontOfAirplanePositionNodeToAdd);
-
-            ComputeCartesianPositions();
         }
 
         private void InsertNodes(int atIndex, params RoutePoint[] nodes)
         {
-
             var newSet = new RoutePoint[Points.Length + nodes.Length];
             var offset = 0;
             for (var i = 0; i < Points.Length; i++)
