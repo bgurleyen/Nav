@@ -1,8 +1,10 @@
 ﻿using System.Collections;
+using Navigation;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
+using Unyawn.Utils;
 
 
 //GW :56.4,ZFW:45,Fuel:12,CI:0,CG:23.3
@@ -160,7 +162,7 @@ public class Calculator : MonoBehaviour
     {
         get
         {
-            float oneNM = -Drawer.Instance.Zoom;
+            float oneNM = -Session.Zoom;
             if (CVS == 0)
                 return 0;
             else
@@ -413,10 +415,10 @@ public class Calculator : MonoBehaviour
         double DeltaAlt, Alt1, Alt0, d, D;
         float posY;
 
-        RouteScriptableObject activePoints = GameManager.Instance.ActiveRoute;
-        RouteScriptableObject modPoints = GameManager.Instance.ModRoute;
+        RouteScriptableObject activePoints = Session.ActiveRoute;
+        RouteScriptableObject modPoints = Session.ModRoute;
 
-        bool isMod = GameManager.Instance.IsMod;
+        bool isMod = Session.IsMod;
         RouteScriptableObject _route = isMod ? modPoints : activePoints;
 
 
@@ -428,8 +430,8 @@ public class Calculator : MonoBehaviour
         //DeltaAlt =  activeCurrentPosition.ComputedDistanceLeft * 318.43 + double.Parse(node.DisplayAltitude);
         Alt0 = double.Parse(node0.DisplayAltitude);
         Alt1 = double.Parse(node1.DisplayAltitude);
-        d = GameManager.Instance.Aircraft.ComputedDistanceLeftOnSegment;
-        D = (d + GameManager.Instance.Aircraft.WalkedDistanceOnSegment); // Daniel: this will behave bad while free flight
+        d = Session.PlayerAircraft.ComputedDistanceLeftOnSegment;
+        D = (d + Session.PlayerAircraft.NMWalkedOnCurrentSegment); // Daniel: this will behave bad while free flight
 
         DeltaAlt = CAltitude - (Alt1 + (d * (Alt0 - Alt1)) / D);
         VDI_Text.text = (((DeltaAlt) > 50) || ((DeltaAlt) < -50)) ? "" + (int)DeltaAlt : "";
@@ -671,7 +673,7 @@ public class Calculator : MonoBehaviour
     {
         if (!fromUI)
         {
-            McpUI.Instance.SBLeverInteract(down, true);
+            UYServiceLocator.Get<McpUI>().SBLeverInteract(down, true);
         }
         
         double[,] Msb = new double[9, 2] { { -900, -600 }, { -900, -600 }, { -900, -500 }, { -900, -500 }, { -900, -400 }, { -900, -400 }, { -900, -400 }, { -900, -500 }, { -900, -400 } };
@@ -753,7 +755,7 @@ public class Calculator : MonoBehaviour
             }
         }
 
-        McpUI.Instance.RefreshHS();
+        UYServiceLocator.Get<McpUI>().RefreshHS();
         CHeading = RHeading;
         
         UpdatePFD();

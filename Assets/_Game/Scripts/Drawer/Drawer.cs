@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using UnityEngine;
 using Lean.Pool;
 using Gamelogic.Extensions;
+using Navigation;
+using Unyawn.Utils;
 
-public class Drawer : Singleton<Drawer>
+public class Drawer : MonoBehaviour 
 {
     [SerializeField] private GameConfigScriptableObject _gameConfig;
 
@@ -27,78 +29,79 @@ public class Drawer : Singleton<Drawer>
     [SerializeField] private Transform freeFlightPivot;
     [SerializeField] private Transform bananaIndicatorPivot;
 
-    [Header("modes visuals")] [SerializeField]
-    private GameObject[] mapHolder;
-
+    [Header("modes visuals")] 
+    [SerializeField] private GameObject[] mapHolder;
     [SerializeField] private GameObject[] centerHolder;
     [SerializeField] private GameObject[] planHolder;
 
-    [Header("Adjust")] [SerializeField] private float mapReferenceLength80 = 1.6f;
-    [SerializeField] private float planReferenceLength80 = 1.6f;
-    [SerializeField] private float _debugStarDistance = 1.3f;
 
     public Color CMagenta => _gameConfig.Settings.cMagenta;
     public Color CLightYellow => _gameConfig.Settings.cLightYellow;
 
-    public DrawerMode Mode { get; private set; } = DrawerMode.Suspeded;
-
-    public float Zoom => (Mode == DrawerMode.Plan
-        ? planReferenceLength80
-        : _zoomMultiplier * mapReferenceLength80) / 80f;
-
-    private float _zoomMultiplier;
-
-
-    private Aircraft Aircraft => GameManager.Instance.Aircraft;
+   
+    [SerializeField] private float _debugStarDistance = 1.3f;
 
     private const bool WalkOnMod = false;
 
     private void Awake()
     {
-        _zoomMultiplier = _gameConfig.Settings.StartingZoom;
+        Session.ZoomMultiplier = _gameConfig.Settings.StartingZoom;
+        UYServiceLocator.Register(this);
+        var mcpUI = UYServiceLocator.Get<McpUI>();
+        mcpUI.OnCenterModeSet += OnUICenterModeSet;
+        mcpUI.OnMapModeSet += OnUIMapModeSet;
+        mcpUI.OnPlanModeSet += OnUIPlanModeSet;
+    }
+
+    private void OnDestroy()
+    {
+        var mcpUI = UYServiceLocator.Get<McpUI>();
+        mcpUI.OnCenterModeSet -= OnUICenterModeSet;
+        mcpUI.OnMapModeSet -= OnUIMapModeSet;
+        mcpUI.OnPlanModeSet -= OnUIPlanModeSet;
     }
 
     public void ResetMode()
     {
-        Mode = DrawerMode.Map;
+        Session.Mode = DrawerMode.Map;
+        OnUIMapModeSet();
     }
 
-    public void ShowMapMode()
+
+    private void OnUIMapModeSet()
     {
         cameraAnimator.SetTrigger("Map");
-        Mode = DrawerMode.Map;
         ShowCurrentMode();
     }
 
-    public void ShowCenterMode()
+    private void OnUICenterModeSet()
     {
         cameraAnimator.SetTrigger("Center");
-        Mode = DrawerMode.Center;
         ShowCurrentMode();
     }
 
-    public void ShowPlanMode()
+    private void OnUIPlanModeSet()
     {
         cameraAnimator.SetTrigger("Center");
-        Mode = DrawerMode.Plan;
         ShowCurrentMode();
     }
+
 
     private void ShowCurrentMode()
     {
         foreach (var x in mapHolder)
         {
-            x.SetActive(Mode == DrawerMode.Map);
+            x.SetActive(Session.Mode == DrawerMode.Map);
         }
 
         foreach (var x in centerHolder)
         {
-            x.SetActive(Mode == DrawerMode.Center);
+            x.SetActive(Session.Mode == DrawerMode.Center);
         }
 
         foreach (var x in planHolder)
         {
-            x.SetActive(Mode == DrawerMode.Plan);
+            x.SetActive(Session.Mode == DrawerMode.Plan);
         }
 
         Clear();
@@ -108,14 +111,14 @@ public class Drawer : Singleton<Drawer>
     public void OnZoomIn()
     {
         Clear();
-        _zoomMultiplier += 0.2f;
+        Session.ZoomMultiplier += 0.2f;
         Display();
     }
 
     public void OnZoomOut()
     {
         Clear();
-        _zoomMultiplier -= 0.2f;
+        Session.ZoomMultiplier -= 0.2f;
         Display();
     }
 
@@ -128,62 +131,68 @@ public class Drawer : Singleton<Drawer>
         Extension.DespawnChildren<OtherAircrafIndicator>(dynamicHolderOtheriarcrafts, otherAircraftsPool);
     }
 
-    public static bool GetCircleFix(RoutePoint linkedPoint, Vector3 from, FixedPointInfo linkedInfo,
-        out FixCircle circle)
-    {
-        if (linkedInfo.NM != null)
-        {
-            circle = new FixCircle(linkedPoint, linkedInfo);
-            circle.Init(from);
-            return true;
-        }
-
-        circle = null;
-        return false;
-    }
-
-    public static bool GetRayFix(RoutePoint linkedPoint, Vector3 from, FixedPointInfo linkedInfo, out FixRay ray)
-    {
-        if (linkedInfo.RawDegrees != null)
-        {
-            ray = new FixRay(linkedPoint, linkedInfo);
-            ray.Init(from);
-            return true;
-        }
-
-        ray = null;
-        return false;
-    }
+    // public static bool GetCircleFix(RoutePoint linkedPoint, Vector3 from, FixedPointInfo linkedInfo,
+    //     out FixCircle circle)
+    // {
+    //     if (linkedInfo.NM != null)
+    //     {
+    //         circle = new FixCircle(linkedPoint, linkedInfo);
+    //         circle.Init(from);
+    //         return true;
+    //     }
+    //
+    //     circle = null;
+    //     return false;
+    // }
+    //
+    // public static bool GetRayFix(RoutePoint linkedPoint, Vector3 from, FixedPointInfo linkedInfo, out FixRay ray)
+    // {
+    //     if (linkedInfo.RawDegrees != null)
+    //     {
+    //         ray = new FixRay(linkedPoint, linkedInfo);
+    //         ray.Init(from);
+    //         return true;
+    //     }
+    //
+    //     ray = null;
+    //     return false;
+    // }
 
     public void Display()
     {
-        DisplaySet(GameManager.Instance.ActiveRoute?.PathLines?.ComputedLines, LinesType.Active);
-        if (GameManager.Instance.ModRoute != null)
+        DisplaySet(Session.ActiveRoute?.TracedRoute.ComputedLines, LinesType.Active);
+        if (Session.ModRoute != null)
         {
-            DisplaySet(GameManager.Instance.ModeSetWithPosition?.PathLines?.ComputedLines, LinesType.Mod);
+            DisplaySet(Session.ModeSetWithPosition?.TracedRoute?.ComputedLines, LinesType.Mod);
         }
 
         DisplayFixCircles();
         DisplayFixRays();
-        freeFlightPivot.gameObject.SetActive(Aircraft.IsFreeFlight);
+        freeFlightPivot.gameObject.SetActive(Session.PlayerAircraft.IsFreeFlight);
         bananaIndicatorPivot.SetLocalY(Calculator.Instance.GetBananaPosition);
 
-        if (Aircraft.IsRejoining && Aircraft.RejoinPathLines != null)
+        if (Session.PlayerAircraft.IsRejoining && Session.PlayerAircraft.RejoinPathLines != null)
         {
-            DisplaySet(Aircraft.RejoinPathLines.ComputedLines,  LinesType.Rejoin);
+            DisplaySet(Session.PlayerAircraft.RejoinPathLines.ComputedLines,  LinesType.Rejoin);
         }
         
         DisplayOtherTraffic();
 
-        switch (Mode)
+        DisplayRotations();
+        
+    }
+
+    private void DisplayRotations()
+    {
+        switch (Session.Mode)
         {
             case DrawerMode.Center:
             case DrawerMode.Map:
                 //rotate compass
-                compasPivot.SetLocalRotationZ(Aircraft.HeadingDegrees);
-                if (Aircraft.IsFreeFlight)
+                compasPivot.SetLocalRotationZ(Session.PlayerAircraft.DisplayHeadingDegrees);
+                if (Session.PlayerAircraft.IsFreeFlight)
                 {
-                    freeFlightPivot.SetLocalRotationZ(Aircraft.HeadingDegrees - Calculator.RHeading);
+                    freeFlightPivot.SetLocalRotationZ(Session.PlayerAircraft.DisplayHeadingDegrees - Calculator.RHeading);
                 }
 
                 break;
@@ -191,8 +200,8 @@ public class Drawer : Singleton<Drawer>
                 //rotate compass
                 compasPivot.SetLocalRotationZ(0);
                 mobilePlaneIndicatorPivot.position =
-                    Aircraft.PositionFreeOrOnCurvedPath.ToDisplay();
-                mobilePlaneIndicatorPivot.SetLocalRotationZ(-Aircraft.HeadingDegrees);
+                    Session.PlayerAircraft.NMPosition.ToDisplay();
+                mobilePlaneIndicatorPivot.SetLocalRotationZ(-Session.PlayerAircraft.DisplayHeadingDegrees);
                 break;
             case DrawerMode.Suspeded:
                 break;
@@ -213,7 +222,7 @@ public class Drawer : Singleton<Drawer>
                 .GetComponent<OtherAircrafIndicator>();
             drawer.name = key;
             drawer.Init(texts[key], Color.yellow);
-            drawer.transform.localPosition = positions[key].ToDisplay();
+            drawer.transform.localPosition = Extension.ToDisplay(positions[key]);
         }
 
         // demo - shows a debug star for seeing the distance
@@ -221,19 +230,20 @@ public class Drawer : Singleton<Drawer>
             .GetComponent<OtherAircrafIndicator>();
         objective.name = "My objective";
         objective.Init("|", Color.yellow);
-        objective.transform.localPosition = (GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath +
-                                             Vector2.right * _debugStarDistance)
-            .ToDisplay();
+        objective.transform.localPosition = Extension.ToDisplay((Session.PlayerAircraft.NMPosition +
+                                                                 Vector2.right * _debugStarDistance));
 
         // demo - shows a debug star for seeing the distance
         objective = otherAircraftsPool.Spawn(Vector3.zero, Quaternion.identity, dynamicHolderOtheriarcrafts)
             .GetComponent<OtherAircrafIndicator>();
         objective.name = "origin";
         objective.Init("o", Color.blue);
-        objective.transform.localPosition = Vector2.zero.ToDisplay();
+        objective.transform.localPosition = Extension.ToDisplay(Vector2.zero);
     }
 
-    private void DisplaySet(IReadOnlyList<MarkLine> lines, LinesType linesType)
+ 
+
+    private void DisplaySet(IReadOnlyList<TracedLine> lines, LinesType linesType)
     {
         if (lines == null)
         {
@@ -260,10 +270,10 @@ public class Drawer : Singleton<Drawer>
 
         var rejoinSegmentIndex = 0;
         var rejoinPoint = Vector2.zero;
-        if (Aircraft.IsRejoining)
+        if (Session.PlayerAircraft.IsRejoining)
         {
-            rejoinSegmentIndex = Aircraft.CachedExitSegmentOfHeadingRejoinIntersection;
-            rejoinPoint = Aircraft.CachedExitPointFromHeading;
+            rejoinSegmentIndex = Session.PlayerAircraft.CachedExitSegmentOfHeadingRejoinIntersection;
+            rejoinPoint = Session.PlayerAircraft.CachedExitPointFromHeading;
         }
 
         for (var i = 0; i < lines.Count; i++)
@@ -278,58 +288,26 @@ public class Drawer : Singleton<Drawer>
                 continue;
             }
 
-            // $%^ this is bad. Ask if we need to keep the rejoin arc after rejoining
-            // we are offsetting the display start of the line to be just after the rejoin path
-            // Update: we want to keep displaying the active route as original so this is not needed
-            // if (linesType == LinesType.Active && Aircraft.IsRejoining)
-            // {
-            //     if (i < rejoinSegmentIndex )
-            //     {
-            //         // dont' hide line even if the aircraft is away rejoining
-            //         //hiddenLine = true;
-            //     }
-            //     else if (i == rejoinSegmentIndex)
-            //     {
-            //         // find intersection vertex index of generated line with rejoin line.. 
-            //         if (line.Vertexes.Length > 4)
-            //         {
-            //             var dist = (line.Vertexes[0].To2DXY() - rejoinPoint).sqrMagnitude;
-            //
-            //             for (int p = 1; p < line.Vertexes.Length; p++)
-            //             {
-            //                 var nextDist = (line.Vertexes[p].To2DXY() - rejoinPoint).sqrMagnitude;
-            //                 if (nextDist > dist)
-            //                 {
-            //                     fromPointIndex = p - 1;
-            //                     break;
-            //                 }
-            //
-            //                 dist = nextDist;
-            //             }
-            //         }
-            //     }
-            // }
-
             var point = line.LinkedPoint;
 
             var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<LineDrawer>();
-            drawer.name = $"{linesType} {line.GetName} {point.Name}";
+            drawer.name = $"{linesType} {point.Name}";
 
-            if (linesType == LinesType.Mod && GameManager.Instance.ActiveRoute.GetPoint(point.ID, out var activePoint))
+            if (linesType == LinesType.Mod && Session.ActiveRoute.GetPoint(point.ID, out var activePoint))
             {
-                // $^% error at cartesian position
                 if (RoutePoint.HaveSamePosition(activePoint, point))
                 {
                     hiddenLabel = true;
                 }
                 else
                 {
+                    // $^% error at cartesian position
                     Debug.LogWarning(activePoint.Name + " " +
                                      (activePoint.CartesianPosition - point.CartesianPosition).magnitude);
                 }
             }
 
-            if (linesType == LinesType.Rejoin && line.StartPosition == Vector3.zero)
+            if (linesType == LinesType.Rejoin && line.StartNMPosition == Vector2.zero)
             {
                 hiddenLine = true;
             }
@@ -337,77 +315,77 @@ public class Drawer : Singleton<Drawer>
             drawer.Display(line, point, hiddenLabel || linesType == LinesType.Rejoin, hiddenLine, fromPointIndex);
         }
     }
-    
-    public enum LinesType
-    {
-        Mod, Active, Rejoin
-    }
 
     private void DisplayFixCircles()
     {
-        var circles = GameManager.Instance.ActiveRoute.PathLines.ComputedCircles;
-        var pool = circlePool;
-        var holder = dynamicHolderCircles;
-
-        for (var i = 0; i < circles.Count; i++)
-        {
-            var line = circles[i];
-
-            if (line == null)
-            {
-                continue;
-            }
-
-            var point = line.LinkedPoint;
-
-            var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<FixedCircleDrawer>();
-            drawer.name = $"{line.GetName} {point.Name}";
-            drawer.Display(line);
-        }
+        // var circles = Session.ActiveRoute.TracedRoute.ComputedCircles;
+        // var pool = circlePool;
+        // var holder = dynamicHolderCircles;
+        //
+        // for (var i = 0; i < circles.Count; i++)
+        // {
+        //     var line = circles[i];
+        //
+        //     if (line == null)
+        //     {
+        //         continue;
+        //     }
+        //
+        //     var point = line.LinkedPoint;
+        //
+        //     var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<FixedCircleDrawer>();
+        //     drawer.name = $"{line.GetName} {point.Name}";
+        //     drawer.Display(line);
+        // }
     }
 
     private void DisplayFixRays()
     {
-        var rays = GameManager.Instance.ActiveRoute.PathLines.ComputedRays;
-        var pool = rayPool;
-        var holder = dynamicHolderRays;
-
-        for (var i = 0; i < rays.Count; i++)
-        {
-            var ray = rays[i];
-
-            if (ray == null)
-            {
-                continue;
-            }
-
-            var point = ray.LinkedPoint;
-
-            var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<FixedRayDrawer>();
-            drawer.name = $"{ray.GetName} {point.Name}";
-            drawer.Display(ray);
-        }
+        // var rays = Session.ActiveRoute.TracedRoute.ComputedRays;
+        // var pool = rayPool;
+        // var holder = dynamicHolderRays;
+        //
+        // for (var i = 0; i < rays.Count; i++)
+        // {
+        //     var ray = rays[i];
+        //
+        //     if (ray == null)
+        //     {
+        //         continue;
+        //     }
+        //
+        //     var point = ray.LinkedPoint;
+        //
+        //     var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<FixedRayDrawer>();
+        //     drawer.name = $"{ray.GetName} {point.Name}";
+        //     drawer.Display(ray);
+        // }
     }
 
 
     private void OnDrawGizmos()
     {
-        Gizmos.color = Color.green;
-        var up = pivot.up;
-        Gizmos.DrawSphere(up * mapReferenceLength80, 0.05f);
-
-        Gizmos.color = Color.blue;
-        Gizmos.DrawWireSphere(up * planReferenceLength80, 0.065f);
-
-        Gizmos.color = Color.cyan;
-        Gizmos.DrawWireSphere(up * planReferenceLength80 / 2f, 0.025f);
-
-
-        if (GameManager.Instance.ActiveRoute?.PathLines?.ComputedLines == null)
+        if (!Application.isPlaying)
         {
             return;
         }
+        
+        Gizmos.color = Color.green;
+        var up = pivot.up;
+        Gizmos.DrawSphere(up * Session.Settings.MapReferenceLength80, 0.05f);
 
-        Gizmos.DrawSphere(GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath.ToDisplay(), 0.05f);
+        Gizmos.color = Color.blue;
+        Gizmos.DrawWireSphere(up * Session.Settings.PlanReferenceLength80, 0.065f);
+
+        Gizmos.color = Color.cyan;
+        Gizmos.DrawWireSphere(up * Session.Settings.PlanReferenceLength80 / 2f, 0.025f);
+
+
+        // if (GameManager.Instance.ActiveRoute?.PathLines?.ComputedLines == null)
+        // {
+        //     return;
+        // }
+        //
+        // Gizmos.DrawSphere(Extension.ToDisplay(GameManager.Instance.Aircraft.PositionFreeOrOnCurvedPath), 0.05f);
     }
 }

@@ -1,0 +1,64 @@
+using UnityEngine;
+
+namespace Navigation
+{
+    public class Pilot
+    {
+        private Vector2 Direction => Geometry.GetDirectionFromHeading(HeadingDegrees);
+
+        public Vector2 NMPosition;
+        public float HeadingDegrees;
+        public float DisplayHeadingDegrees;
+
+        public float CachedDisplayLastAngleDiff { get; private set; }
+        private readonly bool _isTracer;
+
+        public Pilot(Vector2 nmPosition, Vector2 initialOrientationTarget, bool isTracer)
+        {
+            _isTracer = isTracer;
+            NMPosition = nmPosition;
+
+           DisplayHeadingDegrees = HeadingDegrees = Geometry.GetHeadingOfDirection(initialOrientationTarget - nmPosition);
+        }
+
+        public void TickAdvance()
+        {
+            NMPosition += Direction * Session.Settings.TickStepDistance(_isTracer);
+            if (!_isTracer)
+            {
+                DisplayHeadingDegrees = Mathf.LerpAngle(DisplayHeadingDegrees, HeadingDegrees,
+                    Session.Settings.TickFlyingRotationDelayMultiplier);
+            }
+        }
+
+        public void TickSteerToPathFoundVertex(Vector2 seekTarget)
+        {
+            var targetHeading = Geometry.GetHeadingOfDirection(seekTarget - NMPosition);
+
+            TickSteerToTargetHeading(targetHeading);
+        }
+
+        public void TickSteerToTargetHeading(float targetHeading)
+        {
+            var difDegrees = -Geometry.AngleDelta(HeadingDegrees, targetHeading);
+
+            UpdateHeadingTowardsAngleDiff(difDegrees);
+            
+            if (!_isTracer)
+            {
+                CachedDisplayLastAngleDiff = -Geometry.AngleDelta(DisplayHeadingDegrees, targetHeading);
+            }
+        }
+
+        private void UpdateHeadingTowardsAngleDiff(float difDegrees)
+        {
+            var lerpDirection = difDegrees < 0 ? -1 : 1;
+            var currentTurningDegrees = lerpDirection *
+                                        Mathf.Min(Session.Settings.TickMaxRotation(_isTracer), Mathf.Abs(difDegrees));
+
+            HeadingDegrees += currentTurningDegrees;
+
+            HeadingDegrees %= 360;
+        }
+    }
+}

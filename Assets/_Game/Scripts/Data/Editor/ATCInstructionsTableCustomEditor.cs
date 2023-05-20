@@ -1,23 +1,14 @@
-﻿using Helpers.ReorderableList;
-using UnityEditor;
+﻿using UnityEditor;
 using UnityEngine;
 
 [CustomEditor(typeof(ATCInstructionsScriptableObject))]
 public class ATCInstructionsTableCustomEditor : Editor
 {
-    ReorderableList atcItems;
-
-    void OnEnable()
-    {
-        atcItems = new ReorderableList(serializedObject.FindProperty("ATCInstrucitonItems"))
-        {
-            draggable = false
-        };
-    }
+    
 
     public override void OnInspectorGUI()
     {
-        atcItems?.DoLayoutList();
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("ATCInstrucitonItems"));
         
         serializedObject.ApplyModifiedProperties();
     }

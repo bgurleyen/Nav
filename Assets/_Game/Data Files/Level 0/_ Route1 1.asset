@@ -1,0 +1,134 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ba3b8b30b7d3d124482f44bf0dbbbfaf, type: 3}
+  m_Name: _ Route1 1
+  m_EditorClassIdentifier: 
+  Points:
+  - ID: 0
+    Name: _START_
+    RawDegrees: 0
+    Distance: 0
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 1
+    Name: ELNAT
+    RawDegrees: 20
+    Distance: 45
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 2
+    Name: NORTA
+    RawDegrees: 5
+    Distance: 40.1
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 3
+    Name: DLE-5
+    RawDegrees: 6
+    Distance: 18.1
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 4
+    Name: DLE
+    RawDegrees: 3
+    Distance: 5
+    RawSpeed: 0
+    RawAltitude: 8000A9000B
+    Details: 
+  - ID: 5
+    Name: DV581
+    RawDegrees: 2
+    Distance: 7.3
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 6
+    Name: DV582
+    RawDegrees: 91
+    Distance: 5.6
+    RawSpeed: 220
+    RawAltitude: 
+    Details: 
+  - ID: 7
+    Name: DV583
+    RawDegrees: 91
+    Distance: 4
+    RawSpeed: 0
+    RawAltitude: 
+    Details: C
+  - ID: 8
+    Name: DV584
+    RawDegrees: 91
+    Distance: 4
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 9
+    Name: DV585
+    RawDegrees: 91
+    Distance: 4
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 10
+    Name: DV575
+    RawDegrees: 1
+    Distance: 5
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 11
+    Name: DV574
+    RawDegrees: 271
+    Distance: 4
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 12
+    Name: DV573
+    RawDegrees: 271
+    Distance: 4.3
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 13
+    Name: DV572
+    RawDegrees: 271
+    Distance: 4.9
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 14
+    Name: XAVER
+    RawDegrees: 276
+    Distance: 4
+    RawSpeed: 179
+    RawAltitude: 3000
+    Details: 
+  - ID: 15
+    Name: HANB
+    RawDegrees: 271
+    Distance: 4
+    RawSpeed: 173
+    RawAltitude: 1440
+    Details: 
+  - ID: 16
+    Name: RW27R
+    RawDegrees: 271
+    Distance: 4
+    RawSpeed: 0
+    RawAltitude: 219
+    Details: 

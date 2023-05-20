@@ -30,7 +30,7 @@ namespace Gamelogic.Extensions
 
 					if (instance == null)
 					{
-						Debug.LogError("An instance of " + typeof(T) + " is needed in the scene, but there is none.");
+						Debug.LogWarning("An instance of " + typeof(T) + " is needed in the scene, but there is none.");
 					}
 				}
 

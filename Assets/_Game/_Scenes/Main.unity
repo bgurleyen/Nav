@@ -586,29 +586,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 60764884d715c0a4fad74df5c37a82e0, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  __messageText: 
   _gameConfig: {fileID: 11400000, guid: 60965bfde451d46d184d23158024db97, type: 2}
-  initialRoute: {fileID: 11400000, guid: 48239b5a0c22a6a4e9279c5f8c65626a, type: 2}
-  ActiveRoute: {fileID: 2120896182}
-  ModRoute: {fileID: 0}
-  ModeSetWithPosition: {fileID: 0}
-  FixedPoints: {fileID: 922731180}
-  isDebug: 0
-  Aircraft:
-    PositionFreeOrOnCurvedPath: {x: 0, y: 0}
-    PositionFreeOrOnRouteSegment: {x: 0, y: 0}
-    RoutePathLocalization:
-      CurrentNodeIndex: 0
-      UnreachedVertexIndex: 0
-      HeadingBefore: 0
-      UnreachedVertexPosition: {x: 0, y: 0}
-    RejoinPathLocalization:
-      CurrentNodeIndex: 0
-      UnreachedVertexIndex: 0
-      HeadingBefore: 0
-      UnreachedVertexPosition: {x: 0, y: 0}
-    IsFreeFlight: 0
-    IsOnRoute: 0
+  _initialRoute: {fileID: 11400000, guid: 5da69c372eddf482ba8207f0565573bd, type: 2}
+  _routes:
+    ActiveRoute: {fileID: 0}
+    ModRoute: {fileID: 0}
+    ModeSetWithPosition: {fileID: 0}
+    FixedPoints: {fileID: 0}
 --- !u!4 &35611998
 Transform:
   m_ObjectHideFlags: 0
@@ -1425,7 +1409,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &74970278
 Transform:
   m_ObjectHideFlags: 0
@@ -3453,7 +3437,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bbb756f0138501d4ba0894e93ccb0aea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  __messageText: 
   hsToggle: {fileID: 1095616256}
   lNavToggle: {fileID: 605396507}
   headingText: {fileID: 926853338}
@@ -13574,38 +13557,6 @@ RectTransform:
   m_AnchoredPosition: {x: 134.78, y: 60.24}
   m_SizeDelta: {x: 53.02333, y: 39.129593}
   m_Pivot: {x: 0.5, y: 0.5}
---- !u!1 &856449361
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 856449362}
-  m_Layer: 0
-  m_Name: Center Aircraft Indicator
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &856449362
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 856449361}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1075239210}
-  m_Father: {fileID: 2124256482}
-  m_RootOrder: 6
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &860822236 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1906408646554637041, guid: e40b18ac6ecd1a543b3be57ab104646a,
@@ -14478,21 +14429,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 5cf58a6f167d3794085572d72bae3cb4, type: 3}
---- !u!114 &922731180
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 3ce31b191e9d3c44aa31c4c26896c013, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Entries:
-  - Name: NORTA
-    Infos: []
 --- !u!1 &926853336
 GameObject:
   m_ObjectHideFlags: 0
@@ -15197,8 +15133,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 963848562}
+  - component: {fileID: 963848563}
   m_Layer: 0
-  m_Name: Compas Drawer [Non UI]
+  m_Name: Simulation - Drawer [Non UI]
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -15222,6 +15159,21 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &963848563
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 963848561}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bff710339aa554a2a965ea98c46f0c8a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _playerAircraft: {fileID: 1342359670}
+  _otherActors: []
+  _drawer: {fileID: 2120126761}
 --- !u!1 &973863442
 GameObject:
   m_ObjectHideFlags: 0
@@ -16308,138 +16260,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2124256482}
   m_RootOrder: 2
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &1075239208
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1075239210}
-  - component: {fileID: 1075239209}
-  m_Layer: 0
-  m_Name: model
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!120 &1075239209
-LineRenderer:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1075239208}
-  m_Enabled: 1
-  m_CastShadows: 1
-  m_ReceiveShadows: 1
-  m_DynamicOccludee: 1
-  m_StaticShadowCaster: 0
-  m_MotionVectors: 0
-  m_LightProbeUsage: 0
-  m_ReflectionProbeUsage: 0
-  m_RayTracingMode: 0
-  m_RayTraceProcedural: 0
-  m_RenderingLayerMask: 1
-  m_RendererPriority: 0
-  m_Materials:
-  - {fileID: 10306, guid: 0000000000000000f000000000000000, type: 0}
-  m_StaticBatchInfo:
-    firstSubMesh: 0
-    subMeshCount: 0
-  m_StaticBatchRoot: {fileID: 0}
-  m_ProbeAnchor: {fileID: 0}
-  m_LightProbeVolumeOverride: {fileID: 0}
-  m_ScaleInLightmap: 1
-  m_ReceiveGI: 1
-  m_PreserveUVs: 0
-  m_IgnoreNormalsForChartDetection: 0
-  m_ImportantGI: 0
-  m_StitchLightmapSeams: 1
-  m_SelectedEditorRenderState: 3
-  m_MinimumChartSize: 4
-  m_AutoUVMaxDistance: 0.5
-  m_AutoUVMaxAngle: 89
-  m_LightmapParameters: {fileID: 0}
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
-  m_SortingOrder: 0
-  m_Positions:
-  - {x: 0, y: 0, z: 0}
-  - {x: 0.25, y: -0.5, z: 0}
-  - {x: -0.25, y: -0.5, z: 0}
-  m_Parameters:
-    serializedVersion: 3
-    widthMultiplier: 0.04627836
-    widthCurve:
-      serializedVersion: 2
-      m_Curve:
-      - serializedVersion: 3
-        time: 0
-        value: 1
-        inSlope: 0
-        outSlope: 0
-        tangentMode: 0
-        weightedMode: 0
-        inWeight: 0.33333334
-        outWeight: 0.33333334
-      m_PreInfinity: 2
-      m_PostInfinity: 2
-      m_RotationOrder: 4
-    colorGradient:
-      serializedVersion: 2
-      key0: {r: 1, g: 1, b: 1, a: 1}
-      key1: {r: 1, g: 1, b: 1, a: 1}
-      key2: {r: 0, g: 0, b: 0, a: 0}
-      key3: {r: 0, g: 0, b: 0, a: 0}
-      key4: {r: 0, g: 0, b: 0, a: 0}
-      key5: {r: 0, g: 0, b: 0, a: 0}
-      key6: {r: 0, g: 0, b: 0, a: 0}
-      key7: {r: 0, g: 0, b: 0, a: 0}
-      ctime0: 0
-      ctime1: 65535
-      ctime2: 0
-      ctime3: 0
-      ctime4: 0
-      ctime5: 0
-      ctime6: 0
-      ctime7: 0
-      atime0: 0
-      atime1: 65535
-      atime2: 0
-      atime3: 0
-      atime4: 0
-      atime5: 0
-      atime6: 0
-      atime7: 0
-      m_Mode: 0
-      m_NumColorKeys: 2
-      m_NumAlphaKeys: 2
-    numCornerVertices: 0
-    numCapVertices: 0
-    alignment: 0
-    textureMode: 0
-    shadowBias: 0.5
-    generateLightingData: 0
-  m_UseWorldSpace: 0
-  m_Loop: 1
---- !u!4 &1075239210
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1075239208}
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.048, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 856449362}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1092507103
 GameObject:
@@ -20264,6 +20084,98 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1324111199}
   m_CullTransparentMesh: 0
+--- !u!1001 &1342359668
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    m_TransformParent: {fileID: 2124256482}
+    m_Modifications:
+    - target: {fileID: 380748623757760281, guid: 56aa19d64298344958f1175fe91004ea,
+        type: 3}
+      propertyPath: m_Name
+      value: Player Aircraft
+      objectReference: {fileID: 0}
+    - target: {fileID: 380748623757760282, guid: 56aa19d64298344958f1175fe91004ea,
+        type: 3}
+      propertyPath: m_RootOrder
+      value: 6
+      objectReference: {fileID: 0}
+    - target: {fileID: 380748623757760282, guid: 56aa19d64298344958f1175fe91004ea,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 380748623757760282, guid: 56aa19d64298344958f1175fe91004ea,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 380748623757760282, guid: 56aa19d64298344958f1175fe91004ea,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 380748623757760282, guid: 56aa19d64298344958f1175fe91004ea,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 380748623757760282, guid: 56aa19d64298344958f1175fe91004ea,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 380748623757760282, guid: 56aa19d64298344958f1175fe91004ea,
+        type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 380748623757760282, guid: 56aa19d64298344958f1175fe91004ea,
+        type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 380748623757760282, guid: 56aa19d64298344958f1175fe91004ea,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 380748623757760282, guid: 56aa19d64298344958f1175fe91004ea,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 380748623757760282, guid: 56aa19d64298344958f1175fe91004ea,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4636247267581919153, guid: 56aa19d64298344958f1175fe91004ea,
+        type: 3}
+      propertyPath: CurrentTurningDegrees
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 56aa19d64298344958f1175fe91004ea, type: 3}
+--- !u!4 &1342359669 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 380748623757760282, guid: 56aa19d64298344958f1175fe91004ea,
+    type: 3}
+  m_PrefabInstance: {fileID: 1342359668}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1342359670 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4636247267581919153, guid: 56aa19d64298344958f1175fe91004ea,
+    type: 3}
+  m_PrefabInstance: {fileID: 1342359668}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e53da74248184fbf9188efe7f93ea275, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1351852300
 GameObject:
   m_ObjectHideFlags: 0
@@ -29317,7 +29229,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3e051e4cdd7719049a1e3925124c935b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  __messageText: 
   _gameConfig: {fileID: 11400000, guid: 60965bfde451d46d184d23158024db97, type: 2}
   cameraAnimator: {fileID: 561176780}
   dynamicHolder: {fileID: 1049552508}
@@ -29340,146 +29251,11 @@ MonoBehaviour:
   - {fileID: 202076194}
   centerHolder:
   - {fileID: 1351852300}
-  - {fileID: 856449361}
+  - {fileID: 202076194}
   planHolder:
   - {fileID: 623872170}
   - {fileID: 1000632908}
-  mapReferenceLength80: 2.82
-  planReferenceLength80: 3.82
   _debugStarDistance: 1.3
---- !u!114 &2120896182
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 0
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: ba3b8b30b7d3d124482f44bf0dbbbfaf, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  _gameConfig: {fileID: 0}
-  Points:
-  - ID: 0
-    Name: _START_
-    RawDegrees: 0
-    Distance: 0
-    RawSpeed: 270
-    RawAltitude: 40000
-    Details: 
-  - ID: 1
-    Name: ELNAT
-    RawDegrees: 20
-    Distance: 19
-    RawSpeed: 0
-    RawAltitude: 
-    Details: 
-  - ID: 2
-    Name: NORTA
-    RawDegrees: 5
-    Distance: 40.1
-    RawSpeed: 0
-    RawAltitude: 
-    Details: 
-  - ID: 3
-    Name: DLE-5
-    RawDegrees: 6
-    Distance: 18.1
-    RawSpeed: 0
-    RawAltitude: 
-    Details: 
-  - ID: 4
-    Name: DLE
-    RawDegrees: 3
-    Distance: 5
-    RawSpeed: 0
-    RawAltitude: 8000A9000B
-    Details: 
-  - ID: 5
-    Name: DV581
-    RawDegrees: 2
-    Distance: 7.3
-    RawSpeed: 0
-    RawAltitude: 
-    Details: 
-  - ID: 6
-    Name: DV582
-    RawDegrees: 91
-    Distance: 5.6
-    RawSpeed: 220
-    RawAltitude: 
-    Details: 
-  - ID: 7
-    Name: DV583
-    RawDegrees: 91
-    Distance: 4
-    RawSpeed: 0
-    RawAltitude: 
-    Details: C
-  - ID: 8
-    Name: DV584
-    RawDegrees: 91
-    Distance: 4
-    RawSpeed: 0
-    RawAltitude: 
-    Details: 
-  - ID: 9
-    Name: DV585
-    RawDegrees: 91
-    Distance: 4
-    RawSpeed: 0
-    RawAltitude: 
-    Details: 
-  - ID: 10
-    Name: DV575
-    RawDegrees: 1
-    Distance: 5
-    RawSpeed: 0
-    RawAltitude: 
-    Details: 
-  - ID: 11
-    Name: DV574
-    RawDegrees: 271
-    Distance: 4
-    RawSpeed: 0
-    RawAltitude: 
-    Details: 
-  - ID: 12
-    Name: DV573
-    RawDegrees: 271
-    Distance: 4.3
-    RawSpeed: 0
-    RawAltitude: 
-    Details: 
-  - ID: 13
-    Name: DV572
-    RawDegrees: 271
-    Distance: 4.9
-    RawSpeed: 0
-    RawAltitude: 
-    Details: 
-  - ID: 14
-    Name: XAVER
-    RawDegrees: 276
-    Distance: 4
-    RawSpeed: 179
-    RawAltitude: 3000
-    Details: 
-  - ID: 15
-    Name: HANB
-    RawDegrees: 271
-    Distance: 4
-    RawSpeed: 173
-    RawAltitude: 1440
-    Details: 
-  - ID: 16
-    Name: RW27R
-    RawDegrees: 271
-    Distance: 4
-    RawSpeed: 0
-    RawAltitude: 219
-    Details: 
 --- !u!1 &2124256481
 GameObject:
   m_ObjectHideFlags: 0
@@ -29514,7 +29290,7 @@ Transform:
   - {fileID: 702771722}
   - {fileID: 973863443}
   - {fileID: 1723276587}
-  - {fileID: 856449362}
+  - {fileID: 1342359669}
   - {fileID: 202076195}
   - {fileID: 1000632909}
   - {fileID: 74970278}

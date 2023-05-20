@@ -1,4 +1,5 @@
-﻿using UnityEngine;
+﻿using Navigation;
+using UnityEngine;
 
 public class DisplayNodesController
 {
@@ -9,16 +10,13 @@ public class DisplayNodesController
 
     public int TotalPagesCorrection = 0;
 
-    private static bool IsMod => GameManager.Instance.IsMod;
-    private static RouteScriptableObject ActiveRoute => GameManager.Instance.ActiveRoute;
-    private static RouteScriptableObject ModRoute => GameManager.Instance.ModRoute;
-    private static RouteScriptableObject VisibleRoute => IsMod ? ModRoute : ActiveRoute;
+    private static RouteScriptableObject VisibleRoute => Session.IsMod ? Session.ModRoute : Session.ActiveRoute;
 
     private readonly int nodesPerPage;
 
     public void ComputeCorrections()
     {
-        TotalPagesCorrection = GetTotalNodesCorrections(out var _, out var _);
+        TotalPagesCorrection = GetTotalNodesCorrections(out _, out _);
     }
 
     private static int GetTotalNodesCorrections(out int discontinuities, out int skipped)
@@ -47,7 +45,7 @@ public class DisplayNodesController
         var pagedLineIndex = lineIndex + currentPage * nodesPerPage;
 
         // when an insert have been made with the future position node and has been executed. happening until passing the new position
-        var positionIsTemporaryAhead = ActiveRoute.Points[PositionVirtualNode.NextNodeIndex].IsPositionNode;
+        var positionIsTemporaryAhead = Session.ActiveRoute.Points[PositionVirtualNode.NextNodeIndex].IsPositionNode;
 
         var thisIsDiscontinuity = false;
         var thisIsAfterDiscontinuity = false;

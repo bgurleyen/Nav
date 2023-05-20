@@ -1,25 +1,17 @@
-﻿using Helpers.ReorderableList;
+﻿using Navigation;
 using UnityEditor;
 using UnityEngine;
 
 [CustomEditor(typeof(RouteScriptableObject))]
 public class RouteTableCustomEditor : Editor
 {
-    ReorderableList routePoints;
-
-    void OnEnable()
-    {
-        routePoints = new ReorderableList(serializedObject.FindProperty("Points"))
-        {
-            draggable = false
-        };
-    }
+ 
 
     public override void OnInspectorGUI()
     {
-        EditorGUILayout.PropertyField(serializedObject.FindProperty("_gameConfig"));
         EditorGUILayout.Space();
-        routePoints?.DoLayoutList();
+        // routePoints?.DoLayoutList();
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("Points"));
         
         serializedObject.ApplyModifiedProperties();
     }

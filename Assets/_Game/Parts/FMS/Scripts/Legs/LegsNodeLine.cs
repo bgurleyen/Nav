@@ -1,6 +1,6 @@
-﻿using TMPro;
+﻿using Navigation;
+using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 public class LegsNodeLine : MonoBehaviour
 {
@@ -20,7 +20,7 @@ public class LegsNodeLine : MonoBehaviour
     public void DisplayNodeDetails(RoutePoint node, NodeSelection linkedInfo)
     {
         var _distance = linkedInfo.LinkedId == PositionVirtualNode.GetNodeTo.ID
-            ? GameManager.Instance.Aircraft.ComputedDistanceLeftOnSegment
+            ? Session.PlayerAircraft.ComputedDistanceLeftOnSegment
             : node.Distance;
 
         if (linkedInfo.IsAddedDiscontinuity)
@@ -60,7 +60,7 @@ public class LegsNodeLine : MonoBehaviour
             var _speedState = node.IsSpeedModified
                 ? BgText.TextState.ModSelection
                 : _isSpeedRestriction
-                    ? node.ID == LegsScreen.VisibleRoute.FirstSpeedRegulationNodeId 
+                    ? node.ID == Session.VisibleRoute.FirstSpeedRegulationNodeId 
                         ? BgText.TextState.Magenta
                         : BgText.TextState.TallText
                     : BgText.TextState.SmallText;
@@ -68,7 +68,7 @@ public class LegsNodeLine : MonoBehaviour
             var _altState = node.IsAltitudeModified
                 ? BgText.TextState.ModSelection
                 : _isAltRestriction
-                    ? node.ID == LegsScreen.VisibleRoute.FirstAltRegulationNodeId
+                    ? node.ID == Session.VisibleRoute.FirstAltRegulationNodeId
                         ? BgText.TextState.Magenta
                         : BgText.TextState.TallText
                     : BgText.TextState.SmallText;

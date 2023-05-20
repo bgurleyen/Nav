@@ -1,34 +1,50 @@
-using System.Collections;
-using System.Collections.Generic;
+using Navigation;
 using UnityEngine;
 
 [CreateAssetMenu]
 public class GameSettingsScriptableObject : ScriptableObject
 {
+    public float TickStepDistance(bool isTracer) => Session.PlayerAircraft.Speed  / 60 / 60 * TickDuration(isTracer);
+
+    public float TickMaxRotation(bool isTracer) => _pilotMaxTurningDegreesPerNM  * TickDuration(isTracer);
+
+    public float TickFlyingRotationDelayMultiplier =>  _flyingTickDuration / _tracerTickDuration;
+
+    private float TickDuration(bool isTracer) => isTracer ? _tracerTickDuration : _flyingTickDuration;
+
+    
     public Color cMagenta;
     public Color cLightYellow;
 
-    [Space] public float StartingZoom = 2;
-    [Header("Aircraft navigation")]
-    // frequency of points
-    public float DrawerUnitLength = 0.6f;
-    public float MaxTurningSpeedPerNM = 1f;
-    public float MaxTurningSpeedPerUnitLength => MaxTurningSpeedPerNM * DrawerUnitLength;
-
     [Space]
-    [SerializeField]
-    private float deltaTime = 0.0057f;
-    // const float DeltaTime = 0.0000003f;
-    public float DeltaTime => deltaTime /1000f;
-
-    [Header("Route distances(NM)")]
-    public float ForwardThreshold = 2f; // @$# this has to be in sync with the minimum turn radius 
+    [Header("Map")]
+    [Space] public float StartingZoom = 2;
+    public float MapReferenceLength80 = 2.82f;
+    public float PlanReferenceLength80 = 3.82f;
+    
+    [Header("Aircraft")]
     public float RejoinDistance = 2.8f;
-    public float HGDAutoNextPointDistance = 1.3f;
+    [SerializeField] private float _pilotMaxTurningDegreesPerNM= 3;
+    [Space]
+    public float AirplaneInitialSpeed = 170;
+    [Space]
+    [Range(0.04f, 8f)]
+    [SerializeField] private float _flyingTickDuration = 0.04f;
+    
+    
+    [Header("DESIGN - Do Not Edit")]
+    public float ForwardThreshold = 2f; // @$# this has to be in sync with the minimum turn radius 
+    public float PilotSeekDistancePathFollow = 1.2f;
+    public float SegmentGranularity = 0.1f;
+    [SerializeField] private float _tracerTickDuration = 7f;
 
     #region Plane Speeds
 
     private const float FtToNm = 0.000164579f;
+
+    [Header("===pending===")]
+    public float HGDAutoNextPointDistance = 1.3f;
+    
 
     // turn radius
     private const float IAS = 240;
@@ -40,6 +56,7 @@ public class GameSettingsScriptableObject : ScriptableObject
     public static float GetMinRadius => Mathf.Pow(GS, 2) / (11.29f * Mathf.Tan(Bank)) * FtToNm;
 
     public static float GetRelaxedRadius = GetMinRadius * 3;
+    
     
     #endregion
 }

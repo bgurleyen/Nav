@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using Navigation;
 using TMPro;
 using UnityEngine;
 
@@ -56,7 +57,7 @@ public class BgText : MonoBehaviour
                     label.text += $"<mark=#{ColorUtility.ToHtmlStringRGBA(modifiedBackground)}>{_part.Text}</mark>";
                     break;
                 case TextState.Magenta:
-                    if (GameManager.Instance.IsMod)
+                    if (Session.IsMod)
                     {
                         // don't show anything magenta in mod
                         label.text += _part.Text;
