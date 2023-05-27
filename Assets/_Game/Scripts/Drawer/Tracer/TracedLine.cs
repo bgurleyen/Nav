@@ -80,15 +80,15 @@ namespace Navigation
         /// </summary>
 
         /// <returns></returns>
-        public bool FindFurthestSeekTargetOnSegment(Vector2 forPosition, float _seekDistance, out Vector2 foundVertex,
-            out int foundVertexIndex, out bool reachedEnd, int startFromIndex = 0, bool breakOnFirstSolution = false, bool beginingIsAlwaysValid = true)
+        public bool FindFurthestSeekTargetOnSegment(Vector2 forPosition, float seekDistance, out Vector2 foundVertex,
+            out int foundVertexIndex, out bool reachedEnd, int startFromIndex = 0, bool breakOnFirstSolution = false, bool beginningIsAlwaysValid = true)
 
         {
             foundVertex = Vector2.zero;
             foundVertexIndex = -1;
             reachedEnd = false;
 
-            var maxSqrDistance = _seekDistance * _seekDistance;
+            var maxSqrDistance = seekDistance * seekDistance;
 
             for (var i = startFromIndex; i < SegmentVertices.Length; i++)
             {
@@ -98,7 +98,7 @@ namespace Navigation
                 if (sqrDistance > maxSqrDistance)
                 {
                     // if pilot is already very far from the beginning, consider it a valid target until it gets closed
-                    if (beginingIsAlwaysValid && i == startFromIndex)
+                    if (beginningIsAlwaysValid && i == startFromIndex)
                     {
                         foundVertex = vertex;
                         foundVertexIndex = i;

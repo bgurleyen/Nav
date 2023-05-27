@@ -125,17 +125,17 @@ namespace Navigation
 
         // to be executed on ACTIVE route
         public bool FindFreeFlightDirectExitScenario(out Vector2 intersectionPoint,
-            out int intersectionSegmentIndex)
+            out int intersectionSegmentIndex, out int intersectionVertexIndex)
         {
             var nan = new Vector2(-100, -100);
 
             intersectionPoint = nan;
+            intersectionVertexIndex = -1;
             var aircraftPosition = Session.PlayerAircraft.NMPosition; // would be free since we are in free flight
             var aircraftDirection = Geometry.GetDirectionFromHeading(Session.PlayerAircraft.HeadingDegrees);
             var segmentEnd = Vector2.zero;
 
             intersectionSegmentIndex = -1;
-            var intersection = Vector2.zero;
 
             for (var i = 1; i < Points.Length; i++)
             {
@@ -150,46 +150,29 @@ namespace Navigation
                 }
 
                 if (Geometry.FindLineSegmentIntersection(aircraftPosition, aircraftDirection.x, aircraftDirection.y,
-                        segmentStart, segmentEnd, out intersection))
+                        segmentStart, segmentEnd, out var intersection))
                 {
                     intersectionSegmentIndex = i;
+                    intersectionPoint = intersection;
                     break;
                 }
             }
 
-            if (intersectionSegmentIndex < 0)
+            if (intersectionSegmentIndex >= 0)
             {
-                return false;
+
+                TracedRoute.ComputedLines[intersectionSegmentIndex].FindFurthestSeekTargetOnSegment(
+                    intersectionPoint,
+                    Session.Settings.TickStepDistance(false) * 2,
+                    out _,
+                    out intersectionVertexIndex,
+                    out _, beginningIsAlwaysValid: false);
+
+                return true;
             }
 
-            intersectionPoint = intersection;
-
-            return true;
+            return false;
         }
-
-
-        // public bool TransferPathToRoute(Vector2 exitPoint, int lineIndex,
-        //     out PathPositionInfo intersectionRoutePathInfo, out float segmentDistanceUntilIntersection)
-        // {
-        //     intersectionRoutePathInfo = new PathPositionInfo();
-        //     var segmentStart = Points[lineIndex - 1].CartesianPosition;
-        //     var segmentEnd = Points[lineIndex].CartesianPosition;
-        //
-        //     segmentDistanceUntilIntersection = (exitPoint - segmentStart).magnitude;
-        //     if (Session.ActiveRoute.TracedRoute.FindClosestVertexToPositionOnLineActive(
-        //             exitPoint, lineIndex, out var targetVertexIndex,
-        //             out var targetVertexPosition))
-        //     {
-        //         intersectionRoutePathInfo = new PathPositionInfo
-        //         {
-        //             CurrentNodeIndex = lineIndex,
-        //             HeadingBefore = Session.PlayerAircraft.HeadingDegrees
-        //         };
-        //         return true;
-        //     }
-        //
-        //     return false;
-        // }
 
         public void ShortcutNodes(int firstIdNodeToDissolve, int toId,
             out RoutePoint reducedPoint) // $^% refactor for passed nodes ?

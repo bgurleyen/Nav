@@ -221,9 +221,9 @@ public class Aircraft : MovingActor
 
     }
 
-    public void ResetSeekProgress(int atLine, int atVertex)
+    public void ResetSeekProgress(int atLine, int atVertexIndex)
     {
-        _lastFoundSegmentVertexIndex = atVertex;
+        _lastFoundSegmentVertexIndex = atVertexIndex;
         _lastFoundSegmentIndex = atLine;
     }
 
@@ -257,24 +257,22 @@ public class Aircraft : MovingActor
     {
         if ( Session.ActiveRoute.TracedRoute.FindCloseToRouteSegmentDestination(
                 Session.Settings.RejoinDistance,
-                out var lastFoundSegmentVertex,
                 out _,
+                out var lastFoundSegmentVertexIndex,
                 out var lastFoundSegmentIndex,
                 out _,
                 out _,
                 segmentBeginningIsAlwaysValid: false))
         {
-            Session.ActiveRoute.AddRejoinIntersectionNode(lastFoundSegmentVertex, lastFoundSegmentIndex);
-            ResetSeekProgress(lastFoundSegmentIndex + 1, 0);
+            ResetSeekProgress(lastFoundSegmentIndex, lastFoundSegmentVertexIndex);
             IsOnRoute = true;
             IsFreeFlight = false;
         }
         
-        else if (Session.ActiveRoute.FindFreeFlightDirectExitScenario(out var intersectionSegmentVertex,
-                     out var intersectionSegmentIndex))
+        else if (Session.ActiveRoute.FindFreeFlightDirectExitScenario(out _,
+                     out var intersectionSegmentIndex, out var intersectionVertexIndex))
         {
-            Session.ActiveRoute.AddRejoinIntersectionNode(intersectionSegmentVertex, intersectionSegmentIndex);
-            ResetSeekProgress(intersectionSegmentIndex+1, 0);
+            ResetSeekProgress(intersectionSegmentIndex, intersectionVertexIndex);
             IsOnRoute = true;
             IsFreeFlight = false;
         }
@@ -317,30 +315,7 @@ public class Aircraft : MovingActor
         //     IsFreeFlight = false;
     }
 
-    // when aircraft is in heading and user switches to LNav ( and the case is straight intersection with the path )
-    private void ComputeRejoinPathForDirectIntersection(Vector2 tipOfTurn)
-    {
-        // //compute rejoin path
-        // Debug.Log("start LNAV - rejoin direct intersection");
-        // RejoinPathLines = new PathLines(Session.Settings.DrawerUnitLength);
-        //
-        // var tempPoints = new RoutePoint[4];
-        // var lastPoint = RoutePoint.ConstructFromPosition(Vector2.zero, null);
-        // tempPoints[0] = lastPoint;
-        // lastPoint = RoutePoint.ConstructFromPosition(NMPosition, lastPoint);
-        // tempPoints[1] = lastPoint;
-        // lastPoint = RoutePoint.ConstructFromPosition(tipOfTurn, lastPoint);
-        // tempPoints[2] = lastPoint;
-        // lastPoint = RoutePoint.ConstructFromPosition(CachedExitPointFromHeading, lastPoint);
-        // tempPoints[3] = lastPoint;
-        //
-        // RejoinPathLines.ComputeSet(tempPoints);
-        //
-        // GetFirstDestinationFromNode(RejoinPathLines, tempPoints[1], tempPoints,
-        //     out RejoinPathLocalization);
-        //
-        // IsFreeFlight = false;
-    }
+   
 
 
     private void CheckAdvancePointOnHDGProximity()
