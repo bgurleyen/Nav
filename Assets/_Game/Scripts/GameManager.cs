@@ -50,9 +50,12 @@ public class GameManager : MonoBehaviour
         mcpUI.OnPlanModeSet -= MCP_OnUIPlanModeSet;
         mcpUI.OnFreeFlightToggle -= MCP_OnUIFreeFlightToggle;
 
-        var legsScreen = UYServiceLocator.Get<LegsScreen>();
-        legsScreen.OnLeftCornerPressErase -= LEGS_OnLeftCornerPressErase;
-        legsScreen.OnExecButtonPress -= LEGS_OnExecButtonPress;
+        if (UYServiceLocator.Has<LegsScreen>())
+        {
+            var legsScreen = UYServiceLocator.Get<LegsScreen>();
+            legsScreen.OnLeftCornerPressErase -= LEGS_OnLeftCornerPressErase;
+            legsScreen.OnExecButtonPress -= LEGS_OnExecButtonPress;
+        }
     }
 
     private void Update()

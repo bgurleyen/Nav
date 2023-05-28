@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -10,7 +11,7 @@ namespace Navigation
         public RoutePoint LinkedPoint { get; private set; }
         public Vector2[] Vertexes;
         public float TracedNMLength { get; private set; }
-
+        
         public readonly Vector2[] SegmentVertices;
         
 
@@ -44,20 +45,30 @@ namespace Navigation
         /// <param name="pilot"></param>
         public void TraceFromPilot(Pilot pilot, float seekDistance)
         {
+            int safe_max_positions = 200;
             var tracePositions = new List<Vector2> { pilot.NMPosition };
             
             int lastFoundVertexIndex = 0;
+
+            float cachedLastHeading = 999;
             
-            while (tracePositions.Count < 200 && FindFurthestSeekTargetOnSegment(
+            while (tracePositions.Count < safe_max_positions && FindFurthestSeekTargetOnSegment(
                        pilot.NMPosition,
                        seekDistance,
                        out var foundVertex,
                        out lastFoundVertexIndex,
                        out var reachedEnd,
-                       lastFoundVertexIndex))
+                       lastFoundVertexIndex,
+                       breakOnFirstSolution:true))
             {
-                pilot.TickSteerToPathFoundVertex(foundVertex);
+                pilot.TickSteerToPathFoundVertex(foundVertex, out var heading );
                 pilot.TickAdvance();
+                if (Math.Abs(heading - cachedLastHeading) < 0.001f && tracePositions.Count > 1)
+                {
+                    tracePositions.RemoveAt(tracePositions.Count - 1);
+                }
+
+                cachedLastHeading = heading;
                 tracePositions.Add(pilot.NMPosition);
 
                 if (reachedEnd)
@@ -67,7 +78,7 @@ namespace Navigation
 
             }
 
-            if (tracePositions.Count == 200)
+            if (tracePositions.Count == safe_max_positions)
             {
                 Debug.LogError("Cannot reach trace destination");
             }
@@ -90,38 +101,52 @@ namespace Navigation
 
             var maxSqrDistance = seekDistance * seekDistance;
 
-            for (var i = startFromIndex; i < SegmentVertices.Length; i++)
+
+            var fistSqrDistance = (SegmentVertices[startFromIndex] - forPosition).sqrMagnitude;
+            if (fistSqrDistance > maxSqrDistance)
             {
-                var vertex = SegmentVertices[i];
-                var sqrDistance = (vertex - forPosition).sqrMagnitude;
-
-                if (sqrDistance > maxSqrDistance)
+                // if pilot is already very far from the beginning, consider it a valid target until it gets closed
+                if (beginningIsAlwaysValid)
                 {
-                    // if pilot is already very far from the beginning, consider it a valid target until it gets closed
-                    if (beginningIsAlwaysValid && i == startFromIndex)
-                    {
-                        foundVertex = vertex;
-                        foundVertexIndex = i;
+                    foundVertex = SegmentVertices[startFromIndex];
+                    foundVertexIndex = startFromIndex;
 
-                        return true;
-                    }
+                    return true;
+                }
+            }
+            else
+            {
+                // if needed we can to a lerp to find the closest segment vertex to start from 
+                // var hasIntersection = Geometry.FindDistanceToSegment(forPosition, StartNMPosition, EndNMPosition,
+                //     out var closest,
+                //     out var distance);
+                //
+                // var isWithinSegment = hasIntersection && distance <= seekDistance;
 
-                    if (i < SegmentVertices.Length - 1)
+                for (var i = startFromIndex; i < SegmentVertices.Length; i++)
+                {
+                    var vertex = SegmentVertices[i];
+                    var sqrDistance = (vertex - forPosition).sqrMagnitude;
+
+                    if (sqrDistance > maxSqrDistance)
                     {
-                        if (breakOnFirstSolution)
+                        if (i < SegmentVertices.Length - 1)
                         {
-                            break;
+                            if (breakOnFirstSolution)
+                            {
+                                break;
+                            }
                         }
+
+
+                        continue;
                     }
 
-
-                    continue;
+                    foundVertex = vertex;
+                    foundVertexIndex = i;
                 }
 
-                foundVertex = vertex;
-                foundVertexIndex = i;
             }
-
 
             if (foundVertexIndex == SegmentVertices.Length - 1)
             {

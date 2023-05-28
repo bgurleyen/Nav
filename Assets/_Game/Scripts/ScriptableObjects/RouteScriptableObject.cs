@@ -432,7 +432,7 @@ namespace Navigation
             reducedPoint.IndicateDirectApproach(angle);
 
             // insert fake node as linear approach beginning - very far
-            AddRelativeNodeBefore(toNodeId, angle, -500, toNodeId, out var _veryFarNode);
+            AddRelativeNodeBefore(toNodeId, angle, -300, toNodeId, out var _veryFarNode);
 
             // insert fake node as current destination : before very far,  in the place of original next node
             // AddRelativeNodeBefore(_veryFarNode.ID, angle, 500, out var _);
@@ -558,7 +558,5 @@ namespace Navigation
 
             Points = newSet;
         }
-
-      
     }
 }

@@ -31,11 +31,11 @@ namespace Navigation
             }
         }
 
-        public void TickSteerToPathFoundVertex(Vector2 seekTarget)
+        public void TickSteerToPathFoundVertex(Vector2 seekTarget, out float heading)
         {
-            var targetHeading = Geometry.GetHeadingOfDirection(seekTarget - NMPosition);
+            heading = Geometry.GetHeadingOfDirection(seekTarget - NMPosition);
 
-            TickSteerToTargetHeading(targetHeading);
+            TickSteerToTargetHeading(heading);
         }
 
         public void TickSteerToTargetHeading(float targetHeading)

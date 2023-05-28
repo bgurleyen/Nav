@@ -95,7 +95,7 @@ public class Aircraft : MovingActor
                     return;
                 }
 
-                _pilot.TickSteerToPathFoundVertex(_lastFoundSegmentVertex);
+                _pilot.TickSteerToPathFoundVertex(_lastFoundSegmentVertex, out _);
                 _pilot.TickAdvance();
                 
                 // Session.ActiveRoute.TracedRoute.FindClosestRoutePoint(
@@ -148,7 +148,7 @@ public class Aircraft : MovingActor
                     }
                 }
 
-                _pilot.TickSteerToPathFoundVertex(_lastFoundSegmentVertex);
+                _pilot.TickSteerToPathFoundVertex(_lastFoundSegmentVertex, out _);
             }
         }
     }

@@ -111,6 +111,11 @@ namespace Navigation
                 }
             }
 
+            if (Session.ModeSetWithPosition != null)
+            {
+                Destroy(Session.ModeSetWithPosition);
+            }
+
             Session.ModeSetWithPosition = Session.ModRoute.CloneAndInit(); // refactor use the existing modwithposition to avoid reinstantiating
 
             Session.ModeSetWithPosition.AddModPositionNodes();
@@ -246,6 +251,11 @@ namespace Navigation
         private void CheckModForOperation()
         {
             if (Session.IsMod) return;
+
+            if (Session.ModRoute != null)
+            {
+                Destroy(Session.ModRoute);
+            }
 
             // if this is the first modification generate a new mod from current active
             Session.ModRoute = Session.ActiveRoute.CloneAndInit();
