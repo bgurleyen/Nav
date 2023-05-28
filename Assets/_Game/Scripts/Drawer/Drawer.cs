@@ -171,11 +171,6 @@ public class Drawer : MonoBehaviour
         freeFlightPivot.gameObject.SetActive(Session.PlayerAircraft.IsFreeFlight);
         bananaIndicatorPivot.SetLocalY(Calculator.Instance.GetBananaPosition);
 
-        if (Session.PlayerAircraft.IsRejoining && Session.PlayerAircraft.RejoinPathLines != null)
-        {
-            DisplaySet(Session.PlayerAircraft.RejoinPathLines.ComputedLines,  LinesType.Rejoin);
-        }
-        
         DisplayOtherTraffic();
 
         DisplayRotations();

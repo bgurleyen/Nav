@@ -122,11 +122,22 @@ public class TracedRoute
         var reachedSegmentEnd = false;
         reachedRouteEnd = false;
 
+        if (ComputedLines == null)
+        {
+            Debug.LogWarning("Computed lines null");
+            return false;
+        }
 
         // 0 = start line, empty
         for (int i = startFromSegmentIndex; i < ComputedLines.Length; i++)
         {
             var computedLine = ComputedLines[i];
+
+            if (computedLine.LinkedPoint.IsHiddenLine)
+            {
+                startFromVertexIndex = 0;
+                continue;
+            }
 
             if (!computedLine.FindFurthestSeekTargetOnSegment(
                     Session.PlayerAircraft.NMPosition,
@@ -142,6 +153,7 @@ public class TracedRoute
                 {
                     Debug.LogError("not found destination on segment with constraint");
                 }
+                startFromVertexIndex = 0;
                 continue;
             }
 

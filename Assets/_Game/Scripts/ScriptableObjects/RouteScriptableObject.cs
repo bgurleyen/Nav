@@ -163,7 +163,7 @@ namespace Navigation
 
                 TracedRoute.ComputedLines[intersectionSegmentIndex].FindFurthestSeekTargetOnSegment(
                     intersectionPoint,
-                    Session.Settings.TickStepDistance(false) * 2,
+                    Session.Settings.PilotSeekDistancePathFollow*1.1f,
                     out _,
                     out intersectionVertexIndex,
                     out _, beginningIsAlwaysValid: false);

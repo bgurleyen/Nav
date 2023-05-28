@@ -45,14 +45,14 @@ namespace Navigation
         /// <param name="pilot"></param>
         public void TraceFromPilot(Pilot pilot, float seekDistance)
         {
-            int safe_max_positions = 200;
+            const int SAFE_MAX_POSITIONS = 200;
             var tracePositions = new List<Vector2> { pilot.NMPosition };
             
             int lastFoundVertexIndex = 0;
 
             float cachedLastHeading = 999;
             
-            while (tracePositions.Count < safe_max_positions && FindFurthestSeekTargetOnSegment(
+            while (tracePositions.Count < SAFE_MAX_POSITIONS && FindFurthestSeekTargetOnSegment(
                        pilot.NMPosition,
                        seekDistance,
                        out var foundVertex,
@@ -78,7 +78,7 @@ namespace Navigation
 
             }
 
-            if (tracePositions.Count == safe_max_positions)
+            if (tracePositions.Count == SAFE_MAX_POSITIONS)
             {
                 Debug.LogError("Cannot reach trace destination");
             }
@@ -92,60 +92,56 @@ namespace Navigation
 
         /// <returns></returns>
         public bool FindFurthestSeekTargetOnSegment(Vector2 forPosition, float seekDistance, out Vector2 foundVertex,
-            out int foundVertexIndex, out bool reachedEnd, int startFromIndex = 0, bool breakOnFirstSolution = false, bool beginningIsAlwaysValid = true)
+            out int lastFoundVertexIndex, out bool reachedEnd, int startFromIndex = 0, bool breakOnFirstSolution = false, bool beginningIsAlwaysValid = true)
 
         {
             foundVertex = Vector2.zero;
-            foundVertexIndex = -1;
+            lastFoundVertexIndex = 0;
+            var foundVertexIndex = -1;
             reachedEnd = false;
 
             var maxSqrDistance = seekDistance * seekDistance;
 
 
             var fistSqrDistance = (SegmentVertices[startFromIndex] - forPosition).sqrMagnitude;
-            if (fistSqrDistance > maxSqrDistance)
+            if (beginningIsAlwaysValid && fistSqrDistance > maxSqrDistance)
             {
                 // if pilot is already very far from the beginning, consider it a valid target until it gets closed
-                if (beginningIsAlwaysValid)
-                {
-                    foundVertex = SegmentVertices[startFromIndex];
-                    foundVertexIndex = startFromIndex;
+                foundVertex = SegmentVertices[startFromIndex];
+                lastFoundVertexIndex = startFromIndex;
 
-                    return true;
-                }
+                return true;
             }
-            else
+            
+            
+            // if needed we can to a lerp to find the closest segment vertex to start from 
+            // var hasIntersection = Geometry.FindDistanceToSegment(forPosition, StartNMPosition, EndNMPosition,
+            //     out var closest,
+            //     out var distance);
+            //
+            // var isWithinSegment = hasIntersection && distance <= seekDistance;
+
+            for (var i = startFromIndex; i < SegmentVertices.Length; i++)
             {
-                // if needed we can to a lerp to find the closest segment vertex to start from 
-                // var hasIntersection = Geometry.FindDistanceToSegment(forPosition, StartNMPosition, EndNMPosition,
-                //     out var closest,
-                //     out var distance);
-                //
-                // var isWithinSegment = hasIntersection && distance <= seekDistance;
+                var vertex = SegmentVertices[i];
+                var sqrDistance = (vertex - forPosition).sqrMagnitude;
 
-                for (var i = startFromIndex; i < SegmentVertices.Length; i++)
+                if (sqrDistance > maxSqrDistance)
                 {
-                    var vertex = SegmentVertices[i];
-                    var sqrDistance = (vertex - forPosition).sqrMagnitude;
-
-                    if (sqrDistance > maxSqrDistance)
+                    if (i < SegmentVertices.Length - 1)
                     {
-                        if (i < SegmentVertices.Length - 1)
+                        if (breakOnFirstSolution)
                         {
-                            if (breakOnFirstSolution)
-                            {
-                                break;
-                            }
+                            break;
                         }
-
-
-                        continue;
                     }
 
-                    foundVertex = vertex;
-                    foundVertexIndex = i;
+
+                    continue;
                 }
 
+                foundVertex = vertex;
+                foundVertexIndex = i;
             }
 
             if (foundVertexIndex == SegmentVertices.Length - 1)
@@ -153,7 +149,12 @@ namespace Navigation
                 reachedEnd = true;
             }
 
-            return foundVertexIndex > -1;
+            if (foundVertexIndex > -1)
+            {
+                lastFoundVertexIndex = foundVertexIndex;
+                return true;
+            }
+            return false;
         }
     }
 

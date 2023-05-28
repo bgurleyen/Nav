@@ -15,7 +15,6 @@ public class Aircraft : MovingActor
     /// </summary>
     public float TargetHeading { get; private set; }
     public bool IsRejoining => !IsFreeFlight && !IsOnRoute;
-    public TracedRoute RejoinPathLines { get; private set; }
 
     public int CachedExitSegmentOfHeadingRejoinIntersection { get; }
     public Vector2 CachedExitPointFromHeading { get; }
@@ -129,24 +128,7 @@ public class Aircraft : MovingActor
                     //                     Session.PlayerAircraft.NMPosition,
                     //                     out PositionFreeOrClosestOnRouteSegment);
                 }
-                else
-                {
-                    if (!RejoinPathLines.FindCloseToRouteSegmentDestination(
-                            Session.Settings.PilotSeekDistancePathFollow,
-                            out _lastFoundSegmentVertex,
-                            out _lastFoundSegmentVertexIndex,
-                            out _lastFoundSegmentIndex,
-                            out  foundAtDistanceOnSegment,
-                            out  reachedEnd,
-                            startFromSegmentIndex: _lastFoundSegmentIndex,
-                            startFromVertexIndex: _lastFoundSegmentVertexIndex,
-                            breakOnFistSolution: true))
-                    {
-                        Debug.LogError("No Intersection Point Found");
-                        IsFreeFlight = true;
-                        return;
-                    }
-                }
+               
 
                 _pilot.TickSteerToPathFoundVertex(_lastFoundSegmentVertex, out _);
             }
