@@ -46,17 +46,19 @@ namespace Navigation
             }
         }
 
-        public static int GetNodeIndex(this RoutePoint[] points, int nodeId)
+        public static bool GetNodeIndex(this RoutePoint[] points, int nodeId, out int nodeIndex)
         {
             for (var i = 0; i < points.Length; i++)
             {
                 if (points[i].ID == nodeId)
                 {
-                    return i;
+                    nodeIndex = i;
+                    return true;
                 }
             }
 
-            return -1;
+            nodeIndex =  -1;
+            return false;
         }
 
     }

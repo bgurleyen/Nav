@@ -260,7 +260,7 @@ public class Aircraft : MovingActor
         }
         else
         {
-            Debug.LogError("No Intersection Point Found");
+            Debug.LogWarning("No Intersection Point Found");
         }
     }
 

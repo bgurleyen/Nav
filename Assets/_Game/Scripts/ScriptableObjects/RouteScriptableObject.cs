@@ -66,7 +66,7 @@ namespace Navigation
 
         public bool GetPoint(int nodeId, out RoutePoint point)
         {
-            var index = Points.GetNodeIndex(nodeId);
+            Points.GetNodeIndex(nodeId, out var index);
             return GetPointAt(index, out point);
         }
 
@@ -177,8 +177,9 @@ namespace Navigation
         public void ShortcutNodes(int firstIdNodeToDissolve, int toId,
             out RoutePoint reducedPoint) // $^% refactor for passed nodes ?
         {
-            var startIndex = Points.GetNodeIndex(firstIdNodeToDissolve);
-            var endIndex = Points.GetNodeIndex(toId);
+            Points.GetNodeIndex(firstIdNodeToDissolve, out var startIndex);
+            
+            Points.GetNodeIndex(toId, out var  endIndex);
 
             var offset = endIndex - startIndex;
 
@@ -231,7 +232,7 @@ namespace Navigation
             out RoutePoint insertionNode,
             out RoutePoint afterInsertion) // $^% todo refactor for passed nodes ?
         {
-            var nodeIndex = Points.GetNodeIndex(nodeId);
+            Points.GetNodeIndex(nodeId, out var nodeIndex);
             var node = Points[nodeIndex];
 
             float distanceToBefore;
@@ -291,7 +292,7 @@ namespace Navigation
         private void AddRelativeNodeAfter(int relativeFromNodeId, float rawDegrees, int distance,
             out RoutePoint insertionNode, out RoutePoint afterInsertion, bool addCurveOffset = true)
         {
-            var relativeFromNodeIndex = Points.GetNodeIndex(relativeFromNodeId);
+            Points.GetNodeIndex(relativeFromNodeId, out var relativeFromNodeIndex);
             var relativeFromNode = Points[relativeFromNodeIndex];
 
             afterInsertion = Points[relativeFromNodeIndex + 1];
@@ -341,8 +342,8 @@ namespace Navigation
             out RoutePoint insertionNode,
             bool showDiscontinuity = false)
         {
-            var originalBeforeNodeIndex = Points.GetNodeIndex(beforeNodeId);
-            var relativeNodeIndex = Points.GetNodeIndex(relativeNodeId);
+            Points.GetNodeIndex(beforeNodeId, out var originalBeforeNodeIndex);
+            Points.GetNodeIndex(relativeNodeId, out var relativeNodeIndex);
 
             var isInThePast = PositionVirtualNode.PassedNodeIndexForMode > originalBeforeNodeIndex - 1;
 
@@ -426,10 +427,22 @@ namespace Navigation
 
         public void CreateLinearApproach(int toNodeId, int angle)
         {
-            //execute shortcut node at [1] until toNode
-            ShortcutNodes(PositionVirtualNode.GetNodeTo.ID, toNodeId, out var reducedPoint);
+            RoutePoint reducedPoint;
+            var firstNodeToDissolve = PositionVirtualNode.GetNodeTo.ID;
+            // the TO point on active route can be already shortcuted on MOD
+            if (!Points.GetNodeIndex(firstNodeToDissolve, out _))
+            {
+                Points.GetNodeIndex(toNodeId, out var toNodeIndex);
+                reducedPoint = Points[toNodeIndex];
+            }
+            else
+            {
+                //execute shortcut node at [1] until toNode
+                ShortcutNodes(PositionVirtualNode.GetNodeTo.ID, toNodeId, out reducedPoint);
+            }
 
             reducedPoint.IndicateDirectApproach(angle);
+
 
             // insert fake node as linear approach beginning - very far
             AddRelativeNodeBefore(toNodeId, angle, -300, toNodeId, out var _veryFarNode);

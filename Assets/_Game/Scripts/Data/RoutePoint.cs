@@ -100,7 +100,8 @@ public class RoutePoint
                     return true;
                 }
 
-                nodeCursor = Session.ActiveRoute.Points[Session.ActiveRoute.Points.GetNodeIndex(nodeCursor.ID) + 1];
+                Session.ActiveRoute.Points.GetNodeIndex(nodeCursor.ID, out var nodeCursorIndex);
+                nodeCursor = Session.ActiveRoute.Points[nodeCursorIndex + 1];
             }
 
             return false;

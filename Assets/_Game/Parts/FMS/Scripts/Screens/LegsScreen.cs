@@ -158,19 +158,22 @@ public class LegsScreen : ScreenBase
             _scratchPadInterpreter.IsRelativeNodeOnDirection(out var distanceOnDirection, out var relativeNodeId))
         {
             _simulation.ExecuteInsertRelativeOnDirectionOnMod(new ExecuteRelativeOnDirectionOnMod
-                {FromNodeId = clickedInfo.LinkedId, Distance = distanceOnDirection, RelativeNodeId = relativeNodeId});
+                { FromNodeId = clickedInfo.LinkedId, Distance = distanceOnDirection, RelativeNodeId = relativeNodeId });
         }
         else if (!string.IsNullOrEmpty(_scratchPadBuffer) &&
                  _scratchPadInterpreter.IsRelativeNode(out var angle, out var distance, out relativeNodeId))
         {
             // if this is a relative insert command
             _simulation.ExecuteInsertRelativeOnMod(new InsertRelativeCommand
-                {BeforeNodeId = clickedInfo.LinkedId, RawDegrees = angle, Distance = distance, RelativeNodeId = relativeNodeId});
+            {
+                BeforeNodeId = clickedInfo.LinkedId, RawDegrees = angle, Distance = distance,
+                RelativeNodeId = relativeNodeId
+            });
         }
         else
         {
-            var selectedIndex = Session.VisibleRoute.Points.GetNodeIndex(_selectionInfo.LinkedId);
-            var clickedIndex = Session.VisibleRoute.Points.GetNodeIndex(clickedInfo.LinkedId);
+            Session.VisibleRoute.Points.GetNodeIndex(_selectionInfo.LinkedId, out var selectedIndex);
+            Session.VisibleRoute.Points.GetNodeIndex(clickedInfo.LinkedId, out var clickedIndex);
 
             // when user clicks on the node below
             if (selectedIndex < clickedIndex)
@@ -183,10 +186,12 @@ public class LegsScreen : ScreenBase
             // if this is a shortcut command
             Debug.Log("=shortcut=");
             _simulation.ExecuteShortcutOnMod(new ExecuteShortcutOnModeCommand
-                {FromNodeId = clickedInfo.LinkedId, ToNodeId = _selectionInfo.LinkedId});
+                { FromNodeId = clickedInfo.LinkedId, ToNodeId = _selectionInfo.LinkedId });
         }
 
         ClearCurrentOperation();
+        clickedInfo = _nodesController.GetNodeInfoAtLineIndex(index, _currentPage);
+        _lastSelectionClicked = clickedInfo;
     }
 
     public override void OnExecPress()
