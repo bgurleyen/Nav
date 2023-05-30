@@ -30,18 +30,18 @@ public class GameManager : MonoBehaviour
         legsScreen.OnLeftCornerPressErase += LEGS_OnLeftCornerPressErase;
         legsScreen.OnExecButtonPress += LEGS_OnExecButtonPress;
 
-        
+
         _simulation = UYServiceLocator.Get<Simulation>();
 
         _initialRoute.Init(true);
 
         _routes.ActiveRoute = _initialRoute.CloneAndInit();
-        
+
         Session.Routes = _routes;
 
         _simulation.Init();
     }
-    
+
     private void OnDestroy()
     {
         var mcpUI = UYServiceLocator.Get<McpUI>();
@@ -67,7 +67,7 @@ public class GameManager : MonoBehaviour
     {
         _simulation.EraseMod();
     }
-    
+
     private void LEGS_OnExecButtonPress()
     {
         if (Session.IsMod)
@@ -101,7 +101,7 @@ public class GameManager : MonoBehaviour
             default:
                 if (!Session.PlayerAircraft.IsOnRoute)
                 {
-                    Session.PlayerAircraft.StartLNavMode(Aircraft.RejoinRouteMode.Manual);
+                    Session.PlayerAircraft.StartLNavMode();
                 }
 
                 break;
@@ -113,21 +113,12 @@ public class GameManager : MonoBehaviour
         Session.ModRoute.ClearModifiedFlags();
         Session.ModeSetWithPosition.ClearModifiedFlags();
 
-        // if it's free flight, aircraft will switch to the temp path computed until rejoining active path
-        if (Session.PlayerAircraft.IsFreeFlight)
-        {
-            Session.ActiveRoute = Session.ModRoute;
-        }
-        else
-        {
-            Session.ActiveRoute = Session.ModeSetWithPosition;
-            Session.PlayerAircraft.ResetSeekProgress(PositionVirtualNode.PassedNodeIndex+2 ,0);
-        }
-
+        Session.ActiveRoute = Session.ModeSetWithPosition;
+        Session.PlayerAircraft.ResetSeekProgress(PositionVirtualNode.PassedNodeIndex + 2, 0);
 
         if (!Session.PlayerAircraft.IsOnRoute)
         {
-            Session.PlayerAircraft.StartLNavMode(Aircraft.RejoinRouteMode.NextRouteNode);
+            Session.PlayerAircraft.StartLNavMode();
         }
 
         Session.ModRoute = null;

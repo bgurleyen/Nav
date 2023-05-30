@@ -190,6 +190,8 @@ public class LegsScreen : ScreenBase
         }
 
         ClearCurrentOperation();
+        
+        // if a new node is on the selected position after the operation - update the selection info
         clickedInfo = _nodesController.GetNodeInfoAtLineIndex(index, _currentPage);
         _lastSelectionClicked = clickedInfo;
     }

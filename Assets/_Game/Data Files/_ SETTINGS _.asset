@@ -20,7 +20,7 @@ MonoBehaviour:
   RejoinDistance: 2.8
   _pilotMaxTurningDegreesPerNM: 3
   AirplaneInitialSpeed: 170
-  _flyingTickDuration: 1.77
+  _flyingTickDuration: 3.78
   ForwardThreshold: 1.5
   PilotSeekDistancePathFollow: 1.2
   SegmentGranularity: 0.1

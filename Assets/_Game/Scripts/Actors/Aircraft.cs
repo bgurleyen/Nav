@@ -6,7 +6,6 @@ using UnityEngine;
 [Serializable]
 public class Aircraft : MovingActor
 {
-    public Vector2 PositionOnSegment;
     public float NMWalkedOnCurrentSegment;
     public int CurrentSegmentIndex;
 
@@ -102,7 +101,6 @@ public class Aircraft : MovingActor
                 //     Session.PlayerAircraft.NMPosition,
                 //     out PositionFreeOrClosestOnRouteSegment);
 
-                PositionOnSegment = _lastFoundSegmentVertex;
                 CurrentSegmentIndex = _lastFoundSegmentIndex;
                 NMWalkedOnCurrentSegment = foundAtDistanceOnSegment;
             }
@@ -215,29 +213,9 @@ public class Aircraft : MovingActor
         IsOnRoute = false;
     }
 
-    public enum RejoinRouteMode
+    public void StartLNavMode()
     {
-        Manual,
-        NextRouteNode
-    }
-
-    public void StartLNavMode(RejoinRouteMode mode)
-    {
-        switch (mode)
-        {
-            case RejoinRouteMode.Manual:
-                ChooseAutoRejoinMethod();
-                break;
-            // when needed rejoin: ex. after apply MOD
-            case RejoinRouteMode.NextRouteNode:
-                ComputeTempPathForNextNode();
-                break;
-        }
-    }
-
-    private void ChooseAutoRejoinMethod()
-    {
-        if ( Session.ActiveRoute.TracedRoute.FindCloseToRouteSegmentDestination(
+        if (Session.ActiveRoute.TracedRoute.FindCloseToRouteSegmentDestination(
                 Session.Settings.RejoinDistance,
                 out _,
                 out var lastFoundSegmentVertexIndex,
@@ -250,7 +228,7 @@ public class Aircraft : MovingActor
             IsOnRoute = true;
             IsFreeFlight = false;
         }
-        
+
         else if (Session.ActiveRoute.FindFreeFlightDirectExitScenario(out _,
                      out var intersectionSegmentIndex, out var intersectionVertexIndex))
         {
@@ -263,42 +241,6 @@ public class Aircraft : MovingActor
             Debug.LogWarning("No Intersection Point Found");
         }
     }
-
-    // when aircraft is in HDG and user applies a MOD
-    private void ComputeTempPathForNextNode()
-    {
-
-        // £@$
-        // Session.ActiveRoute.FindFreeFlightNextNodeExitScenario(out var futurePosition, out var centerOfTurn, out _cachedExitPointFromHeading,
-        //     out _cachedExitSegmentOfHeadingRejoinIntersection);
-        //
-        //     //compute rejoin path
-        //
-        //     Debug.Log("start LNAV - rejoin next node");
-        //     RejoinPathLines = new PathLines(_settings.DrawerUnitLength);
-        //
-        //     var tempPoints = new RoutePoint[5];
-        //     var lastPoint = RoutePoint.ConstructFromPosition(Vector2.zero, null);
-        //     tempPoints[0] = lastPoint;
-        //     lastPoint = RoutePoint.ConstructFromPosition(PositionFreeOrOnCurvedPath, lastPoint);
-        //     tempPoints[1] = lastPoint;
-        //     lastPoint = RoutePoint.ConstructFromPosition(futurePosition, lastPoint);
-        //     tempPoints[2] = lastPoint;
-        //     lastPoint = RoutePoint.ConstructFromPosition(centerOfTurn, lastPoint);
-        //     tempPoints[3] = lastPoint;
-        //     lastPoint = RoutePoint.ConstructFromPosition(_cachedExitPointFromHeading, lastPoint);
-        //     tempPoints[4] = lastPoint;
-        //
-        //     RejoinPathLines.ComputeSet(tempPoints);
-        //
-        //     GetFirstDestinationFromNode(RejoinPathLines, tempPoints[1], tempPoints,
-        //         out RejoinPathLocalization);
-        //
-        //     IsFreeFlight = false;
-    }
-
-   
-
 
     private void CheckAdvancePointOnHDGProximity()
     {
