@@ -216,7 +216,7 @@ public class Aircraft : MovingActor
     public void StartLNavMode()
     {
         if (Session.ActiveRoute.TracedRoute.FindCloseToRouteSegmentDestination(
-                Session.Settings.RejoinDistance,
+                Session.Settings.HDGCloseRejoinDistance,
                 out _,
                 out var lastFoundSegmentVertexIndex,
                 out var lastFoundSegmentIndex,
@@ -248,7 +248,7 @@ public class Aircraft : MovingActor
         {
             var nodePosition = Session.ActiveRoute.Points[i].CartesianPosition;
             if (Vector2.Distance(nodePosition, _pilot.NMPosition) <=
-                Session.Settings.HGDAutoNextPointDistance)
+                Session.Settings.HDGProximityAdvanceDistance)
             {
                 // if (!Session.ActiveRoute.TracedRoute.GetNextDestination(
                 //         i + 1,
@@ -258,7 +258,7 @@ public class Aircraft : MovingActor
                 //     return;
                 // }
                 //
-                // RoutePathLocalization = newUnreachedPositionInfo;
+                CurrentSegmentIndex = Mathf.Min(i + 1, Session.ActiveRoute.Points.Length - 1);
             }
         }
     }

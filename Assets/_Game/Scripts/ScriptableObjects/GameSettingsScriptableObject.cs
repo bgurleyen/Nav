@@ -23,7 +23,8 @@ public class GameSettingsScriptableObject : ScriptableObject
     public float PlanReferenceLength80 = 3.82f;
     
     [Header("Aircraft")]
-    public float RejoinDistance = 2.8f;
+    public float HDGProximityAdvanceDistance = 5f;
+    public float HDGCloseRejoinDistance = 2.8f;
     [SerializeField] private float _pilotMaxTurningDegreesPerNM= 3;
     [Space]
     public float AirplaneInitialSpeed = 170;
@@ -42,9 +43,6 @@ public class GameSettingsScriptableObject : ScriptableObject
 
     private const float FtToNm = 0.000164579f;
 
-    [Header("===pending===")]
-    public float HGDAutoNextPointDistance = 1.3f;
-    
 
     // turn radius
     private const float IAS = 240;
