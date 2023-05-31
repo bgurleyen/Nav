@@ -1,15 +1,24 @@
-﻿using UnityEngine;
+﻿using System;
+using UnityEngine;
 
 public class ScreenBase : MonoBehaviour
 {
+    protected static MainScreen Main => MainScreen.Instance;
+    protected FMC_Screens FMC { get; private set; }
+
+    protected virtual void Awake()
+    {
+        FMC = GetComponentInParent<FMC_Screens>();
+    }
+
     public virtual void Show()
     {
-        gameObject.SetActive(true);
+       transform.localScale= Vector3.one;
     }
 
     public virtual void Hide()
     {
-        gameObject.SetActive(false);
+       transform.localScale= Vector3.zero;
     }
 
     public virtual void DisplayNextPage() { }

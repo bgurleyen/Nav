@@ -11,8 +11,6 @@ public class LegsScreen : ScreenBase
     public Action OnLeftCornerPressErase;
     public Action OnExecButtonPress;
     
-    private static MainScreen Main => MainScreen.Instance;
-
     private int NodesPerPage => nodes.Length;
 
     private RoutePoint GetSelectedPoint => _selectionInfo == null ? null : 
@@ -39,8 +37,9 @@ public class LegsScreen : ScreenBase
     private int _currentPage;
     private Simulation _simulation;
 
-    private void Awake()
+    protected override void Awake()
     {
+        base.Awake();
         UYServiceLocator.Register(this);
     }
 

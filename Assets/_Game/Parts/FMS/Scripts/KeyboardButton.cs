@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using Navigation;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -14,30 +15,30 @@ public class KeyboardButton : MonoBehaviour
 
     private void OnClickPress()
     {
-        var _text = GetComponentInChildren<TMP_Text>().text;
+        var text = GetComponentInChildren<TMP_Text>().text;
 
-        if (int.TryParse(_text, out var _nr))
+        if (int.TryParse(text, out var _nr))
         {
             FMC_Screens.Instance.CurrentScreen.OnNumberPressed(_nr);
         }
-        else if (_text.Length == 1)
+        else if (text.Length == 1)
         {
-            if (_text == Keys.Decimal)
+            if (text == Keys.Decimal)
             {
                 FMC_Screens.Instance.CurrentScreen.OnDecimalPressed();
             }
-            else if (_text == Keys.Slash)
+            else if (text == Keys.Slash)
             {
                 FMC_Screens.Instance.CurrentScreen.OnSlashPressed();
             }
             else // it's a letter
             {
-                FMC_Screens.Instance.CurrentScreen.OnCharacterInput(_text[0]);
+                FMC_Screens.Instance.CurrentScreen.OnCharacterInput(text[0]);
             }
         }
         else
         {
-            switch (_text)
+            switch (text)
             {
                 case Keys.Sign:
                     FMC_Screens.Instance.CurrentScreen.OnSignPressed();
@@ -65,6 +66,17 @@ public class KeyboardButton : MonoBehaviour
     public void OnNextPageClick()
     {
         FMC_Screens.Instance.CurrentScreen.DisplayNextPage();
+    }
+
+    public void OnMenuButtonClick()
+    {
+        FMC_Screens.Instance.ShowPage(FMCScreens.Menu);
+    }
+    
+    
+    public void OnLEGSButtonClick()
+    {
+        FMC_Screens.Instance.ShowPage(FMCScreens.Legs);
     }
 }
 

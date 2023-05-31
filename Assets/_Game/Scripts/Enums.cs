@@ -14,4 +14,10 @@ namespace Navigation
         Active,
         Rejoin
     }
+
+    public enum FMCScreens
+    {
+        Menu,
+        Legs
+    }
 }

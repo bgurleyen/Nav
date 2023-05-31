@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
 
 public class SideButton : MonoBehaviour
 {
@@ -14,11 +11,11 @@ public class SideButton : MonoBehaviour
 
     public void OnClick()
     {
-        if (IsLeft(index, out var _lineIndex, out var _isExtra))
+        if (IsLeft(index, out var lineIndex, out var isExtra))
         {
-            if (!_isExtra)
+            if (!isExtra)
             {
-                FMC_Screens.Instance.CurrentScreen.OnLineSelectLeft(_lineIndex);
+                FMC_Screens.Instance.CurrentScreen.OnLineSelectLeft(lineIndex);
             }
             else
             {
@@ -27,9 +24,9 @@ public class SideButton : MonoBehaviour
         }
         else
         {
-            if (!_isExtra)
+            if (!isExtra)
             {
-                FMC_Screens.Instance.CurrentScreen.OnLineSelectRight(_lineIndex);
+                FMC_Screens.Instance.CurrentScreen.OnLineSelectRight(lineIndex);
             }
             else
             {

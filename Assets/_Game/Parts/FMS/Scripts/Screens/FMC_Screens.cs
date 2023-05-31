@@ -1,17 +1,23 @@
 ﻿using System;
 using Gamelogic.Extensions;
+using Navigation;
 using UnityEngine;
 
 public class FMC_Screens : Singleton<FMC_Screens>
 {
-    [SerializeField] private ScreenBase legsScreen;
+    [SerializeField] private FMCScreens _startingScreen;
+    [SerializeField] private ScreenBase _menuScreen;
+    [SerializeField] private ScreenBase _legsScreen;
     
     public ScreenBase CurrentScreen { get; private set; }
 
 
     private void Start()
     {
-        ShowPage(legsScreen);
+        _menuScreen.Hide();
+        _legsScreen.Hide();
+        
+        ShowPage(_startingScreen);
     }
 
     private void ShowPage(ScreenBase newPage)
@@ -23,5 +29,20 @@ public class FMC_Screens : Singleton<FMC_Screens>
 
         CurrentScreen = newPage;
         CurrentScreen.Show();
+    }
+
+    public void ShowPage(FMCScreens screen)
+    {
+        switch (screen)
+        {
+            case FMCScreens.Menu:
+                ShowPage(_menuScreen);
+                break;
+            case FMCScreens.Legs:
+                ShowPage(_legsScreen);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(screen), screen, null);
+        }
     }
 }
