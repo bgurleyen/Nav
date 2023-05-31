@@ -19,7 +19,7 @@ public class LegsNodeLine : MonoBehaviour
 
     public void DisplayNodeDetails(RoutePoint node, NodeSelection linkedInfo)
     {
-        var _distance = linkedInfo.LinkedId == PositionVirtualNode.GetNodeTo.ID
+        var distance = linkedInfo.LinkedId == PositionVirtualNode.GetNodeTo.ID
             ? Session.PlayerAircraft.ComputedDistanceLeftOnSegment
             : node.Distance;
 
@@ -32,7 +32,7 @@ public class LegsNodeLine : MonoBehaviour
             hFull.text = node.IsAfterDiscontinuity ? "--- ROUTE DISCONTINUITY ---" : "";
 
             hLeft.text = node.IsAfterDiscontinuity ? "" : $"{node.RawDegrees:000}°";
-            hMiddle.text = node.IsAfterDiscontinuity ? "" : $"{_distance:F1}NM";
+            hMiddle.text = node.IsAfterDiscontinuity ? "" : $"{distance:F1}NM";
 
             if (node.IsModified)
             {
@@ -48,8 +48,8 @@ public class LegsNodeLine : MonoBehaviour
             }
 
 
-            var _isSpeedRestriction = node.GetSpeedIsRestricted(out var _speedDisplayValue);
-            var _isAltRestriction = node.GetAltitudeIsRestricted(out var _altDisplayValue);
+            var isSpeedRestriction = node.GetSpeedIsRestricted(out var speedDisplayValue);
+            var isAltRestriction = node.GetAltitudeIsRestricted(out var altDisplayValue);
             // var _speedColor = 
             //     ? "#FF00C7"
             //     : "#EBE0C9";
@@ -57,25 +57,25 @@ public class LegsNodeLine : MonoBehaviour
             //     ? "#FF00C7"
             //     : "#EBE0C9";
 
-            var _speedState = node.IsSpeedModified
+            var speedState = node.IsSpeedModified
                 ? BgText.TextState.ModSelection
-                : _isSpeedRestriction
+                : isSpeedRestriction
                     ? node.ID == Session.VisibleRoute.FirstSpeedRegulationNodeId 
                         ? BgText.TextState.Magenta
                         : BgText.TextState.TallText
                     : BgText.TextState.SmallText;
 
-            var _altState = node.IsAltitudeModified
+            var altState = node.IsAltitudeModified
                 ? BgText.TextState.ModSelection
-                : _isAltRestriction
+                : isAltRestriction
                     ? node.ID == Session.VisibleRoute.FirstAltRegulationNodeId
                         ? BgText.TextState.Magenta
                         : BgText.TextState.TallText
                     : BgText.TextState.SmallText;
 
             fRight.SetText(true,"/",
-                new BgText.TextBuilder {State = _speedState, Text = _speedDisplayValue},
-                new BgText.TextBuilder {State = _altState, Text = _altDisplayValue});
+                new BgText.TextBuilder {State = speedState, Text = speedDisplayValue},
+                new BgText.TextBuilder {State = altState, Text = altDisplayValue});
         }
     }
 

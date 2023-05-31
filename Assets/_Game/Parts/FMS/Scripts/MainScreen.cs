@@ -28,24 +28,18 @@ public class MainScreen : Singleton<MainScreen>
 
     public string LastLineLeft => lastFLeft.text;
 
-    public void UpdatePageInfo(string pageTitle, string secondInfo)
+    public void UpdatePageInfo( bool isMod = false, string firstInfo = "", string pageTitle = "", string secondInfo = "",int currentPage = -1, int totalPages = -1)
     {
-        pageNumber.text = "";
-        leftInfo1.SetText(false,"");
-        leftInfo2.text = "";
-        title.text = pageTitle;
-    }
+        leftInfo2.text = secondInfo;
+        pageNumber.text = currentPage == -1 ? "" : $"{currentPage + 1}/{totalPages}";
 
-    public void UpdatePageInfo(int currentPage, int totalPages, bool isMod, string pageTitle)
-    {
-        pageNumber.text = $"{currentPage + 1}/{totalPages}";
         if (isMod)
         {
-            leftInfo1.SetAsModified("MOD");
+            leftInfo1.SetAsModified(firstInfo);
         }
         else
         {
-            leftInfo1.SetAsDefault("ACT");
+            leftInfo1.SetAsDefault(firstInfo);
         }
         title.text = pageTitle;
     }

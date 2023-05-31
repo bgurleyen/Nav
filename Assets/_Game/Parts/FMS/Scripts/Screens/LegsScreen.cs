@@ -85,7 +85,13 @@ public class LegsScreen : ScreenBase
 
     public void DisplayCurrentPage()
     {
-        Main.UpdatePageInfo(_currentPage, TotalPages, Session.IsMod, "LEGS");
+        Main.UpdatePageInfo(
+            isMod: Session.IsMod,
+            firstInfo: Session.IsMod ? "MOD" : "ACT",
+            pageTitle: "LEGS",
+            secondInfo: "RTE",
+            _currentPage,
+            TotalPages);
 
         // Debug.Log("start");
         for (var i = 0; i < nodes.Length; i++)
@@ -116,21 +122,21 @@ public class LegsScreen : ScreenBase
             });
         }
 
-        if (_scratchPadInterpreter.IsAltitudeRegulation(out var _regulation))
+        if (_scratchPadInterpreter.IsAltitudeRegulation(out var regulation))
         {
             _simulation.ExecuteAddAltitudeRegulation(new AddAltitudeRegulationCommand
             {
                 NodeId = clickedInfo.LinkedId,
-                Regulation = _regulation
+                Regulation = regulation
             });
         }
 
-        if (_scratchPadInterpreter.IsSpeedRegulation(out var _speedRegulation))
+        if (_scratchPadInterpreter.IsSpeedRegulation(out var speedRegulation))
         {
             _simulation.ExecuteAddSpeedRegulation(new AddSpeedRegulationCommand
             {
                 NodeId = clickedInfo.LinkedId,
-                Regulation = _speedRegulation
+                Regulation = speedRegulation
             });
         }
     }

@@ -47,30 +47,30 @@ public class BgText : MonoBehaviour
             {
                 label.text += separator;
             }
-            var _part = parts[i];
-            switch (_part.State)
+            var part = parts[i];
+            switch (part.State)
             {
                 case TextState.TallText:
-                    label.text += _part.Text;
+                    label.text += part.Text;
                     break;
                 case TextState.ModSelection:
-                    label.text += $"<mark=#{ColorUtility.ToHtmlStringRGBA(modifiedBackground)}>{_part.Text}</mark>";
+                    label.text += $"<mark=#{ColorUtility.ToHtmlStringRGBA(modifiedBackground)}>{part.Text}</mark>";
                     break;
                 case TextState.Magenta:
                     if (Session.IsMod)
                     {
                         // don't show anything magenta in mod
-                        label.text += _part.Text;
+                        label.text += part.Text;
                     }
                     else
                     {
-                        label.text += $"<color=#{ColorUtility.ToHtmlStringRGB(magentaColor)}>{_part.Text}</color>";
+                        label.text += $"<color=#{ColorUtility.ToHtmlStringRGB(magentaColor)}>{part.Text}</color>";
                     }
 
                     break;
                 case TextState.Default:
                 case TextState.SmallText:
-                    label.text += $"<size=35>{_part.Text}</size>";
+                    label.text += $"<size=35>{part.Text}</size>";
                     break;
             }
         }
@@ -86,7 +86,9 @@ public class BgText : MonoBehaviour
     
     public enum TextState
     {
-        Default, ModSelection, Magenta,
+        Default, 
+        ModSelection, 
+        Magenta,
         TallText,
         SmallText
     }

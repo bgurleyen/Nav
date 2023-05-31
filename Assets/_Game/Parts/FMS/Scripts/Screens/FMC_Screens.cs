@@ -8,6 +8,7 @@ public class FMC_Screens : Singleton<FMC_Screens>
     [SerializeField] private FMCScreens _startingScreen;
     [SerializeField] private ScreenBase _menuScreen;
     [SerializeField] private ScreenBase _legsScreen;
+    [SerializeField] private ScreenBase _initScreen;
     
     public ScreenBase CurrentScreen { get; private set; }
 
@@ -16,6 +17,7 @@ public class FMC_Screens : Singleton<FMC_Screens>
     {
         _menuScreen.Hide();
         _legsScreen.Hide();
+        _initScreen.Hide();
         
         ShowPage(_startingScreen);
     }
@@ -40,6 +42,9 @@ public class FMC_Screens : Singleton<FMC_Screens>
                 break;
             case FMCScreens.Legs:
                 ShowPage(_legsScreen);
+                break;
+            case FMCScreens.Init:
+                ShowPage(_initScreen);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(screen), screen, null);

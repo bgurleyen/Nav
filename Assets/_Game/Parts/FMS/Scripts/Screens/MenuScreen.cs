@@ -17,7 +17,9 @@ public class MenuScreen : ScreenBase
    public override void Show()
    {
       base.Show();
-      
-      Main.UpdatePageInfo("MENU", "");
+
+      Main.UpdatePageInfo(
+         isMod: false,
+         pageTitle: "MENU");
    }
 }

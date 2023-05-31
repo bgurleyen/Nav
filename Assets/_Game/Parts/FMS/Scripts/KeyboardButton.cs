@@ -78,6 +78,12 @@ public class KeyboardButton : MonoBehaviour
     {
         FMC_Screens.Instance.ShowPage(FMCScreens.Legs);
     }
+    
+    
+    public void OnINITButtonClick()
+    {
+        FMC_Screens.Instance.ShowPage(FMCScreens.Init);
+    }
 }
 
 public static class Keys

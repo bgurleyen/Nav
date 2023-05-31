@@ -18,6 +18,7 @@ namespace Navigation
     public enum FMCScreens
     {
         Menu,
-        Legs
+        Legs,
+        Init
     }
 }
