@@ -244,22 +244,17 @@ public class Aircraft : MovingActor
 
     private void CheckAdvancePointOnHDGProximity()
     {
-        for (int i = PositionVirtualNode.PassedNodeIndex + 1; i < Session.ActiveRoute.Points.Length; i++)
+        var firstNextPoint = Session.PlayerAircraft.CurrentSegmentIndex;
+        if (Session.ActiveRoute.Points.Length-1 <= firstNextPoint)
         {
-            var nodePosition = Session.ActiveRoute.Points[i].CartesianPosition;
-            if (Vector2.Distance(nodePosition, _pilot.NMPosition) <=
-                Session.Settings.HDGProximityAdvanceDistance)
-            {
-                // if (!Session.ActiveRoute.TracedRoute.GetNextDestination(
-                //         i + 1,
-                //         0, out var newUnreachedPositionInfo))
-                // {
-                //     Debug.LogError("No destination could be found");
-                //     return;
-                // }
-                //
-                CurrentSegmentIndex = Mathf.Min(i + 1, Session.ActiveRoute.Points.Length - 1);
-            }
+            return;
+        }
+        
+        var nodePosition = Session.ActiveRoute.Points[firstNextPoint].CartesianPosition;
+        if (Vector2.Distance(nodePosition, _pilot.NMPosition) <=
+            Session.Settings.HDGProximityAdvanceDistance)
+        {
+            CurrentSegmentIndex = firstNextPoint + 1;
         }
     }
 
