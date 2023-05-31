@@ -143,13 +143,27 @@ public class LegsScreen : ScreenBase
         // user clicks, none is previously selected
         if (GetSelectedPoint == null)
         {
-            Debug.Log("=selection text=");
-            _selectionInfo = clickedInfo;
-            _scratchPadBuffer = GetSelectedPoint.Name;
-            GetSelectedPoint.IsSelected = true;
-            Main.UpdateScratchPad(_scratchPadBuffer);
-            InterpretScratchpadOnTextChanged(false);
-            return;
+            // parse if user input a name of a point letter by letter
+            if (IsNodeName(_scratchPadBuffer, out var lineIndex, out var linkedSelection))
+            {
+                Debug.Log("=written selection text=");
+                _selectionInfo = linkedSelection;
+                _scratchPadBuffer = GetSelectedPoint.Name;
+                GetSelectedPoint.IsSelected = true;
+                Main.UpdateScratchPad(_scratchPadBuffer);
+                InterpretScratchpadOnTextChanged(false);
+                // continue with second selection as this user press
+            }
+            else
+            {
+                Debug.Log("=selection text=");
+                _selectionInfo = clickedInfo;
+                _scratchPadBuffer = GetSelectedPoint.Name;
+                GetSelectedPoint.IsSelected = true;
+                Main.UpdateScratchPad(_scratchPadBuffer);
+                InterpretScratchpadOnTextChanged(false);
+                return;
+            }
         }
 
         GetSelectedPoint.IsSelected = false;
@@ -359,6 +373,8 @@ public class LegsScreen : ScreenBase
 
     private void InterpretScratchpadOnTextChanged(bool handleSelection)
     {
+       
+        
         _scratchPadInterpreter = new ScratchPadInterpreter
         {
             IsValid = true,
@@ -457,6 +473,7 @@ public class LegsScreen : ScreenBase
 
         else
         {
+            
             // look for regulations
             if (_scratchPadBuffer[0] == '/' && _scratchPadBuffer.Length > 1)
             {
@@ -507,6 +524,33 @@ public class LegsScreen : ScreenBase
                 _scratchPadInterpreter.AltRegulation = _scratchPadBuffer;
             }
         }
+    }
+
+    private bool IsNodeName(string text, out int lineIndex, out NodeSelection linkedSelection)
+    {
+        lineIndex = -1;
+        linkedSelection = null;
+        
+        for (var i = 0; i < nodes.Length; i++)
+        {
+            linkedSelection = _nodesController.GetNodeInfoAtLineIndex(i, _currentPage);
+
+            if (linkedSelection.IsInvalid || linkedSelection.IsEmpty)
+            {
+                nodes[i].ShowEmpty();
+            }
+            else
+            {
+                Session.VisibleRoute.GetPoint(linkedSelection.LinkedId, out var node);
+                if (node.Name == text)
+                {
+                    lineIndex = i;
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private void ClearCurrentOperation()
