@@ -62,7 +62,7 @@ public class KeyboardButton : MonoBehaviour
     {
         FMC_Screens.Instance.CurrentScreen.DisplayPrevPage();
     }
-    
+
     public void OnNextPageClick()
     {
         FMC_Screens.Instance.CurrentScreen.DisplayNextPage();
@@ -72,17 +72,22 @@ public class KeyboardButton : MonoBehaviour
     {
         FMC_Screens.Instance.ShowPage(FMCScreens.Menu);
     }
-    
-    
+
+
     public void OnLEGSButtonClick()
     {
         FMC_Screens.Instance.ShowPage(FMCScreens.Legs);
     }
-    
-    
+
+
     public void OnINITButtonClick()
     {
         FMC_Screens.Instance.ShowPage(FMCScreens.Init);
+    }
+
+    public void OnRTEButtonClick()
+    {
+        FMC_Screens.Instance.ShowPage(FMCScreens.Rte);
     }
 }
 

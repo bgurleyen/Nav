@@ -19,6 +19,7 @@ namespace Navigation
     {
         Menu,
         Legs,
-        Init
+        Init,
+        Rte
     }
 }

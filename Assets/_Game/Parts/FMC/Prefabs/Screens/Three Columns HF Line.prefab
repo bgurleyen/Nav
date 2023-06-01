@@ -49,7 +49,7 @@ GameObject:
   m_Component:
   - component: {fileID: 728823450523635530}
   m_Layer: 0
-  m_Name: Init Line
+  m_Name: Three Columns HF Line
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -72,10 +72,10 @@ RectTransform:
   m_Father: {fileID: 0}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 0.81755173}
+  m_AnchorMin: {x: 0, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -424.346, y: 455.282}
-  m_SizeDelta: {x: -940.692, y: -73.437}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 0, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &728823450551836040
 GameObject:

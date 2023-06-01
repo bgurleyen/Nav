@@ -24,7 +24,7 @@ namespace Navigation.Data
              InvokeRepeating(nameof(DisplayFields), 1f, 1f) ;
         }
 
-        public void ComputeFMCFields()
+        private void ComputeFMCFields()
         {
 
             double PrvAltitude, Altitude;
