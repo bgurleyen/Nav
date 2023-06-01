@@ -4,11 +4,11 @@ using UnityEngine;
 public class ScreenBase : MonoBehaviour
 {
     protected static MainScreen Main => MainScreen.Instance;
-    protected FMC_Screens FMC { get; private set; }
+    protected FMC_Screens FMSScreens { get; private set; }
 
     protected virtual void Awake()
     {
-        FMC = GetComponentInParent<FMC_Screens>();
+        FMSScreens = GetComponentInParent<FMC_Screens>();
     }
 
     public virtual void Show()

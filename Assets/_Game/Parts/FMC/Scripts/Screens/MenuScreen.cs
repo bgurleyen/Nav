@@ -9,7 +9,7 @@ public class MenuScreen : ScreenBase
       switch (index)
       {
          case 0:
-            FMC.ShowPage(FMCScreens.Legs);
+            FMSScreens.ShowPage(FMCScreens.Legs);
             break;
       }
    }
