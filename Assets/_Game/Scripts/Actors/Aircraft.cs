@@ -41,13 +41,16 @@ public class Aircraft : MovingActor
         base.Awake();
 
         _pilot = new Pilot(Vector2.zero, Vector2.up, false);
-        Speed = Session.Settings.AirplaneInitialSpeed;
         
         _turningHeaderLine = GetComponent<LineRenderer>();
         _turningHeaderLine.positionCount = 10;
     }
-    
-    
+
+    private void Start()
+    {
+        Speed = Session.Settings.AirplaneInitialSpeed;
+    }
+
     public void ResetPosition()
     {
         _pilot.NMPosition = Vector2.zero;

@@ -60,6 +60,10 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
+        if (Session.PlayerAircraft.Speed == 0)
+        {
+            return;
+        }
         _simulation.Tick(Time.fixedDeltaTime);
     }
 
