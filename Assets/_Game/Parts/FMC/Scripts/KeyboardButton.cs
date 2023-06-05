@@ -89,6 +89,31 @@ public class KeyboardButton : MonoBehaviour
     {
         FMC_Screens.Instance.ShowPage(FMCScreens.Rte);
     }
+
+    public void OnCRZButtonClick()
+    {
+        FMC_Screens.Instance.ShowPage(FMCScreens.Crz);
+    }
+
+    public void OnDESButtonClick()
+    {
+        FMC_Screens.Instance.ShowPage(FMCScreens.Des);
+    }
+
+    public void OnARRButtonClick()
+    {
+        FMC_Screens.Instance.ShowPage(FMCScreens.Arr);
+    }
+
+    public void OnPROGButtonClick()
+    {
+        FMC_Screens.Instance.ShowPage(FMCScreens.Prog);
+    }
+
+    public void OnFIXButtonClick()
+    {
+        FMC_Screens.Instance.ShowPage(FMCScreens.Fix);
+    }
 }
 
 public static class Keys

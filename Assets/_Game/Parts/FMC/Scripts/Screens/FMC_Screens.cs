@@ -10,6 +10,11 @@ public class FMC_Screens : Singleton<FMC_Screens>
     [SerializeField] private ScreenBase _legsScreen;
     [SerializeField] private ScreenBase _initScreen;
     [SerializeField] private ScreenBase _rteScreen;
+    [SerializeField] private ScreenBase _crzScreen;
+    [SerializeField] private ScreenBase _desScreen;
+    [SerializeField] private ScreenBase _arrScreen;
+    [SerializeField] private ScreenBase _progScreen;
+    [SerializeField] private ScreenBase _fixScreen;
     
     public ScreenBase CurrentScreen { get; private set; }
 
@@ -50,6 +55,21 @@ public class FMC_Screens : Singleton<FMC_Screens>
                 break;
             case FMCScreens.Rte:
                 ShowPage(_rteScreen);
+                break;
+            case FMCScreens.Crz:
+                ShowPage(_crzScreen);
+                break;
+            case FMCScreens.Des:
+                ShowPage(_desScreen);
+                break;
+            case FMCScreens.Arr:
+                ShowPage(_arrScreen);
+                break;
+            case FMCScreens.Prog:
+                ShowPage(_progScreen);
+                break;
+            case FMCScreens.Fix:
+                ShowPage(_fixScreen);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(screen), screen, null);

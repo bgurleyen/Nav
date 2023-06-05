@@ -20,6 +20,11 @@ namespace Navigation
         Menu,
         Legs,
         Init,
-        Rte
+        Rte,
+        Crz,
+        Des,
+        Arr,
+        Prog,
+        Fix
     }
 }
