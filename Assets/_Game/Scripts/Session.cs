@@ -7,6 +7,8 @@ namespace Navigation
     public static class Session
     {
         public static GameSettingsScriptableObject Settings;
+
+        public static LevelDataScriptableObject CurrentLevel;
         
         public static Aircraft PlayerAircraft;
 

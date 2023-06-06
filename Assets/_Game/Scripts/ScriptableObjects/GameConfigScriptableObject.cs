@@ -7,4 +7,5 @@ public class GameConfigScriptableObject : ScriptableObject
 {
     public GameSettingsScriptableObject Settings;
 
+    public LevelDataScriptableObject[] LevelsData;
 }

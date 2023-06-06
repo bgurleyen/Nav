@@ -11,8 +11,6 @@ namespace Navigation.Data
 
     public class infoFMC : Singleton<infoFMC>
     {
-        public LevelInfoScriptableObject[] levelsInfoData;
-
         public Text Infotext, pages;
         private int previousPrvIndex = 0;
         private int Level = Calculator.Level;
@@ -72,21 +70,22 @@ namespace Navigation.Data
 
             }
 
+            var levelData = Session.CurrentLevel.levelInfo;
 
-            Fmc.Initref.GWT = "" + (long)(levelsInfoData[Level].ZFW + Calculator.totalFuel / 100);
-            Fmc.Initref.Destination = levelsInfoData[Level].Destination;
-            Fmc.Initref.RW = levelsInfoData[Level].Runway;
-            Fmc.Initref.Field = levelsInfoData[Level].FieldInfo;
-            Fmc.Initref.Freq = levelsInfoData[Level].Freq;
-            Fmc.Initref.Course = levelsInfoData[Level].Course;
-            Fmc.Initref.F15 = "" + (levelsInfoData[Level].F30Speed - 10);
-            Fmc.Initref.F30 = levelsInfoData[Level].F30Speed.ToString();
-            Fmc.Initref.F40 = "" + (levelsInfoData[Level].F30Speed + 10);
-            Fmc.Initref.Vref = "" + levelsInfoData[Level].F30Speed;
+            Fmc.Initref.GWT = "" + (long)(levelData.ZFW + Calculator.totalFuel / 100);
+            Fmc.Initref.Destination = levelData.Destination;
+            Fmc.Initref.RW = levelData.Runway;
+            Fmc.Initref.Field = levelData.FieldInfo;
+            Fmc.Initref.Freq = levelData.Freq;
+            Fmc.Initref.Course = levelData.Course;
+            Fmc.Initref.F15 = "" + (levelData.F30Speed - 10);
+            Fmc.Initref.F30 = levelData.F30Speed.ToString();
+            Fmc.Initref.F40 = "" + (levelData.F30Speed + 10);
+            Fmc.Initref.Vref = "" + levelData.F30Speed;
 
 
-            Fmc.Rte.Destination = levelsInfoData[Level].Destination;
-            Fmc.Rte.RW = levelsInfoData[Level].Runway;
+            Fmc.Rte.Destination = levelData.Destination;
+            Fmc.Rte.RW = levelData.Runway;
             Fmc.Des.RWAltitude = "" + RW_Alt; // Remove //
             //Fmc.Des.WptAltFix = activePoints.Points[levelsInfoData[Level].GateIdx].Name+ "/" + (int)activePoints.Points[levelsInfoData[Level].GateIdx].Altitude.ComputedValue;
 
@@ -100,15 +99,15 @@ namespace Navigation.Data
             Fmc.Des.VS = "" + (int)((Calculator.CAltitude - RW_Alt) / (DirectDistance / Calculator.GS * 60));
 
 
-            Fmc.Crz.Destination = levelsInfoData[Level].Destination;
+            Fmc.Crz.Destination = levelData.Destination;
             Fmc.Crz.FuelAtDestination = "" + System.Math.Round(fr_onpoint[WPTCount - 1], 2);
             Fmc.Crz.ActualWind = "" + Calculator.CWind;
 
 
-            Fmc.Arr.Destination = levelsInfoData[Level].Destination;
-            Fmc.Arr.STAR = levelsInfoData[Level].Runway;
-            Fmc.Arr.Transition = levelsInfoData[Level].Star;
-            Fmc.Arr.RW = levelsInfoData[Level].Transition;
+            Fmc.Arr.Destination = levelData.Destination;
+            Fmc.Arr.STAR = levelData.Runway;
+            Fmc.Arr.Transition = levelData.Star;
+            Fmc.Arr.RW = levelData.Transition;
 
 
             Fmc.Prog.PrvName = "" + activePoints.Points[prvWptIdx].Name;
@@ -141,7 +140,7 @@ namespace Navigation.Data
             Fmc.Prog.SecondFUEL = prvWptIdx + 2 < activePoints.Points.Length
                 ? "" + System.Math.Round(fr_onpoint[prvWptIdx + 2], 1)
                 : "";
-            Fmc.Prog.Destination = levelsInfoData[Level].Destination;
+            Fmc.Prog.Destination = levelData.Destination;
             Fmc.Prog.DestDTG = "" + (int)totalDistLeft[WPTCount - 1];
             Fmc.Prog.DestETA = "" + GameTime.FormatFMCTime(GameTime.timer +
                                                            (((float)totalDistLeft[WPTCount - 1] /

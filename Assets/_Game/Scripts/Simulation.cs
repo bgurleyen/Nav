@@ -39,6 +39,7 @@ namespace Navigation
 
             _drawer.Display();
             _drawer.ResetMode();
+            
         }
 
         public void EraseMod()

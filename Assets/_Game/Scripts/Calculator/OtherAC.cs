@@ -23,10 +23,10 @@ public class OtherAC
 
     private GameObject _ac;
 
-    public OtherAC(int acIndex, LevelData levelData)
+    public OtherAC(int acIndex, LevelDataScriptableObject levelData)
     {
         _acIndex = acIndex;
-        _acItems = levelData.otherACnr[acIndex].ACItems;
+        _acItems = levelData.otherACs[acIndex].ACItems;
 
         AltitudeC = _acItems[0].Altitude;
 

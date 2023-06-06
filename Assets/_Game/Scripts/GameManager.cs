@@ -6,7 +6,6 @@ public class GameManager : MonoBehaviour
 {
     [SerializeField] private GameConfigScriptableObject _gameConfig;
 
-    [SerializeField] private RouteScriptableObject _initialRoute;
 
     [SerializeField] private ComputedRoutes _routes = new();
 
@@ -16,10 +15,6 @@ public class GameManager : MonoBehaviour
     {
         UYServiceLocator.Register(this);
         Session.Settings = _gameConfig.Settings;
-        
-        _initialRoute.Init(true);
-        _initialRoute.ComputeCartesianPositions();
-        Session.OriginalReferenceRoute = _initialRoute.CloneAndInit();
     }
 
     private void Start()
@@ -38,9 +33,24 @@ public class GameManager : MonoBehaviour
         _simulation = UYServiceLocator.Get<Simulation>();
 
 
-        _routes.ActiveRoute = _initialRoute.CloneAndInit();
+        InitForLevel(0);
+    }
+
+    private void InitForLevel(int index)
+    {
+        var levelData = _gameConfig.LevelsData[index];
+        Session.CurrentLevel = levelData;
+
+        levelData.MainRoute.Init(true);
+        levelData.MainRoute.ComputeCartesianPositions();
+        Session.OriginalReferenceRoute = levelData.MainRoute.CloneAndInit();
+        
+        _routes.ActiveRoute = levelData.MainRoute.CloneAndInit();
 
         Session.Routes = _routes;
+
+
+        Move.Instance.Init(levelData);
 
         _simulation.Init();
     }

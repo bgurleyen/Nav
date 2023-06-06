@@ -311,7 +311,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _gameConfig: {fileID: 11400000, guid: 60965bfde451d46d184d23158024db97, type: 2}
-  _initialRoute: {fileID: 11400000, guid: 5da69c372eddf482ba8207f0565573bd, type: 2}
   _routes:
     ActiveRoute: {fileID: 0}
     ModRoute: {fileID: 0}
@@ -2458,17 +2457,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   __messageText: 
-  otherACLevel:
-  - virtualPoints: {fileID: 11400000, guid: c34560a0a564cb444bf437f6235c7cb5, type: 2}
-    aTCs: {fileID: 11400000, guid: 16f6d547515daf84ba56b3af4fcaf877, type: 2}
-    levelInfo: {fileID: 11400000, guid: 004af2526800efa49ab42f499a7ee3f1, type: 2}
-    otherACnr:
-    - {fileID: 11400000, guid: aefa8e84b0bde5748b49057a1e9ef062, type: 2}
-    - {fileID: 11400000, guid: bf2b25adc0d3ee44a9d5ca2c7aee40ce, type: 2}
-    - {fileID: 11400000, guid: 4147e65302b17114da0084a5882cbf7a, type: 2}
-    - {fileID: 11400000, guid: edd2722d6458353439c4beeaa91ce5f3, type: 2}
-    - {fileID: 11400000, guid: 12b058f3b6ec84647aecdb1da1750e53, type: 2}
-    - {fileID: 11400000, guid: 6b077098e65f9304cb2fee9e505a9662, type: 2}
   myAC: {fileID: 1585350094}
   LOCIndex: {fileID: 894392005}
   GSIndex: {fileID: 804653058}

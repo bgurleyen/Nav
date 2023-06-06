@@ -1,6 +1,4 @@
-﻿
-using System.Collections;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Gamelogic.Extensions;
 using Navigation;
 using UnityEngine;
@@ -9,11 +7,6 @@ using UnityEngine.UI;
 [System.Serializable]
 public class Move : Singleton<Move>
 {
-    private int Level = Calculator.Level;
-    private float GameSpeed = 1;
-
-    public LevelData[] otherACLevel;
-
     public static float Perpend;
 
     public Dictionary<string, Vector2> ACPositions = new Dictionary<string, Vector2>();
@@ -41,20 +34,20 @@ public class Move : Singleton<Move>
     private int AltAbove, AltBelow, AltExact;
     private double FuelPenalty = 0;
 
-
+    private LevelDataScriptableObject _currentLevelData;
     private OtherAC[] _otherACs;
 
-    private LevelData CurrentLevel => otherACLevel[Level];
 
     float PrvTrackToPoint = 0, hyp;
-    int _currentInstructionIndex = 0;
     int prvWptIdx = -1;
     int point = 1, mode, Cmode = 1, VS, VS_nx, Speed, Speed_nx;
     long Altitude;
     string RawAlt = "";
+    int _currentInstructionIndex = 0;
 
-    private void Start()
+    public void Init(LevelDataScriptableObject levelData)
     {
+        _currentLevelData = levelData;
         // var somePoint = GameManager.Instance.ActiveSet.Points[3].Clone();
 
         // Altitude computed: GameManager.Instance.ActiveSet.Points[4].Altitude.ComputedValue
@@ -74,10 +67,10 @@ public class Move : Singleton<Move>
         {
 
             var pt = GameObject.Find("pt (" + (j + 50) + ")");
-            VirtualPtsPos[j].x = Pos.x + CurrentLevel.VirtualPoints[j - 1].x -
-                                 CurrentLevel.VirtualPoints[20].x;
-            VirtualPtsPos[j].y = Pos.y + CurrentLevel.VirtualPoints[j - 1].y -
-                                 CurrentLevel.VirtualPoints[20].y;
+            VirtualPtsPos[j].x = Pos.x + _currentLevelData.VirtualPoints[j - 1].x -
+                                 _currentLevelData.VirtualPoints[20].x;
+            VirtualPtsPos[j].y = Pos.y + _currentLevelData.VirtualPoints[j - 1].y -
+                                 _currentLevelData.VirtualPoints[20].y;
             pt.transform.localPosition = VirtualPtsPos[j];
         }
 
@@ -88,11 +81,11 @@ public class Move : Singleton<Move>
         Atc3.text = "";
 
 
-        var otherACsCount = CurrentLevel.otherACnr.Length;
+        var otherACsCount = _currentLevelData.otherACs.Length;
         _otherACs = new OtherAC[otherACsCount];
         for (var i = 0; i < otherACsCount; i++)
         {
-            _otherACs[i] = new OtherAC(i, CurrentLevel);
+            _otherACs[i] = new OtherAC(i, _currentLevelData);
         }
 
         float PrvTrackToPoint = 0, hyp;
@@ -101,24 +94,6 @@ public class Move : Singleton<Move>
         int point = 1, mode, Cmode = 1, VS, VS_nx, Speed, Speed_nx;
         long Altitude;
     }
-
-
-
-    string turnDirection(float newHdg)
-    {
-        return (Mathf.DeltaAngle(Calculator.RHeading, newHdg) >= 0) ? "Right " : "Left "; //change Rheading to C
-    }
-
-    string nxTostring(int nx)
-    {
-        return (nx == 1) ? " or greater " : (nx == 2) ? " or less " : "";
-    }
-
-    float DistanceFromRoute()
-    {
-        return (Mathf.Abs(Mathf.Sin(Mathf.Abs(TrackToPoint(point) - PrvTrackToPoint) * Mathf.Deg2Rad)) * hyp);
-    }
-
 
     public void Tick()
     {
@@ -129,6 +104,22 @@ public class Move : Singleton<Move>
 
         CheckAirplaneMove();
     }
+
+    private string TurnDirection(float newHdg)
+    {
+        return (Mathf.DeltaAngle(Calculator.RHeading, newHdg) >= 0) ? "Right " : "Left "; //change Rheading to C
+    }
+
+    private string NxToString(int nx)
+    {
+        return (nx == 1) ? " or greater " : (nx == 2) ? " or less " : "";
+    }
+
+    private float DistanceFromRoute()
+    {
+        return (Mathf.Abs(Mathf.Sin(Mathf.Abs(TrackToPoint(point) - PrvTrackToPoint) * Mathf.Deg2Rad)) * hyp);
+    }
+
 
     public Vector2 PointPos(int pt)
     {
@@ -202,7 +193,7 @@ public class Move : Singleton<Move>
 
     void ATCCall()
     {
-        var currentInstruction = CurrentLevel.ATCs[_currentInstructionIndex];
+        var currentInstruction = _currentLevelData.ATCs[_currentInstructionIndex];
         
         point = currentInstruction.point;
         mode = currentInstruction.mode;
@@ -232,15 +223,15 @@ public class Move : Singleton<Move>
         {
 
             Atc1.text = mode == 1 ? "Proceed direct to  " + Session.OriginalReferenceRoute.Points[point].Name :
-                mode == 2 ? "Turn " + turnDirection(TrackToPoint(point)) + "Heading " + TrackToPoint(point) :
+                mode == 2 ? "Turn " + TurnDirection(TrackToPoint(point)) + "Heading " + TrackToPoint(point) :
                 "";
 
 
-            string s = VS < 0 ? ", ROD " + (-VS) + " fpm" + nxTostring(VS_nx) : "";
+            string s = VS < 0 ? ", ROD " + (-VS) + " fpm" + NxToString(VS_nx) : "";
 
             if (Altitude > 0) Atc2.text = "Descent altitude " + Altitude + " feet" + s;
 
-            Atc3.text = Speed > 0 ? "Speed " + Speed + " knots " + nxTostring(Speed_nx) :
+            Atc3.text = Speed > 0 ? "Speed " + Speed + " knots " + NxToString(Speed_nx) :
                 Speed == 0 ? Atc3.text : "";
 
             PrvTrackToPoint = TrackToPoint(point);
@@ -273,7 +264,7 @@ public class Move : Singleton<Move>
                 }
 
                 if (mode == 2)
-                    Atc1.text = "Turn " + turnDirection(TrackToPoint(point)) + "Heading " +
+                    Atc1.text = "Turn " + TurnDirection(TrackToPoint(point)) + "Heading " +
                                 (int)TrackToPoint(point);
                 Atc1.color = Color.red;
 
@@ -320,7 +311,7 @@ public class Move : Singleton<Move>
         ATCCall();
 
 
-        if ((_currentInstructionIndex < CurrentLevel.ATCs.Length - 1))
+        if ((_currentInstructionIndex < _currentLevelData.ATCs.Length - 1))
         {
 
 
@@ -400,7 +391,6 @@ public class Move : Singleton<Move>
         isDescentChecked = true;
     }
 }
-
 
 
 [System.Serializable]
