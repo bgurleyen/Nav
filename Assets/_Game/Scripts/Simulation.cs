@@ -35,7 +35,7 @@ namespace Navigation
 
             Session.ActiveRoute.ComputeTrace();
 
-            _playerAircraft.Init(Session.Settings.AirplaneInitialSpeed, 21600);
+            _playerAircraft.Init(Session.Settings.AirplaneDesignSpeed, 21600);
 
             _drawer.Display();
             _drawer.ResetMode();
@@ -57,23 +57,25 @@ namespace Navigation
 
             queueEraseMode = false;
 
-            Session.ActiveRoute.ComputeTrace();
-            ComputeMod();
-
-            _playerAircraft.SimulateTick(deltaTime);
-
-            foreach (var actor in _otherActors)
-            {
-                actor.SimulateTick(deltaTime);
-            }
-            
-            foreach (var actor in _otherActors)
-            {
-                actor.Place();
-            }
-
             if (Session.Mode != DrawerMode.Suspeded)
             {
+                Session.ActiveRoute.ComputeTrace();
+                ComputeMod();
+
+                _playerAircraft.SimulateTick(deltaTime);
+
+                foreach (var actor in _otherActors)
+                {
+                    actor.SimulateTick(deltaTime);
+                }
+
+                foreach (var actor in _otherActors)
+                {
+                    actor.Place();
+                }
+
+                Move.Instance.Tick();
+                
                 _drawer.Clear();
                 _drawer.Display();
             }

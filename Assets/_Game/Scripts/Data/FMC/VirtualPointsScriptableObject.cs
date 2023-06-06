@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using Navigation;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "Virtual Points Data", menuName = "ScriptableObjects/Virtual Points Data")]

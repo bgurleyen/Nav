@@ -15,6 +15,7 @@ public class Calculator : MonoBehaviour
     public  Toggle Accelerate ;
 
     
+    //todo daniel, bring here the slider value
     public static  float Acceleration()
     {
         return  Calculator.Instance.Accelerate.isOn ? 10f : 2.4f;
@@ -43,7 +44,7 @@ public class Calculator : MonoBehaviour
     public static int RSpeed = (int)CSpeed, RHeading, RAltitude, CVS;
     public static int CHeading, Track;
     private double CMach, RMach, VNAV_VS;
-    public static double TAS, GS;
+    public static float TAS, GS;
 
     public Toggle VNAV_Toggle, LNAV_Toggle, LC_Toggle, HS_Toggle, AH_Toggle, VS_Toggle;
     public Toggle co;//Landing Gear ,Speed Brake;

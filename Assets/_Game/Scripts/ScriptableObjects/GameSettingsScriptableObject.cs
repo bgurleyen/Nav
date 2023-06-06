@@ -4,7 +4,11 @@ using UnityEngine;
 [CreateAssetMenu]
 public class GameSettingsScriptableObject : ScriptableObject
 {
-    public float TickStepDistance(bool isTracer) => Session.PlayerAircraft.Speed  / 60 / 60 * TickDuration(isTracer);
+    public float PlayerTickDistance => AircraftTickDistance(Calculator.GS);
+    public float AircraftTickDistance(float gs) => gs / 60 / 60 * TickDuration(false);
+    
+    // todo replace aircraft speed with Calculator.GS
+    public float TracerTickDistance() => AirplaneDesignSpeed  / 60 / 60 * TickDuration(true);
 
     public float TickMaxRotation(bool isTracer) => _pilotMaxTurningDegreesPerNM  * TickDuration(isTracer);
 
@@ -27,7 +31,7 @@ public class GameSettingsScriptableObject : ScriptableObject
     public float HDGCloseRejoinDistance = 2.8f;
     [SerializeField] private float _pilotMaxTurningDegreesPerNM= 3;
     [Space]
-    public float AirplaneInitialSpeed = 170;
+    public float AirplaneDesignSpeed = 170;
     [Space]
     [Range(0.04f, 8f)]
     [SerializeField] private float _flyingTickDuration = 0.04f;

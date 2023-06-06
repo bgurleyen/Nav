@@ -48,7 +48,7 @@ public class Aircraft : MovingActor
 
     private void Start()
     {
-        Speed = Session.Settings.AirplaneInitialSpeed;
+        Speed = Session.Settings.AirplaneDesignSpeed;
     }
 
     public void ResetPosition()

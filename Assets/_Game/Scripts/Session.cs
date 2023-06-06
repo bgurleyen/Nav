@@ -12,6 +12,8 @@ namespace Navigation
 
         public static ComputedRoutes Routes;
 
+        public static RouteScriptableObject OriginalReferenceRoute;
+
         public static RouteScriptableObject ActiveRoute
         {
             get => Routes.ActiveRoute;

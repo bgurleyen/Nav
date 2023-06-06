@@ -1,4 +1,5 @@
 ﻿using System;
+using Navigation;
 using UnityEngine;
 
 [CreateAssetMenu(fileName = "Other AC Data", menuName = "ScriptableObjects/Other AC Data")]

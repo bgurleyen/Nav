@@ -23,7 +23,7 @@ namespace Navigation
 
         public void TickAdvance()
         {
-            NMPosition += Direction * Session.Settings.TickStepDistance(_isTracer);
+            NMPosition += Direction * (_isTracer ? Session.Settings.TracerTickDistance() : Session.Settings.PlayerTickDistance) ;
             if (!_isTracer)
             {
                 DisplayHeadingDegrees = Mathf.LerpAngle(DisplayHeadingDegrees, HeadingDegrees,

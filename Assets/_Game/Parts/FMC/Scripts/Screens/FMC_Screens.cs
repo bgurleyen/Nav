@@ -25,6 +25,9 @@ public class FMC_Screens : Singleton<FMC_Screens>
         _legsScreen.Hide();
         _initScreen.Hide();
         _rteScreen.Hide();
+        _crzScreen.Hide();
+        _desScreen.Hide();
+        _arrScreen.Hide();
         
         ShowPage(_startingScreen);
     }

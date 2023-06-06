@@ -16,6 +16,10 @@ public class GameManager : MonoBehaviour
     {
         UYServiceLocator.Register(this);
         Session.Settings = _gameConfig.Settings;
+        
+        _initialRoute.Init(true);
+        _initialRoute.ComputeCartesianPositions();
+        Session.OriginalReferenceRoute = _initialRoute.CloneAndInit();
     }
 
     private void Start()
@@ -33,7 +37,6 @@ public class GameManager : MonoBehaviour
 
         _simulation = UYServiceLocator.Get<Simulation>();
 
-        _initialRoute.Init(true);
 
         _routes.ActiveRoute = _initialRoute.CloneAndInit();
 

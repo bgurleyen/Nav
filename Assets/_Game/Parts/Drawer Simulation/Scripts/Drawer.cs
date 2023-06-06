@@ -217,7 +217,7 @@ public class Drawer : MonoBehaviour
                 .GetComponent<OtherAircrafIndicator>();
             drawer.name = key;
             drawer.Init(texts[key], Color.yellow);
-            drawer.transform.localPosition = Extension.ToDisplay(positions[key]);
+            drawer.transform.localPosition = positions[key].ToDisplay();
         }
 
         // demo - shows a debug star for seeing the distance
@@ -225,15 +225,15 @@ public class Drawer : MonoBehaviour
             .GetComponent<OtherAircrafIndicator>();
         objective.name = "My objective";
         objective.Init("|", Color.yellow);
-        objective.transform.localPosition = Extension.ToDisplay((Session.PlayerAircraft.NMPosition +
-                                                                 Vector2.right * _debugStarDistance));
+        objective.transform.localPosition = (Session.PlayerAircraft.NMPosition +
+                                             Vector2.right * _debugStarDistance).ToDisplay();
 
         // demo - shows a debug star for seeing the distance
         objective = otherAircraftsPool.Spawn(Vector3.zero, Quaternion.identity, dynamicHolderOtheriarcrafts)
             .GetComponent<OtherAircrafIndicator>();
         objective.name = "origin";
         objective.Init("o", Color.blue);
-        objective.transform.localPosition = Extension.ToDisplay(Vector2.zero);
+        objective.transform.localPosition = Vector2.zero.ToDisplay();
     }
 
  
