@@ -344,9 +344,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   Accelerate: {fileID: 2136385014}
-  windTables:
-  - {fileID: 11400000, guid: 9c42954b9a31eae4cbc2f7456066cf17, type: 2}
-  - {fileID: 11400000, guid: 16facbb0be0dd9a46b26a1e3bf06ab41, type: 2}
   txtRSpeed: {fileID: 1515255884}
   txtRAltitude: {fileID: 162528495}
   txtRVS: {fileID: 456544523}
@@ -2440,8 +2437,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   __messageText: 
-  levelsInfoData:
-  - {fileID: 11400000, guid: 004af2526800efa49ab42f499a7ee3f1, type: 2}
   Infotext: {fileID: 915843712}
   pages: {fileID: 1614403356}
 --- !u!114 &307048009

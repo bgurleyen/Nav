@@ -28,3 +28,4 @@ MonoBehaviour:
   - {fileID: 11400000, guid: b784e007cb102d94b864c82ca5de26f7, type: 2}
   - {fileID: 11400000, guid: 629beea2d3cca0443978f795ce29a9e1, type: 2}
   - {fileID: 11400000, guid: 40346d384f1f5b147a35c17bfc3025df, type: 2}
+  WindTable: {fileID: 11400000, guid: 9c42954b9a31eae4cbc2f7456066cf17, type: 2}

@@ -26,5 +26,4 @@ public class GameTime : Singleton<GameTime>
         return Mathf.Floor(time / 3600).ToString("00") + 
                  (Mathf.Floor(time / 60) - Mathf.Floor(time / 3600) * 60).ToString("00") + "z";
     }
-
 }

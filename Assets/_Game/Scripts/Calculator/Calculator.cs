@@ -23,7 +23,6 @@ public class Calculator : MonoBehaviour
 
     public static int Level = 0;             // ***  Level
 
-    public WindTableScriptableObject[] windTables;
     private string result;
     public Text txtRSpeed, txtRAltitude, txtRVS;
     public Text txtCSpeed, txtCAltitude, txtCVS;
@@ -73,6 +72,8 @@ public class Calculator : MonoBehaviour
     //Flaps: (1-5-10-15-25-30-40)
 
     //**************************************************************
+
+    private WindTableScriptableObject CurrentWindTable => Session.CurrentLevel.WindTable;
 
     private static double[,,] M = new double[9, 4, 4] { //speed,pitch,n1,ff
         { {240, 300,9090,240 } , { -1700, 100, 4780,95 } , { 200, 600,8690,212 } , { -1500, 300, 4620,95 } },
@@ -886,15 +887,15 @@ public class Calculator : MonoBehaviour
     public int GetWindDirection(double Altitude)
     {
         int BaseAlt = 8 - (int)System.Math.Truncate(Altitude / 5000);
-        return (int)Mathf.LerpAngle((float)windTables[0].WindInfoItems[BaseAlt].Degrees,
-                                           (float)windTables[0].WindInfoItems[BaseAlt - 1].Degrees,
+        return (int)Mathf.LerpAngle((float)CurrentWindTable.WindInfoItems[BaseAlt].Degrees,
+                                           (float)CurrentWindTable.WindInfoItems[BaseAlt - 1].Degrees,
                                            (float)(Altitude % 5000) / 5000);
     }
     public int GetWindMagnitude(double Altitude)
     {
         int BaseAlt = 8 - (int)System.Math.Truncate(Altitude / 5000);
-        return (int)Mathf.LerpUnclamped(windTables[0].WindInfoItems[BaseAlt].Knots,
-                                            windTables[0].WindInfoItems[BaseAlt - 1].Knots,
+        return (int)Mathf.LerpUnclamped(CurrentWindTable.WindInfoItems[BaseAlt].Knots,
+                                            CurrentWindTable.WindInfoItems[BaseAlt - 1].Knots,
                                             (float)(Altitude % 5000) / 5000);
     }
     public static WindElements CalculateWindElements(double Altitude, double IAS, int Heading)
