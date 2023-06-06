@@ -57,7 +57,7 @@ public class Aircraft : MovingActor
         NMWalkedOnCurrentSegment = 0;
     }
 
-    public override void SimulateTick(float deltaTime)
+    public override void SimulateTick()
     {
         DrawHeadingLine();
     

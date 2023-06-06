@@ -12,10 +12,8 @@ public class Move : Singleton<Move>
     private int Level = Calculator.Level;
     private float GameSpeed = 1;
 
-
     public LevelData[] otherACLevel;
 
-    
     public static float Perpend;
 
     public Dictionary<string, Vector2> ACPositions = new Dictionary<string, Vector2>();
@@ -70,7 +68,6 @@ public class Move : Singleton<Move>
             pt.transform.localPosition = Pos;
 
             TempPtsPos[j] = Pos;
-            Debug.Log(pt.transform.localPosition);
         }
 
         for (int j = 1; j < 21; j++) //Locate Virtual points on EditMap

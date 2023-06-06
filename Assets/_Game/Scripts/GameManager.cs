@@ -61,13 +61,29 @@ public class GameManager : MonoBehaviour
         }
     }
 
+    private float _pendingDeltaTime;
     private void Update()
     {
         if (Session.PlayerAircraft.Speed == 0)
         {
             return;
         }
-        _simulation.Tick(Time.fixedDeltaTime);
+
+        // normal time calculation, but big computations
+        // _pendingDeltaTime += Time.deltaTime;
+        // var tickDuration = Session.Settings.TickDuration(false) / Session.Settings.SpeedMultiplier;
+        // var ticksInDeltaTime = (int)(_pendingDeltaTime  / tickDuration);
+        // for (int i = 0; i < ticksInDeltaTime; i++)
+        // {
+        //     _simulation.Tick();
+        // }
+        //
+        // _pendingDeltaTime -= ticksInDeltaTime * tickDuration;
+
+        // incorrect game speed up
+        Session.Settings._flyingTickDuration =
+            Time.deltaTime * Session.Settings.SpeedMultiplier;
+        _simulation.Tick();
     }
 
     private void LEGS_OnLeftCornerPressErase()

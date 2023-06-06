@@ -1,3 +1,4 @@
+using Gamelogic.Extensions;
 using Navigation;
 using UnityEngine;
 
@@ -14,7 +15,7 @@ public class GameSettingsScriptableObject : ScriptableObject
 
     public float TickFlyingRotationDelayMultiplier =>  _flyingTickDuration / _tracerTickDuration;
 
-    private float TickDuration(bool isTracer) => isTracer ? _tracerTickDuration : _flyingTickDuration;
+    public float TickDuration(bool isTracer) => isTracer ? _tracerTickDuration : _flyingTickDuration;
 
     
     public Color cMagenta;
@@ -32,17 +33,17 @@ public class GameSettingsScriptableObject : ScriptableObject
     [SerializeField] private float _pilotMaxTurningDegreesPerNM= 3;
     [Space]
     public float AirplaneDesignSpeed = 170;
-    [Space]
-    [Range(0.04f, 8f)]
-    [SerializeField] private float _flyingTickDuration = 0.04f;
-    
+
+    [Space] [Range(1, 50)] 
+    [SerializeField] public int SpeedMultiplier = 1;
     
     [Header("DESIGN - Do Not Edit")]
     public float ForwardThreshold = 2f; // @$# this has to be in sync with the minimum turn radius 
     public float PilotSeekDistancePathFollow = 1.2f;
     public float SegmentGranularity = 0.1f;
     [SerializeField] private float _tracerTickDuration = 7f;
-
+    
+    [SerializeField, ReadOnly] public float _flyingTickDuration = 0.15f;
     #region Plane Speeds
 
     private const float FtToNm = 0.000164579f;

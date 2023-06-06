@@ -15,7 +15,7 @@ namespace Navigation
             _tr = transform;
         }
 
-        public virtual void SimulateTick(float deltaTime)
+        public virtual void SimulateTick()
         {
             
         }

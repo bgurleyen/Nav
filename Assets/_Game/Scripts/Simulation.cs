@@ -48,7 +48,7 @@ namespace Navigation
             MainScreen.Instance.DisplayOperation("0k");
         }
 
-        public void Tick(float deltaTime)
+        public void Tick()
         {
             if (Session.IsMod && queueEraseMode)
             {
@@ -62,11 +62,11 @@ namespace Navigation
                 Session.ActiveRoute.ComputeTrace();
                 ComputeMod();
 
-                _playerAircraft.SimulateTick(deltaTime);
+                _playerAircraft.SimulateTick();
 
                 foreach (var actor in _otherActors)
                 {
-                    actor.SimulateTick(deltaTime);
+                    actor.SimulateTick();
                 }
 
                 foreach (var actor in _otherActors)
