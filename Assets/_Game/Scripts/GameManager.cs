@@ -84,7 +84,7 @@ public class GameManager : MonoBehaviour
         // _pendingDeltaTime -= ticksInDeltaTime * tickDuration;
 
         // incorrect game speed up
-        Session.Settings._flyingTickDuration =
+        Session.Settings.FlyingTickDuration =
             Time.deltaTime * Session.Settings.SpeedMultiplier;
         _simulation.Tick();
     }

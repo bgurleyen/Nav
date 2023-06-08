@@ -13,9 +13,9 @@ public class GameSettingsScriptableObject : ScriptableObject
 
     public float TickMaxRotation(bool isTracer) => _pilotMaxTurningDegreesPerNM  * TickDuration(isTracer);
 
-    public float TickFlyingRotationDelayMultiplier =>  _flyingTickDuration / _tracerTickDuration;
+    public float TickFlyingRotationDelayMultiplier =>  FlyingTickDuration / _tracerTickDuration;
 
-    public float TickDuration(bool isTracer) => isTracer ? _tracerTickDuration : _flyingTickDuration;
+    public float TickDuration(bool isTracer) => isTracer ? _tracerTickDuration : FlyingTickDuration;
 
     
     public Color cMagenta;
@@ -43,7 +43,7 @@ public class GameSettingsScriptableObject : ScriptableObject
     public float SegmentGranularity = 0.1f;
     [SerializeField] private float _tracerTickDuration = 7f;
     
-    [SerializeField, ReadOnly] public float _flyingTickDuration = 0.15f;
+    [SerializeField, ReadOnly] public float FlyingTickDuration = 0.15f;
     #region Plane Speeds
 
     private const float FtToNm = 0.000164579f;

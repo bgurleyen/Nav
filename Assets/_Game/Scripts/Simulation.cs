@@ -13,12 +13,12 @@ namespace Navigation
 
         public event Action OnOperationMade;
 
-        private bool queueEraseMode;
-        private List<ICommand> cachedCommands;
+        private bool _queueEraseMode;
+        private List<ICommand> _cachedCommands;
 
 
         // if we detect that during MOD the current node has passed we reExecute all the commands until that point
-        private int modReExecutedForIndex = -1;
+        private int _modReExecutedForIndex = -1;
 
         private void Awake()
         {
@@ -52,12 +52,12 @@ namespace Navigation
 
         public void Tick()
         {
-            if (Session.IsMod && queueEraseMode)
+            if (Session.IsMod && _queueEraseMode)
             {
                 EraseMod();
             }
 
-            queueEraseMode = false;
+            _queueEraseMode = false;
 
             if (Session.IsRunning)
             {
@@ -76,7 +76,7 @@ namespace Navigation
 
         public void QueueEraseMode()
         {
-            queueEraseMode = true;
+            _queueEraseMode = true;
         }
 
 
@@ -84,7 +84,7 @@ namespace Navigation
         {
             if (Session.ModRoute == null)
             {
-                modReExecutedForIndex = -1;
+                _modReExecutedForIndex = -1;
                 return;
             }
 
@@ -94,7 +94,7 @@ namespace Navigation
                 // otherwise it is invalid - will reapply all the commands
                 var passedNodeIndex = PositionVirtualNode.PassedNodeIndex;
 
-                if (passedNodeIndex != modReExecutedForIndex)
+                if (passedNodeIndex != _modReExecutedForIndex)
                 {
                     if (Session.ActiveRoute.Points[passedNodeIndex].ID != Session.ModRoute.Points[passedNodeIndex].ID)
                     {
@@ -102,7 +102,7 @@ namespace Navigation
                         Debug.Log("Reapplied MOD");
                     }
 
-                    modReExecutedForIndex = passedNodeIndex;
+                    _modReExecutedForIndex = passedNodeIndex;
                 }
             }
 
@@ -122,9 +122,9 @@ namespace Navigation
         {
             EraseMod();
 
-            for (var i = 0; i < cachedCommands.Count; i++)
+            for (var i = 0; i < _cachedCommands.Count; i++)
             {
-                var command = cachedCommands[i];
+                var command = _cachedCommands[i];
                 switch (command)
                 {
                     case InsertRelativeCommand relativeCommand:
@@ -143,7 +143,7 @@ namespace Navigation
         public void ExecuteDeleteRestrictions(DeleteRestrictionsCommand command)
         {
             CheckModForOperation();
-            cachedCommands.Add(command);
+            _cachedCommands.Add(command);
 
             MainScreen.Instance.DisplayOperation("ERASE");
 
@@ -157,7 +157,7 @@ namespace Navigation
         public void ExecuteAddSpeedRegulation(AddSpeedRegulationCommand command)
         {
             CheckModForOperation();
-            cachedCommands.Add(command);
+            _cachedCommands.Add(command);
 
             MainScreen.Instance.DisplayOperation("ERASE");
             Session.ModRoute.GetPoint(command.NodeId, out var node);
@@ -171,7 +171,7 @@ namespace Navigation
         public void ExecuteAddAltitudeRegulation(AddAltitudeRegulationCommand command)
         {
             CheckModForOperation();
-            cachedCommands.Add(command);
+            _cachedCommands.Add(command);
 
             MainScreen.Instance.DisplayOperation("ERASE");
             Session.ModRoute.GetPoint(command.NodeId, out var node);
@@ -186,7 +186,7 @@ namespace Navigation
         public void ExecuteShortcutOnMod(ExecuteShortcutOnModeCommand command)
         {
             CheckModForOperation();
-            cachedCommands.Add(command);
+            _cachedCommands.Add(command);
 
             Session.ModRoute.GetPoint(command.FromNodeId, out var node);
             MainScreen.Instance.DisplayOperation("ERASE", ToDegreesDisplay(node.RawDegrees));
@@ -205,7 +205,7 @@ namespace Navigation
         {
             Debug.Log("=execute relative insert on direction=");
             CheckModForOperation();
-            cachedCommands.Add(command);
+            _cachedCommands.Add(command);
 
             Session.ModRoute.AddRelativeNodeOnDirection(command.FromNodeId, command.Distance, command.RelativeNodeId,
                 out _, out _);
@@ -220,7 +220,7 @@ namespace Navigation
         {
             Debug.Log("=execute relative insert simple=");
             CheckModForOperation();
-            cachedCommands.Add(command);
+            _cachedCommands.Add(command);
 
             Session.ModRoute.AddRelativeNodeBefore(command.BeforeNodeId, command.RawDegrees, command.Distance,
                 command.RelativeNodeId, out _, true);
@@ -234,7 +234,7 @@ namespace Navigation
         {
             Debug.Log("=linear approach=");
             CheckModForOperation();
-            cachedCommands.Add(command);
+            _cachedCommands.Add(command);
 
             Session.ModRoute.CreateLinearApproach(command.ToNodeId, command.Angle);
             DataHandler.BuildSetDetails(Session.ModRoute);
@@ -255,7 +255,7 @@ namespace Navigation
             // if this is the first modification generate a new mod from current active
             Session.ModRoute = Session.ActiveRoute.CloneAndInit();
 
-            cachedCommands = new List<ICommand>();
+            _cachedCommands = new List<ICommand>();
             Session.IsMod = true;
 
             // in case the aircraft was in free flight with intersection valid shortcut mod until the node after intersection

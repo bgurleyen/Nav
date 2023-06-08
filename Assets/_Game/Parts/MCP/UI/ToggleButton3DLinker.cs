@@ -72,4 +72,5 @@ public class ToggleLinkedBool
     {
         Set(!_state);
     }
+
 }

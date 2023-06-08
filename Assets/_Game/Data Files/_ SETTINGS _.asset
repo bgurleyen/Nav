@@ -21,9 +21,9 @@ MonoBehaviour:
   HDGCloseRejoinDistance: 2.8
   _pilotMaxTurningDegreesPerNM: 3
   AirplaneDesignSpeed: 170
-  SpeedMultiplier: 25
+  SpeedMultiplier: 1
   ForwardThreshold: 1.5
   PilotSeekDistancePathFollow: 1.2
   SegmentGranularity: 0.1
   _tracerTickDuration: 7
-  _flyingTickDuration: 0.530361
+  FlyingTickDuration: 0.028597962

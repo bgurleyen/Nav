@@ -21,10 +21,10 @@ public class State
         LNAV = new ToggleLinkedBool(mcpUI.lNavToggle, UIOnLNAVAttemptToggle);
         HDG = new ToggleLinkedBool(mcpUI.hsToggle, UIOnHDGAttemptToggle);
         
-        LC = new ToggleLinkedBool(mcpUI._LCToggle);
+        LC = new ToggleLinkedBool(mcpUI._LCToggle, UIOnLCAttemptToggle);
         VNAV = new ToggleLinkedBool(mcpUI._VNAVToggle);
         AH = new ToggleLinkedBool(mcpUI._AHToggle, UIOnAHAttemptToggle);
-        VS = new ToggleLinkedBool(mcpUI._VSToggle);
+        VS = new ToggleLinkedBool(mcpUI._VSToggle, UIOnVSAttemptToggle);
 
         _mcpUI.OnMapModeSet += UIOnMapModeSet;
     }
@@ -43,7 +43,27 @@ public class State
     {
         AH.Switch();
     }
-    
+
+    private void UIOnLCAttemptToggle()
+    {
+        if (Calculator.RAltitude == Calculator.CAltitude)
+        {
+            return;
+        }
+
+        LC.Switch();
+    }
+
+    private void UIOnVSAttemptToggle()
+    {
+        if (Calculator.RAltitude == Calculator.CAltitude)
+        {
+            return;
+        }
+        
+        VS.Switch();
+    }
+
     public void AutoSetAH(bool state)
     {
         AH.Set(state);
@@ -63,5 +83,6 @@ public class State
             }
         }
     }
-
+    
+    
 }

@@ -11,15 +11,6 @@ using Unyawn.Utils;
 
 public class Calculator : MonoBehaviour
 {
-    //TEMP
-    public  Toggle Accelerate ;
-
-    
-    //todo daniel, bring here the slider value
-    public static  float Acceleration()
-    {
-        return  Calculator.Instance.Accelerate.isOn ? 10f : 2.4f;
-    }
 
     public static int Level = 0;             // ***  Level
 
@@ -191,8 +182,8 @@ public class Calculator : MonoBehaviour
         txtCVS.text = "";
 
 
-        Invoke("VS_Equalize", 1f);
-        Invoke("Speed_Equalize", 0.1f);
+        Invoke(nameof(VS_Equalize), 1f);
+        Invoke(nameof(Speed_Equalize), 0.1f);
 
 
         StartCoroutine(ExecuteEachSecond());
@@ -208,7 +199,6 @@ public class Calculator : MonoBehaviour
         {
             MatchAltitudes();
             SetN1FF();
-            ToggleEnable();
 
 
             yield return new WaitForSeconds(0.1f);
@@ -824,21 +814,7 @@ public class Calculator : MonoBehaviour
 
     }
 
-     // todo daniel
-    private void ToggleEnable()
-    {
-        // if (RAltitude != CAltitude)
-        // {
-        //     LC_Toggle.enabled = true;
-        //     VS_Toggle.enabled = true;
-        // }
-        // else
-        // {
-        //     LC_Toggle.enabled = false;
-        //     VS_Toggle.enabled = false;
-        // }
-
-    }
+   
     public void co_Change()
     {
         double[,] MVS = new double[5, 2] { { -800, -280 }, { -680, -520 }, { -500, -400 }, { -430, -140 }, { -420, -240 } };

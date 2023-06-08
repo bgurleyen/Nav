@@ -315,7 +315,7 @@ public class Move : Singleton<Move>
         {
 
 
-            ElapsedTime += Calculator.Acceleration();
+            ElapsedTime += Session.Settings.FlyingTickDuration;
             TimerText.text = "" + ElapsedTime;
 
             ATCCall();
