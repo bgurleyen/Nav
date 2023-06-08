@@ -165,7 +165,7 @@ public class Drawer : MonoBehaviour
 
         DisplayFixCircles();
         DisplayFixRays();
-        freeFlightPivot.gameObject.SetActive(Session.PlayerAircraft.IsFreeFlight);
+        freeFlightPivot.gameObject.SetActive(Session.State.HDG);
         bananaIndicatorPivot.SetLocalY(Calculator.Instance.GetBananaPosition);
 
         DisplayOtherTraffic();
@@ -187,7 +187,7 @@ public class Drawer : MonoBehaviour
             case MapMode.Map:
                 //rotate compass
                 compasPivot.SetLocalRotationZ(Session.PlayerAircraft.DisplayHeadingDegrees);
-                if (Session.PlayerAircraft.IsFreeFlight)
+                if (Session.State.HDG)
                 {
                     freeFlightPivot.SetLocalRotationZ(Session.PlayerAircraft.DisplayHeadingDegrees - Calculator.RHeading);
                 }
@@ -266,7 +266,7 @@ public class Drawer : MonoBehaviour
 
         var rejoinSegmentIndex = 0;
         var rejoinPoint = Vector2.zero;
-        if (Session.PlayerAircraft.IsRejoining)
+        if (Session.PlayerAircraft.IsJoining)
         {
             rejoinSegmentIndex = Session.PlayerAircraft.CachedExitSegmentOfHeadingRejoinIntersection;
             rejoinPoint = Session.PlayerAircraft.CachedExitPointFromHeading;

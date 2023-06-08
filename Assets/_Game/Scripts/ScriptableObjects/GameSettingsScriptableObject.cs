@@ -34,7 +34,7 @@ public class GameSettingsScriptableObject : ScriptableObject
     [Space]
     public float AirplaneDesignSpeed = 170;
 
-    [Space] [Range(1, 50)] 
+    [Space] [Range(1, 25)] 
     [SerializeField] public int SpeedMultiplier = 1;
     
     [Header("DESIGN - Do Not Edit")]

@@ -1,15 +1,14 @@
-using System;
 using Navigation;
 
 public class State
 {
-    public ToggleLinkedBool LNAV { get; private set; }
-    public ToggleLinkedBool HDG { get; private set; }
+    public ToggleLinkedBool LNAV { get; }
+    public ToggleLinkedBool HDG { get; }
     
-    public ToggleLinkedBool LC { get; private set; }
+    public ToggleLinkedBool LC { get; }
     public ToggleLinkedBool VNAV { get; private set; }
-    public ToggleLinkedBool AH { get; private set; }
-    public ToggleLinkedBool VS { get; private set; }
+    public ToggleLinkedBool AH { get; }
+    public ToggleLinkedBool VS { get; }
     public MapMode MapMode { get; private set; }
 
     private readonly McpUI _mcpUI;
@@ -37,6 +36,12 @@ public class State
     private void UIOnLNAVAttemptToggle()
     {
         LNAV.Switch();
+        if (LNAV)
+        {
+            HDG.Set(false);
+        }
+
+        TriggerNewNAVState();
     }
 
     private void UIOnAHAttemptToggle()
@@ -52,6 +57,8 @@ public class State
         }
 
         LC.Switch();
+
+       
     }
 
     private void UIOnVSAttemptToggle()
@@ -71,11 +78,34 @@ public class State
 
     private void UIOnHDGAttemptToggle()
     {
+        HDG.Switch();
+
+        if (HDG)
+        {
+            LNAV.Set(false);
+        }
+        
+        TriggerNewNAVState();
+    }
+
+    public void AutoSetHDG(bool state)
+    {
+        HDG.Set(state);
+        if (state)
+        {
+            LNAV.Set(false);
+        }
+        
+        TriggerNewNAVState();
+    }
+
+    private void TriggerNewNAVState()
+    {
         if (HDG)
         {
             Session.PlayerAircraft.StartHeadingMode();
         }
-        else
+        else if(LNAV)
         {
             if (!Session.PlayerAircraft.IsOnRoute)
             {
@@ -83,6 +113,4 @@ public class State
             }
         }
     }
-    
-    
 }

@@ -13,7 +13,6 @@ public class Aircraft : MovingActor
     /// If used for geometry should be used with '-' . see other places
     /// </summary>
     public float TargetHeading { get; private set; }
-    public bool IsRejoining => !IsFreeFlight && !IsOnRoute;
 
     public int CachedExitSegmentOfHeadingRejoinIntersection { get; }
     public Vector2 CachedExitPointFromHeading { get; }
@@ -23,9 +22,8 @@ public class Aircraft : MovingActor
 
     public override Vector2 NMPosition => _pilot.NMPosition;
     
-    public bool IsFreeFlight;
     public bool IsOnRoute = true;
-    public bool IsJoining => !IsFreeFlight && !IsOnRoute;
+    public bool IsJoining = false;
 
     private Pilot _pilot;
 
@@ -60,26 +58,14 @@ public class Aircraft : MovingActor
     public override void SimulateTick()
     {
         DrawHeadingLine();
-    
-        if (IsFreeFlight)
-        {
-            TargetHeading = Calculator.RHeading;
 
-            _pilot.TickSteerToTargetHeading(TargetHeading);
-            
-            _pilot.TickAdvance();
-
-            CheckAdvancePointOnHDGProximity();
-            // for display only
-            //GameManager.Instance.ActiveRoute.FindFreeFlightDirectExitScenario(out displayCenterOfTurn, out displayExitPoint, out _);
-        }
-        else
+        if (Session.State.LNAV)
         {
             var foundClosePathDestination = Session.ActiveRoute.TracedRoute.FindCloseToRouteSegmentDestination(
                 Session.Settings.PilotSeekDistancePathFollow,
                 out _lastFoundSegmentVertex,
                 out _lastFoundSegmentVertexIndex,
-                out _lastFoundSegmentIndex, 
+                out _lastFoundSegmentIndex,
                 out var foundAtDistanceOnSegment,
                 out var reachedEnd,
                 startFromSegmentIndex: _lastFoundSegmentIndex,
@@ -91,14 +77,14 @@ public class Aircraft : MovingActor
                 if (!foundClosePathDestination)
                 {
                     Debug.LogError("No Intersection Point Found");
-                    IsFreeFlight = true;
+                    Session.State.AutoSetHDG(true);
 
                     return;
                 }
 
                 _pilot.TickSteerToPathFoundVertex(_lastFoundSegmentVertex, out _);
                 _pilot.TickAdvance();
-                
+
                 // Session.ActiveRoute.TracedRoute.FindClosestRoutePoint(
                 //     lastFoundSegmentIndex,
                 //     Session.PlayerAircraft.NMPosition,
@@ -129,10 +115,22 @@ public class Aircraft : MovingActor
                     //                     Session.PlayerAircraft.NMPosition,
                     //                     out PositionFreeOrClosestOnRouteSegment);
                 }
-               
+
 
                 _pilot.TickSteerToPathFoundVertex(_lastFoundSegmentVertex, out _);
             }
+        }
+        else
+        {
+            TargetHeading = Calculator.RHeading;
+
+            _pilot.TickSteerToTargetHeading(TargetHeading);
+
+            _pilot.TickAdvance();
+
+            CheckAdvancePointOnHDGProximity();
+            // for display only
+            //GameManager.Instance.ActiveRoute.FindFreeFlightDirectExitScenario(out displayCenterOfTurn, out displayExitPoint, out _);
         }
     }
     
@@ -212,7 +210,6 @@ public class Aircraft : MovingActor
 
     public void StartHeadingMode()
     {
-        IsFreeFlight = true;
         IsOnRoute = false;
     }
 
@@ -228,8 +225,9 @@ public class Aircraft : MovingActor
                 segmentBeginningIsAlwaysValid: false))
         {
             ResetSeekProgress(lastFoundSegmentIndex, lastFoundSegmentVertexIndex);
+            // todo daniel isonRoute to be set later
             IsOnRoute = true;
-            IsFreeFlight = false;
+            IsJoining = true;
         }
 
         else if (Session.ActiveRoute.FindFreeFlightDirectExitScenario(out _,
@@ -237,7 +235,7 @@ public class Aircraft : MovingActor
         {
             ResetSeekProgress(intersectionSegmentIndex, intersectionVertexIndex);
             IsOnRoute = true;
-            IsFreeFlight = false;
+            IsJoining = true;
         }
         else
         {
@@ -268,7 +266,7 @@ public class Aircraft : MovingActor
             return;
         }
 
-        if (!IsFreeFlight)
+        if (Session.State.LNAV)
         {
             Gizmos.DrawWireSphere(transform.position + _lastFoundSegmentVertex.ToDisplay(), 0.12f);
         }
