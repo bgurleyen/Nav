@@ -6,6 +6,10 @@ namespace Navigation
 {
     public static class Session
     {
+        public static bool IsRunning;
+
+        public static State State;
+        
         public static GameSettingsScriptableObject Settings;
 
         public static LevelDataScriptableObject CurrentLevel;
@@ -36,10 +40,10 @@ namespace Navigation
 
         public static RouteScriptableObject VisibleRoute => IsMod ? ModRoute : ActiveRoute;
 
-        public static DrawerMode Mode { get; set; } = DrawerMode.Suspeded;
+        public static MapMode Mode { get; set; } = MapMode.Map;
         public static bool IsMod;
 
-        public static float Zoom => (Mode == DrawerMode.Plan
+        public static float Zoom => (Mode == MapMode.Plan
             ? Settings.PlanReferenceLength80
             : ZoomMultiplier * Settings.MapReferenceLength80) / 80f;
 

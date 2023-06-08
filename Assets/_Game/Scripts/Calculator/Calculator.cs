@@ -45,7 +45,6 @@ public class Calculator : MonoBehaviour
     private double CMach, RMach, VNAV_VS;
     public static float TAS, GS;
 
-    public Toggle VNAV_Toggle, LNAV_Toggle, LC_Toggle, HS_Toggle, AH_Toggle, VS_Toggle;
     public Toggle co;//Landing Gear ,Speed Brake;
     public static bool LGDown = false;
     private bool SBDown = false;
@@ -73,7 +72,7 @@ public class Calculator : MonoBehaviour
 
     //**************************************************************
 
-    private WindTableScriptableObject CurrentWindTable => Session.CurrentLevel.WindTable;
+    private static WindTableScriptableObject CurrentWindTable => Session.CurrentLevel.WindTable;
 
     private static double[,,] M = new double[9, 4, 4] { //speed,pitch,n1,ff
         { {240, 300,9090,240 } , { -1700, 100, 4780,95 } , { 200, 600,8690,212 } , { -1500, 300, 4620,95 } },
@@ -238,7 +237,7 @@ public class Calculator : MonoBehaviour
 
         increasedSpeed = 0;
 
-        if (VS_Toggle.isOn || AH_Toggle.isOn || VNAV_Toggle.isOn)
+        if (Session.State.VS || Session.State.AH || Session.State.VNAV)
         {
             int F = 8 - Mathf.FloorToInt((float)Altitude / 5000);
 
@@ -294,7 +293,7 @@ public class Calculator : MonoBehaviour
         double s1, s2;             // 2 interpolation for Speed    
         double[] a = new double[4];                  // Final interpolation for Altitude
 
-        if (LC_Toggle.isOn)
+        if (Session.State.LC)
         {
             int F = 8 - Mathf.FloorToInt(((int)Altitude / 5000));
             for (int i = 0; i < 4; i++)
@@ -363,7 +362,7 @@ public class Calculator : MonoBehaviour
                     txtRAltitude.text = "" + RAltitude; txtRAltitude_overTape.text = txtRAltitude.text;
                     CVS = 0;
                     RVS = 0;
-                    AH_Toggle.isOn = true;
+                    Session.State.AutoSetAH(true);
                 }
                 txtCAltitude.text = "" + (int)(CAltitude / 10) * 10;
                 txtMeter.text = "" + (int)(CAltitude / 3.28084 / 10) * 10 + "M";
@@ -437,7 +436,7 @@ public class Calculator : MonoBehaviour
 
         DeltaAlt = CAltitude - (Alt1 + (d * (Alt0 - Alt1)) / D);
         VDI_Text.text = (((DeltaAlt) > 50) || ((DeltaAlt) < -50)) ? "" + (int)DeltaAlt : "";
-        if (VNAV_Toggle.isOn)
+        if (Session.State.VNAV)
         {
             VNAV_VS = -((CAltitude - Alt1) * GS) / (60 * d) - DeltaAlt * 2;
             RVS = (DeltaAlt < -50) ? -100 : (int)VNAV_VS;
@@ -453,19 +452,19 @@ public class Calculator : MonoBehaviour
     }
     public void SetFMA()
     {
-        if (HS_Toggle.isOn) isHDG = true; else isHDG = false; //For Move.cs Delete later
-        if (HS_Toggle.isOn) FMA2.text = "HDG"; else FMA2.text = "LNAV";
-        if (LC_Toggle.isOn)
+        if (Session.State.HDG) isHDG = true; else isHDG = false; //For Move.cs Delete later
+        if (Session.State.HDG) FMA2.text = "HDG"; else FMA2.text = "LNAV";
+        if (Session.State.LC)
         {
             FMA1.text = "IDLE";
             FMA3.text = "MCP SPD";
         }
-        if (AH_Toggle.isOn)
+        if (Session.State.AH)
         {
             FMA1.text = "MCP SPD";
             FMA3.text = "ALT";
         }
-        if (VS_Toggle.isOn)
+        if (Session.State.VS)
         {
             FMA1.text = "MCP SPD";
             FMA3.text = "VS";
@@ -647,7 +646,6 @@ public class Calculator : MonoBehaviour
                 M[i, 3, 3] = Wlg[i - 5, 1, 1];
             }
         }
-
         else
         {
             LGlever.transform.localEulerAngles = new Vector3(-90, 0, 0);
@@ -796,7 +794,7 @@ public class Calculator : MonoBehaviour
 
     public void OnClick_V(bool positive)
     {
-        if (VS_Toggle.isOn) //VS
+        if (Session.State.VS) //VS
         {
             if (positive) RVS += 100;
             if (!positive) RVS -= 100;
@@ -811,14 +809,14 @@ public class Calculator : MonoBehaviour
 
     public void Toggle_Change()
     {
-        if (!VS_Toggle.isOn) txtRVS.enabled = false;
+        if (!Session.State.VS) txtRVS.enabled = false;
         else
         {
             txtRVS.enabled = true;
             RVS = CVS / 100 * 100;
             txtRVS.text = "" + RVS;
         }
-        if (AH_Toggle.isOn)
+        if (Session.State.AH)
         {
             RVS = 0;
             txtRVS.text = "" + RVS;
@@ -826,18 +824,19 @@ public class Calculator : MonoBehaviour
 
     }
 
+     // todo daniel
     private void ToggleEnable()
     {
-        if (RAltitude != CAltitude)
-        {
-            LC_Toggle.enabled = true;
-            VS_Toggle.enabled = true;
-        }
-        else
-        {
-            LC_Toggle.enabled = false;
-            VS_Toggle.enabled = false;
-        }
+        // if (RAltitude != CAltitude)
+        // {
+        //     LC_Toggle.enabled = true;
+        //     VS_Toggle.enabled = true;
+        // }
+        // else
+        // {
+        //     LC_Toggle.enabled = false;
+        //     VS_Toggle.enabled = false;
+        // }
 
     }
     public void co_Change()
@@ -884,19 +883,20 @@ public class Calculator : MonoBehaviour
     {
         public int GS, Track, relativeWindD, WindM, WindD, TAS;
     }
-    public int GetWindDirection(double Altitude)
+
+    private static int GetWindDirection(double altitude)
     {
-        int BaseAlt = 8 - (int)System.Math.Truncate(Altitude / 5000);
-        return (int)Mathf.LerpAngle((float)CurrentWindTable.WindInfoItems[BaseAlt].Degrees,
-                                           (float)CurrentWindTable.WindInfoItems[BaseAlt - 1].Degrees,
-                                           (float)(Altitude % 5000) / 5000);
+        int baseAlt = 8 - (int)System.Math.Truncate(altitude / 5000);
+        return (int)Mathf.LerpAngle((float)CurrentWindTable.WindInfoItems[baseAlt].Degrees,
+                                           (float)CurrentWindTable.WindInfoItems[baseAlt - 1].Degrees,
+                                           (float)(altitude % 5000) / 5000);
     }
-    public int GetWindMagnitude(double Altitude)
+    public static int GetWindMagnitude(double altitude)
     {
-        int BaseAlt = 8 - (int)System.Math.Truncate(Altitude / 5000);
-        return (int)Mathf.LerpUnclamped(CurrentWindTable.WindInfoItems[BaseAlt].Knots,
-                                            CurrentWindTable.WindInfoItems[BaseAlt - 1].Knots,
-                                            (float)(Altitude % 5000) / 5000);
+        int baseAlt = 8 - (int)System.Math.Truncate(altitude / 5000);
+        return (int)Mathf.LerpUnclamped(CurrentWindTable.WindInfoItems[baseAlt].Knots,
+                                            CurrentWindTable.WindInfoItems[baseAlt - 1].Knots,
+                                            (float)(altitude % 5000) / 5000);
     }
     public static WindElements CalculateWindElements(double Altitude, double IAS, int Heading)
     {
@@ -906,8 +906,8 @@ public class Calculator : MonoBehaviour
 
         int BaseAlt = 8 - (int)System.Math.Truncate(Altitude / 5000);
 
-        WE.WindD = Calculator.Instance.GetWindDirection(Altitude);
-        WE.WindM = Calculator.Instance.GetWindMagnitude(Altitude);
+        WE.WindD = GetWindDirection(Altitude);
+        WE.WindM = GetWindMagnitude(Altitude);
 
         WE.relativeWindD = WE.WindD + Heading;
 

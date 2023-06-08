@@ -6,7 +6,6 @@ public class GameManager : MonoBehaviour
 {
     [SerializeField] private GameConfigScriptableObject _gameConfig;
 
-
     [SerializeField] private ComputedRoutes _routes = new();
 
     private Simulation _simulation;
@@ -20,17 +19,15 @@ public class GameManager : MonoBehaviour
     private void Start()
     {
         var mcpUI = UYServiceLocator.Get<McpUI>();
-        mcpUI.OnCenterModeSet += MCP_OnUICenterModeSet;
-        mcpUI.OnMapModeSet += MCP_OnUIMapModeSet;
-        mcpUI.OnPlanModeSet += MCP_OnUIPlanModeSet;
-        mcpUI.OnFreeFlightToggle += MCP_OnUIFreeFlightToggle;
 
         var legsScreen = UYServiceLocator.Get<LegsScreen>();
         legsScreen.OnLeftCornerPressErase += LEGS_OnLeftCornerPressErase;
         legsScreen.OnExecButtonPress += LEGS_OnExecButtonPress;
 
 
+        Session.State = new State(mcpUI);
         _simulation = UYServiceLocator.Get<Simulation>();
+
 
 
         InitForLevel(0);
@@ -44,7 +41,7 @@ public class GameManager : MonoBehaviour
         levelData.MainRoute.Init(true);
         levelData.MainRoute.ComputeCartesianPositions();
         Session.OriginalReferenceRoute = levelData.MainRoute.CloneAndInit();
-        
+
         _routes.ActiveRoute = levelData.MainRoute.CloneAndInit();
 
         Session.Routes = _routes;
@@ -57,11 +54,6 @@ public class GameManager : MonoBehaviour
 
     private void OnDestroy()
     {
-        var mcpUI = UYServiceLocator.Get<McpUI>();
-        mcpUI.OnCenterModeSet -= MCP_OnUICenterModeSet;
-        mcpUI.OnMapModeSet -= MCP_OnUIMapModeSet;
-        mcpUI.OnPlanModeSet -= MCP_OnUIPlanModeSet;
-        mcpUI.OnFreeFlightToggle -= MCP_OnUIFreeFlightToggle;
 
         if (UYServiceLocator.Has<LegsScreen>())
         {
@@ -72,6 +64,7 @@ public class GameManager : MonoBehaviour
     }
 
     private float _pendingDeltaTime;
+
     private void Update()
     {
         if (Session.PlayerAircraft.Speed == 0)
@@ -109,38 +102,6 @@ public class GameManager : MonoBehaviour
         }
     }
 
-    private void MCP_OnUIMapModeSet()
-    {
-        Session.Mode = DrawerMode.Map;
-    }
-
-    private void MCP_OnUICenterModeSet()
-    {
-        Session.Mode = DrawerMode.Center;
-    }
-
-    private void MCP_OnUIPlanModeSet()
-    {
-        Session.Mode = DrawerMode.Plan;
-    }
-
-    private void MCP_OnUIFreeFlightToggle(bool state)
-    {
-        switch (state)
-        {
-            case true:
-                Session.PlayerAircraft.StartHeadingMode();
-                break;
-            default:
-                if (!Session.PlayerAircraft.IsOnRoute)
-                {
-                    Session.PlayerAircraft.StartLNavMode();
-                }
-
-                break;
-        }
-    }
-
     private void ApplyMod()
     {
         Session.ModRoute.ClearModifiedFlags();
@@ -167,8 +128,12 @@ public class GameManager : MonoBehaviour
     public void SwitchThroughHeading()
     {
         Calculator.RHeading = (int)Session.PlayerAircraft.TargetHeading;
-        MCP_OnUIFreeFlightToggle(true);
-        MCP_OnUIFreeFlightToggle(false);
+        Session.PlayerAircraft.StartHeadingMode();
+        if (!Session.PlayerAircraft.IsOnRoute)
+        {
+            Session.PlayerAircraft.StartLNavMode();
+        }
+
         UYServiceLocator.Get<McpUI>().RefreshHS();
     }
 }

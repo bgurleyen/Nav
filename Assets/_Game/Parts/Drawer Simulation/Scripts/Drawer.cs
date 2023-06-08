@@ -48,60 +48,57 @@ public class Drawer : MonoBehaviour
         Session.ZoomMultiplier = _gameConfig.Settings.StartingZoom;
         UYServiceLocator.Register(this);
         var mcpUI = UYServiceLocator.Get<McpUI>();
-        mcpUI.OnCenterModeSet += OnUICenterModeSet;
         mcpUI.OnMapModeSet += OnUIMapModeSet;
-        mcpUI.OnPlanModeSet += OnUIPlanModeSet;
     }
 
     private void OnDestroy()
     {
         var mcpUI = UYServiceLocator.Get<McpUI>();
-        mcpUI.OnCenterModeSet -= OnUICenterModeSet;
         mcpUI.OnMapModeSet -= OnUIMapModeSet;
-        mcpUI.OnPlanModeSet -= OnUIPlanModeSet;
     }
 
+    // todo daniel - move this through session.State
     public void ResetMode()
     {
-        Session.Mode = DrawerMode.Map;
-        OnUIMapModeSet();
+        Session.Mode = MapMode.Map;
+        OnUIMapModeSet(Session.Mode);
     }
 
 
-    private void OnUIMapModeSet()
+    private void OnUIMapModeSet(MapMode mode)
     {
-        cameraAnimator.SetTrigger("Map");
+        switch (mode)
+        {
+            case MapMode.Map:
+                cameraAnimator.SetTrigger("Map");
+                break;
+            case MapMode.Center:
+            case MapMode.Plan:
+                cameraAnimator.SetTrigger("Center");
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(mode), mode, null);
+        }
         ShowCurrentMode();
     }
 
-    private void OnUICenterModeSet()
-    {
-        cameraAnimator.SetTrigger("Center");
-        ShowCurrentMode();
-    }
-
-    private void OnUIPlanModeSet()
-    {
-        cameraAnimator.SetTrigger("Center");
-        ShowCurrentMode();
-    }
 
 
     private void ShowCurrentMode()
     {
         foreach (var x in mapHolder)
         {
-            x.SetActive(Session.Mode == DrawerMode.Map);
+            x.SetActive(Session.Mode == MapMode.Map);
         }
 
         foreach (var x in centerHolder)
         {
-            x.SetActive(Session.Mode == DrawerMode.Center);
+            x.SetActive(Session.Mode == MapMode.Center);
         }
 
         foreach (var x in planHolder)
         {
-            x.SetActive(Session.Mode == DrawerMode.Plan);
+            x.SetActive(Session.Mode == MapMode.Plan);
         }
 
         Clear();
@@ -179,10 +176,15 @@ public class Drawer : MonoBehaviour
 
     private void DisplayRotations()
     {
+        if (!Session.IsRunning)
+        {
+            return;
+        }
+        
         switch (Session.Mode)
         {
-            case DrawerMode.Center:
-            case DrawerMode.Map:
+            case MapMode.Center:
+            case MapMode.Map:
                 //rotate compass
                 compasPivot.SetLocalRotationZ(Session.PlayerAircraft.DisplayHeadingDegrees);
                 if (Session.PlayerAircraft.IsFreeFlight)
@@ -191,15 +193,14 @@ public class Drawer : MonoBehaviour
                 }
 
                 break;
-            case DrawerMode.Plan:
+            case MapMode.Plan:
                 //rotate compass
                 compasPivot.SetLocalRotationZ(0);
                 mobilePlaneIndicatorPivot.position =
                     Session.PlayerAircraft.NMPosition.ToDisplay();
                 mobilePlaneIndicatorPivot.SetLocalRotationZ(-Session.PlayerAircraft.DisplayHeadingDegrees);
                 break;
-            case DrawerMode.Suspeded:
-                break;
+           
             default:
                 throw new ArgumentOutOfRangeException();
         }

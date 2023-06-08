@@ -1,11 +1,10 @@
 namespace Navigation
 {
-    public enum DrawerMode
+    public enum MapMode
     {
         Map,
         Center,
         Plan,
-        Suspeded
     }
 
     public enum LinesType

@@ -8,7 +8,6 @@ namespace Navigation
     public class Simulation : MonoBehaviour
     {
         [SerializeField] private Aircraft _playerAircraft;
-        [SerializeField] private Actor[] _otherActors;
 
         [SerializeField] private Drawer _drawer;
 
@@ -39,7 +38,9 @@ namespace Navigation
 
             _drawer.Display();
             _drawer.ResetMode();
-            
+
+            Session.IsRunning = true;
+
         }
 
         public void EraseMod()
@@ -58,22 +59,13 @@ namespace Navigation
 
             queueEraseMode = false;
 
-            if (Session.Mode != DrawerMode.Suspeded)
+            if (Session.IsRunning)
             {
                 Session.ActiveRoute.ComputeTrace();
                 ComputeMod();
 
                 _playerAircraft.SimulateTick();
 
-                foreach (var actor in _otherActors)
-                {
-                    actor.SimulateTick();
-                }
-
-                foreach (var actor in _otherActors)
-                {
-                    actor.Place();
-                }
 
                 Move.Instance.Tick();
                 

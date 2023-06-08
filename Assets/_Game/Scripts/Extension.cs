@@ -17,14 +17,14 @@ namespace Navigation
 
             switch (Session.Mode)
             {
-                case DrawerMode.Map:
-                case DrawerMode.Center:
+                case MapMode.Map:
+                case MapMode.Center:
                     // walked
                     finalPosition -= walkedPosition;
                     // walked rotation
                     finalPosition = finalPosition.Rotate(aircraftHeadingRotation);
                     break;
-                case DrawerMode.Plan:
+                case MapMode.Plan:
                     // centered
                     finalPosition -= Session.ActiveRoute.TracedRoute.CenteredPosition;
                     break;

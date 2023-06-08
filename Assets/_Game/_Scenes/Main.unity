@@ -362,9 +362,7 @@ MonoBehaviour:
   VDI_Text: {fileID: 418341848}
   VDI_Index: {fileID: 52461472}
   VNAV_Toggle: {fileID: 85324213}
-  LNAV_Toggle: {fileID: 605396507}
   LC_Toggle: {fileID: 81498715}
-  HS_Toggle: {fileID: 1095616256}
   AH_Toggle: {fileID: 146287079}
   VS_Toggle: {fileID: 1821963472}
   co: {fileID: 1126275798}
@@ -1939,8 +1937,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bbb756f0138501d4ba0894e93ccb0aea, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  hsToggle: {fileID: 1095616256}
-  lNavToggle: {fileID: 605396507}
+  hsToggle: {fileID: 0}
+  lNavToggle: {fileID: 0}
   headingText: {fileID: 926853338}
   _SBSlider: {fileID: 7330376348200001193}
 --- !u!1 &210789261
@@ -4723,12 +4721,18 @@ PrefabInstance:
       propertyPath: m_IsOn
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 6475345876558142862, guid: 2dedce2a5c5b380419f0824af7157c63,
+        type: 3}
+      propertyPath: m_Interactable
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 6475345876558142863, guid: 2dedce2a5c5b380419f0824af7157c63,
         type: 3}
       propertyPath: indicatorMesh
       value: 
       objectReference: {fileID: 1929894279}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 6475345876558142862, guid: 2dedce2a5c5b380419f0824af7157c63, type: 3}
   m_SourcePrefab: {fileID: 100100000, guid: 2dedce2a5c5b380419f0824af7157c63, type: 3}
 --- !u!224 &605396506 stripped
 RectTransform:
@@ -4736,18 +4740,6 @@ RectTransform:
     type: 3}
   m_PrefabInstance: {fileID: 605396505}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &605396507 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 6475345876558142862, guid: 2dedce2a5c5b380419f0824af7157c63,
-    type: 3}
-  m_PrefabInstance: {fileID: 605396505}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9085046f02f69544eb97fd06b6048fe2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &632568271
 GameObject:
   m_ObjectHideFlags: 0
@@ -7939,18 +7931,6 @@ RectTransform:
     type: 3}
   m_PrefabInstance: {fileID: 6475345875504994958}
   m_PrefabAsset: {fileID: 0}
---- !u!114 &1095616256 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 6475345876558142862, guid: 2dedce2a5c5b380419f0824af7157c63,
-    type: 3}
-  m_PrefabInstance: {fileID: 6475345875504994958}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 0}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 9085046f02f69544eb97fd06b6048fe2, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!1 &1101291689
 GameObject:
   m_ObjectHideFlags: 0
