@@ -1,5 +1,4 @@
 using Gamelogic.Extensions;
-using Navigation;
 using UnityEngine;
 
 [CreateAssetMenu]
@@ -8,7 +7,6 @@ public class GameSettingsScriptableObject : ScriptableObject
     public float PlayerTickDistance => AircraftTickDistance(Calculator.GS);
     public float AircraftTickDistance(float gs) => gs / 60 / 60 * TickDuration(false);
     
-    // todo replace aircraft speed with Calculator.GS
     public float TracerTickDistance() => AirplaneDesignSpeed  / 60 / 60 * TickDuration(true);
 
     public float TickMaxRotation(bool isTracer) => _pilotMaxTurningDegreesPerNM  * TickDuration(isTracer);

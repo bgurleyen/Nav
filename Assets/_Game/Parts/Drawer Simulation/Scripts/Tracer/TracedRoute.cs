@@ -80,10 +80,10 @@ public class TracedRoute
         return false;
     }
 
-    public void FindClosestRoutePoint(int forLineIndex, Vector2 forNMPosition, out RoutePosition foundVertexOnSegment)
+    public void FindClosestRoutePoint(int forLineIndex, Vector2 forNMPosition, out NodeRoutePosition foundVertexOnSegment)
     {
         var computedLine = ComputedLines[forLineIndex];
-        foundVertexOnSegment = new RoutePosition();
+        foundVertexOnSegment = new NodeRoutePosition();
 
         var minFoundSqrDistance = computedLine.LinkedPoint.Distance * computedLine.LinkedPoint.Distance;
         foundVertexOnSegment.NMPosition = computedLine.SegmentVertices[0];
@@ -105,9 +105,7 @@ public class TracedRoute
 
     public bool FindCloseToRouteSegmentDestination(
         float seekDistance,
-        out Vector2 lastFoundSegmentVertex,
-        out int lastFoundSegmentVertexIndex,
-        out int lastFoundSegmentIndex,
+        out RoutePosition lastFoundRoutePosition,
         out float foundAtDistanceOnSegment,
         out bool reachedRouteEnd,
         int startFromSegmentIndex = 1,
@@ -115,10 +113,8 @@ public class TracedRoute
         bool breakOnFistSolution = false,
         bool segmentBeginningIsAlwaysValid = true)
     {
-        lastFoundSegmentVertexIndex = -1;
+        lastFoundRoutePosition = new RoutePosition() { SegmentIndex = -1, SegmentVertexIndex = 1, SegmentVertex = Vector2.zero };
         foundAtDistanceOnSegment = -1;
-        lastFoundSegmentIndex = -1;
-        lastFoundSegmentVertex = Vector2.zero;
         var reachedSegmentEnd = false;
         reachedRouteEnd = false;
 
@@ -157,13 +153,13 @@ public class TracedRoute
                 continue;
             }
 
-            lastFoundSegmentVertex = foundSegmentVertex;
-            lastFoundSegmentVertexIndex = foundSegmentVertexIndex;
+            lastFoundRoutePosition.SegmentVertex = foundSegmentVertex;
+            lastFoundRoutePosition.SegmentVertexIndex = foundSegmentVertexIndex;
 
             // another solution was found 
             if (!reachedSegmentEnd)
             {
-                lastFoundSegmentIndex = i;
+                lastFoundRoutePosition.SegmentIndex = i;
 
                 if (breakOnFistSolution)
                 {
@@ -174,19 +170,19 @@ public class TracedRoute
             startFromVertexIndex = 0;
         }
 
-        if (lastFoundSegmentIndex == ComputedLines.Length - 1 && reachedSegmentEnd)
+        if (lastFoundRoutePosition.SegmentIndex == ComputedLines.Length - 1 && reachedSegmentEnd)
         {
             reachedRouteEnd = true;
         }
 
-        foundAtDistanceOnSegment = Mathf.Max(0, lastFoundSegmentVertexIndex - 1) * Session.Settings.SegmentGranularity;
-        return lastFoundSegmentIndex > -1;
+        foundAtDistanceOnSegment = Mathf.Max(0, lastFoundRoutePosition.SegmentVertexIndex - 1) * Session.Settings.SegmentGranularity;
+        return lastFoundRoutePosition.SegmentIndex > -1;
 
     }
 }
 
 [Serializable]
-public struct RoutePosition
+public struct NodeRoutePosition
 {
     public Vector2 NMPosition;
     public float NMWalkedOnCurrentSegment;

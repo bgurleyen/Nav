@@ -264,13 +264,7 @@ public class Drawer : MonoBehaviour
                 throw new ArgumentOutOfRangeException(nameof(linesType), linesType, null);
         }
 
-        var rejoinSegmentIndex = 0;
-        var rejoinPoint = Vector2.zero;
-        if (Session.PlayerAircraft.IsJoining)
-        {
-            rejoinSegmentIndex = Session.PlayerAircraft.CachedExitSegmentOfHeadingRejoinIntersection;
-            rejoinPoint = Session.PlayerAircraft.CachedExitPointFromHeading;
-        }
+       
 
         for (var i = 0; i < lines.Count; i++)
         {

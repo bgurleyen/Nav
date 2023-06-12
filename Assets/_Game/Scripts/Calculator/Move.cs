@@ -214,8 +214,8 @@ public class Move : Singleton<Move>
         DataHandler.ParseAltRegulation(RawAlt, out AltAbove, out AltBelow, out AltExact); // FMS Altitude Limit
 
 
-        Debug.Log(point + ".   " + RawSpeed + "   /  " + AltExact + "   " + AltAbove + "A  " + AltBelow + "B" +
-                  "    FP:" + FuelPenalty + "   MxSpd: " + ATCSpeed);
+        // Debug.Log(point + ".   " + RawSpeed + "   /  " + AltExact + "   " + AltAbove + "A  " + AltBelow + "B" +
+        //           "    FP:" + FuelPenalty + "   MxSpd: " + ATCSpeed);
 
         //   Debug.Log(" N:  " + LegsScreen.VisibleRoute.FirstSpeedRegulationNodeId); // Correct this
 
@@ -365,9 +365,15 @@ public class Move : Singleton<Move>
     private void DescentCheck()
     {
         int AltAbove, AltBelow, AltExact, AltRef; // First Altitude Restriction
-        // Todo Birol, fix for when there are no alt regulation nodes left
-        string RawAlt = (Session.ActiveRoute.Points[Session.VisibleRoute.FirstAltRegulationNodeId].RawAltitude);
-        DataHandler.ParseAltRegulation(RawAlt, out AltAbove, out AltBelow, out AltExact);
+        
+        // todo birol : there is another variable RawAlt in the begining of this class - should they be the same ?
+        var rawAlt = "0";
+        if (Session.ActiveRoute.GetPoint(Session.VisibleRoute.FirstAltRegulationNodeId, out var altRegulationNode))
+        {
+            rawAlt = altRegulationNode.RawAltitude;
+        }
+
+        DataHandler.ParseAltRegulation(rawAlt, out AltAbove, out AltBelow, out AltExact);
 
         AltRef = AltBelow > AltExact ? AltBelow : AltExact;
 

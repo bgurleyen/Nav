@@ -124,18 +124,16 @@ namespace Navigation
         }
 
         // to be executed on ACTIVE route
-        public bool FindFreeFlightDirectExitScenario(out Vector2 intersectionPoint,
-            out int intersectionSegmentIndex, out int intersectionVertexIndex)
+        public bool FindFreeFlightDirectExitScenario(out RoutePosition routeIntersection)
         {
             var nan = new Vector2(-100, -100);
 
-            intersectionPoint = nan;
-            intersectionVertexIndex = -1;
+            routeIntersection = new RoutePosition { SegmentIndex = -1, SegmentVertexIndex = -1, SegmentVertex = nan };
+
             var aircraftPosition = Session.PlayerAircraft.NMPosition; // would be free since we are in free flight
             var aircraftDirection = Geometry.GetDirectionFromHeading(Session.PlayerAircraft.HeadingDegrees);
             var segmentEnd = Vector2.zero;
 
-            intersectionSegmentIndex = -1;
 
             for (var i = 1; i < Points.Length; i++)
             {
@@ -152,20 +150,20 @@ namespace Navigation
                 if (Geometry.FindLineSegmentIntersection(aircraftPosition, aircraftDirection.x, aircraftDirection.y,
                         segmentStart, segmentEnd, out var intersection))
                 {
-                    intersectionSegmentIndex = i;
-                    intersectionPoint = intersection;
+                    routeIntersection.SegmentIndex = i;
+                    routeIntersection.SegmentVertex = intersection;
                     break;
                 }
             }
 
-            if (intersectionSegmentIndex >= 0)
+            if (routeIntersection.SegmentIndex >= 0)
             {
 
-                TracedRoute.ComputedLines[intersectionSegmentIndex].FindFurthestSeekTargetOnSegment(
-                    intersectionPoint,
+                TracedRoute.ComputedLines[routeIntersection.SegmentIndex].FindFurthestSeekTargetOnSegment(
+                    routeIntersection.SegmentVertex,
                     Session.Settings.PilotSeekDistancePathFollow*1.1f,
                     out _,
-                    out intersectionVertexIndex,
+                    out routeIntersection.SegmentVertexIndex,
                     out _, beginningIsAlwaysValid: false);
 
                 return true;
@@ -490,12 +488,12 @@ namespace Navigation
 
         public void AddModPositionNodes()
         {
-            var nodeBeforePosition = Session.PlayerAircraft.IsOnRoute
+            var nodeBeforePosition = Session.State.LNAV
                 ? PositionVirtualNode.GetNodeFrom
                 : Points[0];
 
             int routeNextNodeIndex;
-            if (Session.PlayerAircraft.IsOnRoute)
+            if (Session.State.LNAV)
             {
                 var nextNodeIndexOnActive = PositionVirtualNode.PassedNodeIndex + 1;
                 routeNextNodeIndex = nextNodeIndexOnActive;
@@ -572,4 +570,16 @@ namespace Navigation
             Points = newSet;
         }
     }
+}
+
+public struct RoutePosition
+{
+    public Vector2 SegmentVertex;
+    public int SegmentVertexIndex;
+    public int SegmentIndex;
+
+    public static bool operator ==(RoutePosition a, RoutePosition b) => a.SegmentIndex == b.SegmentIndex &&
+                                                                        a.SegmentVertexIndex == b.SegmentVertexIndex;
+
+    public static bool operator !=(RoutePosition a, RoutePosition b) => !(a == b);
 }

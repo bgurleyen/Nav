@@ -67,11 +67,6 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        if (Session.PlayerAircraft.Speed == 0)
-        {
-            return;
-        }
-
         // normal time calculation, but big computations
         // _pendingDeltaTime += Time.deltaTime;
         // var tickDuration = Session.Settings.TickDuration(false) / Session.Settings.SpeedMultiplier;
@@ -83,7 +78,7 @@ public class GameManager : MonoBehaviour
         //
         // _pendingDeltaTime -= ticksInDeltaTime * tickDuration;
 
-        // incorrect game speed up
+        // incorrect, but faster game speed up
         Session.Settings.FlyingTickDuration =
             Time.deltaTime * Session.Settings.SpeedMultiplier;
         _simulation.Tick();
@@ -110,10 +105,8 @@ public class GameManager : MonoBehaviour
         Session.ActiveRoute = Session.ModeSetWithPosition;
         Session.PlayerAircraft.ResetSeekProgress(PositionVirtualNode.PassedNodeIndex + 2, 0);
 
-        if (!Session.PlayerAircraft.IsOnRoute)
-        {
-            Session.PlayerAircraft.StartLNavMode();
-        }
+      
+        Session.State.AutoSetLNAV(true, false);
 
         Session.ModRoute = null;
         Session.IsMod = false;
@@ -129,10 +122,9 @@ public class GameManager : MonoBehaviour
     {
         Calculator.RHeading = (int)Session.PlayerAircraft.TargetHeading;
         Session.PlayerAircraft.StartHeadingMode();
-        if (!Session.PlayerAircraft.IsOnRoute)
-        {
-            Session.PlayerAircraft.StartLNavMode();
-        }
+       
+        Session.State.AutoSetLNAV(true, false);
+
 
         UYServiceLocator.Get<McpUI>().RefreshHS();
     }

@@ -3,11 +3,11 @@
 public class PositionVirtualNode
 {
     public static int PassedNodeIndex => Session.PlayerAircraft.CurrentSegmentIndex - 1;
-    public static int PassedNodeIndexForMode => Session.PlayerAircraft.IsOnRoute 
+    public static int PassedNodeIndexForMode => Session.State.LNAV
         ? Session.PlayerAircraft.CurrentSegmentIndex - 1 
         : 0;
 
-    public static int NextNodeIndex => !Session.PlayerAircraft.IsOnRoute && Session.IsMod
+    public static int NextNodeIndex => !Session.State.LNAV && Session.IsMod
         ? 1
         : Session.PlayerAircraft.CurrentSegmentIndex;
     public static RoutePoint GetNodeFrom => Session.ActiveRoute.Points[PassedNodeIndex];

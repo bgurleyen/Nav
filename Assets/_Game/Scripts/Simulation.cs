@@ -88,7 +88,7 @@ namespace Navigation
                 return;
             }
 
-            if (Session.PlayerAircraft.IsOnRoute)
+            if (Session.State.LNAV)
             {
                 // mod always has to include the last passed active node ( all the passed nodes ) 
                 // otherwise it is invalid - will reapply all the commands
@@ -258,8 +258,8 @@ namespace Navigation
             _cachedCommands = new List<ICommand>();
             Session.IsMod = true;
 
-            // in case the aircraft was in free flight with intersection valid shortcut mod until the node after intersection
-            if (!Session.PlayerAircraft.IsOnRoute)
+            // in case the aircraft was in free flight with intersection valid, shortcut mod until the node after intersection
+            if (Session.PlayerAircraft.IsJoining)
             {
                 ExecuteShortcutOnMod(new ExecuteShortcutOnModeCommand
                 {

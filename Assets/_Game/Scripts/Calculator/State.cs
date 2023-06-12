@@ -88,6 +88,26 @@ public class State
         TriggerNewNAVState();
     }
 
+    public void AutoSetLNAV(bool state, bool silent)
+    {
+        if (LNAV == state)
+        {
+            return;
+        }
+        
+        LNAV.Set(state);
+
+        if (state)
+        {
+            HDG.Set(false);
+        }
+
+        if (!silent)
+        {
+            TriggerNewNAVState();
+        }
+    }
+
     public void AutoSetHDG(bool state)
     {
         HDG.Set(state);
@@ -105,12 +125,9 @@ public class State
         {
             Session.PlayerAircraft.StartHeadingMode();
         }
-        else if(LNAV)
+        else if (LNAV)
         {
-            if (!Session.PlayerAircraft.IsOnRoute)
-            {
-                Session.PlayerAircraft.StartLNavMode();
-            }
+            Session.PlayerAircraft.StartLNavMode();
         }
     }
 }
