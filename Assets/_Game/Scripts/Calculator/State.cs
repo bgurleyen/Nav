@@ -9,6 +9,8 @@ public class State
     public ToggleLinkedBool VNAV { get; private set; }
     public ToggleLinkedBool AH { get; }
     public ToggleLinkedBool VS { get; }
+    
+    public ToggleLinkedBool Speed10X { get; }
 
     public MapMode MapMode
     {
@@ -36,6 +38,13 @@ public class State
 
         _mapMode = new RotatingButtonLinkedValue(mcpUI._mapRotatingToggle, UIOnMapModeAttemptChange, (int)MapMode.Map);
 
+        Speed10X = new ToggleLinkedBool(mcpUI._speed10XToggle, UIOnSpeed10XToggle);
+    }
+
+    private void UIOnSpeed10XToggle()
+    {
+        Speed10X.Switch();
+        Session.Settings.SpeedMultiplier = Speed10X ? 10 : 1;
     }
 
     private void UIOnMapModeAttemptChange()

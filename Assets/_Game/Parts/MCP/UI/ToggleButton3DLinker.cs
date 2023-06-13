@@ -3,7 +3,7 @@ using JetBrains.Annotations;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-public class ToggleButton3DLinker : MonoBehaviour, IPointerUpHandler, IPointerDownHandler
+public class ToggleButton3DLinker : ToggleButtonLinker, IPointerUpHandler, IPointerDownHandler
 {
     [SerializeField] private Renderer indicatorMesh;
     [SerializeField] private Material onMat;
@@ -12,11 +12,6 @@ public class ToggleButton3DLinker : MonoBehaviour, IPointerUpHandler, IPointerDo
     private Material[] _materials;
     private Animator _meshAnimator;
 
-    public Action UserAttemptSwitch;
-
-    private bool _state;
-
-    public bool State => _state;
     
     /// <summary>
     /// [ newState, return ]
@@ -27,9 +22,10 @@ public class ToggleButton3DLinker : MonoBehaviour, IPointerUpHandler, IPointerDo
         _meshAnimator = indicatorMesh.gameObject.GetComponent<Animator>();
     }
 
-    public void SetState(bool on)
+    public override void SetState(bool on)
     {
-        _state = on;
+        base.SetState(on);
+       
         _materials[1] = on ? onMat : offMat;
         indicatorMesh.materials = _materials;
     }
@@ -42,24 +38,25 @@ public class ToggleButton3DLinker : MonoBehaviour, IPointerUpHandler, IPointerDo
     public void OnPointerUp(PointerEventData eventData)
     {
         _meshAnimator.SetTrigger("Normal");
-        UserAttemptSwitch?.Invoke();
+        
+        OnUserSwitch();
     }
 }
 
 public class ToggleLinkedBool
 {
-    private readonly ToggleButton3DLinker _linkedToggle;
+    private readonly ToggleButtonLinker _linkedToggle;
 
     public static implicit operator bool(ToggleLinkedBool i) => i._linkedToggle.State;
 
-    public ToggleLinkedBool(ToggleButton3DLinker toggle, bool initialState = false)
+    public ToggleLinkedBool(ToggleButtonLinker toggle, bool initialState = false)
     {
         _linkedToggle = toggle;
         toggle.UserAttemptSwitch += Switch;
         Set(initialState);
     }
 
-    public ToggleLinkedBool(ToggleButton3DLinker toggle, Action onUserPress, bool initialState = false)
+    public ToggleLinkedBool(ToggleButtonLinker toggle, Action onUserPress, bool initialState = false)
     {
         _linkedToggle = toggle;
         toggle.UserAttemptSwitch += onUserPress;
