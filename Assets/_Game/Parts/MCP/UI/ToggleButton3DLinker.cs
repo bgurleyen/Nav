@@ -14,6 +14,10 @@ public class ToggleButton3DLinker : MonoBehaviour, IPointerUpHandler, IPointerDo
 
     public Action UserAttemptSwitch;
 
+    private bool _state;
+
+    public bool State => _state;
+    
     /// <summary>
     /// [ newState, return ]
     /// </summary>
@@ -25,6 +29,7 @@ public class ToggleButton3DLinker : MonoBehaviour, IPointerUpHandler, IPointerDo
 
     public void SetState(bool on)
     {
+        _state = on;
         _materials[1] = on ? onMat : offMat;
         indicatorMesh.materials = _materials;
     }
@@ -44,9 +49,8 @@ public class ToggleButton3DLinker : MonoBehaviour, IPointerUpHandler, IPointerDo
 public class ToggleLinkedBool
 {
     private readonly ToggleButton3DLinker _linkedToggle;
-    private bool _state;
 
-    public static implicit operator bool(ToggleLinkedBool i) => i._state;
+    public static implicit operator bool(ToggleLinkedBool i) => i._linkedToggle.State;
 
     public ToggleLinkedBool(ToggleButton3DLinker toggle, bool initialState = false)
     {
@@ -64,13 +68,12 @@ public class ToggleLinkedBool
 
     public void Set(bool state)
     {
-        _state = state;
         _linkedToggle.SetState(state);
     }
 
     public void Switch()
     {
-        Set(!_state);
+        Set(!_linkedToggle.State);
     }
 
 }

@@ -9,13 +9,22 @@ public class State
     public ToggleLinkedBool VNAV { get; private set; }
     public ToggleLinkedBool AH { get; }
     public ToggleLinkedBool VS { get; }
-    public MapMode MapMode { get; private set; }
 
-    private readonly McpUI _mcpUI;
-
-    public State(McpUI mcpUI)
+    public MapMode MapMode
     {
-        _mcpUI = mcpUI;
+        get => (MapMode)(int)_mapMode;
+
+        private set => _mapMode.Set((int)value);
+    }
+
+
+    private RotatingButtonLinkedValue _mapMode { get; }
+
+    private readonly Drawer _linkedDrawer;
+
+    public State(McpUI mcpUI, Drawer drawer)
+    {
+        _linkedDrawer = drawer;
 
         LNAV = new ToggleLinkedBool(mcpUI.lNavToggle, UIOnLNAVAttemptToggle);
         HDG = new ToggleLinkedBool(mcpUI.hsToggle, UIOnHDGAttemptToggle);
@@ -25,12 +34,21 @@ public class State
         AH = new ToggleLinkedBool(mcpUI._AHToggle, UIOnAHAttemptToggle);
         VS = new ToggleLinkedBool(mcpUI._VSToggle, UIOnVSAttemptToggle);
 
-        _mcpUI.OnMapModeSet += UIOnMapModeSet;
+        _mapMode = new RotatingButtonLinkedValue(mcpUI._mapRotatingToggle, UIOnMapModeAttemptChange, (int)MapMode.Map);
+
     }
 
-    private void UIOnMapModeSet(MapMode mode)
+    private void UIOnMapModeAttemptChange()
     {
-        Session.Mode = mode;
+        _mapMode.Increment();
+        _linkedDrawer.OnUIMapModeSet();
+    }
+
+    public void AutoSetMapMode(MapMode mode)
+    {
+        MapMode = mode;
+        
+        _linkedDrawer.OnUIMapModeSet();
     }
 
     private void UIOnLNAVAttemptToggle()

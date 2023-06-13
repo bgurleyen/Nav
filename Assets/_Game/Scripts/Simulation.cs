@@ -12,6 +12,7 @@ namespace Navigation
         [SerializeField] private Drawer _drawer;
 
         public event Action OnOperationMade;
+        public Drawer Drawer => _drawer;
 
         private bool _queueEraseMode;
         private List<ICommand> _cachedCommands;

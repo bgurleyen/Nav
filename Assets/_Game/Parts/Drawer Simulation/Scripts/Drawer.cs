@@ -47,27 +47,19 @@ public class Drawer : MonoBehaviour
     {
         Session.ZoomMultiplier = _gameConfig.Settings.StartingZoom;
         UYServiceLocator.Register(this);
-        var mcpUI = UYServiceLocator.Get<McpUI>();
-        mcpUI.OnMapModeSet += OnUIMapModeSet;
-    }
-
-    private void OnDestroy()
-    {
-        var mcpUI = UYServiceLocator.Get<McpUI>();
-        mcpUI.OnMapModeSet -= OnUIMapModeSet;
     }
 
     // todo daniel - move this through session.State
     public void ResetMode()
     {
-        Session.Mode = MapMode.Map;
-        OnUIMapModeSet(Session.Mode);
+        Session.State.AutoSetMapMode(MapMode.Map);
+        OnUIMapModeSet();
     }
 
 
-    private void OnUIMapModeSet(MapMode mode)
+    public void OnUIMapModeSet()
     {
-        switch (mode)
+        switch (Session.State.MapMode)
         {
             case MapMode.Map:
                 cameraAnimator.SetTrigger("Map");
@@ -76,8 +68,6 @@ public class Drawer : MonoBehaviour
             case MapMode.Plan:
                 cameraAnimator.SetTrigger("Center");
                 break;
-            default:
-                throw new ArgumentOutOfRangeException(nameof(mode), mode, null);
         }
         ShowCurrentMode();
     }
@@ -88,17 +78,17 @@ public class Drawer : MonoBehaviour
     {
         foreach (var x in mapHolder)
         {
-            x.SetActive(Session.Mode == MapMode.Map);
+            x.SetActive(Session.State.MapMode == MapMode.Map);
         }
 
         foreach (var x in centerHolder)
         {
-            x.SetActive(Session.Mode == MapMode.Center);
+            x.SetActive(Session.State.MapMode == MapMode.Center);
         }
 
         foreach (var x in planHolder)
         {
-            x.SetActive(Session.Mode == MapMode.Plan);
+            x.SetActive(Session.State.MapMode == MapMode.Plan);
         }
 
         Clear();
@@ -181,7 +171,7 @@ public class Drawer : MonoBehaviour
             return;
         }
         
-        switch (Session.Mode)
+        switch (Session.State.MapMode)
         {
             case MapMode.Center:
             case MapMode.Map:

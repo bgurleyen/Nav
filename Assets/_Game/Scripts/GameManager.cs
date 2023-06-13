@@ -25,9 +25,9 @@ public class GameManager : MonoBehaviour
         legsScreen.OnExecButtonPress += LEGS_OnExecButtonPress;
 
 
-        Session.State = new State(mcpUI);
         _simulation = UYServiceLocator.Get<Simulation>();
 
+        Session.State = new State(mcpUI, _simulation.Drawer);
 
 
         InitForLevel(0);

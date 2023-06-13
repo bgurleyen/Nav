@@ -13,6 +13,7 @@ public class McpUI : MonoBehaviour
     public ToggleButton3DLinker _LCToggle;
     public ToggleButton3DLinker _AHToggle;
     public ToggleButton3DLinker _VSToggle;
+    public RotatingRadioButton3DLinker _mapRotatingToggle;
     
     public Text headingText;
     public Slider _SBSlider;

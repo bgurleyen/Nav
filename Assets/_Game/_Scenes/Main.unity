@@ -1902,6 +1902,7 @@ MonoBehaviour:
   _LCToggle: {fileID: 1589272380}
   _AHToggle: {fileID: 210270002}
   _VSToggle: {fileID: 1821963473}
+  _mapRotatingToggle: {fileID: 370891114}
   headingText: {fileID: 926853338}
   _SBSlider: {fileID: 7330376348200001193}
 --- !u!114 &210270002 stripped
@@ -3423,21 +3424,6 @@ MonoBehaviour:
   _maxSteps: 3
   _stepDuration: 0.2
   _preserveInitialRotation: 0
-  _changeCallback:
-    m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 195338239}
-        m_TargetAssemblyTypeName: McpUI, Assembly-CSharp
-        m_MethodName: MCPSwitch_Click
-        m_Mode: 0
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
 --- !u!1 &378039984
 GameObject:
   m_ObjectHideFlags: 0
@@ -18341,6 +18327,51 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 7932975016993532857, guid: 0084e192a38304c8aa6734745d3e9be1,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7932975016993532857, guid: 0084e192a38304c8aa6734745d3e9be1,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -1.28
+      objectReference: {fileID: 0}
+    - target: {fileID: 7932975016993532857, guid: 0084e192a38304c8aa6734745d3e9be1,
+        type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.9330792
+      objectReference: {fileID: 0}
+    - target: {fileID: 7932975016993532857, guid: 0084e192a38304c8aa6734745d3e9be1,
+        type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0.35967106
+      objectReference: {fileID: 0}
+    - target: {fileID: 7932975016993532857, guid: 0084e192a38304c8aa6734745d3e9be1,
+        type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: -42.16
+      objectReference: {fileID: 0}
+    - target: {fileID: 7932975017492041618, guid: 0084e192a38304c8aa6734745d3e9be1,
+        type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 3.55
+      objectReference: {fileID: 0}
+    - target: {fileID: 7932975017492041618, guid: 0084e192a38304c8aa6734745d3e9be1,
+        type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 1.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 7932975017492041618, guid: 0084e192a38304c8aa6734745d3e9be1,
+        type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7932975017492041621, guid: 0084e192a38304c8aa6734745d3e9be1,
+        type: 3}
+      propertyPath: orthographic size
+      value: 2.08
+      objectReference: {fileID: 0}
     - target: {fileID: 7932975017492695956, guid: 0084e192a38304c8aa6734745d3e9be1,
         type: 3}
       propertyPath: m_RootOrder
