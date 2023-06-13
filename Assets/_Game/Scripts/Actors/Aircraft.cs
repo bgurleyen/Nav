@@ -164,6 +164,7 @@ public class Aircraft : MovingActor
     {
         _lastFoundRoutePosition.SegmentVertexIndex = atVertexIndex;
         _lastFoundRoutePosition.SegmentIndex = atLine;
+        CurrentSegmentIndex = atLine;
     }
 
     public void StartHeadingMode()
@@ -171,7 +172,7 @@ public class Aircraft : MovingActor
         _pendingJoinRoutePosition = null;
     }
 
-    public void StartLNavMode()
+    public bool TryRejoinRoute()
     {
         if (Session.ActiveRoute.TracedRoute.FindCloseToRouteSegmentDestination(
                 Session.Settings.HDGCloseRejoinDistance,
@@ -183,11 +184,13 @@ public class Aircraft : MovingActor
         {
             ResetSeekProgress(routeIntersection.SegmentIndex, routeIntersection.SegmentVertexIndex);
             _pendingJoinRoutePosition = routeIntersection;
+            return true;
         }
         else
         {
             Debug.LogWarning("No Intersection Point Found");
             Session.State.AutoSetLNAV(false, true);
+            return false;
         }
     }
 

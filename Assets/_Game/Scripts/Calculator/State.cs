@@ -127,7 +127,7 @@ public class State
         }
         else if (LNAV)
         {
-            Session.PlayerAircraft.StartLNavMode();
+            Session.PlayerAircraft.TryRejoinRoute();
         }
     }
 }

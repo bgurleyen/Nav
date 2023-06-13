@@ -9,7 +9,6 @@ namespace Navigation
         public RoutePoint[] Points;
         public TracedRoute TracedRoute { get; private set; }
 
-        public bool ActiveDirectApproach { get; private set; }
         public int FirstSpeedRegulationNodeId { get; set; }
         public int FirstAltRegulationNodeId { get; set; }
 
@@ -25,6 +24,23 @@ namespace Navigation
                     Points[i].ID = i;
                 }
             }
+        }
+
+
+        public bool HasActiveDirectApproach(out int linearPointIndex)
+        {
+            linearPointIndex = -1;
+            for (var index = 0; index < Points.Length; index++)
+            {
+                var t = Points[index];
+                if (t.IsLinearApproach)
+                {
+                    linearPointIndex = index;
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public void ComputeCartesianPositions()
@@ -110,7 +126,6 @@ namespace Navigation
         public RouteScriptableObject CloneAndInit()
         {
             var newSet = CreateInstance<RouteScriptableObject>(); // new DataSetScriptableObject();
-            newSet.ActiveDirectApproach = ActiveDirectApproach;
             newSet.FirstAltRegulationNodeId = FirstAltRegulationNodeId;
             newSet.FirstSpeedRegulationNodeId = FirstSpeedRegulationNodeId;
             newSet.Points = new RoutePoint[Points.Length];
@@ -458,8 +473,6 @@ namespace Navigation
 
                 Points[i].IndicateHiddenLine();
             }
-
-            ActiveDirectApproach = true;
         }
 
         public void AddRejoinIntersectionNode(Vector2 segmentVertex, int segmentIndex)
@@ -541,7 +554,7 @@ namespace Navigation
 
 
             airplanePositionNodeToAdd.IndicateHiddenLine();
-            if (ActiveDirectApproach)
+            if (HasActiveDirectApproach(out _))
             {
                 frontOfAirplanePositionNodeToAdd.IndicateHiddenLine();
             }

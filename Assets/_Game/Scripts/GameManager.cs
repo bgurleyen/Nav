@@ -103,29 +103,23 @@ public class GameManager : MonoBehaviour
         Session.ModeSetWithPosition.ClearModifiedFlags();
 
         Session.ActiveRoute = Session.ModeSetWithPosition;
-        Session.PlayerAircraft.ResetSeekProgress(PositionVirtualNode.PassedNodeIndex + 2, 0);
 
-      
-        Session.State.AutoSetLNAV(true, false);
+        //Session.State.AutoSetLNAV(true, false);
 
         Session.ModRoute = null;
         Session.IsMod = false;
         MainScreen.Instance.DisplayOperation("0k");
 
-        if (Session.ActiveRoute.ActiveDirectApproach)
+        if (Session.ActiveRoute.HasActiveDirectApproach(out var linearApproachIndex) && Session.State.LNAV)
         {
-            SwitchThroughHeading();
+            if (!Session.PlayerAircraft.TryRejoinRoute())
+            {
+                Session.PlayerAircraft.ResetSeekProgress(linearApproachIndex, 0);
+            }
         }
-    }
-
-    public void SwitchThroughHeading()
-    {
-        Calculator.RHeading = (int)Session.PlayerAircraft.TargetHeading;
-        Session.PlayerAircraft.StartHeadingMode();
-       
-        Session.State.AutoSetLNAV(true, false);
-
-
-        UYServiceLocator.Get<McpUI>().RefreshHS();
+        else
+        {
+            Session.PlayerAircraft.ResetSeekProgress(PositionVirtualNode.PassedNodeIndex + 2, 0);
+        }
     }
 }
