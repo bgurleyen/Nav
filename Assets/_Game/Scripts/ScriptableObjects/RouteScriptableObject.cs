@@ -501,9 +501,7 @@ namespace Navigation
 
         public void AddModPositionNodes()
         {
-            var nodeBeforePosition = Session.State.LNAV
-                ? PositionVirtualNode.GetNodeFrom
-                : Points[0];
+            var nodeBeforePosition =  PositionVirtualNode.GetNodeFrom;
 
             int routeNextNodeIndex;
             if (Session.State.LNAV)
