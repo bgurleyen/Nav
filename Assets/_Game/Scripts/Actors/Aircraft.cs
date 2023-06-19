@@ -6,6 +6,7 @@ using UnityEngine;
 public class Aircraft : MovingActor
 {
     public float NMWalkedOnCurrentSegment;
+    public float DistanceToNextPoint;
     public int CurrentSegmentIndex;
 
     /// <summary>
@@ -81,7 +82,7 @@ public class Aircraft : MovingActor
 
             _pilot.TickAdvance();
 
-            CheckAdvancePointOnHDGProximity();
+            CheckAdvancePointOnHDGProximity(out DistanceToNextPoint);
             
             // for display only
             //GameManager.Instance.ActiveRoute.FindFreeFlightDirectExitScenario(out displayCenterOfTurn, out displayExitPoint, out _);
@@ -89,7 +90,7 @@ public class Aircraft : MovingActor
         else // airplane is on free flight
         {
             _pilot.TickAdvance();
-            CheckAdvancePointOnHDGProximity();
+            CheckAdvancePointOnHDGProximity(out DistanceToNextPoint);
         }
     }
     
@@ -128,19 +129,24 @@ public class Aircraft : MovingActor
     {
         get
         {
-            if (!IsJoining)
+            if (!Session.State.LNAV)
             {
-                return PositionVirtualNode.CurrentTracedLine.LinkedPoint.Distance - NMWalkedOnCurrentSegment;
+                return DistanceToNextPoint;
+            }
+            
+            if (IsJoining)
+            {
+                var nextViableNodeIndex = PositionVirtualNode.PassedNodeIndex + 1;
+                while (Session.ActiveRoute.Points[nextViableNodeIndex].IsSkippable)
+                {
+                    nextViableNodeIndex++;
+                }
+
+                return (Session.ActiveRoute.GetCartesianPosition(nextViableNodeIndex) -
+                        _pilot.NMPosition).magnitude;
             }
 
-            var nextViableNodeIndex = PositionVirtualNode.PassedNodeIndex + 1;
-            while (Session.ActiveRoute.Points[nextViableNodeIndex].IsSkippable)
-            {
-                nextViableNodeIndex++;
-            }
-
-            return (Session.ActiveRoute.GetCartesianPosition(nextViableNodeIndex) -
-                    _pilot.NMPosition).magnitude;
+            return PositionVirtualNode.CurrentTracedLine.LinkedPoint.Distance - NMWalkedOnCurrentSegment;
         }
     }
 
@@ -194,17 +200,18 @@ public class Aircraft : MovingActor
         }
     }
 
-    private void CheckAdvancePointOnHDGProximity()
+    private void CheckAdvancePointOnHDGProximity(out float proximityDistance)
     {
+        proximityDistance = -1;
         var firstNextPoint = Session.PlayerAircraft.CurrentSegmentIndex;
-        if (Session.ActiveRoute.Points.Length-1 <= firstNextPoint)
+        if (Session.ActiveRoute.Points.Length - 1 <= firstNextPoint)
         {
             return;
         }
-        
+
         var nodePosition = Session.ActiveRoute.Points[firstNextPoint].CartesianPosition;
-        if (Vector2.Distance(nodePosition, _pilot.NMPosition) <=
-            Session.Settings.HDGProximityAdvanceDistance)
+        proximityDistance = Vector2.Distance(nodePosition, _pilot.NMPosition);
+        if (proximityDistance <= Session.Settings.HDGProximityAdvanceDistance)
         {
             CurrentSegmentIndex = firstNextPoint + 1;
         }
