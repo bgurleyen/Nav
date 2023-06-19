@@ -23,11 +23,14 @@ namespace Navigation
 
         public void TickAdvance()
         {
-            NMPosition += Direction * (_isTracer ? Session.Settings.TracerTickDistance() : Session.Settings.PlayerTickDistance) ;
+            NMPosition += Direction *
+                          (_isTracer ? Session.Settings.TracerTickDistance() : Session.Settings.PlayerTickDistance);
             if (!_isTracer)
             {
                 DisplayHeadingDegrees = Mathf.LerpAngle(DisplayHeadingDegrees, HeadingDegrees,
                     Session.Settings.TickFlyingRotationDelayMultiplier);
+
+                CachedDisplayLastAngleDiff = -Geometry.AngleDelta(DisplayHeadingDegrees, HeadingDegrees);
             }
         }
 
@@ -44,10 +47,7 @@ namespace Navigation
 
             UpdateHeadingTowardsAngleDiff(difDegrees);
             
-            if (!_isTracer)
-            {
-                CachedDisplayLastAngleDiff = -Geometry.AngleDelta(DisplayHeadingDegrees, targetHeading);
-            }
+            
         }
 
         private void UpdateHeadingTowardsAngleDiff(float difDegrees)
