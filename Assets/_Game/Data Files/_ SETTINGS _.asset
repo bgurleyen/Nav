@@ -17,13 +17,13 @@ MonoBehaviour:
   StartingZoom: 2
   MapReferenceLength80: 2.82
   PlanReferenceLength80: 3.82
-  HDGProximityAdvanceDistance: 5
+  HDGProximityAdvanceDistance: 1.3
   HDGCloseRejoinDistance: 2.8
   _pilotMaxTurningDegreesPerNM: 3
   AirplaneDesignSpeed: 170
-  SpeedMultiplier: 7
+  SpeedMultiplier: 24
   ForwardThreshold: 1.5
   PilotSeekDistancePathFollow: 1.2
   SegmentGranularity: 0.1
   _tracerTickDuration: 7
-  FlyingTickDuration: 0.1653913
+  FlyingTickDuration: 0.56056714

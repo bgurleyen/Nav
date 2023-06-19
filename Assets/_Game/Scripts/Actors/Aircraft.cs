@@ -5,6 +5,8 @@ using UnityEngine;
 [Serializable]
 public class Aircraft : MovingActor
 {
+    [SerializeField] private LineRenderer _turningHeaderLine;
+    
     public float NMWalkedOnCurrentSegment;
     public float DistanceToNextPoint;
     public int CurrentSegmentIndex;
@@ -22,7 +24,6 @@ public class Aircraft : MovingActor
     private Pilot _pilot;
 
     private Vector3 _upwardsHeaderLineTop = new(0, 1.2f, 0);
-    private LineRenderer _turningHeaderLine;
 
     private RoutePosition _lastFoundRoutePosition = new() { SegmentIndex = 1 };
     private RoutePosition? _pendingJoinRoutePosition = new() { SegmentIndex = 1 };
@@ -33,7 +34,6 @@ public class Aircraft : MovingActor
 
         _pilot = new Pilot(Vector2.zero, Vector2.up, false);
         
-        _turningHeaderLine = GetComponent<LineRenderer>();
         _turningHeaderLine.positionCount = 10;
     }
 

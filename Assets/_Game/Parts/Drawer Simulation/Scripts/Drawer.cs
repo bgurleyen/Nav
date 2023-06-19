@@ -73,6 +73,11 @@ public class Drawer : MonoBehaviour
     }
 
 
+    private void Update()
+    {
+        
+    }
+
 
     private void ShowCurrentMode()
     {
@@ -170,25 +175,36 @@ public class Drawer : MonoBehaviour
         {
             return;
         }
-        
+
+
+
         switch (Session.State.MapMode)
         {
             case MapMode.Center:
             case MapMode.Map:
                 //rotate compass
                 compasPivot.SetLocalRotationZ(Session.PlayerAircraft.DisplayHeadingDegrees);
+                
                 if (Session.State.HDG)
                 {
                     freeFlightPivot.SetLocalRotationZ(Session.PlayerAircraft.DisplayHeadingDegrees - Calculator.RHeading);
                 }
+                mobilePlaneIndicatorPivot.SetLocalRotationZ(0);
 
                 break;
             case MapMode.Plan:
                 //rotate compass
                 compasPivot.SetLocalRotationZ(0);
-                mobilePlaneIndicatorPivot.position =
-                    Session.PlayerAircraft.NMPosition.ToDisplay();
+                // mobilePlaneIndicatorPivot.position =
+                //     Session.PlayerAircraft.NMPosition.ToDisplay();
                 mobilePlaneIndicatorPivot.SetLocalRotationZ(-Session.PlayerAircraft.DisplayHeadingDegrees);
+                
+                
+                if (Session.State.HDG)
+                {
+                    freeFlightPivot.SetLocalRotationZ(- Calculator.RHeading);
+                }
+                
                 break;
            
             default:
