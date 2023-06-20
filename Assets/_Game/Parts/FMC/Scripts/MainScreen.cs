@@ -13,20 +13,13 @@ public class MainScreen : Singleton<MainScreen>
     [SerializeField] private TMP_Text title;
     [SerializeField] private TMP_Text pageNumber;
 
-
-    [Header("last button line")]
-    [SerializeField] private TMP_Text lastHLeft;
-    [SerializeField] private TMP_Text lastHRight;
-    [SerializeField] private TMP_Text lastFLeft;
-    [SerializeField] private BgText lastFRight;
     
 
     [Header("scratch pad")]
     [SerializeField]
-    private BgText scratchPadText;
+    public BgText scratchPadText;
+    
 
-
-    public string LastLineLeft => lastFLeft.text;
 
     public void UpdatePageInfo( bool isMod = false, string firstInfo = "", string pageTitle = "", string secondInfo = "",int currentPage = -1, int totalPages = -1)
     {
@@ -44,30 +37,8 @@ public class MainScreen : Singleton<MainScreen>
         title.text = pageTitle;
     }
 
-    public void UpdateScratchPad(string buffer, bool withStatus = true)
-    {
-        scratchPadText.SetAsDefault(buffer);
-        if (withStatus)
-        {
-            lastFLeft.text = "ok";
-        }
-    }
+   
 
-    public void DisplayOperation(string value , string details = "", bool tallDetails= false)
-    {
-        lastFLeft.text = $"<{value}";
-        switch (tallDetails)
-        {
-            case true:
-                lastFRight.SetAsTall(details);
-                break;
-            default:
-                lastFRight.SetAsDefault(details);
-                break;
-        }
-
-        scratchPadText.Clear();
-    }
     
     public static class Keywords
     {

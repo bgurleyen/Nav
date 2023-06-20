@@ -1,10 +1,22 @@
 ﻿using System;
+using TMPro;
 using UnityEngine;
 
 public class ScreenBase : MonoBehaviour
 {
     protected static MainScreen Main => MainScreen.Instance;
     protected FMC_Screens FMSScreens { get; private set; }
+    
+    
+
+    [Header("last button line")]
+    [SerializeField] protected TMP_Text lastHLeft;
+    [SerializeField] protected TMP_Text lastHRight;
+    [SerializeField] protected TMP_Text lastFLeft;
+    [SerializeField] protected BgText lastFRight;
+    
+
+    public string LastLineLeft => lastFLeft.text;
 
     protected virtual void Awake()
     {

@@ -1020,6 +1020,18 @@ RectTransform:
     type: 3}
   m_PrefabInstance: {fileID: 1159131435906841669}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &3936138877324783071 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 2777021752658317722, guid: d65278865393d5c4b88630892d46c97c,
+    type: 3}
+  m_PrefabInstance: {fileID: 1159131435906841669}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8cff38d8255f203469df37404f9cdfaa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1159131436274179866
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -2525,7 +2537,7 @@ PrefabInstance:
     - target: {fileID: 3562050924836705497, guid: 75aa873b34c574558b31503d54ba7dac,
         type: 3}
       propertyPath: m_Name
-      value: LEGS Screen
+      value: LEGS Screen Variant
       objectReference: {fileID: 0}
     - target: {fileID: 4466346670787222887, guid: 75aa873b34c574558b31503d54ba7dac,
         type: 3}
@@ -2637,6 +2649,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ff63f650a8697344a97dccf40743e5d2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  lastHLeft: {fileID: 728823451209285256}
+  lastHRight: {fileID: 728823451159943558}
+  lastFLeft: {fileID: 728823450626754375}
+  lastFRight: {fileID: 3936138877324783071}
+  scratchPadText: {fileID: 0}
   nodes:
   - {fileID: 4163465133214573559}
   - {fileID: 3736532399190127170}

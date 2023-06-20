@@ -22,7 +22,7 @@ public class CRZScreen : ScreenBase
          currentPage: 0, totalPages: 1);
   
 
-      InvokeRepeating(nameof(Refresh), 0, 1f);
+         InvokeRepeating(nameof(Refresh), 0, 1f);
    }
 
    public override void Hide()

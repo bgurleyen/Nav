@@ -10,6 +10,8 @@ public class GameManager : MonoBehaviour
 
     private Simulation _simulation;
 
+    private LegsScreen _legsScreen;
+
     private void Awake()
     {
         UYServiceLocator.Register(this);
@@ -20,9 +22,9 @@ public class GameManager : MonoBehaviour
     {
         var mcpUI = UYServiceLocator.Get<McpUI>();
 
-        var legsScreen = UYServiceLocator.Get<LegsScreen>();
-        legsScreen.OnLeftCornerPressErase += LEGS_OnLeftCornerPressErase;
-        legsScreen.OnExecButtonPress += LEGS_OnExecButtonPress;
+        _legsScreen = UYServiceLocator.Get<LegsScreen>();
+        _legsScreen.OnLeftCornerPressErase += LEGS_OnLeftCornerPressErase;
+        _legsScreen.OnExecButtonPress += LEGS_OnExecButtonPress;
 
 
         _simulation = UYServiceLocator.Get<Simulation>();
@@ -108,7 +110,7 @@ public class GameManager : MonoBehaviour
 
         Session.ModRoute = null;
         Session.IsMod = false;
-        MainScreen.Instance.DisplayOperation("0k");
+        _legsScreen.DisplayOperation("0k");
 
         if (Session.ActiveRoute.HasActiveDirectApproach(out var linearApproachIndex) && Session.State.LNAV)
         {

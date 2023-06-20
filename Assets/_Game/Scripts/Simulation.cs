@@ -17,6 +17,8 @@ namespace Navigation
         private bool _queueEraseMode;
         private List<ICommand> _cachedCommands;
 
+        private LegsScreen _legsScreen;
+
 
         // if we detect that during MOD the current node has passed we reExecute all the commands until that point
         private int _modReExecutedForIndex = -1;
@@ -24,6 +26,11 @@ namespace Navigation
         private void Awake()
         {
             UYServiceLocator.Register(this);
+        }
+
+        private void Start()
+        {
+            _legsScreen = UYServiceLocator.Get<LegsScreen>();
         }
 
         public void Init()
@@ -48,7 +55,7 @@ namespace Navigation
         {
             Session.ModRoute = null;
             Session.IsMod = false;
-            MainScreen.Instance.DisplayOperation("0k");
+            _legsScreen.DisplayOperation("0k");
         }
 
         public void Tick()
@@ -146,7 +153,7 @@ namespace Navigation
             CheckModForOperation();
             _cachedCommands.Add(command);
 
-            MainScreen.Instance.DisplayOperation("ERASE");
+            _legsScreen.DisplayOperation("ERASE");
 
             Session.ModRoute.GetPoint(command.NodeId, out var node);
             node.RawAltitude = "";
@@ -160,7 +167,7 @@ namespace Navigation
             CheckModForOperation();
             _cachedCommands.Add(command);
 
-            MainScreen.Instance.DisplayOperation("ERASE");
+            _legsScreen.DisplayOperation("ERASE");
             Session.ModRoute.GetPoint(command.NodeId, out var node);
             node.RawSpeed = command.Regulation;
             node.IsSpeedModified = true;
@@ -174,7 +181,7 @@ namespace Navigation
             CheckModForOperation();
             _cachedCommands.Add(command);
 
-            MainScreen.Instance.DisplayOperation("ERASE");
+            _legsScreen.DisplayOperation("ERASE");
             Session.ModRoute.GetPoint(command.NodeId, out var node);
             //maybe move this to route class to also do some tests?
             node.RawAltitude = command.Regulation;
@@ -190,7 +197,7 @@ namespace Navigation
             _cachedCommands.Add(command);
 
             Session.ModRoute.GetPoint(command.FromNodeId, out var node);
-            MainScreen.Instance.DisplayOperation("ERASE", ToDegreesDisplay(node.RawDegrees));
+            _legsScreen.DisplayOperation("ERASE", ToDegreesDisplay(node.RawDegrees));
             Session.ModRoute.ShortcutNodes(command.FromNodeId, command.ToNodeId, out var _);
             DataHandler.BuildSetDetails(Session.ModRoute);
 
@@ -211,7 +218,7 @@ namespace Navigation
             Session.ModRoute.AddRelativeNodeOnDirection(command.FromNodeId, command.Distance, command.RelativeNodeId,
                 out _, out _);
             DataHandler.BuildSetDetails(Session.ModRoute);
-            MainScreen.Instance.DisplayOperation("ERASE");
+            _legsScreen.DisplayOperation("ERASE");
 
             OnOperationMade?.Invoke();
         }
@@ -226,7 +233,7 @@ namespace Navigation
             Session.ModRoute.AddRelativeNodeBefore(command.BeforeNodeId, command.RawDegrees, command.Distance,
                 command.RelativeNodeId, out _, true);
             DataHandler.BuildSetDetails(Session.ModRoute);
-            MainScreen.Instance.DisplayOperation(MainScreen.Keywords.ERASE);
+            _legsScreen.DisplayOperation(MainScreen.Keywords.ERASE);
 
             OnOperationMade?.Invoke();
         }
@@ -239,7 +246,7 @@ namespace Navigation
 
             Session.ModRoute.CreateLinearApproach(command.ToNodeId, command.Angle);
             DataHandler.BuildSetDetails(Session.ModRoute);
-            MainScreen.Instance.DisplayOperation(MainScreen.Keywords.ERASE, ToDegreesDisplay(command.Angle), true);
+            _legsScreen.DisplayOperation(MainScreen.Keywords.ERASE, ToDegreesDisplay(command.Angle), true);
 
             OnOperationMade?.Invoke();
         }

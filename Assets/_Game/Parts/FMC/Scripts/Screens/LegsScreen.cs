@@ -24,7 +24,10 @@ public class LegsScreen : ScreenBase
         Mathf.CeilToInt((Session.VisibleRoute.Points.Length - PositionVirtualNode.NextNodeIndex + _nodesController.TotalPagesCorrection) /
                         (float) NodesPerPage);
     
-    private static bool IsErase => Main.LastLineLeft == ERASE_TITLE;
+    private bool IsErase => LastLineLeft == ERASE_TITLE;
+
+    // the current code that is centered when in PLAN mode.
+    private int PlanCenterNodeIndex = 0;
 
     private const string ERASE_TITLE = "<ERASE";
     
@@ -64,7 +67,7 @@ public class LegsScreen : ScreenBase
     public override void Show()
     {
         base.Show();
-        InvokeRepeating(nameof(DisplayCurrentPage), 0, 0.1f);
+        InvokeRepeating(nameof(DisplayCurrentPage), 0, 0.2f);
     }
 
     public override void Hide()
@@ -155,7 +158,7 @@ public class LegsScreen : ScreenBase
                 _selectionInfo = linkedSelection;
                 _scratchPadBuffer = GetSelectedPoint.Name;
                 GetSelectedPoint.IsSelected = true;
-                Main.UpdateScratchPad(_scratchPadBuffer);
+                UpdateScratchPad(_scratchPadBuffer);
                 InterpretScratchpadOnTextChanged(false);
                 // continue with second selection as this user press
             }
@@ -165,7 +168,7 @@ public class LegsScreen : ScreenBase
                 _selectionInfo = clickedInfo;
                 _scratchPadBuffer = GetSelectedPoint.Name;
                 GetSelectedPoint.IsSelected = true;
-                Main.UpdateScratchPad(_scratchPadBuffer);
+                UpdateScratchPad(_scratchPadBuffer);
                 InterpretScratchpadOnTextChanged(false);
                 return;
             }
@@ -263,13 +266,13 @@ public class LegsScreen : ScreenBase
             _scratchPadBuffer = _scratchPadBuffer.Remove(_scratchPadBuffer.Length - 1);
         }
 
-        Main.UpdateScratchPad(_scratchPadBuffer);
+        UpdateScratchPad(_scratchPadBuffer);
     }
 
     public override void OnDeletePress()
     {
         _scratchPadBuffer = MainScreen.Keywords.DELETE;
-        Main.UpdateScratchPad(_scratchPadBuffer);
+        UpdateScratchPad(_scratchPadBuffer);
     }
 
     public override void OnCharacterInput(char character)
@@ -285,7 +288,7 @@ public class LegsScreen : ScreenBase
 
         InterpretScratchpadOnTextChanged(true);
 
-        Main.UpdateScratchPad(_scratchPadBuffer, _selectionInfo != null);
+        UpdateScratchPad(_scratchPadBuffer, _selectionInfo != null);
     }
 
     private struct ScratchPadInterpreter
@@ -568,4 +571,31 @@ public class LegsScreen : ScreenBase
     {
         _lastSelectionClicked = null;
     }
+    
+    
+    public void DisplayOperation(string value , string details = "", bool tallDetails= false)
+    {
+        lastFLeft.text = $"<{value}";
+        switch (tallDetails)
+        {
+            case true:
+                lastFRight.SetAsTall(details);
+                break;
+            default:
+                lastFRight.SetAsDefault(details);
+                break;
+        }
+
+        MainScreen.Instance.scratchPadText.Clear();
+    }
+
+    public void UpdateScratchPad(string buffer, bool withStatus = true)
+    {
+        MainScreen.Instance.scratchPadText.SetAsDefault(buffer);
+        if (withStatus)
+        {
+            lastFLeft.text = "ok";
+        }
+    }
+
 }
