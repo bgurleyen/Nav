@@ -1,3 +1,4 @@
+using System;
 using Navigation;
 
 public class State
@@ -16,17 +17,20 @@ public class State
     {
         get => (MapMode)(int)_mapMode;
 
-        private set => _mapMode.Set((int)value);
+        private set
+        {
+            _mapMode.Set((int)value);
+            OnMapModeChanged?.Invoke(MapMode);
+        }
     }
+
+    public Action<MapMode> OnMapModeChanged;
 
 
     private RotatingButtonLinkedValue _mapMode { get; }
 
-    private readonly Drawer _linkedDrawer;
-
-    public State(McpUI mcpUI, Drawer drawer)
+    public State(McpUI mcpUI)
     {
-        _linkedDrawer = drawer;
 
         LNAV = new ToggleLinkedBool(mcpUI.lNavToggle, UIOnLNAVAttemptToggle);
         HDG = new ToggleLinkedBool(mcpUI.hsToggle, UIOnHDGAttemptToggle);
@@ -50,14 +54,12 @@ public class State
     private void UIOnMapModeAttemptChange()
     {
         _mapMode.Increment();
-        _linkedDrawer.OnUIMapModeSet();
+        OnMapModeChanged?.Invoke(MapMode);
     }
 
     public void AutoSetMapMode(MapMode mode)
     {
         MapMode = mode;
-        
-        _linkedDrawer.OnUIMapModeSet();
     }
 
     private void UIOnLNAVAttemptToggle()

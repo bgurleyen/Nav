@@ -44,5 +44,7 @@ public class MainScreen : Singleton<MainScreen>
     {
         public const string DELETE = "DELETE";
         public const string ERASE = "ERASE";
+        
+        public const string STEP = "STEP";
     }
 }

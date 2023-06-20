@@ -6,14 +6,19 @@ public class DisplayNodesController
 {
     public DisplayNodesController(int nodesPerPage)
     {
-        this.nodesPerPage = nodesPerPage;
+        this._nodesPerPage = nodesPerPage;
     }
 
+
+    // the current code that is centered when in PLAN mode.
+    private int _planCenterNodeIndex = 0;
+    
+    
     public int TotalPagesCorrection = 0;
 
     private static RouteScriptableObject VisibleRoute => Session.IsMod ? Session.ModRoute : Session.ActiveRoute;
 
-    private readonly int nodesPerPage;
+    private readonly int _nodesPerPage;
 
     public void ComputeCorrections()
     {
@@ -43,7 +48,7 @@ public class DisplayNodesController
 
     public NodeSelection GetNodeInfoAtLineIndex(int lineIndex, int currentPage)
     {
-        var pagedLineIndex = lineIndex + currentPage * nodesPerPage;
+        var pagedLineIndex = lineIndex + currentPage * _nodesPerPage;
 
         // when an insert have been made with the future position node and has been executed. happening until passing the new position
         var positionIsTemporaryAhead = Session.ActiveRoute.Points[PositionVirtualNode.NextNodeIndex].IsPositionNode;
@@ -124,8 +129,15 @@ public class DisplayNodesController
             LinkedId = linkedId,
             IsAddedDiscontinuity = thisIsDiscontinuity && !thisIsAfterDiscontinuity,
             IsEmpty = !pointIsValid,
-            IsStartingPoint = isStartingPoint
+            IsStartingPoint = isStartingPoint,
+            IsPlanCenter = _planCenterNodeIndex == lineIndex
         }; // not showing the first point as is NOW
+        
+    }
+
+    public void DoPlanModeStep()
+    {
+        throw new NotImplementedException();
     }
 }
 
@@ -135,6 +147,8 @@ public class NodeSelection
     public bool IsAddedDiscontinuity;
     public bool IsEmpty;
     internal bool IsStartingPoint;
+    // for map mode
+    internal bool IsPlanCenter;
 
     public bool IsInvalid => LinkedId <= 0;
 }

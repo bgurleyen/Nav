@@ -13,6 +13,7 @@ public class LegsNodeLine : MonoBehaviour
 
     [Header("footer")] 
     public BgText fLeft;
+    public TMP_Text fMiddle;
     public BgText fRight;
 
     private NodeSelection selection;
@@ -47,6 +48,8 @@ public class LegsNodeLine : MonoBehaviour
                 fLeft.SetAsDefault(node.Name);
             }
 
+            fMiddle.text = linkedInfo.IsPlanCenter && Session.State.MapMode == MapMode.Plan
+                ? "<CTR>" : "";
 
             var isSpeedRestriction = node.GetSpeedIsRestricted(out var speedDisplayValue);
             var isAltRestriction = node.GetAltitudeIsRestricted(out var altDisplayValue);

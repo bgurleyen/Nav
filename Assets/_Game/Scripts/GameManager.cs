@@ -22,15 +22,13 @@ public class GameManager : MonoBehaviour
     {
         var mcpUI = UYServiceLocator.Get<McpUI>();
 
+        _simulation = UYServiceLocator.Get<Simulation>();
+
+        Session.State = new State(mcpUI);
+
         _legsScreen = UYServiceLocator.Get<LegsScreen>();
         _legsScreen.OnLeftCornerPressErase += LEGS_OnLeftCornerPressErase;
         _legsScreen.OnExecButtonPress += LEGS_OnExecButtonPress;
-
-
-        _simulation = UYServiceLocator.Get<Simulation>();
-
-        Session.State = new State(mcpUI, _simulation.Drawer);
-
 
         InitForLevel(0);
     }

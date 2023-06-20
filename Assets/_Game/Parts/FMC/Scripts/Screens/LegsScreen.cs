@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Linq;
 using Navigation;
 using UnityEngine;
@@ -26,8 +27,6 @@ public class LegsScreen : ScreenBase
     
     private bool IsErase => LastLineLeft == ERASE_TITLE;
 
-    // the current code that is centered when in PLAN mode.
-    private int PlanCenterNodeIndex = 0;
 
     private const string ERASE_TITLE = "<ERASE";
     
@@ -46,15 +45,20 @@ public class LegsScreen : ScreenBase
         UYServiceLocator.Register(this);
     }
 
-    private void Start()
+    private IEnumerator Start()
     {
         _nodesController = new DisplayNodesController(NodesPerPage);
 
         _simulation = UYServiceLocator.Get<Simulation>();
         
         _simulation.OnOperationMade += _nodesController.ComputeCorrections;
+        
+        yield return null;
+        
+        Session.State.OnMapModeChanged+= OnMapModeChanged;
     }
-    
+
+
 
     private void OnDestroy()
     {
@@ -234,7 +238,11 @@ public class LegsScreen : ScreenBase
             return;
         }
 
-        if (LastSelectedPoint is { IsModified: true } &&
+        if (Session.State.MapMode == MapMode.Plan)
+        {
+            _nodesController.DoPlanModeStep();
+        }
+        else if (LastSelectedPoint is { IsModified: true } &&
             _scratchPadInterpreter.IsLinearApproach(out var angle))
         {
             Debug.Log("=linear approach= on " + LastSelectedPoint.Name + " with: " + angle);
@@ -571,8 +579,12 @@ public class LegsScreen : ScreenBase
     {
         _lastSelectionClicked = null;
     }
-    
-    
+
+    private void OnMapModeChanged(MapMode obj)
+    {
+        lastFRight.SetAsDefault(obj == MapMode.Plan ? "STEP":"");
+    }
+
     public void DisplayOperation(string value , string details = "", bool tallDetails= false)
     {
         lastFLeft.text = $"<{value}";

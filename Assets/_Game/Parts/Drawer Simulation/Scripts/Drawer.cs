@@ -49,17 +49,22 @@ public class Drawer : MonoBehaviour
         UYServiceLocator.Register(this);
     }
 
+    private void Start()
+    {
+        Session.State.OnMapModeChanged += OnUIMapModeSet;
+    }
+
     // todo daniel - move this through session.State
     public void ResetMode()
     {
         Session.State.AutoSetMapMode(MapMode.Map);
-        OnUIMapModeSet();
+        OnUIMapModeSet(Session.State.MapMode);
     }
 
 
-    public void OnUIMapModeSet()
+    public void OnUIMapModeSet(MapMode mode)
     {
-        switch (Session.State.MapMode)
+        switch (mode)
         {
             case MapMode.Map:
                 cameraAnimator.SetTrigger("Map");
@@ -72,11 +77,6 @@ public class Drawer : MonoBehaviour
         ShowCurrentMode();
     }
 
-
-    private void Update()
-    {
-        
-    }
 
 
     private void ShowCurrentMode()
