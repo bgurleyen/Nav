@@ -26,25 +26,6 @@ namespace Navigation
             }
         }
 
-        public (RoutePoint Node, int index) GetFirstViableNode
-        {
-            get
-            {
-                var activeRoutePoints = Session.ActiveRoute.Points;
-                for (int i = 0; i < activeRoutePoints.Length; i++)
-                {
-                    if (activeRoutePoints[i].IsLinearApproach ||
-                        activeRoutePoints[i].IsHiddenLine)
-                    {
-                        continue;
-                    }
-
-                    return (activeRoutePoints[i], i);
-                }
-
-                return (null, -1);
-            }
-        }
 
         public bool HasActiveDirectApproach(out int linearPointIndex)
         {
@@ -459,8 +440,19 @@ namespace Navigation
 
         public void CreateLinearApproach(int toNodeId, int angle)
         {
-            var firstNodeToDissolve = GetFirstViableNode.Node;
-            ShortcutNodes(firstNodeToDissolve.ID, toNodeId, out var reducedPoint);
+            RoutePoint reducedPoint;
+            var firstNodeToDissolve = PositionVirtualNode.GetNodeTo.ID;
+            // the TO point on active route can be already shortcuted on MOD
+            if (!Points.GetNodeIndex(firstNodeToDissolve, out _))
+            {
+                Points.GetNodeIndex(toNodeId, out var toNodeIndex);
+                reducedPoint = Points[toNodeIndex];
+            }
+            else
+            {
+                //execute shortcut node at [1] until toNode
+                ShortcutNodes(PositionVirtualNode.GetNodeTo.ID, toNodeId, out reducedPoint);
+            }
 
             reducedPoint.IndicateDirectApproach(angle);
 
@@ -507,47 +499,26 @@ namespace Navigation
             ComputeTrace();
         }
 
-        private void RemoveExistingPositionNodes()
+        public void AddModPositionNodes()
         {
-            int lastPositionIndex = -1;
-            for (int i = 1; i < Points.Length; i++)
+            var nodeBeforePosition =  PositionVirtualNode.GetNodeFrom;
+
+            int routeNextNodeIndex;
+            //if (Session.State.LNAV)
             {
-                if (Points[i].IsPositionNode)
-                {
-                    lastPositionIndex = i;
-                }
+                var nextNodeIndexOnActive = PositionVirtualNode.PassedNodeIndex + 1;
+                routeNextNodeIndex = nextNodeIndexOnActive;
             }
-
-            if (lastPositionIndex == -1)
-            {
-                return;
-            }
-            
-            ShortcutNodes(Points[1].ID , Points[lastPositionIndex+1].ID, out _);
-        }
-
-        public void ResetFromCurrentPosition()
-        {
-            RemoveExistingPositionNodes();
-            
-            //var nodeBeforePosition =  PositionVirtualNode.GetNodeFrom;
-
-            //int routeNextNodeIndex;
-            // if (Session.State.LNAV)
-            // {
-            //     var nextNodeIndexOnActive = PositionVirtualNode.PassedNodeIndex + 1;
-            //     routeNextNodeIndex = nextNodeIndexOnActive;
-            // }
             // else
             // {
             //     routeNextNodeIndex = 1;
             //
             // }
 
-            ConstructPositionNodes(Points[0], GetFirstViableNode.Node,
+            ConstructPositionNodes(nodeBeforePosition, Points[routeNextNodeIndex],
                 out var airplanePositionNodeToAdd, out var frontOfAirplanePositionNodeToAdd);
             
-            InsertNodes(GetFirstViableNode.index, 
+            InsertNodes(routeNextNodeIndex, 
                 airplanePositionNodeToAdd, 
                 frontOfAirplanePositionNodeToAdd);
 

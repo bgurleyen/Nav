@@ -12,7 +12,7 @@ namespace Navigation.Data
     public class infoFMC : Singleton<infoFMC>
     {
         public Text Infotext, pages;
-        private int cachedNextId = 0;
+        private int previousPrvIndex = 0;
         private int Level = Calculator.Level;
 
         public FMC Fmc = new FMC();
@@ -35,8 +35,7 @@ namespace Navigation.Data
             PrvAltitude = Calculator.CAltitude;
 
             Calculator.WindElements WE;
-            // int prvWptIdx = PositionVirtualNode.PassedNodeIndex;
-            int nextWptIdx = Session.ActiveRoute.GetFirstViableNode.index;
+            int prvWptIdx = PositionVirtualNode.PassedNodeIndex;
             int WPTCount = activePoints.Points.Length;
             double[] fr_onpoint = new double[WPTCount];
             int[] GS_onpoint = new int[WPTCount];
@@ -46,7 +45,7 @@ namespace Navigation.Data
             float DirectDistance = (Vector2.Distance(Session.ActiveRoute.GetCartesianPosition(WPTCount - 1),
                 Session.PlayerAircraft.NMPosition));
 
-            for (int i = nextWptIdx; i < activePoints.Points.Length; i++)
+            for (int i = prvWptIdx + 1; i < activePoints.Points.Length; i++)
             {
                 Altitude = (int)activePoints.Points[i].Altitude.ComputedValue;
                 Speed = activePoints.Points[i].Speed.ComputedValue;
@@ -62,7 +61,7 @@ namespace Navigation.Data
 
                 //Infotext.text +=  activePoints.Points[i].Name;+ " D:" + Distance + " S:" + WE.GS + " A:" + Altitude + " V:" + VS + "   ff:" + ff + "   fb:" + fb + "   fr:" + System.Math.Round(fr,2) + "\n";
 
-                totalDistLeft[i] = (i == nextWptIdx)
+                totalDistLeft[i] = (i == prvWptIdx + 1)
                     ? Session.PlayerAircraft.ComputedDistanceLeftOnSegment
                     : totalDistLeft[i - 1] + Distance;
                 PrvAltitude = Altitude;
@@ -111,36 +110,35 @@ namespace Navigation.Data
             Fmc.Arr.RW = levelData.Transition;
 
 
-            Fmc.Prog.PrvName = "" + activePoints.Points[0].Name;
+            Fmc.Prog.PrvName = "" + activePoints.Points[prvWptIdx].Name;
 
-            if (Session.ActiveRoute.Points[nextWptIdx].ID != cachedNextId) // Catch the actual info while passing the point
+            if (prvWptIdx != previousPrvIndex) // Catch the actual info while passing the point
             {
                 Fmc.Prog.PrvCrossAltitude = "" + Calculator.CAltitude;
                 Fmc.Prog.PrvActualTime = "" + GameTime.timerFMC;
                 Fmc.Prog.PrvActualFuel = "" + System.Math.Round(Calculator.totalFuel / 100, 1);
             }
 
-            cachedNextId = Session.ActiveRoute.Points[nextWptIdx].ID;
-            var afterNextIndex = nextWptIdx + 1;
+            previousPrvIndex = prvWptIdx;
 
-            Fmc.Prog.NxtName = "" + activePoints.Points[nextWptIdx].Name;
-            Fmc.Prog.NxtDTG = "" + (int)totalDistLeft[nextWptIdx];
+            Fmc.Prog.NxtName = "" + activePoints.Points[prvWptIdx + 1].Name;
+            Fmc.Prog.NxtDTG = "" + (int)totalDistLeft[prvWptIdx + 1];
             Fmc.Prog.NxtETA = "" + GameTime.FormatFMCTime(GameTime.timer +
-                                                          (((float)totalDistLeft[nextWptIdx] /
-                                                            GS_onpoint[nextWptIdx]) * 3600));
-            Fmc.Prog.NxtFUEL = "" + System.Math.Round(fr_onpoint[nextWptIdx], 1);
-            Fmc.Prog.SecondName = afterNextIndex < activePoints.Points.Length
-                ? "" + activePoints.Points[afterNextIndex].Name
+                                                          (((float)totalDistLeft[prvWptIdx + 1] /
+                                                            GS_onpoint[prvWptIdx + 1]) * 3600));
+            Fmc.Prog.NxtFUEL = "" + System.Math.Round(fr_onpoint[prvWptIdx + 1], 1);
+            Fmc.Prog.SecondName = prvWptIdx + 2 < activePoints.Points.Length
+                ? "" + activePoints.Points[prvWptIdx + 2].Name
                 : "";
             Fmc.Prog.SecondDTG =
-                afterNextIndex < activePoints.Points.Length ? "" + (int)totalDistLeft[afterNextIndex] : "";
-            Fmc.Prog.SecondETA = afterNextIndex < activePoints.Points.Length
+                prvWptIdx + 2 < activePoints.Points.Length ? "" + (int)totalDistLeft[prvWptIdx + 2] : "";
+            Fmc.Prog.SecondETA = prvWptIdx + 2 < activePoints.Points.Length
                 ? "" + GameTime.FormatFMCTime(GameTime.timer +
-                                              (((float)totalDistLeft[afterNextIndex] / GS_onpoint[afterNextIndex]) *
+                                              (((float)totalDistLeft[prvWptIdx + 2] / GS_onpoint[prvWptIdx + 2]) *
                                                3600))
                 : "";
-            Fmc.Prog.SecondFUEL = afterNextIndex < activePoints.Points.Length
-                ? "" + System.Math.Round(fr_onpoint[afterNextIndex], 1)
+            Fmc.Prog.SecondFUEL = prvWptIdx + 2 < activePoints.Points.Length
+                ? "" + System.Math.Round(fr_onpoint[prvWptIdx + 2], 1)
                 : "";
             Fmc.Prog.Destination = levelData.Destination;
             Fmc.Prog.DestDTG = "" + (int)totalDistLeft[WPTCount - 1];

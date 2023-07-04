@@ -32,7 +32,7 @@ namespace Navigation
             set => Routes.ModRoute = value;
         }
 
-        public static RouteScriptableObject ModeSetFromPosition
+        public static RouteScriptableObject ModeSetWithPosition
         {
             get => Routes.ModeSetWithPosition;
             set => Routes.ModeSetWithPosition = value;

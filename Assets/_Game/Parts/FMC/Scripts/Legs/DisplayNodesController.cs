@@ -29,8 +29,7 @@ public class DisplayNodesController
     {
         discontinuities = 0;
         skipped = 0;
-        var nextNodeIndex = Session.ActiveRoute.GetFirstViableNode.index;
-        for (var i = nextNodeIndex; i < VisibleRoute.Points.Length; i++)
+        for (var i = PositionVirtualNode.NextNodeIndex; i < VisibleRoute.Points.Length; i++)
         {
             if (VisibleRoute.Points[i].IsSkippable)
             {
@@ -51,15 +50,13 @@ public class DisplayNodesController
     {
         var pagedLineIndex = lineIndex + currentPage * _nodesPerPage;
 
-        var nextNodeIndex = Session.ActiveRoute.GetFirstViableNode.index;
-
         // when an insert have been made with the future position node and has been executed. happening until passing the new position
-        var positionIsTemporaryAhead = Session.ActiveRoute.Points[nextNodeIndex].IsPositionNode;
+        var positionIsTemporaryAhead = Session.ActiveRoute.Points[PositionVirtualNode.NextNodeIndex].IsPositionNode;
 
         var thisIsDiscontinuity = false;
         var thisIsAfterDiscontinuity = false;
 
-        var linkedIndex = nextNodeIndex + (positionIsTemporaryAhead ? 1 : 0);
+        var linkedIndex = PositionVirtualNode.NextNodeIndex + (positionIsTemporaryAhead ? 1 : 0);
         var pointIsValid = false;
         RoutePoint linkedPoint = null;
 
@@ -122,7 +119,7 @@ public class DisplayNodesController
 
         var linkedId = pointIsValid ? linkedPoint.ID : -1;
 
-        var isStartingPoint = linkedIndex == nextNodeIndex;
+        var isStartingPoint = linkedIndex == PositionVirtualNode.NextNodeIndex;
 
         // Debug.Log(
         //     $"_linkedIndex:{_linkedIndex}  index:{_totalLineIndex} ");

@@ -100,21 +100,26 @@ public class GameManager : MonoBehaviour
     private void ApplyMod()
     {
         Session.ModRoute.ClearModifiedFlags();
-        Session.ModeSetFromPosition.ClearModifiedFlags();
+        Session.ModeSetWithPosition.ClearModifiedFlags();
 
-        Session.ActiveRoute = Session.ModeSetFromPosition.CloneAndInit();
+        Session.ActiveRoute = Session.ModeSetWithPosition.CloneAndInit();
 
         //Session.State.AutoSetLNAV(true, false);
 
         Session.ModRoute = null;
         Session.IsMod = false;
-        _legsScreen.DisplayOperation("ok");
+        _legsScreen.DisplayOperation("0k");
 
-        if (Session.ActiveRoute.HasActiveDirectApproach(out _) && Session.State.LNAV)
+        if (Session.ActiveRoute.HasActiveDirectApproach(out var linearApproachIndex) && Session.State.LNAV)
         {
-            Session.PlayerAircraft.TryRejoinRoute();
+            if (!Session.PlayerAircraft.TryRejoinRoute())
+            {
+                Session.PlayerAircraft.ResetSeekProgress(linearApproachIndex, 0);
+            }
         }
-
-        Session.PlayerAircraft.ResetSeekProgress(Session.ActiveRoute.GetFirstViableNode.index, 0);
+        else
+        {
+            Session.PlayerAircraft.ResetSeekProgress(PositionVirtualNode.PassedNodeIndex + 2, 0);
+        }
     }
 }

@@ -21,7 +21,7 @@ namespace Navigation
 
 
         // if we detect that during MOD the current node has passed we reExecute all the commands until that point
-        private int _modReExecutedForActiveNextId = -1;
+        private int _modReExecutedForIndex = -1;
 
         private void Awake()
         {
@@ -92,7 +92,7 @@ namespace Navigation
         {
             if (Session.ModRoute == null)
             {
-                _modReExecutedForActiveNextId = -1;
+                _modReExecutedForIndex = -1;
                 return;
             }
 
@@ -100,27 +100,30 @@ namespace Navigation
             {
                 // mod always has to include the last passed active node ( all the passed nodes ) 
                 // otherwise it is invalid - will reapply all the commands
-                var activeNextId = Session.ActiveRoute.GetFirstViableNode.Node.ID;
+                var passedNodeIndex = PositionVirtualNode.PassedNodeIndex;
 
-                if (activeNextId != _modReExecutedForActiveNextId)
+                if (passedNodeIndex != _modReExecutedForIndex)
                 {
-                    ReExecuteCachedCommands();
-                    Debug.Log("Reapplied MOD");
+                    if (Session.ActiveRoute.Points[passedNodeIndex].ID != Session.ModRoute.Points[passedNodeIndex].ID)
+                    {
+                        ReExecuteCachedCommands();
+                        Debug.Log("Reapplied MOD");
+                    }
 
-                    _modReExecutedForActiveNextId = activeNextId;
+                    _modReExecutedForIndex = passedNodeIndex;
                 }
             }
 
-            if (Session.ModeSetFromPosition != null)
+            if (Session.ModeSetWithPosition != null)
             {
-                Destroy(Session.ModeSetFromPosition);
+                Destroy(Session.ModeSetWithPosition);
             }
 
-            Session.ModeSetFromPosition = Session.ModRoute.CloneAndInit(); // refactor use the existing modwithposition to avoid reinstantiating
+            Session.ModeSetWithPosition = Session.ModRoute.CloneAndInit(); // refactor use the existing modwithposition to avoid reinstantiating
 
-            Session.ModeSetFromPosition.ResetFromCurrentPosition();
+            Session.ModeSetWithPosition.AddModPositionNodes();
 
-            Session.ModeSetFromPosition.ComputeTrace();
+            Session.ModeSetWithPosition.ComputeTrace();
         }
 
         public void ReExecuteCachedCommands()

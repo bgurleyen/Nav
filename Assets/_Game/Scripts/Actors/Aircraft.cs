@@ -133,22 +133,20 @@ public class Aircraft : MovingActor
             {
                 return DistanceToNextPoint;
             }
-                
-            var nextViableNode = Session.ActiveRoute.GetFirstViableNode;
             
             if (IsJoining)
             {
-                var nextIndex = nextViableNode.index;
-                while (Session.ActiveRoute.Points[nextIndex].IsSkippable)
+                var nextViableNodeIndex = PositionVirtualNode.PassedNodeIndex + 1;
+                while (Session.ActiveRoute.Points[nextViableNodeIndex].IsSkippable)
                 {
-                    nextIndex++;
+                    nextViableNodeIndex++;
                 }
 
-                return (Session.ActiveRoute.GetCartesianPosition(nextIndex) -
+                return (Session.ActiveRoute.GetCartesianPosition(nextViableNodeIndex) -
                         _pilot.NMPosition).magnitude;
             }
 
-            return nextViableNode.Node.Distance - NMWalkedOnCurrentSegment;
+            return PositionVirtualNode.CurrentTracedLine.LinkedPoint.Distance - NMWalkedOnCurrentSegment;
         }
     }
 
