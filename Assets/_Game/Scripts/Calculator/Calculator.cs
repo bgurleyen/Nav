@@ -401,45 +401,45 @@ public class Calculator : MonoBehaviour
         PFD_Animation Script2 = FindObjectOfType<PFD_Animation>();
         Script2.AttUpdate((int)P);
     }
-    public void DrawVDI()
-    {
-        double DeltaAlt, Alt1, Alt0, d, D;
-        float posY;
-
-        RouteScriptableObject activePoints = Session.ActiveRoute;
-        RouteScriptableObject modPoints = Session.ModRoute;
-
-        bool isMod = Session.IsMod;
-        RouteScriptableObject _route = isMod ? modPoints : activePoints;
-
-
-        var node0 = _route.Points[PositionVirtualNode.PassedNodeIndex];
-        var node1 = _route.Points[PositionVirtualNode.PassedNodeIndex + 1];
-
-        //Debug.Log(node.DisplayAltitude.ToString());
-
-        //DeltaAlt =  activeCurrentPosition.ComputedDistanceLeft * 318.43 + double.Parse(node.DisplayAltitude);
-        Alt0 = double.Parse(node0.DisplayAltitude);
-        Alt1 = double.Parse(node1.DisplayAltitude);
-        d = Session.PlayerAircraft.ComputedDistanceLeftOnSegment;
-        D = (d + Session.PlayerAircraft.NMWalkedOnCurrentSegment); // Daniel: this will behave bad while free flight
-
-        DeltaAlt = CAltitude - (Alt1 + (d * (Alt0 - Alt1)) / D);
-        VDI_Text.text = (((DeltaAlt) > 50) || ((DeltaAlt) < -50)) ? "" + (int)DeltaAlt : "";
-        if (Session.State.VNAV)
-        {
-            VNAV_VS = -((CAltitude - Alt1) * GS) / (60 * d) - DeltaAlt * 2;
-            RVS = (DeltaAlt < -50) ? -100 : (int)VNAV_VS;
-        }
-
-        posY = -((float)DeltaAlt / 5);
-        if (posY > 100) posY = 100;
-        if (posY < -100) posY = -100;
-
-        VDI_Index.transform.localPosition = new Vector2(0.3f, posY / 125);
-        if (DeltaAlt < 0) VDI_Text.transform.localPosition = new Vector2(0.1f, -1);
-        else VDI_Text.transform.localPosition = new Vector2(0.1f, 1);
-    }
+    // public void DrawVDI()
+    // {
+    //     double DeltaAlt, Alt1, Alt0, d, D;
+    //     float posY;
+    //
+    //     RouteScriptableObject activePoints = Session.ActiveRoute;
+    //     RouteScriptableObject modPoints = Session.ModRoute;
+    //
+    //     bool isMod = Session.IsMod;
+    //     RouteScriptableObject _route = isMod ? modPoints : activePoints;
+    //
+    //
+    //     var node0 = _route.Points[PositionVirtualNode.PassedNodeIndex];
+    //     var node1 = _route.Points[PositionVirtualNode.PassedNodeIndex + 1];
+    //
+    //     //Debug.Log(node.DisplayAltitude.ToString());
+    //
+    //     //DeltaAlt =  activeCurrentPosition.ComputedDistanceLeft * 318.43 + double.Parse(node.DisplayAltitude);
+    //     Alt0 = double.Parse(node0.DisplayAltitude);
+    //     Alt1 = double.Parse(node1.DisplayAltitude);
+    //     d = Session.PlayerAircraft.ComputedDistanceLeftOnSegment;
+    //     D = (d + Session.PlayerAircraft.NMWalkedOnCurrentSegment); // Daniel: this will behave bad while free flight
+    //
+    //     DeltaAlt = CAltitude - (Alt1 + (d * (Alt0 - Alt1)) / D);
+    //     VDI_Text.text = (((DeltaAlt) > 50) || ((DeltaAlt) < -50)) ? "" + (int)DeltaAlt : "";
+    //     if (Session.State.VNAV)
+    //     {
+    //         VNAV_VS = -((CAltitude - Alt1) * GS) / (60 * d) - DeltaAlt * 2;
+    //         RVS = (DeltaAlt < -50) ? -100 : (int)VNAV_VS;
+    //     }
+    //
+    //     posY = -((float)DeltaAlt / 5);
+    //     if (posY > 100) posY = 100;
+    //     if (posY < -100) posY = -100;
+    //
+    //     VDI_Index.transform.localPosition = new Vector2(0.3f, posY / 125);
+    //     if (DeltaAlt < 0) VDI_Text.transform.localPosition = new Vector2(0.1f, -1);
+    //     else VDI_Text.transform.localPosition = new Vector2(0.1f, 1);
+    // }
     public void SetFMA()
     {
         if (Session.State.HDG) isHDG = true; else isHDG = false; //For Move.cs Delete later

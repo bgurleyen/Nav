@@ -20,10 +20,11 @@ public class LegsScreen : ScreenBase
     private RoutePoint LastSelectedPoint =>
         _lastSelectionClicked == null ? null :
         Session.VisibleRoute.GetPoint(_lastSelectionClicked.LinkedId, out var node) ? node : null;
-    
+
     private int TotalPages =>
-        Mathf.CeilToInt((Session.VisibleRoute.Points.Length - PositionVirtualNode.NextNodeIndex + _nodesController.TotalPagesCorrection) /
-                        (float) NodesPerPage);
+        // may not be correct daniel lupascu
+        Mathf.CeilToInt((Session.VisibleRoute.Points.Length - Session.ActiveRoute.GetFirstViableNode.index +
+                         _nodesController.TotalPagesCorrection) / (float)NodesPerPage);
     
     private bool IsErase => LastLineLeft == ERASE_TITLE;
 
@@ -233,16 +234,19 @@ public class LegsScreen : ScreenBase
 
     public override void OnRightCornerPress()
     {
+
+        if (Session.State.MapMode == MapMode.Plan)
+        {
+            _nodesController.DoPlanModeStep();
+            return;
+        }
+        
         if (!Session.IsMod)
         {
             return;
         }
 
-        if (Session.State.MapMode == MapMode.Plan)
-        {
-            _nodesController.DoPlanModeStep();
-        }
-        else if (LastSelectedPoint is { IsModified: true } &&
+        if (LastSelectedPoint is { IsModified: true } &&
             _scratchPadInterpreter.IsLinearApproach(out var angle))
         {
             Debug.Log("=linear approach= on " + LastSelectedPoint.Name + " with: " + angle);

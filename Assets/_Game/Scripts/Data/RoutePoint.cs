@@ -47,6 +47,7 @@ public class RoutePoint
     /// </summary>
     /// <param name="position"></param>
     /// <param name="previousPoint"></param>
+    /// <param name="nextNodeToAdjust"></param>
     /// <param name="newId"></param>
     /// <param name="details"></param>
     /// <param name="name"></param>
@@ -92,7 +93,7 @@ public class RoutePoint
     {
         get
         {
-            var nodeCursor = PositionVirtualNode.GetNodeTo;
+            var nodeCursor = Session.ActiveRoute.GetFirstViableNode.Node;
             while (nodeCursor.IsPositionNode || nodeCursor.ID == ID)
             {
                 if (nodeCursor.ID == ID)

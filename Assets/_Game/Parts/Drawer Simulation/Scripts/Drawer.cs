@@ -155,7 +155,7 @@ public class Drawer : MonoBehaviour
         DisplaySet(Session.ActiveRoute?.TracedRoute.ComputedLines, LinesType.Active);
         if (Session.ModRoute != null)
         {
-            DisplaySet(Session.ModeSetWithPosition?.TracedRoute?.ComputedLines, LinesType.Mod);
+            DisplaySet(Session.ModeSetFromPosition?.TracedRoute?.ComputedLines, LinesType.Mod);
         }
 
         DisplayFixCircles();
