@@ -92,7 +92,7 @@ public class RoutePoint
     {
         get
         {
-            var nodeCursor = PositionVirtualNode.GetNodeTo;
+            var nodeCursor = PositionVirtualNode.GetNodeToOnActive;
             while (nodeCursor.IsPositionNode || nodeCursor.ID == ID)
             {
                 if (nodeCursor.ID == ID)

@@ -80,6 +80,8 @@ namespace Navigation
             return Points[lineIndex].CartesianPosition;
         }
 
+       
+
         public bool GetPoint(int nodeId, out RoutePoint point)
         {
             Points.GetNodeIndex(nodeId, out var index);
@@ -441,7 +443,7 @@ namespace Navigation
         public void CreateLinearApproach(int toNodeId, int angle)
         {
             RoutePoint reducedPoint;
-            var firstNodeToDissolve = PositionVirtualNode.GetNodeTo.ID;
+            var firstNodeToDissolve = PositionVirtualNode.GetNodeToOnActive.ID;
             // the TO point on active route can be already shortcuted on MOD
             if (!Points.GetNodeIndex(firstNodeToDissolve, out _))
             {
@@ -451,7 +453,7 @@ namespace Navigation
             else
             {
                 //execute shortcut node at [1] until toNode
-                ShortcutNodes(PositionVirtualNode.GetNodeTo.ID, toNodeId, out reducedPoint);
+                ShortcutNodes(PositionVirtualNode.GetNodeToOnActive.ID, toNodeId, out reducedPoint);
             }
 
             reducedPoint.IndicateDirectApproach(angle);
@@ -499,26 +501,39 @@ namespace Navigation
             ComputeTrace();
         }
 
+        private int FindNodeBeforePlaneOnMode()
+        {
+            int foundIndex = 0;
+            for (foundIndex = 0; 
+                 foundIndex < Session.ModRoute.Points.Length && 
+                 foundIndex < Session.ActiveRoute.Points.Length ; foundIndex++)
+            {
+                if (Session.ModRoute.Points[foundIndex].ID != Session.ActiveRoute.Points[foundIndex].ID)
+                {
+                    foundIndex -= 1;
+                    break;
+                }
+
+                if (foundIndex == PositionVirtualNode.PassedNodeIndex)
+                {
+                    break;
+                }
+            }
+
+            return foundIndex;
+        }
+        
         public void AddModPositionNodes()
         {
-            var nodeBeforePosition =  PositionVirtualNode.GetNodeFrom;
+            var nodeBeforePlaneIndex = FindNodeBeforePlaneOnMode();
+            var nodeBeforePosition = Points[nodeBeforePlaneIndex];
+            int nodeAfterPlaneIndex = nodeBeforePlaneIndex + 1;
+           
 
-            int routeNextNodeIndex;
-            //if (Session.State.LNAV)
-            {
-                var nextNodeIndexOnActive = PositionVirtualNode.PassedNodeIndex + 1;
-                routeNextNodeIndex = nextNodeIndexOnActive;
-            }
-            // else
-            // {
-            //     routeNextNodeIndex = 1;
-            //
-            // }
-
-            ConstructPositionNodes(nodeBeforePosition, Points[routeNextNodeIndex],
+            ConstructPositionNodes(nodeBeforePosition, Points[nodeAfterPlaneIndex],
                 out var airplanePositionNodeToAdd, out var frontOfAirplanePositionNodeToAdd);
             
-            InsertNodes(routeNextNodeIndex, 
+            InsertNodes(nodeAfterPlaneIndex, 
                 airplanePositionNodeToAdd, 
                 frontOfAirplanePositionNodeToAdd);
 
