@@ -16,7 +16,7 @@ public class LegsNodeLine : MonoBehaviour
     public TMP_Text fMiddle;
     public BgText fRight;
 
-    private NodeSelection selection;
+    private NodeSelection _selection;
 
     public void DisplayNodeDetails(RoutePoint node, NodeSelection linkedInfo)
     {
@@ -100,6 +100,7 @@ public class LegsNodeLine : MonoBehaviour
         hFull.text = "";
 
         fLeft.Clear();
+        fMiddle.text = "";
         fRight.Clear();
 
     }

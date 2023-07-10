@@ -6,15 +6,14 @@ public class DisplayNodesController
 {
     public DisplayNodesController(int nodesPerPage)
     {
-        this._nodesPerPage = nodesPerPage;
+        _nodesPerPage = nodesPerPage;
     }
 
 
     // the current code that is centered when in PLAN mode.
-    private int _planCenterNodeIndex = 0;
+    public int PlanCenterNodeIndex { get; private set; }
     
-    
-    public int TotalPagesCorrection = 0;
+    public int TotalPagesCorrection { get; private set; }
 
     private static RouteScriptableObject VisibleRoute => Session.IsMod ? Session.ModRoute : Session.ActiveRoute;
 
@@ -75,6 +74,10 @@ public class DisplayNodesController
 
                 if (!pointIsValid)
                 {
+                    if (PlanCenterNodeIndex >= i)
+                    {
+                        SetPlanCenterNode(0);
+                    }
                     break;
                 }
 
@@ -130,14 +133,26 @@ public class DisplayNodesController
             IsAddedDiscontinuity = thisIsDiscontinuity && !thisIsAfterDiscontinuity,
             IsEmpty = !pointIsValid,
             IsStartingPoint = isStartingPoint,
-            IsPlanCenter = _planCenterNodeIndex == lineIndex
+            IsPlanCenter = PlanCenterNodeIndex ==pagedLineIndex 
         }; // not showing the first point as is NOW
         
     }
 
-    public void DoPlanModeStep()
+    public void DoPlanModeStep(bool reset)
     {
-        throw new NotImplementedException();
+        SetPlanCenterNode(PlanCenterNodeIndex + (reset?0:1));
+    }
+
+    private void SetPlanCenterNode(int value)
+    {
+        PlanCenterNodeIndex = value;
+        var page = PlanCenterNodeIndex / _nodesPerPage;
+        var line = PlanCenterNodeIndex % _nodesPerPage;
+        
+        if (Session.ActiveRoute.GetPoint(GetNodeInfoAtLineIndex(line, page).LinkedId, out var point))
+        {
+            Session.CenteredPosition = point.CartesianPosition;
+        }
     }
 }
 

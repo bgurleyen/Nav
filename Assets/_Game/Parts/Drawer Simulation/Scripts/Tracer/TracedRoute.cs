@@ -13,7 +13,6 @@ public class TracedRoute
 
     public List<FixCircle> ComputedCircles;
     public List<FixRay> ComputedRays;
-    public Vector2 CenteredPosition;
         
     public void Compute(RoutePoint[] pointsArray, bool hasOtherMarkers = false)
     {

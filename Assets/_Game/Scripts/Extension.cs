@@ -14,7 +14,6 @@ namespace Navigation
 
             var walkedPosition = Session.PlayerAircraft.NMPosition;
             var aircraftHeadingRotation = Session.PlayerAircraft.DisplayHeadingDegrees;
-            finalPosition -= walkedPosition;
 
             switch (Session.State.MapMode)
             {
@@ -22,11 +21,12 @@ namespace Navigation
                 case MapMode.Center:
                     // walked
                     // walked rotation
+                    finalPosition -= walkedPosition;
                     finalPosition = finalPosition.Rotate(aircraftHeadingRotation);
                     break;
                 case MapMode.Plan:
                     // centered
-                    finalPosition -= Session.ActiveRoute.TracedRoute.CenteredPosition;
+                    finalPosition -= Session.CenteredPosition;
                     break;
             }
 

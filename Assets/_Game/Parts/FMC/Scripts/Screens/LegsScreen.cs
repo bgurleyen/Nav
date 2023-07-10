@@ -233,21 +233,24 @@ public class LegsScreen : ScreenBase
 
     public override void OnRightCornerPress()
     {
-        if (!Session.IsMod)
-        {
-            return;
-        }
-
         if (Session.State.MapMode == MapMode.Plan)
         {
-            _nodesController.DoPlanModeStep();
+            _nodesController.DoPlanModeStep(false);
         }
-        else if (LastSelectedPoint is { IsModified: true } &&
-            _scratchPadInterpreter.IsLinearApproach(out var angle))
+        else
         {
-            Debug.Log("=linear approach= on " + LastSelectedPoint.Name + " with: " + angle);
-            _simulation.ExecuteLinearApproachOnMod(new ExecuteAddLinearApproachCommand
-                {ToNodeId = _lastSelectionClicked.LinkedId, Angle = angle});
+            if (!Session.IsMod)
+            {
+                return;
+            }
+
+            if (LastSelectedPoint is { IsModified: true } &&
+                _scratchPadInterpreter.IsLinearApproach(out var angle))
+            {
+                Debug.Log("=linear approach= on " + LastSelectedPoint.Name + " with: " + angle);
+                _simulation.ExecuteLinearApproachOnMod(new ExecuteAddLinearApproachCommand
+                    { ToNodeId = _lastSelectionClicked.LinkedId, Angle = angle });
+            }
         }
     }
 
@@ -583,6 +586,11 @@ public class LegsScreen : ScreenBase
     private void OnMapModeChanged(MapMode obj)
     {
         lastFRight.SetAsDefault(obj == MapMode.Plan ? "STEP":"");
+
+        if (obj == MapMode.Plan)
+        {
+            _nodesController.DoPlanModeStep(true);
+        }
     }
 
     public void DisplayOperation(string value , string details = "", bool tallDetails= false)

@@ -1,6 +1,7 @@
 using System;
 using Gamelogic.Extensions;
 using Navigation;
+using UnityEngine;
 
 namespace Navigation
 {
@@ -19,6 +20,8 @@ namespace Navigation
         public static ComputedRoutes Routes;
 
         public static RouteScriptableObject OriginalReferenceRoute;
+        
+        public static Vector2 CenteredPosition;
 
         public static RouteScriptableObject ActiveRoute
         {
