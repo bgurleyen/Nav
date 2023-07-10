@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7821017955311078287}
   - component: {fileID: 6297528922841017883}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: model
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -27,6 +27,7 @@ Transform:
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 5326676220299471070}
   m_RootOrder: 0
@@ -42,9 +43,12 @@ LineRenderer:
   m_CastShadows: 1
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
+  m_StaticShadowCaster: 0
   m_MotionVectors: 0
   m_LightProbeUsage: 0
   m_ReflectionProbeUsage: 0
+  m_RayTracingMode: 0
+  m_RayTraceProcedural: 0
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
@@ -140,10 +144,10 @@ PrefabInstance:
   m_Modification:
     m_TransformParent: {fileID: 0}
     m_Modifications:
-    - target: {fileID: 3523289877670268511, guid: d88c0b778a608c24ba3d77c9aa795d73,
+    - target: {fileID: 3523289877670268510, guid: d88c0b778a608c24ba3d77c9aa795d73,
         type: 3}
-      propertyPath: m_Name
-      value: Heading Indicator Variant
+      propertyPath: m_RootOrder
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3523289877670268510, guid: d88c0b778a608c24ba3d77c9aa795d73,
         type: 3}
@@ -162,6 +166,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3523289877670268510, guid: d88c0b778a608c24ba3d77c9aa795d73,
         type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3523289877670268510, guid: d88c0b778a608c24ba3d77c9aa795d73,
+        type: 3}
       propertyPath: m_LocalRotation.x
       value: -0
       objectReference: {fileID: 0}
@@ -177,16 +186,6 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3523289877670268510, guid: d88c0b778a608c24ba3d77c9aa795d73,
         type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3523289877670268510, guid: d88c0b778a608c24ba3d77c9aa795d73,
-        type: 3}
-      propertyPath: m_RootOrder
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3523289877670268510, guid: d88c0b778a608c24ba3d77c9aa795d73,
-        type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
       value: 0
       objectReference: {fileID: 0}
@@ -199,6 +198,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3523289877670268511, guid: d88c0b778a608c24ba3d77c9aa795d73,
+        type: 3}
+      propertyPath: m_Name
+      value: Heading Indicator Variant
       objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: d88c0b778a608c24ba3d77c9aa795d73, type: 3}

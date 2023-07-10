@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 988660702015700956}
   - component: {fileID: 4035964009363460156}
   - component: {fileID: 988660702015700947}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Drawer Line Mod
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -160,7 +160,7 @@ GameObject:
   m_Component:
   - component: {fileID: 3245902935262049594}
   - component: {fileID: 3245902935262049595}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: mark star
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -296,7 +296,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4100802901759877872}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: holder
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -329,7 +329,7 @@ GameObject:
   m_Component:
   - component: {fileID: 4100802902976092957}
   - component: {fileID: 4100802902976092956}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Label Text
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -376,7 +376,7 @@ GameObject:
   - component: {fileID: 4100802903220044034}
   - component: {fileID: 4100802903220044046}
   - component: {fileID: 4100802903220044045}
-  m_Layer: 0
+  m_Layer: 7
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
