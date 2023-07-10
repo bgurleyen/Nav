@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 380748623757760282}
   - component: {fileID: 4636247267581919153}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: Player Aircraft
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -60,7 +60,7 @@ GameObject:
   m_Component:
   - component: {fileID: 380748624513363810}
   - component: {fileID: 380748624513363809}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: model - map
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -192,7 +192,7 @@ GameObject:
   m_Component:
   - component: {fileID: 856000870955974000}
   - component: {fileID: 6524845987540298750}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: model -  plan
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -323,7 +323,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4341000073884957329}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: pivot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -359,7 +359,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5296059483503221015}
   - component: {fileID: 1339446116754692979}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: model - center
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -491,7 +491,7 @@ GameObject:
   m_Component:
   - component: {fileID: 2590254348586682246}
   - component: {fileID: 4159575164589762674}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: heading
   m_TagString: Untagged
   m_Icon: {fileID: 0}

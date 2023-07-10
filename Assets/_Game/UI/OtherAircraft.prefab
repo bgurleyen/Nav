@@ -10,7 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5405566425050444109}
   - component: {fileID: 9148568343871124063}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: Circle
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -95,7 +95,7 @@ GameObject:
   - component: {fileID: 7877206139200155698}
   - component: {fileID: 7877206139200155710}
   - component: {fileID: 7877206139200155697}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: Text (TMP)
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -265,7 +265,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 7877206139527222822}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: Pivot
   m_TagString: Untagged
   m_Icon: {fileID: 0}
@@ -299,7 +299,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7877206140614797256}
   - component: {fileID: 2689189458132278552}
-  m_Layer: 7
+  m_Layer: 0
   m_Name: OtherAircraft
   m_TagString: Untagged
   m_Icon: {fileID: 0}
