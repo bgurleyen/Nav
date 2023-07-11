@@ -6648,6 +6648,21 @@ PrefabInstance:
       propertyPath: m_Name
       value: Simulation - Drawer [Non UI]
       objectReference: {fileID: 0}
+    - target: {fileID: 664191028123842316, guid: b693fc6bec1154ce785478e8e4a8f1eb,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 664191028263361923, guid: b693fc6bec1154ce785478e8e4a8f1eb,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 664191029425905322, guid: b693fc6bec1154ce785478e8e4a8f1eb,
+        type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: b693fc6bec1154ce785478e8e4a8f1eb, type: 3}
 --- !u!1001 &2719986833617758165

@@ -26,7 +26,7 @@ public class Drawer : MonoBehaviour
     [Space] [SerializeField] private Transform pivot;
     [SerializeField] private Transform compasPivot;
     [SerializeField] private Transform mobilePlaneIndicatorPivot;
-    [SerializeField] private Transform freeFlightPivot;
+    [SerializeField] private FreeFlightIndicator freeFlightPivot;
     [SerializeField] private Transform bananaIndicatorPivot;
 
     [Header("modes visuals")] 
@@ -70,8 +70,10 @@ public class Drawer : MonoBehaviour
                 cameraAnimator.SetTrigger("Map");
                 break;
             case MapMode.Center:
-            case MapMode.Plan:
                 cameraAnimator.SetTrigger("Center");
+                break;
+            case MapMode.Plan:
+                cameraAnimator.SetTrigger("Plan");
                 break;
         }
         ShowCurrentMode();
@@ -95,6 +97,8 @@ public class Drawer : MonoBehaviour
         {
             x.SetActive(Session.State.MapMode == MapMode.Plan);
         }
+
+        freeFlightPivot.RefreshScale();
 
         Clear();
         Display();
@@ -160,7 +164,7 @@ public class Drawer : MonoBehaviour
 
         DisplayFixCircles();
         DisplayFixRays();
-        freeFlightPivot.gameObject.SetActive(Session.State.HDG);
+        freeFlightPivot.RefreshVisibility();
         bananaIndicatorPivot.SetLocalY(Calculator.Instance.GetBananaPosition);
 
         DisplayOtherTraffic();
@@ -183,10 +187,7 @@ public class Drawer : MonoBehaviour
                 //rotate compass
                 compasPivot.SetLocalRotationZ(Session.PlayerAircraft.DisplayHeadingDegrees);
                 
-                if (Session.State.HDG)
-                {
-                    freeFlightPivot.SetLocalRotationZ(Session.PlayerAircraft.DisplayHeadingDegrees - Calculator.RHeading);
-                }
+                freeFlightPivot.transform.SetLocalRotationZ(Session.PlayerAircraft.DisplayHeadingDegrees - Calculator.RHeading);
                 mobilePlaneIndicatorPivot.SetLocalRotationZ(0);
 
                 break;
@@ -197,7 +198,7 @@ public class Drawer : MonoBehaviour
 
                 if (Session.State.HDG)
                 {
-                    freeFlightPivot.SetLocalRotationZ(- Calculator.RHeading);
+                    freeFlightPivot.transform.SetLocalRotationZ(- Calculator.RHeading);
                 }
                 
                 break;
