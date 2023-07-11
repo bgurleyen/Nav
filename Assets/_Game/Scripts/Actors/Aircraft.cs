@@ -40,6 +40,7 @@ public class Aircraft : MovingActor
     public override void SimulateTick()
     {
         DrawHeadingLine();
+        CheckAdvancePointOnHDGProximity(out DistanceToNextPoint);
 
         if (Session.State.LNAV)
         {
@@ -76,21 +77,23 @@ public class Aircraft : MovingActor
         }
         else if(Session.State.HDG)
         {
+            // airplane is on free flight
+            
             TargetHeading = Calculator.RHeading;
 
             _pilot.TickSteerToTargetHeading(TargetHeading);
 
             _pilot.TickAdvance();
 
-            CheckAdvancePointOnHDGProximity(out DistanceToNextPoint);
             
             // for display only
             //GameManager.Instance.ActiveRoute.FindFreeFlightDirectExitScenario(out displayCenterOfTurn, out displayExitPoint, out _);
         }
-        else // airplane is on free flight
+        else 
         {
+            // both lnav and hg are off
+            
             _pilot.TickAdvance();
-            CheckAdvancePointOnHDGProximity(out DistanceToNextPoint);
         }
     }
     
@@ -129,11 +132,6 @@ public class Aircraft : MovingActor
     {
         get
         {
-            if (!Session.State.LNAV)
-            {
-                return DistanceToNextPoint;
-            }
-            
             if (IsJoining)
             {
                 var nextViableNodeIndex = PositionVirtualNode.PassedNodeIndex + 1;
@@ -146,7 +144,7 @@ public class Aircraft : MovingActor
                         _pilot.NMPosition).magnitude;
             }
 
-            return PositionVirtualNode.CurrentTracedLine.LinkedPoint.Distance - NMWalkedOnCurrentSegment;
+            return DistanceToNextPoint;
         }
     }
 
