@@ -5,12 +5,16 @@ public class State
 {
     public ToggleLinkedBool LNAV { get; }
     public ToggleLinkedBool HDG { get; }
-    
+    public bool LOCCaptured { get; set; }
+
     public ToggleLinkedBool LC { get; }
     public ToggleLinkedBool VNAV { get; private set; }
     public ToggleLinkedBool AH { get; }
     public ToggleLinkedBool VS { get; }
-    
+    public bool GSCaptured { get; set; }
+    public bool AppArmed { get; set; }
+    public bool LNAVArmed { get; }
+
     public ToggleLinkedBool Speed10X { get; }
 
     public MapMode MapMode
@@ -34,7 +38,7 @@ public class State
 
         LNAV = new ToggleLinkedBool(mcpUI.lNavToggle, UIOnLNAVAttemptToggle);
         HDG = new ToggleLinkedBool(mcpUI.hsToggle, UIOnHDGAttemptToggle);
-        
+
         LC = new ToggleLinkedBool(mcpUI._LCToggle, UIOnLCAttemptToggle);
         VNAV = new ToggleLinkedBool(mcpUI._VNAVToggle);
         AH = new ToggleLinkedBool(mcpUI._AHToggle, UIOnAHAttemptToggle);
@@ -87,7 +91,7 @@ public class State
 
         LC.Switch();
 
-       
+
     }
 
     private void UIOnVSAttemptToggle()
@@ -96,7 +100,7 @@ public class State
         {
             return;
         }
-        
+
         VS.Switch();
     }
 
@@ -113,7 +117,7 @@ public class State
         {
             LNAV.Set(false);
         }
-        
+
         TriggerNewNAVState();
     }
 
@@ -123,7 +127,7 @@ public class State
         {
             return;
         }
-        
+
         LNAV.Set(state);
 
         if (state)
@@ -144,7 +148,7 @@ public class State
         {
             LNAV.Set(false);
         }
-        
+
         TriggerNewNAVState();
     }
 
