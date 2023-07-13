@@ -44,7 +44,7 @@ public class Move : Singleton<Move>
     long Altitude;
     string RawAlt = "";
     int _currentInstructionIndex = 0;
-
+    int RW ;
 
     public void Init(LevelDataScriptableObject levelData)
     {
@@ -94,6 +94,8 @@ public class Move : Singleton<Move>
         int prvWptIdx = -1;
         int point = 1, mode, Cmode = 1, VS, VS_nx, Speed, Speed_nx;
         long Altitude;
+
+        RW = Session.OriginalReferenceRoute.Points.Length - 1;
     }
 
     public void Tick()
@@ -126,8 +128,9 @@ public class Move : Singleton<Move>
     public Vector2 PointPos(int pt)
     {
         //int ptCount =  virtualPoints[Level].VirtualPointsItems.Length;
+
         return pt < 50 ? Session.OriginalReferenceRoute.GetCartesianPosition(pt) : VirtualPtsPos[pt - 50];
-    }
+     }
 
     private float TrackToPoint(int pt)
     {
@@ -175,8 +178,8 @@ public class Move : Singleton<Move>
     }
 
     public float DME()
-    {
-        return Vector2.Distance(Session.PlayerAircraft.NMPosition, PointPos(16));
+    { 
+        return Vector2.Distance(Session.PlayerAircraft.NMPosition, PointPos(RW));
     } // Distance from RW
 
     private void SpeedCheck()
@@ -358,7 +361,7 @@ public class Move : Singleton<Move>
     }
     public float LocDeviation(float course)
     {
-        float Deviation = Mathf.DeltaAngle(course, TrackToPoint(4));
+        float Deviation = Mathf.DeltaAngle(course, TrackToPoint(RW));
 
         if (Mathf.Abs(Mathf.DeltaAngle(course, Session.PlayerAircraft.HeadingDegrees)) > 90) Deviation *= -1;
         if (((Mathf.Abs(Deviation) < 35) && (DME() < 10)) || ((Mathf.Abs(Deviation) < 10) && (DME() < 25)))
@@ -374,7 +377,7 @@ public class Move : Singleton<Move>
         return Deviation;
     }
 
-    public float GsDeviation(float GS)
+    public  float GsDeviation(float GS)
     {
         float DescentAngle = Mathf.Atan2((float)Calculator.CAltitude, DME() * 6076.12f) * Mathf.Rad2Deg;
         float Deviation = -Mathf.DeltaAngle(GS, DescentAngle);
@@ -390,10 +393,9 @@ public class Move : Singleton<Move>
         {
             GSIndex.enabled = false;
         }
-        Debug.Log(Deviation + "   L" + LocDeviation(272) + "  " + PointPos(4).x + "  " + PointPos(4).y);
+       // Debug.Log(Deviation + "   L" + LocDeviation(272) + "  " + "   G" + Deviation + "  " );
+  
         return Deviation;
-
-
 
     }
 

@@ -193,7 +193,8 @@ namespace Gamelogic.Extensions.Examples
 		public static IGenerator<float> PerlinNoise(int levels, int sampleExponent)
 		{
 			//
-			int totalSampleCount = 1 << sampleExponent; //16
+			int totalSampleCount = 1 << sampleExponent; //
+														//
 
 			var smoothNoiseLayers = new List<IGenerator<float>>();
 

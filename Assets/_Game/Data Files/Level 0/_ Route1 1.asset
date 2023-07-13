@@ -23,21 +23,21 @@ MonoBehaviour:
   - ID: 1
     Name: ELNAT
     RawDegrees: 20
-    Distance: 45
+    Distance: 5
     RawSpeed: 0
     RawAltitude: 
     Details: 
   - ID: 2
     Name: NORTA
     RawDegrees: 5
-    Distance: 40.1
+    Distance: 5
     RawSpeed: 0
     RawAltitude: 
     Details: 
   - ID: 3
     Name: DLE-5
     RawDegrees: 6
-    Distance: 18.1
+    Distance: 5
     RawSpeed: 0
     RawAltitude: 
     Details: 
@@ -51,14 +51,14 @@ MonoBehaviour:
   - ID: 5
     Name: DV581
     RawDegrees: 2
-    Distance: 7.3
+    Distance: 5
     RawSpeed: 0
     RawAltitude: 
     Details: 
   - ID: 6
     Name: DV582
     RawDegrees: 91
-    Distance: 5.6
+    Distance: 5
     RawSpeed: 220
     RawAltitude: 
     Details: 
