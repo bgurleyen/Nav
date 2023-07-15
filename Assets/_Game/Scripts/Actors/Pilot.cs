@@ -19,6 +19,7 @@ namespace Navigation
             NMPosition = nmPosition;
 
            DisplayHeadingDegrees = HeadingDegrees = Geometry.GetHeadingOfDirection(initialOrientationTarget - nmPosition);
+          
         }
 
         public void TickAdvance()
@@ -32,6 +33,7 @@ namespace Navigation
 
                 CachedDisplayLastAngleDiff = -Geometry.AngleDelta(DisplayHeadingDegrees, HeadingDegrees);
             }
+            Calculator.CHeading = (int)HeadingDegrees;
         }
 
         public void TickSteerToPathFoundVertex(Vector2 seekTarget, out float heading)
@@ -59,6 +61,7 @@ namespace Navigation
             HeadingDegrees += currentTurningDegrees;
 
             HeadingDegrees %= 360;
+     
         }
     }
 }

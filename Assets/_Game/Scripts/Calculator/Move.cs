@@ -161,7 +161,6 @@ public class Move : Singleton<Move>
         float alfa = Mathf.DeltaAngle(Calculator.CHeading, TrackToPoint(pt)) * Mathf.Deg2Rad;
         float Heading = Calculator.CHeading*Mathf.Deg2Rad;
 
-        Debug.Log(Calculator.CHeading +" H     T "+ TrackToPoint(pt) + "   P" + pt  + "    x1" + x1 + "   y1" +y1) ;
 
         float TurnRadius = 2.4f;
 
@@ -173,9 +172,9 @@ public class Move : Singleton<Move>
         float x2 = x1 + Sign * (H * Mathf.Cos(Heading) + V * Mathf.Sin(Heading));
         float y2 = y1 + Sign * (V * Mathf.Cos(Heading) - H * Mathf.Sin(Heading));
 
-            var TurnPoint = GameObject.Find("pt (60)");  //use pt 60 to show turnpoint
-             Vector2 Pos = new Vector2(x2, y2);
-            TurnPoint.transform.localPosition = Pos ;
+          //   var TurnPoint = GameObject.Find("pt (60)");  //use pt 60 to show turnpoint
+          //   Vector2 Pos = new Vector2(x2, y2);
+          //   TurnPoint.transform.localPosition = Pos ;
 
 
         return TrackToPoint(x2, y2, pt);

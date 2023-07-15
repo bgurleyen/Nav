@@ -45,7 +45,7 @@ public class DataHandler
         }
     }
 
-    private static void BuildAltitudes(RouteScriptableObject set, int startFrom = 40000)
+    private static void BuildAltitudes(RouteScriptableObject set, int startFrom = 22000)
     {
         if (set.Points[0].AltitudeRegulation == RoutePoint.AltitudeFlags.NotSet)
         {
