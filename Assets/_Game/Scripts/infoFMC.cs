@@ -83,6 +83,8 @@ namespace Navigation.Data
             Fmc.Initref.F40 = "" + (levelData.F30Speed + 10);
             Fmc.Initref.Vref = "" + levelData.F30Speed;
 
+            Fmc.Initref.GlideSlope = levelData.GlideSlope;
+
 
             Fmc.Rte.Destination = levelData.Destination;
             Fmc.Rte.RW = levelData.Runway;
@@ -214,6 +216,7 @@ namespace Navigation.Data
     {
         public string GWT, Destination, RW, Field, Freq, F15, F30, F40, Vref;
         public int Course;
+        public float GlideSlope;
     }
 
     public class RTE

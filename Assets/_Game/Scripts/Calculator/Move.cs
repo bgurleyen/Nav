@@ -89,13 +89,9 @@ public class Move : Singleton<Move>
             _otherACs[i] = new OtherAC(i, _currentLevelData);
         }
 
-        float PrvTrackToPoint = 0, hyp;
+ 
         _currentInstructionIndex = 0;
-        int prvWptIdx = -1;
-        int point = 1, mode, Cmode = 1, VS, VS_nx, Speed, Speed_nx;
-        long Altitude;
-
-        RW = Session.OriginalReferenceRoute.Points.Length - 1;
+         RW = Session.OriginalReferenceRoute.Points.Length - 1;
     }
 
     public void Tick()
@@ -163,16 +159,24 @@ public class Move : Singleton<Move>
         float x1 = Session.PlayerAircraft.NMPosition.x;
         float y1 = Session.PlayerAircraft.NMPosition.y;
         float alfa = Mathf.DeltaAngle(Calculator.CHeading, TrackToPoint(pt)) * Mathf.Deg2Rad;
+        float Heading = Calculator.CHeading*Mathf.Deg2Rad;
+
+        Debug.Log(Calculator.CHeading +" H     T "+ TrackToPoint(pt) + "   P" + pt  + "    x1" + x1 + "   y1" +y1) ;
+
         float TurnRadius = 2.4f;
 
+        
         int Sign = Mathf.DeltaAngle(Calculator.CHeading, TrackToPoint(pt)) >= 0 ? 1 : -1;
 
-        float x2 = x1 + Sign * TurnRadius * (1 - Mathf.Cos(alfa));
-        float y2 = y1 + Sign * Mathf.Sin(alfa) * TurnRadius;
+        float H = TurnRadius * (1 - Mathf.Cos(alfa));
+        float V = Mathf.Sin(alfa) * TurnRadius;
+        float x2 = x1 + Sign * (H * Mathf.Cos(Heading) + V * Mathf.Sin(Heading));
+        float y2 = y1 + Sign * (V * Mathf.Cos(Heading) - H * Mathf.Sin(Heading));
 
-        // var TurnPoint = GameObject.Find("pt (60)");  use pt 60 to show turnpoint
-        // Vector2 Pos = new Vector2(x2, y2);
-        // TurnPoint.transform.localPosition = Pos ;
+            var TurnPoint = GameObject.Find("pt (60)");  //use pt 60 to show turnpoint
+             Vector2 Pos = new Vector2(x2, y2);
+            TurnPoint.transform.localPosition = Pos ;
+
 
         return TrackToPoint(x2, y2, pt);
     }
@@ -240,10 +244,12 @@ public class Move : Singleton<Move>
 
         if (NewPoint)
         {
+        
 
             Atc1.text = mode == 1 ? "Proceed direct to  " + Session.OriginalReferenceRoute.Points[point].Name :
-                mode == 2 ? "Turn " + TurnDirection(TrackToPoint(point)) + "Heading " + TrackToPointFactored(point) :
- "";
+                mode == 2 ? "Turn " + TurnDirection(TrackToPoint(point)) + "Heading " + TrackToPointFactored(point) : "";
+
+      
 
 
             string s = VS < 0 ? ", ROD " + (-VS) + " fpm" + NxToString(VS_nx) : "";

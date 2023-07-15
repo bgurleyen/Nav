@@ -20,6 +20,6 @@ public class LevelInfoScriptableObject : ScriptableObject
     public int F30Speed;
     public int DesEconSpeed;
     public int DesEconMach;
-    public int GateIdx;
-    public int CheckPointTime;
+    public int GlideSlope;
+    public int Reserved;
 }

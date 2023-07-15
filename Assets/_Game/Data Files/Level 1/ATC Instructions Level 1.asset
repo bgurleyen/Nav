@@ -84,7 +84,7 @@ MonoBehaviour:
     Speed: 190
     Speed_nx: 2
   - point: 52
-    mode: 0
+    mode: 2
     Altitude: 0
     VS: 0
     VS_nx: 0

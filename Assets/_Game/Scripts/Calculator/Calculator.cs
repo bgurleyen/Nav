@@ -1,18 +1,17 @@
 ﻿using System.Collections;
 using Navigation;
+using Navigation.Data;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 using Unyawn.Utils;
 
-
 //GW :56.4,ZFW:45,Fuel:12,CI:0,CG:23.3
 
 public class Calculator : MonoBehaviour
 {
-    public float GlideSlope = 3;// Change 3 to Glideslope
-
+    public float GlideSlope = 3;// change to dynamic
 
     public static int Level = 0;             // ***  Level
 
@@ -30,7 +29,7 @@ public class Calculator : MonoBehaviour
     public Transform VDI_Index;
 
 
-    public static double CSpeed = 150, CAltitude = 3000; // Currenr Altitude*************************
+    public static double CSpeed = 250, CAltitude = 24000; // Currenr Altitude*************************
     //                            ***              *****
     private int RVS;
     public static int RSpeed = (int)CSpeed, RHeading, RAltitude, CVS;
@@ -166,7 +165,7 @@ public class Calculator : MonoBehaviour
     private void Awake()
     {
         Instance = this;
-    }
+     }
     private void Start()
     {
         RAltitude = (int)CAltitude;
@@ -192,10 +191,13 @@ public class Calculator : MonoBehaviour
         StartCoroutine(Altitude_Equalize());
         Flap_Idx = 0;
         SetFlaps();
+
+
     }
 
     private IEnumerator ExecuteEachFrameSecond()
     {
+        //GlideSlope = infoFMC.Instance.Fmc.Initref.GlideSlope;
         while (true)
         {
             MatchAltitudes();
@@ -503,7 +505,7 @@ public class Calculator : MonoBehaviour
                 {
                     FMA2.text = "LOC";
 
-                    Debug.Log("   G" + Move.Instance.GsDeviation(GlideSlope) + "  ");
+                    //Debug.Log("   G" + Move.Instance.GsDeviation(GlideSlope) + "  ");
 
                     if (Mathf.Abs(Move.Instance.GsDeviation(GlideSlope)) < 0.1)
                     {

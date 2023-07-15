@@ -198,6 +198,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bb0a2d2c38c63964892b61a04241840a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  GlideSlope: 3
   txtRSpeed: {fileID: 1515255884}
   txtRAltitude: {fileID: 162528495}
   txtRVS: {fileID: 456544523}
@@ -2349,7 +2350,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: -421.8, y: 0}
+  m_AnchoredPosition: {x: -421.80005, y: 0}
   m_SizeDelta: {x: 843.6, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &608203140
@@ -6849,6 +6850,11 @@ PrefabInstance:
       propertyPath: onClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
       objectReference: {fileID: 35611999}
+    - target: {fileID: 2719986833092983322, guid: 9104df00b47524a3bba9d5718acc7432,
+        type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -251.84998
+      objectReference: {fileID: 0}
     - target: {fileID: 2719986833183564777, guid: 9104df00b47524a3bba9d5718acc7432,
         type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
@@ -6993,6 +6999,11 @@ PrefabInstance:
         type: 3}
       propertyPath: m_AnchoredPosition.y
       value: -6.3598633
+      objectReference: {fileID: 0}
+    - target: {fileID: 2719986834627965449, guid: 9104df00b47524a3bba9d5718acc7432,
+        type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 490.32996
       objectReference: {fileID: 0}
     - target: {fileID: 2719986834643303683, guid: 9104df00b47524a3bba9d5718acc7432,
         type: 3}
