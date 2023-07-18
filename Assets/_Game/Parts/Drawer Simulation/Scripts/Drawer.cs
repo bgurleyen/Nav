@@ -4,6 +4,7 @@ using UnityEngine;
 using Lean.Pool;
 using Gamelogic.Extensions;
 using Navigation;
+using TMPro;
 using Unyawn.Utils;
 
 public class Drawer : MonoBehaviour 
@@ -30,6 +31,8 @@ public class Drawer : MonoBehaviour
     [SerializeField] private Transform _freeFlightPivot;
     [SerializeField] private Transform _windPivot;
     [SerializeField] private Transform bananaIndicatorPivot;
+    [SerializeField] private TMP_Text _reference40;
+    [SerializeField] private TMP_Text _reference80;
 
     [Header("modes visuals")] 
     [SerializeField] private GameObject[] mapHolder;
@@ -105,6 +108,7 @@ public class Drawer : MonoBehaviour
         Clear();
         Session.ZoomMultiplier += 0.2f;
         Display();
+        RefreshDisplayDistances();
     }
 
     public void OnZoomOut()
@@ -112,6 +116,7 @@ public class Drawer : MonoBehaviour
         Clear();
         Session.ZoomMultiplier -= 0.2f;
         Display();
+        RefreshDisplayDistances();
     }
 
     public void Clear()
@@ -149,6 +154,15 @@ public class Drawer : MonoBehaviour
     //     ray = null;
     //     return false;
     // }
+
+    public void RefreshDisplayDistances()
+    {
+
+        var zoomDistance = Math.Round(80f / Session.ZoomMultiplier / 2f, 1);
+        _reference40.text = zoomDistance.ToString();
+        _reference80.text = (zoomDistance*2).ToString();
+
+    }
 
     public void Display()
     {
@@ -361,13 +375,14 @@ public class Drawer : MonoBehaviour
         
         Gizmos.color = Color.green;
         var up = pivot.up;
-        Gizmos.DrawSphere(up * Session.Settings.MapReferenceLength80, 0.05f);
+        var r = 0.1f;
+        Gizmos.DrawSphere(pivot.position +  up * Session.Settings.MapReferenceLength80, r);
 
         Gizmos.color = Color.blue;
-        Gizmos.DrawWireSphere(up * Session.Settings.PlanReferenceLength80, 0.065f);
+        Gizmos.DrawSphere(pivot.position + up * Session.Settings.PlanReferenceLength80, r);
 
         Gizmos.color = Color.cyan;
-        Gizmos.DrawWireSphere(up * Session.Settings.PlanReferenceLength80 / 2f, 0.025f);
+        Gizmos.DrawSphere(pivot.position + up * Session.Settings.PlanReferenceLength80 / 2f,r);
 
 
         // if (GameManager.Instance.ActiveRoute?.PathLines?.ComputedLines == null)

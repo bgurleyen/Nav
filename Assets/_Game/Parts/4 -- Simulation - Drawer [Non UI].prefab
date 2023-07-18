@@ -30,7 +30,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 664191029675729413}
-  - {fileID: 664191029201179570}
   m_Father: {fileID: 664191028123842317}
   m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -397,7 +396,8 @@ Transform:
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 0.498275, y: 0.498275, z: 0.498275}
   m_ConstrainProportionsScale: 0
-  m_Children: []
+  m_Children:
+  - {fileID: 664191029201179570}
   m_Father: {fileID: 664191028123842317}
   m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -1312,6 +1312,8 @@ MonoBehaviour:
   _freeFlightPivot: {fileID: 8739339122823657066}
   _windPivot: {fileID: 664191028658534087}
   bananaIndicatorPivot: {fileID: 664191029791200243}
+  _reference40: {fileID: 664191029201179571}
+  _reference80: {fileID: 664191029675729410}
   mapHolder:
   - {fileID: 900472413818034354}
   centerHolder:
@@ -1419,16 +1421,16 @@ RectTransform:
   m_GameObject: {fileID: 664191029201179573}
   m_LocalRotation: {x: -0, y: -0, z: 0.7071073, w: 0.70710635}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalScale: {x: 2.006924, y: 2.006924, z: 2.0069237}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 664191029702438972}
-  m_Father: {fileID: 664191027856331296}
-  m_RootOrder: 1
+  m_Father: {fileID: 664191028282112384}
+  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 90.00001}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -1.82, y: 0.01}
+  m_AnchoredPosition: {x: -3.652602, y: 0.020069081}
   m_SizeDelta: {x: 0.581, y: 0.351}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!23 &664191029201179582

@@ -45,6 +45,7 @@ namespace Navigation
             _playerAircraft.Init(Session.Settings.AirplaneDesignSpeed, 21600);
 
             _drawer.Display();
+            _drawer.RefreshDisplayDistances();
             _drawer.ResetMode();
 
             Session.IsRunning = true;
