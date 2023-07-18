@@ -12,13 +12,13 @@ public class Move : Singleton<Move>
     public Dictionary<string, Vector2> ACPositions = new Dictionary<string, Vector2>();
     public Dictionary<string, string> ACTexts = new Dictionary<string, string>();
 
-    public GameObject  myAC;
+    public GameObject myAC;
     public Image LOCIndex, GSIndex;
 
     public Text Atc1, Atc2, Atc3;
     public Text TimerText;
 
-    
+
     private float ElapsedTime = 0f;
 
     public string ATtc1; // maybe it's possible to use like this
@@ -44,6 +44,7 @@ public class Move : Singleton<Move>
     long Altitude;
     string RawAlt = "";
     int _currentInstructionIndex = 0;
+    int RW ;
 
     public void Init(LevelDataScriptableObject levelData)
     {
@@ -88,11 +89,9 @@ public class Move : Singleton<Move>
             _otherACs[i] = new OtherAC(i, _currentLevelData);
         }
 
-        float PrvTrackToPoint = 0, hyp;
+ 
         _currentInstructionIndex = 0;
-        int prvWptIdx = -1;
-        int point = 1, mode, Cmode = 1, VS, VS_nx, Speed, Speed_nx;
-        long Altitude;
+         RW = Session.OriginalReferenceRoute.Points.Length - 1;
     }
 
     public void Tick()
@@ -107,7 +106,8 @@ public class Move : Singleton<Move>
 
     private string TurnDirection(float newHdg)
     {
-        return (Mathf.DeltaAngle(Calculator.RHeading, newHdg) >= 0) ? "Right " : "Left "; //change Rheading to C
+
+        return (Mathf.DeltaAngle(Calculator.CHeading, newHdg) >= 0) ? "Right " : "Left ";
     }
 
     private string NxToString(int nx)
@@ -124,43 +124,65 @@ public class Move : Singleton<Move>
     public Vector2 PointPos(int pt)
     {
         //int ptCount =  virtualPoints[Level].VirtualPointsItems.Length;
+
         return pt < 50 ? Session.OriginalReferenceRoute.GetCartesianPosition(pt) : VirtualPtsPos[pt - 50];
-    }
+     }
 
     private float TrackToPoint(int pt)
     {
         float x1 = Session.PlayerAircraft.NMPosition.x;
         float y1 = Session.PlayerAircraft.NMPosition.y;
+
         float x2 = PointPos(pt).x;
         float y2 = PointPos(pt).y;
 
 
         float Angle = Mathf.Atan2(x2 - x1, y2 - y1) * Mathf.Rad2Deg;
         if (Angle < 0) Angle += 360;
+
+        return Angle;
+    }
+    private float TrackToPoint(float x1, float y1, int pt)
+    {
+
+        float x2 = PointPos(pt).x;
+        float y2 = PointPos(pt).y;
+
+        float Angle = Mathf.Atan2(x2 - x1, y2 - y1) * Mathf.Rad2Deg;
+        if (Angle < 0) Angle += 360;
         return Angle;
     }
 
-    public float LocDeviation(float course)
+    private float TrackToPointFactored(int pt)
     {
-        float Deviation = Mathf.DeltaAngle(course, TrackToPoint(16));
 
-        if (Mathf.Abs(Mathf.DeltaAngle(course, Session.PlayerAircraft.HeadingDegrees)) > 90) Deviation *= -1;
-        if (((Mathf.Abs(Deviation) < 35) && (DME() < 10)) || ((Mathf.Abs(Deviation) < 10) && (DME() < 25)))
-        {
-            LOCIndex.enabled = true;
-            LOCIndex.transform.localPosition = new Vector2(Mathf.Clamp(Deviation * 1000, -1243, 1243), -645);
-        }
-        else
-        {
-            LOCIndex.enabled = false;
-        }
+        float x1 = Session.PlayerAircraft.NMPosition.x;
+        float y1 = Session.PlayerAircraft.NMPosition.y;
+        float alfa = Mathf.DeltaAngle(Calculator.CHeading, TrackToPoint(pt)) * Mathf.Deg2Rad;
+        float Heading = Calculator.CHeading*Mathf.Deg2Rad;
 
-        return Deviation;
+
+        float TurnRadius = 2.4f;
+
+        
+        int Sign = Mathf.DeltaAngle(Calculator.CHeading, TrackToPoint(pt)) >= 0 ? 1 : -1;
+
+        float H = TurnRadius * (1 - Mathf.Cos(alfa));
+        float V = Mathf.Sin(alfa) * TurnRadius;
+        float x2 = x1 + Sign * (H * Mathf.Cos(Heading) + V * Mathf.Sin(Heading));
+        float y2 = y1 + Sign * (V * Mathf.Cos(Heading) - H * Mathf.Sin(Heading));
+
+          //   var TurnPoint = GameObject.Find("pt (60)");  //use pt 60 to show turnpoint
+          //   Vector2 Pos = new Vector2(x2, y2);
+          //   TurnPoint.transform.localPosition = Pos ;
+
+
+        return TrackToPoint(x2, y2, pt);
     }
 
     public float DME()
-    {
-        return Vector2.Distance(Session.PlayerAircraft.NMPosition, PointPos(16));
+    { 
+        return Vector2.Distance(Session.PlayerAircraft.NMPosition, PointPos(RW));
     } // Distance from RW
 
     private void SpeedCheck()
@@ -194,7 +216,7 @@ public class Move : Singleton<Move>
     void ATCCall()
     {
         var currentInstruction = _currentLevelData.ATCs[_currentInstructionIndex];
-        
+
         point = currentInstruction.point;
         mode = currentInstruction.mode;
         Altitude = currentInstruction.Altitude;
@@ -221,10 +243,12 @@ public class Move : Singleton<Move>
 
         if (NewPoint)
         {
+        
 
             Atc1.text = mode == 1 ? "Proceed direct to  " + Session.OriginalReferenceRoute.Points[point].Name :
-                mode == 2 ? "Turn " + TurnDirection(TrackToPoint(point)) + "Heading " + TrackToPoint(point) :
-                "";
+                mode == 2 ? "Turn " + TurnDirection(TrackToPoint(point)) + "Heading " + TrackToPointFactored(point) : "";
+
+      
 
 
             string s = VS < 0 ? ", ROD " + (-VS) + " fpm" + NxToString(VS_nx) : "";
@@ -264,9 +288,9 @@ public class Move : Singleton<Move>
                 }
 
                 if (mode == 2)
-                    Atc1.text = "Turn " + TurnDirection(TrackToPoint(point)) + "Heading " +
-                                (int)TrackToPoint(point);
-                Atc1.color = Color.red;
+                    //  Atc1.text = "Turn " + TurnDirection(TrackToPoint(point)) + "Heading " +
+                    //              (int)TrackToPointFactored(point);
+                    Atc1.color = Color.red;
 
             }
             else Atc1.color = Color.white;
@@ -327,8 +351,9 @@ public class Move : Singleton<Move>
 
             float V = Vector2.Distance(Session.PlayerAircraft.NMPosition, PointPos(point));
 
-            //Debug.Log(" V :" + V+ " P :" +point);
-            if ((point != prvWptIdx) && ((V < 1)))
+            // Debug.Log(" V :" + V + "prv" + prvWptIdx + " P :" + point);
+
+            if ((point != prvWptIdx) && ((V < 2.3)))  // next instruction 1.3 nm before next pt
             {
                 _currentInstructionIndex += 1;
                 NewPoint = true;
@@ -339,11 +364,29 @@ public class Move : Singleton<Move>
             }
         }
     }
+    public float LocDeviation(float course)
+    {
+        float Deviation = Mathf.DeltaAngle(course, TrackToPoint(RW));
 
-    public float GsDeviation(float GS)
+        if (Mathf.Abs(Mathf.DeltaAngle(course, Session.PlayerAircraft.HeadingDegrees)) > 90) Deviation *= -1;
+        if (((Mathf.Abs(Deviation) < 35) && (DME() < 10)) || ((Mathf.Abs(Deviation) < 10) && (DME() < 25)))
+        {
+            LOCIndex.enabled = true;
+            LOCIndex.transform.localPosition = new Vector2(Mathf.Clamp(Deviation * 1000, -1243, 1243), -645);
+        }
+        else
+        {
+            LOCIndex.enabled = false;
+        }
+
+        return Deviation;
+    }
+
+    public  float GsDeviation(float GS)
     {
         float DescentAngle = Mathf.Atan2((float)Calculator.CAltitude, DME() * 6076.12f) * Mathf.Rad2Deg;
         float Deviation = -Mathf.DeltaAngle(GS, DescentAngle);
+
 
 
         if ((Mathf.Abs(LocDeviation(272)) < 5) && (DME() < 20))
@@ -355,17 +398,16 @@ public class Move : Singleton<Move>
         {
             GSIndex.enabled = false;
         }
-
+       // Debug.Log(Deviation + "   L" + LocDeviation(272) + "  " + "   G" + Deviation + "  " );
+  
         return Deviation;
-
-        // Calt- RW alt  , pos 16 -->> Rw point
 
     }
 
     private void DescentCheck()
     {
         int AltAbove, AltBelow, AltExact, AltRef; // First Altitude Restriction
-        
+
         // todo birol : there is another variable RawAlt in the begining of this class - should they be the same ?
         var rawAlt = "0";
         if (Session.ActiveRoute.GetPoint(Session.VisibleRoute.FirstAltRegulationNodeId, out var altRegulationNode))

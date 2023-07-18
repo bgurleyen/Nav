@@ -1,18 +1,21 @@
 ﻿using System.Collections;
 using Navigation;
+using Navigation.Data;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 using Unyawn.Utils;
 
-
 //GW :56.4,ZFW:45,Fuel:12,CI:0,CG:23.3
 
 public class Calculator : MonoBehaviour
 {
+    public float GlideSlope = 3;// change to dynamic
 
     public static int Level = 0;             // ***  Level
+
+    private Pilot _pilot;
 
     private string result;
     public Text txtRSpeed, txtRAltitude, txtRVS;
@@ -28,14 +31,13 @@ public class Calculator : MonoBehaviour
     public Transform VDI_Index;
 
 
-    public static double CSpeed = 220, CAltitude = 13000; // Currenr Altitude*************************
+    public static double CSpeed = 250, CAltitude = 21000; // Currenr Altitude*************************
     //                            ***              *****
     private int RVS;
     public static int RSpeed = (int)CSpeed, RHeading, RAltitude, CVS;
     public static int CHeading, Track;
     private double CMach, RMach, VNAV_VS;
     public static float TAS, GS;
-
     public Toggle co;//Landing Gear ,Speed Brake;
     public static bool LGDown = false;
     private bool SBDown = false;
@@ -44,7 +46,7 @@ public class Calculator : MonoBehaviour
     private float SpeedTime;
     public Text windTxt;
     public static string CWind;
-    public Text FMA1, FMA2, FMA3;
+    public Text FMA1, FMA2, FMA3, FMAarmed;
     public Image windArrow, VSline, SpeedTrend;
     public GameObject Progres, FlapNeedle, LGlever;
     private int N1, FF, dispN1 = 77;
@@ -165,7 +167,12 @@ public class Calculator : MonoBehaviour
     private void Awake()
     {
         Instance = this;
+
+        _pilot = new Pilot(Vector2.zero, Vector2.up, false);
     }
+
+    public float HeadingDegrees => _pilot.HeadingDegrees;
+
     private void Start()
     {
         RAltitude = (int)CAltitude;
@@ -180,7 +187,7 @@ public class Calculator : MonoBehaviour
         txtRSpeed_overTape.text = txtRSpeed.text;
 
         txtCVS.text = "";
-
+        FMAarmed.text = "";
 
         Invoke(nameof(VS_Equalize), 1f);
         Invoke(nameof(Speed_Equalize), 0.1f);
@@ -191,17 +198,19 @@ public class Calculator : MonoBehaviour
         StartCoroutine(Altitude_Equalize());
         Flap_Idx = 0;
         SetFlaps();
+
+
     }
 
     private IEnumerator ExecuteEachFrameSecond()
     {
+        //GlideSlope = infoFMC.Instance.Fmc.Initref.GlideSlope;
         while (true)
         {
             MatchAltitudes();
             SetN1FF();
 
-
-            yield return new WaitForSeconds(0.1f);
+           yield return new WaitForSeconds(0.1f);
         }
     }
 
@@ -213,9 +222,9 @@ public class Calculator : MonoBehaviour
             InterpolateVS();
             SetFMA();
             FuelandMach();
-            //DrawVDI();                 Remove // Causes error at DLE-5
+            DrawVDI();                  // Remove Causes error at DLE-5
             DisplayWindElements();
-
+            
             yield return new WaitForSeconds(1);
         }
     }
@@ -227,7 +236,7 @@ public class Calculator : MonoBehaviour
 
         increasedSpeed = 0;
 
-        if (Session.State.VS || Session.State.AH || Session.State.VNAV)
+        if (Session.State.VS || Session.State.AH || Session.State.VNAV ||Session.State.GSCaptured)
         {
             int F = 8 - Mathf.FloorToInt((float)Altitude / 5000);
 
@@ -320,11 +329,11 @@ public class Calculator : MonoBehaviour
         if ((CVS != 0) || (RVS != 0))
         {
 
-            if (RAltitude != CAltitude)
+            if ((RAltitude != CAltitude) || (Session.State.GSCaptured))
             {
-                if (RVS < CVS) CVS -= 10;
-                if (CVS < RVS) CVS += 10;
-                if (Mathf.Abs(RVS - CVS) < 10) CVS = RVS;
+                if (RVS < CVS) CVS -= 10 * Session.Settings.SpeedMultiplier;
+                if (CVS < RVS) CVS += 10 * Session.Settings.SpeedMultiplier;
+                if (Mathf.Abs(RVS - CVS) < 10 * Session.Settings.SpeedMultiplier) CVS = RVS;
                 if ((Mathf.Abs(RVS) > 1000) && (Mathf.Abs(RAltitude - (int)CAltitude) < Mathf.Abs(CVS / 2f) - 600))
                 {
                     RVS = RVS / Mathf.Abs(RVS) * 1000;
@@ -345,8 +354,8 @@ public class Calculator : MonoBehaviour
         {
             if (CVS != 0)
             {
-                CAltitude += (float)CVS / 60;
-                if (Mathf.Abs(RAltitude - (int)CAltitude) < 10)
+                CAltitude += (float)CVS / 60 * Session.Settings.SpeedMultiplier;
+                if ((Mathf.Abs(RAltitude - (int)CAltitude) < 10) && (!Session.State.GSCaptured))
                 {
                     CAltitude = RAltitude;
                     txtRAltitude.text = "" + RAltitude; txtRAltitude_overTape.text = txtRAltitude.text;
@@ -370,7 +379,7 @@ public class Calculator : MonoBehaviour
         }
         int RRSpeed;
 
-        float speedbandspeed = 1f;
+        float speedbandspeed = 1f * Session.Settings.SpeedMultiplier;
         if (RSpeed > increasedSpeed) RRSpeed = RSpeed; else RRSpeed = increasedSpeed;
 
 
@@ -416,22 +425,33 @@ public class Calculator : MonoBehaviour
         var node0 = _route.Points[PositionVirtualNode.PassedNodeIndex];
         var node1 = _route.Points[PositionVirtualNode.PassedNodeIndex + 1];
 
-        //Debug.Log(node.DisplayAltitude.ToString());
+        Alt0 = (double) (node0.Altitude.ComputedValue);
+        if (Alt0 == -1) Alt0 = 22000; // first and last nodes missing altitude info
+        Alt1 = (double) (node1.Altitude.ComputedValue);
+        d = Session.PlayerAircraft.ComputedDistanceLeftOnSegment;  
+        D  = node1.Distance; 
 
-        //DeltaAlt =  activeCurrentPosition.ComputedDistanceLeft * 318.43 + double.Parse(node.DisplayAltitude);
-        Alt0 = double.Parse(node0.DisplayAltitude);
-        Alt1 = double.Parse(node1.DisplayAltitude);
-        d = Session.PlayerAircraft.ComputedDistanceLeftOnSegment;
-        D = (d + Session.PlayerAircraft.NMWalkedOnCurrentSegment); // Daniel: this will behave bad while free flight
-
-        DeltaAlt = CAltitude - (Alt1 + (d * (Alt0 - Alt1)) / D);
+        if (D == 0) DeltaAlt = 0;
+        else DeltaAlt = CAltitude - (Alt1 + (d * (Alt0 - Alt1)) / D);
+        double Target= (int)(Alt1 + (d * (Alt0 - Alt1)) / D);
         VDI_Text.text = (((DeltaAlt) > 50) || ((DeltaAlt) < -50)) ? "" + (int)DeltaAlt : "";
-        if (Session.State.VNAV)
+
+        Debug.Log("Alt0: "  + (int)Alt0 + " Alt1: " + (int)Alt1 + "  d: "+ (int)d + "  D: " + D +  "  DeltaAlt: " +   (int)DeltaAlt + " T: " + Target);
+
+        if (Session.State.VNAV )  //VNAV Logic
         {
+
             VNAV_VS = -((CAltitude - Alt1) * GS) / (60 * d) - DeltaAlt * 2;
             RVS = (DeltaAlt < -50) ? -100 : (int)VNAV_VS;
         }
 
+        if (Session.State.GSCaptured)  // GlideSlope Logic
+        {
+          //  float DegreeToVS = -6076 * Mathf.Tan(GlideSlope * Mathf.Deg2Rad) * (GS / 60);
+          //  VNAV_VS = DegreeToVS + Move.Instance.GsDeviation(GlideSlope) * 1000;
+          //  RVS = (int)VNAV_VS;
+        }
+     
         posY = -((float)DeltaAlt / 5);
         if (posY > 100) posY = 100;
         if (posY < -100) posY = -100;
@@ -440,26 +460,77 @@ public class Calculator : MonoBehaviour
         if (DeltaAlt < 0) VDI_Text.transform.localPosition = new Vector2(0.1f, -1);
         else VDI_Text.transform.localPosition = new Vector2(0.1f, 1);
     }
-    public void SetFMA()
+    public void DrawVDI2()  // GS Logic
     {
-        if (Session.State.HDG) isHDG = true; else isHDG = false; //For Move.cs Delete later
-        if (Session.State.HDG) FMA2.text = "HDG"; else FMA2.text = "LNAV";
-        if (Session.State.LC)
+       
+
+        if (Session.State.GSCaptured)  // GlideSlope Logic
         {
-            FMA1.text = "IDLE";
-            FMA3.text = "MCP SPD";
-        }
-        if (Session.State.AH)
-        {
-            FMA1.text = "MCP SPD";
-            FMA3.text = "ALT";
-        }
-        if (Session.State.VS)
-        {
-            FMA1.text = "MCP SPD";
-            FMA3.text = "VS";
+            float DegreeToVS = -6076 * Mathf.Tan(GlideSlope*Mathf.Deg2Rad) * (GS / 60);
+            VNAV_VS = DegreeToVS + Move.Instance.GsDeviation(GlideSlope) * 1000;
+            RVS = (int)VNAV_VS;
         }
 
+        
+    }
+    public void SetFMA()
+    {
+        Session.State.AppArmed = true;
+        Session.State.LOCCaptured = true;
+
+        if (Session.State.HDG) isHDG = true; else isHDG = false; //For Move.cs Delete later
+        if (Session.State.HDG) FMA2.text = "HDG";
+        if (Session.State.LNAV) FMA2.text = "LNAV";
+        if (Session.State.LNAVArmed) FMAarmed.text = "LNAV";
+
+        
+        if (!Session.State.GSCaptured)
+        {
+            if (Session.State.LC)
+            {
+                FMA1.text = "IDLE";
+                FMA3.text = "MCP SPD";
+            }
+            if (Session.State.AH)
+            {
+                FMA1.text = "MCP SPD";
+                FMA3.text = "ALT";
+            }
+            if (Session.State.VS)
+            {
+                FMA1.text = "MCP SPD";
+                FMA3.text = "VS";
+            }
+            if (Session.State.VNAV)
+            {
+                FMA1.text = "FMC SPD";
+                FMA3.text = "VNAV";
+            }
+
+
+
+            if ((Session.State.AppArmed))
+            {
+                if (Session.State.LOCCaptured)
+                {
+                    FMA2.text = "LOC";
+
+                    //Debug.Log("   G" + Move.Instance.GsDeviation(GlideSlope) + "  ");
+
+                    if (Mathf.Abs(Move.Instance.GsDeviation(GlideSlope)) < 0.1)
+                    {
+                        Session.State.GSCaptured = true;
+
+                        FMA1.text = "MCP SPD";
+                        FMA3.text = "GS";
+                        FMAarmed.text = "";
+                    }
+                    else FMAarmed.text = "                             GS";
+                }
+                else FMAarmed.text = "LOC                          GS";
+            }
+
+        }
 
     }
     private void MatchAltitudes()
@@ -542,7 +613,7 @@ public class Calculator : MonoBehaviour
     }
     private void FuelandMach()
     {
-        totalFuel -= (double)FF * 2 / 3600;                                                     //Fuel
+        totalFuel -= (double)FF * 2 / 3600 * Session.Settings.SpeedMultiplier;                                                     //Fuel
         txtTotalFuel.text = "" + System.Math.Round(totalFuel / 100, 2);
 
         CMach = Speed2Mach(CSpeed, CAltitude);
@@ -586,7 +657,7 @@ public class Calculator : MonoBehaviour
                 }
         if (LGDown) LG_Click();
         if (SBDown) SetSB(false);
-        
+
 
         if (FlapNeedle != null)
         {
@@ -658,16 +729,16 @@ public class Calculator : MonoBehaviour
                 M[i, 3, 3] = WOlg[i - 5, 1, 1];
             }
         }
-    } 
+    }
     public void SetSB(bool down, bool fromUI = false)
     {
         if (!fromUI)
         {
             UYServiceLocator.Get<McpUI>().SBLeverInteract(down, true);
         }
-        
+
         double[,] Msb = new double[9, 2] { { -900, -600 }, { -900, -600 }, { -900, -500 }, { -900, -500 }, { -900, -400 }, { -900, -400 }, { -900, -400 }, { -900, -500 }, { -900, -400 } };
- 
+
         int i;
         SBDown = down;
         if (SBDown)
@@ -717,10 +788,10 @@ public class Calculator : MonoBehaviour
 
     public void UpdatePFD()
     {
-        
+
         PFD_Animation pfdAnimation = FindObjectOfType<PFD_Animation>();
         pfdAnimation.SpeedIndexUpdate_Click();
-        pfdAnimation.CheckAltitudeIndicator(RAltitude, (int) CAltitude);
+        pfdAnimation.CheckAltitudeIndicator(RAltitude, (int)CAltitude);
     }
 
     public void OnClick_HDG(bool positive)
@@ -746,8 +817,8 @@ public class Calculator : MonoBehaviour
         }
 
         UYServiceLocator.Get<McpUI>().RefreshHS();
-        CHeading = RHeading;
         
+
         UpdatePFD();
     }
 
@@ -767,8 +838,8 @@ public class Calculator : MonoBehaviour
 
         Check_LimitSpeed();
         txtRSpeed_overTape.text = txtRSpeed.text;
-        
-        
+
+
         UpdatePFD();
     }
 
@@ -814,7 +885,7 @@ public class Calculator : MonoBehaviour
 
     }
 
-   
+
     public void co_Change()
     {
         double[,] MVS = new double[5, 2] { { -800, -280 }, { -680, -520 }, { -500, -400 }, { -430, -140 }, { -420, -240 } };

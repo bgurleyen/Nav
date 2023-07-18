@@ -27,5 +27,5 @@ MonoBehaviour:
   F30Speed: 120
   DesEconSpeed: 270
   DesEconMach: 79
-  GateIdx: 13
-  CheckPointTime: 880
+  GlideSlope: 3
+  Reserved: 0
