@@ -26,7 +26,9 @@ public class Drawer : MonoBehaviour
     [Space] [SerializeField] private Transform pivot;
     [SerializeField] private Transform compasPivot;
     [SerializeField] private Transform mobilePlaneIndicatorPivot;
-    [SerializeField] private FreeFlightIndicator freeFlightPivot;
+    [SerializeField] private RadialIndicators radialPivots;
+    [SerializeField] private Transform _freeFlightPivot;
+    [SerializeField] private Transform _windPivot;
     [SerializeField] private Transform bananaIndicatorPivot;
 
     [Header("modes visuals")] 
@@ -35,13 +37,7 @@ public class Drawer : MonoBehaviour
     [SerializeField] private GameObject[] planHolder;
 
 
-    public Color CMagenta => _gameConfig.Settings.cMagenta;
-    public Color CLightYellow => _gameConfig.Settings.cLightYellow;
-
-   
     [SerializeField] private float _debugStarDistance = 1.3f;
-
-    private const bool WalkOnMod = false;
 
     private void Awake()
     {
@@ -98,7 +94,7 @@ public class Drawer : MonoBehaviour
             x.SetActive(Session.State.MapMode == MapMode.Plan);
         }
 
-        freeFlightPivot.RefreshScale();
+        radialPivots.RefreshScale();
 
         Clear();
         Display();
@@ -164,13 +160,12 @@ public class Drawer : MonoBehaviour
 
         DisplayFixCircles();
         DisplayFixRays();
-        freeFlightPivot.RefreshVisibility();
+        radialPivots.RefreshVisibility();
         bananaIndicatorPivot.SetLocalY(Calculator.Instance.GetBananaPosition);
 
         DisplayOtherTraffic();
 
         DisplayRotations();
-        
     }
 
     private void DisplayRotations()
@@ -187,7 +182,7 @@ public class Drawer : MonoBehaviour
                 //rotate compass
                 compasPivot.SetLocalRotationZ(Session.PlayerAircraft.DisplayHeadingDegrees);
                 
-                freeFlightPivot.transform.SetLocalRotationZ(Session.PlayerAircraft.DisplayHeadingDegrees - Calculator.RHeading);
+                _freeFlightPivot.SetLocalRotationZ(Session.PlayerAircraft.DisplayHeadingDegrees - Calculator.RHeading);
                 mobilePlaneIndicatorPivot.SetLocalRotationZ(0);
 
                 break;
@@ -198,7 +193,7 @@ public class Drawer : MonoBehaviour
 
                 if (Session.State.HDG)
                 {
-                    freeFlightPivot.transform.SetLocalRotationZ(- Calculator.RHeading);
+                    _freeFlightPivot.SetLocalRotationZ(- Calculator.RHeading);
                 }
                 
                 break;

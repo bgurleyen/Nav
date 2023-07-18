@@ -3,7 +3,7 @@ using Gamelogic.Extensions;
 using Navigation;
 using UnityEngine;
 
-public class FreeFlightIndicator : MonoBehaviour
+public class RadialIndicators : MonoBehaviour
 {
     [SerializeField] private Transform _mapPivot;
     [SerializeField] private Transform _centerPivot;
@@ -11,6 +11,7 @@ public class FreeFlightIndicator : MonoBehaviour
 
     [SerializeField] private LineRenderer _headingLine;
     [SerializeField] private Transform _headingTop;
+    [SerializeField] private Transform _windTop;
 
     private float _onePivotHeight;
 
@@ -40,6 +41,7 @@ public class FreeFlightIndicator : MonoBehaviour
 
         _headingLine.transform.localScale = scale;
         _headingTop.SetLocalY(scale.x * _onePivotHeight);
+        _windTop.SetLocalY(scale.x * _onePivotHeight);
         
     }
 
