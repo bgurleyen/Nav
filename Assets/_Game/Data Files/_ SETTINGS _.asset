@@ -26,4 +26,4 @@ MonoBehaviour:
   PilotSeekDistancePathFollow: 1.2
   SegmentGranularity: 0.1
   _tracerTickDuration: 7
-  FlyingTickDuration: 0.02513433
+  FlyingTickDuration: 0.018011697
