@@ -222,7 +222,8 @@ public class Calculator : MonoBehaviour
             InterpolateVS();
             SetFMA();
             FuelandMach();
-            DrawVDI();                  // Remove Causes error at DLE-5
+            DrawVDI();
+            FlyVerticalPath();
             DisplayWindElements();
             
             yield return new WaitForSeconds(1);
@@ -421,7 +422,6 @@ public class Calculator : MonoBehaviour
         bool isMod = Session.IsMod;
         RouteScriptableObject _route = isMod ? modPoints : activePoints;
 
-
         var node0 = _route.Points[PositionVirtualNode.PassedNodeIndex];
         var node1 = _route.Points[PositionVirtualNode.PassedNodeIndex + 1];
 
@@ -429,28 +429,16 @@ public class Calculator : MonoBehaviour
         if (Alt0 == -1) Alt0 = 22000; // first and last nodes missing altitude info
         Alt1 = (double) (node1.Altitude.ComputedValue);
         d = Session.PlayerAircraft.ComputedDistanceLeftOnSegment;  
-        D  = node1.Distance; 
+        D  = node1.Distance;
 
+        double Target = (int)(Alt1 + (d * (Alt0 - Alt1)) / D);
         if (D == 0) DeltaAlt = 0;
-        else DeltaAlt = CAltitude - (Alt1 + (d * (Alt0 - Alt1)) / D);
-        double Target= (int)(Alt1 + (d * (Alt0 - Alt1)) / D);
-        VDI_Text.text = (((DeltaAlt) > 50) || ((DeltaAlt) < -50)) ? "" + (int)DeltaAlt : "";
+        else DeltaAlt = CAltitude - Target;
+ 
+        VDI_Text.text = (Mathf.Abs((float) DeltaAlt)>=50) ? "" + (int)DeltaAlt : "";
 
         Debug.Log("Alt0: "  + (int)Alt0 + " Alt1: " + (int)Alt1 + "  d: "+ (int)d + "  D: " + D +  "  DeltaAlt: " +   (int)DeltaAlt + " T: " + Target);
 
-        if (Session.State.VNAV )  //VNAV Logic
-        {
-
-            VNAV_VS = -((CAltitude - Alt1) * GS) / (60 * d) - DeltaAlt * 2;
-            RVS = (DeltaAlt < -50) ? -100 : (int)VNAV_VS;
-        }
-
-        if (Session.State.GSCaptured)  // GlideSlope Logic
-        {
-          //  float DegreeToVS = -6076 * Mathf.Tan(GlideSlope * Mathf.Deg2Rad) * (GS / 60);
-          //  VNAV_VS = DegreeToVS + Move.Instance.GsDeviation(GlideSlope) * 1000;
-          //  RVS = (int)VNAV_VS;
-        }
      
         posY = -((float)DeltaAlt / 5);
         if (posY > 100) posY = 100;
@@ -459,6 +447,43 @@ public class Calculator : MonoBehaviour
         VDI_Index.transform.localPosition = new Vector2(0.3f, posY / 125);
         if (DeltaAlt < 0) VDI_Text.transform.localPosition = new Vector2(0.1f, -1);
         else VDI_Text.transform.localPosition = new Vector2(0.1f, 1);
+    }
+    public void FlyVerticalPath()  // Recode more modular
+    {
+        double DeltaAlt, Alt1, Alt0, d, D;
+
+        RouteScriptableObject activePoints = Session.ActiveRoute;
+
+        RouteScriptableObject _route = activePoints;
+
+        var node0 = _route.Points[PositionVirtualNode.PassedNodeIndex];
+        var node1 = _route.Points[PositionVirtualNode.PassedNodeIndex + 1];
+
+        Alt0 = (double)(node0.Altitude.ComputedValue);
+        if (Alt0 == -1) Alt0 = 22000; // first and last nodes missing altitude info
+        Alt1 = (double)(node1.Altitude.ComputedValue);
+        d = Session.PlayerAircraft.ComputedDistanceLeftOnSegment;
+        D = node1.Distance;
+
+        double Target = (int)(Alt1 + (d * (Alt0 - Alt1)) / D);
+        if (D == 0) DeltaAlt = 0;
+        else DeltaAlt = CAltitude - Target;
+
+        if (Session.State.VNAV)  //VNAV Logic
+        {
+
+            VNAV_VS = -((CAltitude - Alt1) * GS) / (60 * d) - DeltaAlt * 2;
+            RVS = (DeltaAlt < -50) ? -100 : (int)VNAV_VS;
+        }
+
+        if (Session.State.GSCaptured)  // GlideSlope Logic
+        {
+            //  float DegreeToVS = -6076 * Mathf.Tan(GlideSlope * Mathf.Deg2Rad) * (GS / 60);
+            //  VNAV_VS = DegreeToVS + Move.Instance.GsDeviation(GlideSlope) * 1000;
+            //  RVS = (int)VNAV_VS;
+        }
+
+ 
     }
     public void DrawVDI2()  // GS Logic
     {

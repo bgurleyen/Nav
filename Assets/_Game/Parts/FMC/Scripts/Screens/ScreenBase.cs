@@ -1,4 +1,5 @@
 ﻿using System;
+using Gamelogic.Extensions;
 using TMPro;
 using UnityEngine;
 
@@ -14,7 +15,8 @@ public class ScreenBase : MonoBehaviour
     [SerializeField] protected TMP_Text lastHRight;
     [SerializeField] protected TMP_Text lastFLeft;
     [SerializeField] protected BgText lastFRight;
-    
+
+    [SerializeField, ReadOnly] private string _design = "----";
 
     public string LastLineLeft => lastFLeft.text;
 
