@@ -7,7 +7,7 @@ using UnityEngine.UI;
 [System.Serializable]
 public class Move : Singleton<Move>
 {
-    public static float Perpend;
+    public static float Perpend,teta;
 
     public Dictionary<string, Vector2> ACPositions = new Dictionary<string, Vector2>();
     public Dictionary<string, string> ACTexts = new Dictionary<string, string>();
@@ -107,7 +107,7 @@ public class Move : Singleton<Move>
     private string TurnDirection(float newHdg)
     {
 
-        return (Mathf.DeltaAngle(Calculator.CHeading, newHdg) >= 0) ? "Right " : "Left ";
+        return (Mathf.DeltaAngle(Calculator.CTrack, newHdg) >= 0) ? "Right " : "Left ";
     }
 
     private string NxToString(int nx)
@@ -127,6 +127,7 @@ public class Move : Singleton<Move>
 
         return pt < 50 ? Session.OriginalReferenceRoute.GetCartesianPosition(pt) : VirtualPtsPos[pt - 50];
      }
+
 
     private float TrackToPoint(int pt)
     {
@@ -158,26 +159,26 @@ public class Move : Singleton<Move>
 
         float x1 = Session.PlayerAircraft.NMPosition.x;
         float y1 = Session.PlayerAircraft.NMPosition.y;
-        float alfa = Mathf.DeltaAngle(Calculator.CHeading, TrackToPoint(pt)) * Mathf.Deg2Rad;
-        float Heading = Calculator.CHeading*Mathf.Deg2Rad;
+        float alfa = Mathf.DeltaAngle(Calculator.CTrack, TrackToPoint(pt)) * Mathf.Deg2Rad;
+        float Track = Calculator.CTrack*Mathf.Deg2Rad;
 
 
         float TurnRadius = 2.4f;
 
         
-        int Sign = Mathf.DeltaAngle(Calculator.CHeading, TrackToPoint(pt)) >= 0 ? 1 : -1;
+        int Sign = Mathf.DeltaAngle(Calculator.CTrack, TrackToPoint(pt)) >= 0 ? 1 : -1;
 
-        float H = TurnRadius * (1 - Mathf.Cos(alfa));
-        float V = Mathf.Sin(alfa) * TurnRadius;
-        float x2 = x1 + Sign * (H * Mathf.Cos(Heading) + V * Mathf.Sin(Heading));
-        float y2 = y1 + Sign * (V * Mathf.Cos(Heading) - H * Mathf.Sin(Heading));
+        float H = TurnRadius * (1 - Mathf.Cos(alfa)); //Horizantal
+        float V = Mathf.Sin(alfa) * TurnRadius;  //Vertical
+        float x2 = x1 + Sign * (H * Mathf.Cos(Track) + V * Mathf.Sin(Track));
+        float y2 = y1 + Sign * (V * Mathf.Cos(Track) - H * Mathf.Sin(Track));
 
-          //   var TurnPoint = GameObject.Find("pt (60)");  //use pt 60 to show turnpoint
-          //   Vector2 Pos = new Vector2(x2, y2);
-          //   TurnPoint.transform.localPosition = Pos ;
+        //   var TurnPoint = GameObject.Find("pt (60)");  //use pt 60 to show turnpoint
+        //   Vector2 Pos = new Vector2(x2, y2);
+        //   TurnPoint.transform.localPosition = Pos ;
 
-
-        return TrackToPoint(x2, y2, pt);
+        Calculator.WindElements WE = Calculator.CalculateWindElements(Calculator.CAltitude,Calculator.CSpeed, (int)TrackToPoint(x2, y2, pt));
+        return TrackToPoint(x2, y2, pt) + WE.HeadingWindAddition;
     }
 
     public float DME()
@@ -272,25 +273,34 @@ public class Move : Singleton<Move>
                 ? PrvTrackToPoint + 90
                 : PrvTrackToPoint - 90;
 
-            //Debug.Log(DistanceFromRoute() + "   Pp: " + Perpend + "  Tp: " + TrackToPoint(point) + " prv:" + PrvTrackToPoint + " hyp: " + hyp + " Point: " + point );
-            //Debug.Log("Loc : "+ LocDeviation(272) + "  G/S : " + GsDeviation(3) + "  D: " + DME());
-
+            
             float dev = LocDeviation(272);
             float gsD = GsDeviation(3);
 
-            if (DistanceFromRoute() > 1) //Warning   
+            float x = hyp * Mathf.Cos(Mathf.DeltaAngle(TrackToPoint(point), PrvTrackToPoint) * Mathf.Deg2Rad);
+
+            teta = Mathf.Atan2(DistanceFromRoute()-0.5f,x) * Mathf.Rad2Deg;//noktanin 0.5 nm uzerine aci
+
+            //Debug.Log(DistanceFromRoute() + "   Pp: " + Perpend + "  Tp: " + TrackToPoint(point) + 
+            //       " prv:" + PrvTrackToPoint + " hyp: " + hyp + " x: " + x + " Pt: " + point);
+
+
+            if (DistanceFromRoute() > Mathf.Tan(20 * Mathf.Deg2Rad) * x + 0.5) //Warning   (20 degrees koni)
+
+
             {
 
-                if (Mathf.Abs(Mathf.DeltaAngle(Calculator.RHeading, Perpend)) >=
-                    90) // Hdg rota tracki ve +-90 arasinda
+                if (Mathf.Abs(Mathf.DeltaAngle(Calculator.RTrack, Perpend)) >= 90-teta) // Hdg rota tracki ve +-70 arasinda
                 {
-                    //Time.timeScale = 0;
+                    //Time.timeScale = 0;  //Stop at Borders
                 }
 
                 if (mode == 2)
-                    //  Atc1.text = "Turn " + TurnDirection(TrackToPoint(point)) + "Heading " +
-                    //              (int)TrackToPointFactored(point);
-                    Atc1.color = Color.red;
+                {
+                      Atc1.text = "Turn " + TurnDirection(TrackToPoint(point)) + "Heading " +
+                                  (int)TrackToPointFactored(point);
+                     Atc1.color = Color.red;
+                }
 
             }
             else Atc1.color = Color.white;
@@ -353,7 +363,7 @@ public class Move : Singleton<Move>
 
             // Debug.Log(" V :" + V + "prv" + prvWptIdx + " P :" + point);
 
-            if ((point != prvWptIdx) && ((V < 2.3)))  // next instruction 1.3 nm before next pt
+            if ((point != prvWptIdx) && ((V < 1.3)))  // next instruction 1.3 nm before next pt
             {
                 _currentInstructionIndex += 1;
                 NewPoint = true;

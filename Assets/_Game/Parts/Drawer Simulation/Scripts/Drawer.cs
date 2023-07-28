@@ -207,7 +207,7 @@ public class Drawer : MonoBehaviour
 
                 if (Session.State.HDG)
                 {
-                    _freeFlightPivot.SetLocalRotationZ(- Calculator.RHeading);
+                    _freeFlightPivot.SetLocalRotationZ(- Calculator.RTrack);
                 }
                 
                 break;

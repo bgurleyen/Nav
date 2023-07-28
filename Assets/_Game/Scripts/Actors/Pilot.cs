@@ -33,7 +33,6 @@ namespace Navigation
 
                 CachedDisplayLastAngleDiff = -Geometry.AngleDelta(DisplayHeadingDegrees, HeadingDegrees);
             }
-            Calculator.CHeading = (int)HeadingDegrees;
         }
 
         public void TickSteerToPathFoundVertex(Vector2 seekTarget, out float heading)

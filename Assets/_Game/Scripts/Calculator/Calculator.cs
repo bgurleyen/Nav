@@ -34,8 +34,9 @@ public class Calculator : MonoBehaviour
     public static double CSpeed = 250, CAltitude = 21000; // Currenr Altitude*************************
     //                            ***              *****
     private int RVS;
-    public static int RSpeed = (int)CSpeed, RHeading, RAltitude, CVS;
-    public static int CHeading, Track;
+    public static int RSpeed = (int)CSpeed, RHeading, RAltitude, CVS, CHeading;
+
+    public static int CTrack, Track , RTrack;
     private double CMach, RMach, VNAV_VS;
     public static float TAS, GS;
     public Toggle co;//Landing Gear ,Speed Brake;
@@ -204,14 +205,17 @@ public class Calculator : MonoBehaviour
 
     private IEnumerator ExecuteEachFrameSecond()
     {
-        //GlideSlope = infoFMC.Instance.Fmc.Initref.GlideSlope;
+          //GlideSlope = infoFMC.Instance.Fmc.Initref.GlideSlope;
         while (true)
         {
+            CTrack = (int)Session.PlayerAircraft.DisplayHeadingDegrees;
+
             MatchAltitudes();
             SetN1FF();
 
            yield return new WaitForSeconds(0.1f);
         }
+
     }
 
     private IEnumerator ExecuteEachSecond()
@@ -437,7 +441,7 @@ public class Calculator : MonoBehaviour
  
         VDI_Text.text = (Mathf.Abs((float) DeltaAlt)>=50) ? "" + (int)DeltaAlt : "";
 
-        Debug.Log("Alt0: "  + (int)Alt0 + " Alt1: " + (int)Alt1 + "  d: "+ (int)d + "  D: " + D +  "  DeltaAlt: " +   (int)DeltaAlt + " T: " + Target);
+        //Debug.Log("Alt0: "  + (int)Alt0 + " Alt1: " + (int)Alt1 + "  d: "+ (int)d + "  D: " + D +  "  DeltaAlt: " +   (int)DeltaAlt + " T: " + Target);
 
      
         posY = -((float)DeltaAlt / 5);
@@ -825,21 +829,28 @@ public class Calculator : MonoBehaviour
         {
             RHeading += 1;
             if (RHeading > 359) RHeading = 0;
-            if (Mathf.Abs(Mathf.DeltaAngle(RHeading, Move.Perpend)) < 90)
+            if (Mathf.Abs(Mathf.DeltaAngle(RHeading, Move.Perpend)) < 90-Move.teta)
             {
                 Time.timeScale = 1;
-            }
+            } 
         }
         else
         {
             RHeading -= 1;
             if (RHeading < 0) RHeading = 359;
 
-            if (Mathf.Abs(Mathf.DeltaAngle(RHeading, Move.Perpend)) < 90)
+            if (Mathf.Abs(Mathf.DeltaAngle(RHeading, Move.Perpend)) < 90-Move.teta)
             {
                 Time.timeScale = 1;
             }
         }
+
+        WindElements WE = CalculateWindElements(CAltitude, CSpeed, RHeading);
+
+        RTrack = RHeading - WE.HeadingWindAddition;  // Rtrackteki ruzgar etkisini kullanmak gerekiyor?
+
+        Debug.Log("Rtrack:   " + RTrack + "HdgWingAddition:   " + WE.HeadingWindAddition + "rel:   " + WE.relativeWindD);
+
 
         UYServiceLocator.Get<McpUI>().RefreshHS();
         
@@ -943,17 +954,17 @@ public class Calculator : MonoBehaviour
     public void DisplayWindElements()
     {
 
-        WindElements WE = CalculateWindElements(CAltitude, CSpeed, RHeading); // Change to current Heading
+        WindElements WE = CalculateWindElements(CAltitude, CSpeed, CTrack); //Change to Current Heading
         windArrow.transform.localEulerAngles = new Vector3(0, 0, 180 - WE.relativeWindD);
-        int Track = WE.Track;
         windTxt.text = "GS" + WE.GS + "   TAS" + WE.TAS + "\n" + WE.WindD + "° / " + WE.WindM;
         CWind = WE.WindD + "° / " + WE.WindM;
         GS = WE.GS;
-        // Debug.Log(WE.GS + "   " + Track);
+        CHeading = CTrack - WE.HeadingWindAddition;
+   //     Debug.Log("CTrack:   " + CTrack + "HdgWingAddition:   " + WE.HeadingWindAddition + "rel:   " + WE.relativeWindD);
     }
     public class WindElements
     {
-        public int GS, Track, relativeWindD, WindM, WindD, TAS;
+        public int GS, HeadingWindAddition, relativeWindD, WindM, WindD, TAS;
     }
 
     private static int GetWindDirection(double altitude)
@@ -970,7 +981,7 @@ public class Calculator : MonoBehaviour
                                             CurrentWindTable.WindInfoItems[baseAlt - 1].Knots,
                                             (float)(altitude % 5000) / 5000);
     }
-    public static WindElements CalculateWindElements(double Altitude, double IAS, int Heading)
+    public static WindElements CalculateWindElements(double Altitude, double IAS, int Track)
     {
         if (Altitude > 39900) Altitude = 39900;
 
@@ -981,7 +992,7 @@ public class Calculator : MonoBehaviour
         WE.WindD = GetWindDirection(Altitude);
         WE.WindM = GetWindMagnitude(Altitude);
 
-        WE.relativeWindD = WE.WindD + Heading;
+        WE.relativeWindD = WE.WindD - Track;
 
         double HeadWind = Mathf.Cos(WE.relativeWindD * Mathf.Deg2Rad) * WE.WindM;
         double CrossWind = Mathf.Sin(WE.relativeWindD * Mathf.Deg2Rad) * WE.WindM;
@@ -990,8 +1001,9 @@ public class Calculator : MonoBehaviour
         WE.TAS = (int)(IAS + (Altitude / 1000 * 0.02 * IAS));
 
         WE.GS = (int)(WE.TAS - HeadWind);
-        WE.Track = Heading - (int)(Mathf.Atan((float)(CrossWind / WE.GS)) * Mathf.Rad2Deg);
+        WE.HeadingWindAddition = (int)(Mathf.Atan((float)(CrossWind / WE.GS)) * Mathf.Rad2Deg);
 
+       
         return WE;
     }
 }

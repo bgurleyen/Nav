@@ -79,7 +79,7 @@ public class Aircraft : MovingActor
         {
             // airplane is on free flight
             
-            TargetHeading = Calculator.RHeading;
+            TargetHeading = Calculator.RTrack;
 
             _pilot.TickSteerToTargetHeading(TargetHeading);
 
