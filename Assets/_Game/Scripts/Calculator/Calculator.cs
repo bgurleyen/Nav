@@ -6,6 +6,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using TMPro;
 using Unyawn.Utils;
+using System;
 
 //GW :56.4,ZFW:45,Fuel:12,CI:0,CG:23.3
 
@@ -18,7 +19,7 @@ public class Calculator : MonoBehaviour
     private Pilot _pilot;
 
     private string result;
-    public Text txtRSpeed, txtRAltitude, txtRVS;
+    public Text txtRSpeed, txtRAltitude, txtRVS, txtRHeading;
     public Text txtCSpeed, txtCAltitude, txtCVS;
     public Text txtRSpeed_overTape, txtRAltitude_overTape;
     public Text txtDTG;//DTG: Distance to go
@@ -200,7 +201,7 @@ public class Calculator : MonoBehaviour
         Flap_Idx = 0;
         SetFlaps();
 
-
+        Session.Settings.SpeedMultiplier = 1;
     }
 
     private IEnumerator ExecuteEachFrameSecond()
@@ -209,7 +210,7 @@ public class Calculator : MonoBehaviour
         while (true)
         {
             CTrack = (int)Session.PlayerAircraft.DisplayHeadingDegrees;
-
+  
             MatchAltitudes();
             SetN1FF();
 
@@ -796,6 +797,24 @@ public class Calculator : MonoBehaviour
             }
         }
     }
+    public void XFR1_Click()
+    {
+        RHeading = Move.XFRHdg;
+        AddWindEffectToRHeading();
+        UYServiceLocator.Get<McpUI>().RefreshHS();
+
+    }
+    public void XFR2_Click()
+    {
+        RAltitude = (int)Move.XFRAltitude;
+        txtRAltitude.text = RAltitude.ToString();
+        txtRAltitude_overTape.text = txtRAltitude.text;
+    }
+    public void XFR3_Click()
+    {
+        RSpeed = Move.XFRSpeed;
+        txtRSpeed.text = RSpeed.ToString();
+    }
 
     public static void Check_LimitSpeed()
     {
@@ -845,17 +864,28 @@ public class Calculator : MonoBehaviour
             }
         }
 
+        AddWindEffectToRHeading();
+
+        UpdatePFD();
+    }
+
+    public void AddWindEffectToRHeading()
+    {
         WindElements WE = CalculateWindElements(CAltitude, CSpeed, RHeading);
 
         RTrack = RHeading - WE.HeadingWindAddition;  // Rtrackteki ruzgar etkisini kullanmak gerekiyor?
 
-        Debug.Log("Rtrack:   " + RTrack + "HdgWingAddition:   " + WE.HeadingWindAddition + "rel:   " + WE.relativeWindD);
+        // Debug.Log("Rtrack:   " + RTrack + "HdgWingAddition:   " + WE.HeadingWindAddition + "rel:   " + WE.relativeWindD);
 
 
         UYServiceLocator.Get<McpUI>().RefreshHS();
-        
 
-        UpdatePFD();
+    }
+
+
+    private object Distancefromroute()
+    {
+        throw new NotImplementedException();
     }
 
     public void OnClick_S(bool positive)
@@ -874,7 +904,6 @@ public class Calculator : MonoBehaviour
 
         Check_LimitSpeed();
         txtRSpeed_overTape.text = txtRSpeed.text;
-
 
         UpdatePFD();
     }

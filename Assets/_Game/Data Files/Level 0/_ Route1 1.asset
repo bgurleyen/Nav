@@ -65,21 +65,21 @@ MonoBehaviour:
   - ID: 7
     Name: DV583
     RawDegrees: 91
-    Distance: 4
+    Distance: 5
     RawSpeed: 0
     RawAltitude: 
     Details: C
   - ID: 8
     Name: DV584
     RawDegrees: 91
-    Distance: 4
+    Distance: 5
     RawSpeed: 0
     RawAltitude: 
     Details: 
   - ID: 9
     Name: DV585
     RawDegrees: 91
-    Distance: 4
+    Distance: 5
     RawSpeed: 0
     RawAltitude: 
     Details: 
@@ -93,42 +93,42 @@ MonoBehaviour:
   - ID: 11
     Name: DV574
     RawDegrees: 271
-    Distance: 4
+    Distance: 5
     RawSpeed: 0
     RawAltitude: 
     Details: 
   - ID: 12
     Name: DV573
     RawDegrees: 271
-    Distance: 4.3
+    Distance: 5
     RawSpeed: 0
     RawAltitude: 
     Details: 
   - ID: 13
     Name: DV572
     RawDegrees: 271
-    Distance: 4.9
+    Distance: 5
     RawSpeed: 0
     RawAltitude: 
     Details: 
   - ID: 14
     Name: XAVER
     RawDegrees: 276
-    Distance: 4
+    Distance: 5
     RawSpeed: 179
     RawAltitude: 3000
     Details: 
   - ID: 15
     Name: HANB
     RawDegrees: 271
-    Distance: 4
+    Distance: 5
     RawSpeed: 173
     RawAltitude: 1440
     Details: 
   - ID: 16
     Name: RW27R
     RawDegrees: 271
-    Distance: 4
+    Distance: 5
     RawSpeed: 0
     RawAltitude: 219
     Details: 
