@@ -46,6 +46,11 @@ public class Move : Singleton<Move>
     int _currentInstructionIndex = 0;
     int RW ;
 
+    public Button XFR1, XFR2, XFR3;
+    public static int XFRSpeed = 0;
+    public static long XFRAltitude = 0;
+    public static int XFRHdg = 0;
+
     public void Init(LevelDataScriptableObject levelData)
     {
         _currentLevelData = levelData;
@@ -259,6 +264,15 @@ public class Move : Singleton<Move>
             Atc3.text = Speed > 0 ? "Speed " + Speed + " knots " + NxToString(Speed_nx) :
                 Speed == 0 ? Atc3.text : "";
 
+            XFR1.interactable = mode == 2 ? true : false;
+            XFR2.interactable = Altitude > 0 ? true : false;
+            XFR3.interactable = (Speed > 0) && (Speed_nx == 0) ? true : false;
+
+            if ((Speed > 0) && (Speed_nx == 0)) XFRSpeed = Speed;
+            if (mode == 2) XFRHdg = (int)TrackToPointFactored(point);
+            if (Altitude > 0) XFRAltitude = Altitude;
+
+
             PrvTrackToPoint = TrackToPoint(point);
             Atc1.color = Color.green;
             if (mode > 0) Cmode = mode;
@@ -268,6 +282,11 @@ public class Move : Singleton<Move>
         }
         else // Not New
         {
+            if (XFRHdg == Calculator.RHeading) XFR1.interactable = false;
+            if (XFRAltitude == Calculator.RAltitude) XFR2.interactable = false;
+            if (XFRSpeed == Calculator.RSpeed) XFR3.interactable = false;
+
+            // Debug.Log(XFRHdg +"H"+ Calculator.RHeading+  "     "+ XFRAltitude +"A"+ Calculator.RAltitude + "   " + Speed +"S"+ Calculator.RSpeed);
 
             Perpend = Mathf.Sin((TrackToPoint(point) - PrvTrackToPoint) * Mathf.Deg2Rad) > 0
                 ? PrvTrackToPoint + 90
@@ -284,7 +303,7 @@ public class Move : Singleton<Move>
             //Debug.Log(DistanceFromRoute() + "   Pp: " + Perpend + "  Tp: " + TrackToPoint(point) + 
             //       " prv:" + PrvTrackToPoint + " hyp: " + hyp + " x: " + x + " Pt: " + point);
 
-
+            
             if (DistanceFromRoute() > Mathf.Tan(20 * Mathf.Deg2Rad) * x + 0.5) //Warning   (20 degrees koni)
 
 
