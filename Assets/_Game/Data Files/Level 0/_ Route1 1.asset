@@ -30,7 +30,7 @@ MonoBehaviour:
   - ID: 2
     Name: NORTA
     RawDegrees: 5
-    Distance: 5
+    Distance: 20
     RawSpeed: 0
     RawAltitude: 
     Details: 

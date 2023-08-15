@@ -45,6 +45,7 @@ public class Move : Singleton<Move>
     string RawAlt = "";
     int _currentInstructionIndex = 0;
     int RW ;
+    float NextInstructionDistance = 1.3f;
 
     public Button XFR1, XFR2, XFR3;
     public static int XFRSpeed = 0;
@@ -119,7 +120,7 @@ public class Move : Singleton<Move>
 
     private string NxToString(int nx)
     {
-        return (nx == 1) ? " or greater " : (nx == 2) ? " or less " : "";
+        return (nx == 1) ? " or greater " : (nx == 2) ? " or less " :  ""; 
     }
 
     private float DistanceFromRoute()
@@ -222,6 +223,12 @@ public class Move : Singleton<Move>
     }
 
     void ATCCall()
+        //mode      pt  Alt VS  nx          Speed   nx
+        //0..NoChg				0..exact	        0..exact
+        //1..DCT				1..min	   	        1..min
+        //2..HDG				2..max		        2..max
+        //                      3..CLEAR ILS       >2..NextInstructionDistance
+
     {
         var currentInstruction = _currentLevelData.ATCs[_currentInstructionIndex];
 
@@ -264,8 +271,17 @@ public class Move : Singleton<Move>
 
             if (Altitude > 0) Atc2.text = "Descent altitude " + Altitude + " feet" + s;
 
+            if (VS_nx == 3)
+            {
+                Atc2.text += " CLEAR ILS APPROACH ";
+                Session.State.AppArmed=true;
+     
+            }
+
             Atc3.text = Speed > 0 ? "Speed " + Speed + " knots " + NxToString(Speed_nx) :
                 Speed == 0 ? Atc3.text : "";
+
+            NextInstructionDistance = Speed_nx > 2 ? Speed_nx : 1.3f;
 
             XFR1.interactable = mode == 2 ? true : false;
             XFR2.interactable = Altitude > 0 ? true : false;
@@ -285,8 +301,8 @@ public class Move : Singleton<Move>
 
             if (mode>0 || XFR2.interactable || XFR3.interactable)
             {
-               // Session.State.Speed10X.Set(false); // Yeni kleransta yavasla
-              //  Session.Settings.SpeedMultiplier = 1;
+                Session.State.Speed10X.Set(false); // Yeni kleransta yavasla
+                Session.Settings.SpeedMultiplier = 1;
             }
         }
         else // Not New
@@ -394,7 +410,7 @@ public class Move : Singleton<Move>
 
             // Debug.Log(" V :" + V + "prv" + prvWptIdx + " P :" + point);
 
-            if ((point != prvWptIdx) && ((V < 1.3)))  // next instruction 1.3 nm before next pt
+            if ((point != prvWptIdx) && ((V < NextInstructionDistance)))  // next instruction NextInstructionDistance nm before next pt
             {
                 _currentInstructionIndex += 1;
                 NewPoint = true;

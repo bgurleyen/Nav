@@ -53,7 +53,6 @@ public class Calculator : MonoBehaviour
     public GameObject Progres, FlapNeedle, LGlever;
     private int N1, FF, dispN1 = 77;
     private double dispFF = 270;
-    public static bool isHDG;
     public static double totalFuel = 1000; // 10 tons *100 
     //Speed:(NM per Hour = Knots)--> Show in PFD , map will move in this speed
     //Altitude:(Feet)--> Show in PFD ,no other effect
@@ -505,10 +504,8 @@ public class Calculator : MonoBehaviour
     }
     public void SetFMA()
     {
-        Session.State.AppArmed = true;
-        Session.State.LOCCaptured = true;
+        Session.State.LOCCaptured = false;
 
-        if (Session.State.HDG) isHDG = true; else isHDG = false; //For Move.cs Delete later
         if (Session.State.HDG) FMA2.text = "HDG";
         if (Session.State.LNAV) FMA2.text = "LNAV";
         if (Session.State.LNAVArmed) FMAarmed.text = "LNAV";
@@ -557,7 +554,7 @@ public class Calculator : MonoBehaviour
                     }
                     else FMAarmed.text = "                             GS";
                 }
-                else FMAarmed.text = "LOC                          GS";
+                else FMAarmed.text = "LOC                     GS";
             }
 
         }
