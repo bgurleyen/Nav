@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: ba3b8b30b7d3d124482f44bf0dbbbfaf, type: 3}
-  m_Name: _ Route1 1
+  m_Name: _ Route1
   m_EditorClassIdentifier: 
   Points:
   - ID: 0
@@ -23,21 +23,21 @@ MonoBehaviour:
   - ID: 1
     Name: ELNAT
     RawDegrees: 20
-    Distance: 5
+    Distance: 10
     RawSpeed: 0
     RawAltitude: 
     Details: 
   - ID: 2
     Name: NORTA
     RawDegrees: 5
-    Distance: 20
+    Distance: 10
     RawSpeed: 0
     RawAltitude: 
     Details: 
   - ID: 3
     Name: DLE-5
     RawDegrees: 6
-    Distance: 5
+    Distance: 10
     RawSpeed: 0
     RawAltitude: 
     Details: 
@@ -51,35 +51,35 @@ MonoBehaviour:
   - ID: 5
     Name: DV581
     RawDegrees: 2
-    Distance: 5
+    Distance: 7.3
     RawSpeed: 0
     RawAltitude: 
     Details: 
   - ID: 6
     Name: DV582
     RawDegrees: 91
-    Distance: 5
+    Distance: 5.6
     RawSpeed: 220
     RawAltitude: 
     Details: 
   - ID: 7
     Name: DV583
     RawDegrees: 91
-    Distance: 5
+    Distance: 4
     RawSpeed: 0
     RawAltitude: 
     Details: C
   - ID: 8
     Name: DV584
     RawDegrees: 91
-    Distance: 5
+    Distance: 4
     RawSpeed: 0
     RawAltitude: 
     Details: 
   - ID: 9
     Name: DV585
     RawDegrees: 91
-    Distance: 5
+    Distance: 4
     RawSpeed: 0
     RawAltitude: 
     Details: 
@@ -93,42 +93,42 @@ MonoBehaviour:
   - ID: 11
     Name: DV574
     RawDegrees: 271
-    Distance: 5
+    Distance: 4
     RawSpeed: 0
     RawAltitude: 
     Details: 
   - ID: 12
     Name: DV573
     RawDegrees: 271
-    Distance: 5
+    Distance: 4.3
     RawSpeed: 0
     RawAltitude: 
     Details: 
   - ID: 13
     Name: DV572
     RawDegrees: 271
-    Distance: 5
+    Distance: 4.9
     RawSpeed: 0
     RawAltitude: 
     Details: 
   - ID: 14
     Name: XAVER
     RawDegrees: 276
-    Distance: 5
+    Distance: 4
     RawSpeed: 179
     RawAltitude: 3000
     Details: 
   - ID: 15
     Name: HANB
     RawDegrees: 271
-    Distance: 5
+    Distance: 4
     RawSpeed: 173
     RawAltitude: 1440
     Details: 
   - ID: 16
     Name: RW27R
     RawDegrees: 271
-    Distance: 5
+    Distance: 4
     RawSpeed: 0
     RawAltitude: 219
     Details: 

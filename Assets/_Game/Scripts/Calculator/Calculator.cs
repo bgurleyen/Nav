@@ -7,6 +7,7 @@ using UnityEngine.UI;
 using TMPro;
 using Unyawn.Utils;
 using System;
+using UnityEditor;
 
 //GW :56.4,ZFW:45,Fuel:12,CI:0,CG:23.3
 
@@ -32,7 +33,7 @@ public class Calculator : MonoBehaviour
     public Transform VDI_Index;
 
 
-    public static double CSpeed = 250, CAltitude = 21000; // Currenr Altitude*************************
+    public static double CSpeed = 280, CAltitude = 15000; // Currenr Altitude*************************
     //                            ***              *****
     private int RVS;
     public static int RSpeed = (int)CSpeed, RHeading, RAltitude, CVS, CHeading;
@@ -222,17 +223,19 @@ public class Calculator : MonoBehaviour
     {
         while (true)
         {
-            InterpolateLvlChg();
             InterpolateVS();
+            InterpolateLvlChg();
             SetFMA();
             FuelandMach();
             DrawVDI();
             FlyVerticalPath();
             DisplayWindElements();
+            CheckStabilization();
             
             yield return new WaitForSeconds(1);
         }
     }
+  
     public void InterpolateVS()
     {
         double Altitude = CAltitude > 39900 ? 39900 : CAltitude;
@@ -359,7 +362,8 @@ public class Calculator : MonoBehaviour
         {
             if (CVS != 0)
             {
-                CAltitude += (float)CVS / 60 * Session.Settings.SpeedMultiplier;
+                  CAltitude += (float)CVS / 60* Session.Settings.SpeedMultiplier;
+
                 if ((Mathf.Abs(RAltitude - (int)CAltitude) < 10) && (!Session.State.GSCaptured))
                 {
                     CAltitude = RAltitude;
@@ -384,7 +388,7 @@ public class Calculator : MonoBehaviour
         }
         int RRSpeed;
 
-        float speedbandspeed = 1f * Session.Settings.SpeedMultiplier;
+        float speedbandspeed = 1f;// Session.Settings.SpeedMultiplier;
         if (RSpeed > increasedSpeed) RRSpeed = RSpeed; else RRSpeed = increasedSpeed;
 
 
@@ -408,7 +412,7 @@ public class Calculator : MonoBehaviour
         if (SpeedTime < 0.3) SpeedTime = 0.3f;
         DrawSpeedTrend(SpeedTime);
 
-        Invoke("Speed_Equalize", SpeedTime * speedbandspeed);
+        Invoke("Speed_Equalize", SpeedTime/ Session.Settings.SpeedMultiplier);
     }
     private void SetAttPitch(int P)
     {
@@ -473,38 +477,25 @@ public class Calculator : MonoBehaviour
         if (D == 0) DeltaAlt = 0;
         else DeltaAlt = CAltitude - Target;
 
-        if (Session.State.VNAV)  //VNAV Logic
-        {
-
-            VNAV_VS = -((CAltitude - Alt1) * GS) / (60 * d) - DeltaAlt * 2;
-            RVS = (DeltaAlt < -50) ? -100 : (int)VNAV_VS;
-        }
-
-        if (Session.State.GSCaptured)  // GlideSlope Logic
-        {
-            //  float DegreeToVS = -6076 * Mathf.Tan(GlideSlope * Mathf.Deg2Rad) * (GS / 60);
-            //  VNAV_VS = DegreeToVS + Move.Instance.GsDeviation(GlideSlope) * 1000;
-            //  RVS = (int)VNAV_VS;
-        }
-
- 
-    }
-    public void DrawVDI2()  // GS Logic
-    {
        
 
         if (Session.State.GSCaptured)  // GlideSlope Logic
         {
-            float DegreeToVS = -6076 * Mathf.Tan(GlideSlope*Mathf.Deg2Rad) * (GS / 60);
-            VNAV_VS = DegreeToVS + Move.Instance.GsDeviation(GlideSlope) * 1000;
+            float DegreeToVS = -6076 * Mathf.Tan(GlideSlope * Mathf.Deg2Rad) * (GS / 60);
+            VNAV_VS = DegreeToVS; //- Move.Instance.GsDeviation(GlideSlope)*200 ;
             RVS = (int)VNAV_VS;
         }
+        else if (Session.State.VNAV)  //VNAV Logic
+        {
+            VNAV_VS = -((CAltitude - Alt1) * GS) / (60 * d) - DeltaAlt * 2;
+            RVS = (DeltaAlt < -50) ? -100 : (int)VNAV_VS;
+        }
 
-        
     }
+
     public void SetFMA()
     {
-        Session.State.LOCCaptured = false;
+        Session.State.LOCCaptured = true;  // Remove after setting the LOC logic
 
         if (Session.State.HDG) FMA2.text = "HDG";
         if (Session.State.LNAV) FMA2.text = "LNAV";
@@ -546,7 +537,7 @@ public class Calculator : MonoBehaviour
 
                     if (Mathf.Abs(Move.Instance.GsDeviation(GlideSlope)) < 0.1)
                     {
-                        Session.State.GSCaptured = true;
+                       if (Session.State.VS == true) Session.State.GSCaptured = true;   // remove first part
 
                         FMA1.text = "MCP SPD";
                         FMA3.text = "GS";
@@ -1031,5 +1022,27 @@ public class Calculator : MonoBehaviour
 
        
         return WE;
+    }
+    public void CheckStabilization()
+    {
+        string LF = System.Environment.NewLine;
+        if (CAltitude <= 1000)
+        {
+            EditorUtility.DisplayDialog("NOT STABLE", "Localizer............ok" + LF+
+                                                      "Glide Slope..........ok" + LF +
+                                                      "Vertical Speed.......ok" + LF +
+                                                      "Speed................ok" + LF +
+                                                      "Landing Gear.......Down" + LF +
+                                                      "Flaps................30" + LF +
+                                                      "Speed Brake....Extended XXX" + LF , "Exit");
+            QuitGame();
+        }
+    }
+    public void QuitGame()
+    {
+        #if UNITY_EDITOR
+        UnityEditor.EditorApplication.isPlaying = false;
+        #endif
+        Application.Quit();
     }
 }

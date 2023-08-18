@@ -15,72 +15,72 @@ MonoBehaviour:
   ATCInstrucitonItems:
   - point: 1
     mode: 1
-    Altitude: 30000
+    Altitude: 15000
     VS: 0
-    VS_nx: 0
+    VS_nx: 3
     Speed: 280
     Speed_nx: 0
   - point: 2
     mode: 0
-    Altitude: 20000
-    VS: 0
-    VS_nx: 0
-    Speed: 0
-    Speed_nx: 15
-  - point: 62
-    mode: 2
     Altitude: 7000
     VS: 0
     VS_nx: 0
-    Speed: 0
-    Speed_nx: 0
-  - point: 4
-    mode: 1
-    Altitude: 0
-    VS: 0
-    VS_nx: 0
-    Speed: 0
-    Speed_nx: 0
-  - point: 5
-    mode: 0
-    Altitude: 0
-    VS: 0
-    VS_nx: 0
     Speed: 250
-    Speed_nx: 0
-  - point: 6
-    mode: 0
-    Altitude: 0
+    Speed_nx: 5
+  - point: 57
+    mode: 2
+    Altitude: 5000
     VS: 0
     VS_nx: 0
     Speed: 0
     Speed_nx: 0
-  - point: 63
+  - point: 58
     mode: 2
-    Altitude: 6000
+    Altitude: 0
     VS: 0
     VS_nx: 0
     Speed: 230
-    Speed_nx: 2
-  - point: 8
+    Speed_nx: 0
+  - point: 63
+    mode: 2
+    Altitude: 4000
+    VS: 0
+    VS_nx: 0
+    Speed: 180
+    Speed_nx: 0
+  - point: 13
     mode: 1
+    Altitude: 3000
+    VS: 0
+    VS_nx: 3
+    Speed: 160
+    Speed_nx: 0
+  - point: 14
+    mode: 0
+    Altitude: 0
+    VS: 0
+    VS_nx: 0
+    Speed: 148
+    Speed_nx: 0
+  - point: 15
+    mode: 0
     Altitude: 0
     VS: 0
     VS_nx: 0
     Speed: 0
     Speed_nx: 0
-  - point: 9
+  - point: 16
     mode: 0
     Altitude: 0
     VS: 0
     VS_nx: 0
-    Speed: 210
+    Speed: 0
     Speed_nx: 0
-  - point: 10
+  - point: 1
     mode: 0
     Altitude: 0
     VS: 0
-    VS_nx: 4
+    VS_nx: 0
     Speed: 0
     Speed_nx: 0
   - point: 11
@@ -92,7 +92,7 @@ MonoBehaviour:
     Speed_nx: 0
   - point: 12
     mode: 0
-    Altitude: 3000
+    Altitude: 0
     VS: 0
     VS_nx: 3
     Speed: 180

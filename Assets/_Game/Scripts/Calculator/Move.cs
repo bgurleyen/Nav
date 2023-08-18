@@ -3,6 +3,7 @@ using Gamelogic.Extensions;
 using Navigation;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEditor;
 
 [System.Serializable]
 public class Move : Singleton<Move>
@@ -28,7 +29,7 @@ public class Move : Singleton<Move>
     private Vector2[] TempPtsPos = new Vector2[100];
     private long ATCAltitude, OncekiAlt;
     private int ATCVS, ATCSpeed;
-    private bool isDescentChecked, isSpeedChecked;
+    private bool isDescentChecked, isSpeedChecked,isRouteChecked;
     private int modD = 0, modS = 0;
     private int RawSpeed = 0;
     private int AltAbove, AltBelow, AltExact;
@@ -36,7 +37,7 @@ public class Move : Singleton<Move>
 
     private LevelDataScriptableObject _currentLevelData;
     private OtherAC[] _otherACs;
-
+    float DistanceToPoint;
 
     float PrvTrackToPoint = 0, hyp;
     int prvWptIdx = -1;
@@ -111,7 +112,11 @@ public class Move : Singleton<Move>
 
    
     }
-
+    void SlowDown()
+    {
+        Session.State.Speed10X.Set(false);
+        Session.Settings.SpeedMultiplier = 1;
+    }
     private string TurnDirection(float newHdg)
     {
 
@@ -162,7 +167,7 @@ public class Move : Singleton<Move>
         return Angle;
     }
 
-    private float TrackToPointFactored(int pt)
+    private int TrackToPointFactored(int pt)
     {
 
         float x1 = Session.PlayerAircraft.NMPosition.x;
@@ -171,9 +176,9 @@ public class Move : Singleton<Move>
         float Track = Calculator.CTrack*Mathf.Deg2Rad;
 
 
-        float TurnRadius = 2.4f;
-
+        float TurnRadius = 1.6f * Calculator.GS/280;
         
+
         int Sign = Mathf.DeltaAngle(Calculator.CTrack, TrackToPoint(pt)) >= 0 ? 1 : -1;
 
         float H = TurnRadius * (1 - Mathf.Cos(alfa)); //Horizantal
@@ -181,12 +186,9 @@ public class Move : Singleton<Move>
         float x2 = x1 + Sign * (H * Mathf.Cos(Track) + V * Mathf.Sin(Track));
         float y2 = y1 + Sign * (V * Mathf.Cos(Track) - H * Mathf.Sin(Track));
 
-        //   var TurnPoint = GameObject.Find("pt (60)");  //use pt 60 to show turnpoint
-        //   Vector2 Pos = new Vector2(x2, y2);
-        //   TurnPoint.transform.localPosition = Pos ;
 
         Calculator.WindElements WE = Calculator.CalculateWindElements(Calculator.CAltitude,Calculator.CSpeed, (int)TrackToPoint(x2, y2, pt));
-        return TrackToPoint(x2, y2, pt) + WE.HeadingWindAddition;
+        return (int) (Mathf.Round(TrackToPoint(x2, y2, pt)) + WE.HeadingWindAddition);
     }
 
     public float DME()
@@ -232,22 +234,23 @@ public class Move : Singleton<Move>
     {
         var currentInstruction = _currentLevelData.ATCs[_currentInstructionIndex];
 
+        int oncemode = mode;
+
         point = currentInstruction.point;
-        mode = currentInstruction.mode;
+        mode = (mode ==11) ? 1 : currentInstruction.mode;
         Altitude = currentInstruction.Altitude;
         VS = currentInstruction.VS;
         VS_nx = currentInstruction.VS_nx;
         Speed = currentInstruction.Speed;
         Speed_nx = currentInstruction.Speed_nx;
 
-
-
         hyp = Vector2.Distance(Session.PlayerAircraft.NMPosition, PointPos(point));
 
 
-        if (point < 50 && point > 1) RawSpeed = Session.ActiveRoute.Points[point - 1].RawSpeed;
+        if (point < 50 && point > 1) RawSpeed = Session.OriginalReferenceRoute.Points[point - 1].RawSpeed;
 
-        if (point < 50 && point > 1) RawAlt = (Session.ActiveRoute.Points[point - 1].RawAltitude);
+        if (point < 50 && point > 1) RawAlt = (Session.OriginalReferenceRoute.Points[point - 1].RawAltitude);
+
         DataHandler.ParseAltRegulation(RawAlt, out AltAbove, out AltBelow, out AltExact); // FMS Altitude Limit
 
 
@@ -256,13 +259,12 @@ public class Move : Singleton<Move>
 
         //   Debug.Log(" N:  " + LegsScreen.VisibleRoute.FirstSpeedRegulationNodeId); // Correct this
 
-        Debug.Log("DistanceFromRoute  : " + DistanceFromRoute());
         if (NewPoint)
         {
         
 
             Atc1.text = mode == 1 ? "Proceed direct to  " + Session.OriginalReferenceRoute.Points[point].Name :
-                mode == 2 ? "Turn " + TurnDirection(TrackToPoint(point)) + "Heading " +(int) TrackToPointFactored(point) : "";
+                mode == 2 ? "Turn " + TurnDirection(TrackToPoint(point)) + "Heading " +TrackToPointFactored(point) : "";
 
       
 
@@ -285,10 +287,10 @@ public class Move : Singleton<Move>
 
             XFR1.interactable = mode == 2 ? true : false;
             XFR2.interactable = Altitude > 0 ? true : false;
-            XFR3.interactable = (Speed > 0) && (Speed_nx == 0) ? true : false;
+            XFR3.interactable = (Speed > 0) ? true : false;
 
-            if ((Speed > 0) && (Speed_nx == 0)) XFRSpeed = Speed;
-            if (mode == 2) XFRHdg = (int)TrackToPointFactored(point);
+            if (Speed > 0) XFRSpeed = Speed;
+            if (mode == 2) XFRHdg = TrackToPointFactored(point);
             if (Altitude > 0) XFRAltitude = Altitude;
 
 
@@ -299,11 +301,7 @@ public class Move : Singleton<Move>
 
             NewPoint = false;
 
-            if (mode>0 || XFR2.interactable || XFR3.interactable)
-            {
-                Session.State.Speed10X.Set(false); // Yeni kleransta yavasla
-                Session.Settings.SpeedMultiplier = 1;
-            }
+            if (mode > 0 || XFR2.interactable || XFR3.interactable) SlowDown();
         }
         else // Not New
         {
@@ -323,32 +321,51 @@ public class Move : Singleton<Move>
 
             float x = hyp * Mathf.Cos(Mathf.DeltaAngle(TrackToPoint(point), PrvTrackToPoint) * Mathf.Deg2Rad);
 
-            teta = Mathf.Atan2(DistanceFromRoute()-0.5f,x) * Mathf.Rad2Deg;//noktanin 0.5 nm uzerine aci
+            teta = Mathf.Atan2(DistanceFromRoute()-1.3f,x) * Mathf.Rad2Deg;//noktanin 1.3 nm uzerine aci
 
             //Debug.Log(DistanceFromRoute() + "   Pp: " + Perpend + "  Tp: " + TrackToPoint(point) + 
             //       " prv:" + PrvTrackToPoint + " hyp: " + hyp + " x: " + x + " Pt: " + point);
 
-            
-            if (DistanceFromRoute() > Mathf.Tan(20 * Mathf.Deg2Rad) * x + 0.5) //Warning   (20 degrees koni)
-
-
+            if (DistanceFromRoute() > Mathf.Tan(20 * Mathf.Deg2Rad) * x + 1.3) //(20 degrees koni) Warning 
             {
 
-                if (Mathf.Abs(Mathf.DeltaAngle(Calculator.RTrack, Perpend)) >= 90-teta) // Hdg rota tracki ve +-70 arasinda
+                if (Mathf.Abs(Mathf.DeltaAngle(Calculator.RTrack, Perpend)) >= 90 - teta) // Hdg rota tracki ve +-70 arasinda
                 {
-                    //Time.timeScale = 0;  //Stop at Borders
-                }
+                    SlowDown();
+                    Time.timeScale = 0;  //Stop at Borders
+                    Atc1.color = Color.red;
 
-                if (mode == 2)
-                {
-                      Atc1.text = "Turn " + TurnDirection(TrackToPoint(point)) + "Heading " +
-                                  (int)TrackToPointFactored(point);
-                     Atc1.color = Color.red;
+                    int FactoredAngleToPoint = TrackToPointFactored(point);
+                    int FactoredAngleDifference = Mathf.Abs((int)Mathf.DeltaAngle(Calculator.CTrack, TrackToPointFactored(point)));
+
+                    if (Calculator.RHeading != FactoredAngleToPoint)
+                    {
+                        if (FactoredAngleDifference < 20 * DistanceToPoint)
+
+                        {
+                            string WarningString = mode < 2 ? " Proceed Direct to " + Session.OriginalReferenceRoute.Points[point].Name
+                                                            : "Fly Heading " + FactoredAngleToPoint;
+                            EditorUtility.DisplayDialog("PILOT RESPONSE", "Please comply with instructions" + WarningString, "OK");
+                            Calculator.RHeading = FactoredAngleToPoint;
+                        }
+                        else
+                        {
+                            EditorUtility.DisplayDialog("PILOT RESPONSE ,FUEL PENALTY!! ",
+                                                        "An instruction was missed, follow the new clearance with 100kg fuel penalty ", "OK");
+                            if (mode < 2) mode = 11;//if next mode zero 
+
+                            Calculator.RHeading = TrackToPointFactored(_currentLevelData.ATCs[_currentInstructionIndex + 1].point);
+                            MoveOnNextInstruction();
+
+                            FuelPenalty += 0.01; //100 kg FuelPenalty for shortcut
+                        }
+
+                    }
                 }
 
             }
-            else Atc1.color = Color.white;
-
+        //    else  Atc1.color = Color.white;
+         
         }
 
         if ((Altitude > 0) && (Altitude != ATCAltitude)) //Descent clr changed
@@ -381,9 +398,6 @@ public class Move : Singleton<Move>
 
         if (Speed == -1) CancelInvoke(nameof(SpeedCheck));
 
-
-
-
     }
 
     public void CheckAirplaneMove()
@@ -403,23 +417,24 @@ public class Move : Singleton<Move>
 
             OncekiPos = Session.PlayerAircraft.NMPosition;
             OncekiAlt = (int)Calculator.CAltitude;
-            myAC.transform.localPosition =
-                Session.PlayerAircraft.NMPosition; //move AC on EditMap
+            myAC.transform.localPosition = Session.PlayerAircraft.NMPosition; //move AC on EditMap
 
-            float V = Vector2.Distance(Session.PlayerAircraft.NMPosition, PointPos(point));
+             DistanceToPoint = Vector2.Distance(Session.PlayerAircraft.NMPosition, PointPos(point));
 
-            // Debug.Log(" V :" + V + "prv" + prvWptIdx + " P :" + point);
-
-            if ((point != prvWptIdx) && ((V < NextInstructionDistance)))  // next instruction NextInstructionDistance nm before next pt
+            if ((point != prvWptIdx) && ((DistanceToPoint < NextInstructionDistance)))  // next instruction NextInstructionDistance nm before next pt
             {
-                _currentInstructionIndex += 1;
-                NewPoint = true;
-
-                ATCAltitude = VS;
-                myAC.GetComponent<UnityEngine.UI.Text>().text = "#";
-                prvWptIdx = point;
+                MoveOnNextInstruction();
             }
         }
+    }
+
+    void MoveOnNextInstruction()
+    {
+        _currentInstructionIndex += 1;
+        NewPoint = true;
+        ATCAltitude = VS;
+        myAC.GetComponent<UnityEngine.UI.Text>().text = "#";
+        prvWptIdx = point;
     }
     public float LocDeviation(float course)
     {
@@ -442,14 +457,14 @@ public class Move : Singleton<Move>
     public  float GsDeviation(float GS)
     {
         float DescentAngle = Mathf.Atan2((float)Calculator.CAltitude, DME() * 6076.12f) * Mathf.Rad2Deg;
-        float Deviation = -Mathf.DeltaAngle(GS, DescentAngle);
+        float Deviation = Mathf.DeltaAngle(GS, DescentAngle);
 
-
+        if (Session.State.GSCaptured) Deviation = 0;
 
         if ((Mathf.Abs(LocDeviation(272)) < 5) && (DME() < 20))
         {
             GSIndex.enabled = true;
-            GSIndex.transform.localPosition = new Vector2(1373, Mathf.Clamp(Deviation * 1500, -541, 541));
+            GSIndex.transform.localPosition = new Vector2(1373, Mathf.Clamp(-Deviation * 1500, -541, 541));
         }
         else
         {
