@@ -80,7 +80,21 @@ namespace Navigation
             return Points[lineIndex].CartesianPosition;
         }
 
-       
+        public bool GetPointByName(string pointName, out RoutePoint point)
+        {
+            for (int i = 0; i < Points.Length; i++)
+            {
+                var p = Points[i];
+                if (p.Name == pointName)
+                {
+                    point = p;
+                    return true;
+                }
+            }
+
+            point = null;
+            return false;
+        }
 
         public bool GetPoint(int nodeId, out RoutePoint point)
         {

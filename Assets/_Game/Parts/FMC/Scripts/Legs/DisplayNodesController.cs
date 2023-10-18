@@ -166,4 +166,15 @@ public class NodeSelection
     internal bool IsPlanCenter;
 
     public bool IsInvalid => LinkedId <= 0;
+    
+}
+
+public static class NodeSelectionExtensions
+{
+    public static RoutePoint GetRouteNode(this NodeSelection selectionInfo)
+    {
+          return selectionInfo == null ? null : 
+                Session.VisibleRoute.GetPoint(selectionInfo.LinkedId, out var node) ? node : null;
+    }
+    
 }

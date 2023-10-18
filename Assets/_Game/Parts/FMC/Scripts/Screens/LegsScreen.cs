@@ -14,13 +14,6 @@ public class LegsScreen : ScreenBase
     
     private int NodesPerPage => nodes.Length;
 
-    private RoutePoint GetSelectedPoint => _selectionInfo == null ? null : 
-        Session.VisibleRoute.GetPoint(_selectionInfo.LinkedId, out var node) ? node : null;
-
-    private RoutePoint LastSelectedPoint =>
-        _lastSelectionClicked == null ? null :
-        Session.VisibleRoute.GetPoint(_lastSelectionClicked.LinkedId, out var node) ? node : null;
-    
     private int TotalPages =>
         Mathf.CeilToInt((Session.VisibleRoute.Points.Length - PositionVirtualNode.NextNodeIndex + _nodesController.TotalPagesCorrection) /
                         (float) NodesPerPage);
@@ -151,17 +144,22 @@ public class LegsScreen : ScreenBase
     public override void OnLineSelectLeft(int index)
     {
         var clickedInfo = _nodesController.GetNodeInfoAtLineIndex(index, _currentPage);
+        var clickedNode = clickedInfo.GetRouteNode();
+        if (clickedNode == null)
+        {
+            return;
+        }
         _lastSelectionClicked = clickedInfo;
         // user clicks, none is previously selected
-        if (GetSelectedPoint == null)
+        if (NodeSelectionExtensions.GetRouteNode(_selectionInfo) == null)
         {
-            // parse if user input a name of a point letter by letter
-            if (IsNodeName(_scratchPadBuffer, out var lineIndex, out var linkedSelection))
+            // parse if user inputs a name of a point letter by letter
+            if (IsFutureNodeName(_scratchPadBuffer, out var lineIndex, out var typedInfo))
             {
                 Debug.Log("=written selection text=");
-                _selectionInfo = linkedSelection;
-                _scratchPadBuffer = GetSelectedPoint.Name;
-                GetSelectedPoint.IsSelected = true;
+                _selectionInfo = typedInfo;
+                _scratchPadBuffer = typedInfo.GetRouteNode().Name;
+                typedInfo.GetRouteNode().IsSelected = true;
                 UpdateScratchPad(_scratchPadBuffer);
                 InterpretScratchpadOnTextChanged(false);
                 // continue with second selection as this user press
@@ -170,15 +168,15 @@ public class LegsScreen : ScreenBase
             {
                 Debug.Log("=selection text=");
                 _selectionInfo = clickedInfo;
-                _scratchPadBuffer = GetSelectedPoint.Name;
-                GetSelectedPoint.IsSelected = true;
+                _scratchPadBuffer = clickedNode.Name;
+                clickedNode.IsSelected = true;
                 UpdateScratchPad(_scratchPadBuffer);
                 InterpretScratchpadOnTextChanged(false);
                 return;
             }
         }
 
-        GetSelectedPoint.IsSelected = false;
+        _selectionInfo.GetRouteNode().IsSelected = false;
 
         if (!string.IsNullOrEmpty(_scratchPadBuffer) &&
             _scratchPadInterpreter.IsRelativeNodeOnDirection(out var distanceOnDirection, out var relativeNodeId))
@@ -244,10 +242,10 @@ public class LegsScreen : ScreenBase
                 return;
             }
 
-            if (LastSelectedPoint is { IsModified: true } &&
+            if (_lastSelectionClicked.GetRouteNode() is { IsModified: true } &&
                 _scratchPadInterpreter.IsLinearApproach(out var angle))
             {
-                Debug.Log("=linear approach= on " + LastSelectedPoint.Name + " with: " + angle);
+                Debug.Log("=linear approach= on " + _lastSelectionClicked.GetRouteNode().Name + " with: " + angle);
                 _simulation.ExecuteLinearApproachOnMod(new ExecuteAddLinearApproachCommand
                     { ToNodeId = _lastSelectionClicked.LinkedId, Angle = angle });
             }
@@ -404,11 +402,11 @@ public class LegsScreen : ScreenBase
             Node = null
         };
 
-        if (GetSelectedPoint != null || _lastSelectionClicked != null)
+        if (NodeSelectionExtensions.GetRouteNode(_selectionInfo) != null || _lastSelectionClicked != null)
         {
-            if (handleSelection && GetSelectedPoint != null)
+            if (handleSelection && NodeSelectionExtensions.GetRouteNode(_selectionInfo) != null)
             {
-                GetSelectedPoint.IsSelected = false;
+                _selectionInfo.GetRouteNode().IsSelected = false;
             }
 
             if (_scratchPadBuffer.Contains('/'))
@@ -481,7 +479,7 @@ public class LegsScreen : ScreenBase
                         IsStartingPoint = false
                     };
 
-                    GetSelectedPoint.IsSelected = true;
+                    _selectionInfo.GetRouteNode().IsSelected = true;
                 }
             }
             else
@@ -545,31 +543,45 @@ public class LegsScreen : ScreenBase
         }
     }
 
-    private bool IsNodeName(string text, out int lineIndex, out NodeSelection linkedSelection)
+    private bool IsFutureNodeName(string text, out int lineIndex, out NodeSelection linkedSelection)
     {
         lineIndex = -1;
         linkedSelection = null;
-        
-        for (var i = 0; i < nodes.Length; i++)
+        for (int page = _currentPage; page < TotalPages; page++)
         {
-            linkedSelection = _nodesController.GetNodeInfoAtLineIndex(i, _currentPage);
+            for (var i = 0; i < nodes.Length; i++)
+            {
+                linkedSelection = _nodesController.GetNodeInfoAtLineIndex(i, page);
 
-            if (linkedSelection.IsInvalid || linkedSelection.IsEmpty)
-            {
-                nodes[i].ShowEmpty();
-            }
-            else
-            {
-                Session.VisibleRoute.GetPoint(linkedSelection.LinkedId, out var node);
-                if (node.Name == text)
+                if (!linkedSelection.IsInvalid && !linkedSelection.IsEmpty)
                 {
-                    lineIndex = i;
-                    return true;
+                    Session.VisibleRoute.GetPoint(linkedSelection.LinkedId, out var node);
+                    if (node.Name == text)
+                    {
+                        lineIndex = i;
+                        return true;
+                    }
+                }
+                else
+                {
+                    //nodes[i].ShowEmpty();
                 }
             }
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// If the text represents a node in the original path route, which is not visible on screen anymore
+    /// </summary>
+    /// <param name="text"></param>
+    /// <param name="lineIndex"></param>
+    /// <param name="linkedSelection"></param>
+    /// <returns></returns>
+    private bool IsPassedOriginalNodeName(string text, out RoutePoint originalNodeInfo)
+    {
+        return Session.OriginalReferenceRoute.GetPointByName(text, out originalNodeInfo);
     }
 
     private void ClearCurrentOperation()
