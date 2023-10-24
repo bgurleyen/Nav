@@ -145,6 +145,9 @@ namespace Navigation
                     case ExecuteAddLinearApproachCommand approachCommand:
                         ExecuteLinearApproachOnMod(approachCommand);
                         break;
+                    case ExecuteOriginalInsertOnModCommand approachCommand:
+                        ExecuteInsertOriginalOnMod(approachCommand);
+                        break;
                 }
             }
         }
@@ -156,7 +159,7 @@ namespace Navigation
 
             _legsScreen.DisplayOperation("ERASE");
 
-            Session.ModRoute.GetPoint(command.NodeId, out var node);
+            Session.ModRoute.GetPoint(command.NodeId, out var node, out _);
             node.RawAltitude = "";
             node.RawSpeed = 0;
 
@@ -169,7 +172,7 @@ namespace Navigation
             _cachedCommands.Add(command);
 
             _legsScreen.DisplayOperation("ERASE");
-            Session.ModRoute.GetPoint(command.NodeId, out var node);
+            Session.ModRoute.GetPoint(command.NodeId, out var node, out _);
             node.RawSpeed = command.Regulation;
             node.IsSpeedModified = true;
             DataHandler.BuildSetDetails(Session.ModRoute);
@@ -183,7 +186,7 @@ namespace Navigation
             _cachedCommands.Add(command);
 
             _legsScreen.DisplayOperation("ERASE");
-            Session.ModRoute.GetPoint(command.NodeId, out var node);
+            Session.ModRoute.GetPoint(command.NodeId, out var node, out _);
             //maybe move this to route class to also do some tests?
             node.RawAltitude = command.Regulation;
             node.IsAltitudeModified = true;
@@ -197,7 +200,7 @@ namespace Navigation
             CheckModForOperation();
             _cachedCommands.Add(command);
 
-            Session.ModRoute.GetPoint(command.FromNodeId, out var node);
+            Session.ModRoute.GetPoint(command.FromNodeId, out var node, out _);
             _legsScreen.DisplayOperation("ERASE", ToDegreesDisplay(node.RawDegrees));
             Session.ModRoute.ShortcutNodes(command.FromNodeId, command.ToNodeId, out var _);
             DataHandler.BuildSetDetails(Session.ModRoute);
@@ -224,6 +227,19 @@ namespace Navigation
             OnOperationMade?.Invoke();
         }
 
+        public void ExecuteInsertOriginalOnMod(ExecuteOriginalInsertOnModCommand command)
+        {
+            Debug.Log("=execute insert original on MOD=");
+            CheckModForOperation();
+            _cachedCommands.Add(command);
+            
+            Session.ModRoute.AddDirectToCartesianNodeBefore(command.OriginalRouteNodeId, command.OnTopNodeId);
+            
+            DataHandler.BuildSetDetails(Session.ModRoute);
+            _legsScreen.DisplayOperation(MainScreen.Keywords.ERASE);
+            
+            OnOperationMade?.Invoke();
+        }
 
         public void ExecuteInsertRelativeOnMod(InsertRelativeCommand command)
         {

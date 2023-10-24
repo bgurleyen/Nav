@@ -45,6 +45,12 @@ public struct ExecuteRelativeOnDirectionOnMod : ICommand
     public int RelativeNodeId;
 }
 
+public struct ExecuteOriginalInsertOnModCommand : ICommand
+{
+    public int OriginalRouteNodeId;
+    public int OnTopNodeId;
+}
+
 public struct ExecuteShortcutOnModeCommand : ICommand
 {
     public int FromNodeId;

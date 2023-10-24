@@ -149,7 +149,7 @@ public class DisplayNodesController
         var page = PlanCenterNodeIndex / _nodesPerPage;
         var line = PlanCenterNodeIndex % _nodesPerPage;
         
-        if (Session.ActiveRoute.GetPoint(GetNodeInfoAtLineIndex(line, page).LinkedId, out var point))
+        if (Session.ActiveRoute.GetPoint(GetNodeInfoAtLineIndex(line, page).LinkedId, out var point, out _))
         {
             Session.CenteredPosition = point.CartesianPosition;
         }
@@ -174,7 +174,7 @@ public static class NodeSelectionExtensions
     public static RoutePoint GetRouteNode(this NodeSelection selectionInfo)
     {
           return selectionInfo == null ? null : 
-                Session.VisibleRoute.GetPoint(selectionInfo.LinkedId, out var node) ? node : null;
+                Session.VisibleRoute.GetPoint(selectionInfo.LinkedId, out var node, out _) ? node : null;
     }
     
 }

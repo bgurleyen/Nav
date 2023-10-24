@@ -482,7 +482,7 @@ public class Move : Singleton<Move>
 
         // todo birol : there is another variable RawAlt in the begining of this class - should they be the same ?
         var rawAlt = "0";
-        if (Session.ActiveRoute.GetPoint(Session.VisibleRoute.FirstAltRegulationNodeId, out var altRegulationNode))
+        if (Session.ActiveRoute.GetPoint(Session.VisibleRoute.FirstAltRegulationNodeId, out var altRegulationNode, out _))
         {
             rawAlt = altRegulationNode.RawAltitude;
         }

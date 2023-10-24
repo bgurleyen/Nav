@@ -96,9 +96,9 @@ namespace Navigation
             return false;
         }
 
-        public bool GetPoint(int nodeId, out RoutePoint point)
+        public bool GetPoint(int nodeId, out RoutePoint point, out int index)
         {
-            Points.GetNodeIndex(nodeId, out var index);
+            Points.GetNodeIndex(nodeId, out index);
             return GetPointAt(index, out point);
         }
 
@@ -366,6 +366,27 @@ namespace Navigation
             Points = newSet;
         }
 
+        public void AddDirectToCartesianNodeBefore(int originalRouteNodeId, int nextNodeId)
+        {
+            Session.OriginalReferenceRoute.GetPoint(originalRouteNodeId, out var originalRoutePoint, out _);
+            GetPoint(nextNodeId, out var modeAfterNode, out var modIndexAfter);
+            GetPointAt(modIndexAfter - 1, out var modNodeBefore);
+
+            // todo to add after discontinuity
+
+            var targetPointToAdd = RoutePoint.ConstructFromPosition(
+                originalRoutePoint.CartesianPosition,
+                modNodeBefore,
+                modeAfterNode,
+                GetNewId(true),
+                "D",
+                originalRoutePoint.Name);
+
+            InsertNodes(modIndexAfter, targetPointToAdd);
+
+            ComputeTrace();
+        }
+
 
         public void AddRelativeNodeBefore(int beforeNodeId, float rawDegrees, int distance, int relativeNodeId,
             out RoutePoint insertionNode,
@@ -387,7 +408,7 @@ namespace Navigation
             var insertionAngle = Geometry.AngleOfPosition(insertPosition, positionBeforeInsertion);
             var insertionDistance = (insertPosition - positionBeforeInsertion).magnitude;
 
-            GetPoint(beforeNodeId, out var nodeAfterInsertion);
+            GetPoint(beforeNodeId, out var nodeAfterInsertion, out _);
 
             insertionNode = new RoutePoint
             {
@@ -587,13 +608,13 @@ namespace Navigation
             }
         }
 
-        private void InsertNodes(int atIndex, params RoutePoint[] nodes)
+        private void InsertNodes(int beforeIndex, params RoutePoint[] nodes)
         {
             var newSet = new RoutePoint[Points.Length + nodes.Length];
             var offset = 0;
             for (var i = 0; i < Points.Length; i++)
             {
-                if (i == atIndex)
+                if (i == beforeIndex)
                 {
                     for (int j = 0; j < nodes.Length; j++)
                     {

@@ -104,7 +104,7 @@ public class LegsScreen : ScreenBase
             }
             else
             {
-                Session.VisibleRoute.GetPoint(linkedSelection.LinkedId, out var _node);
+                Session.VisibleRoute.GetPoint(linkedSelection.LinkedId, out var _node, out _);
                 nodes[i].DisplayNodeDetails(_node, linkedSelection);
             }
         }
@@ -149,12 +149,14 @@ public class LegsScreen : ScreenBase
         {
             return;
         }
+
+        var handled = false;
         _lastSelectionClicked = clickedInfo;
         // user clicks, none is previously selected
         if (NodeSelectionExtensions.GetRouteNode(_selectionInfo) == null)
         {
             // parse if user inputs a name of a point letter by letter
-            if (IsFutureNodeName(_scratchPadBuffer, out var lineIndex, out var typedInfo))
+            if (IsFutureNodeInfo(_scratchPadBuffer, out var lineIndex, out var typedInfo))
             {
                 Debug.Log("=written selection text=");
                 _selectionInfo = typedInfo;
@@ -163,6 +165,24 @@ public class LegsScreen : ScreenBase
                 UpdateScratchPad(_scratchPadBuffer);
                 InterpretScratchpadOnTextChanged(false);
                 // continue with second selection as this user press
+            }
+            else if (IsPassedOriginalNodeName(_scratchPadBuffer, out var originalNode))
+            {
+                Debug.Log("=original route node text=");
+                // we need to insert the node from the original route
+                // to the current mod route and have it displayed as discontinuity
+                // Example:
+                // FMC Shows C D E F G
+                // if u write manually A and put on top (on Top of C)
+                // FMC should show A **■** C D E     (**■** is discontinuity)
+
+                _simulation.ExecuteInsertOriginalOnMod(new ExecuteOriginalInsertOnModCommand
+                {
+                    OriginalRouteNodeId = originalNode.ID,
+                    OnTopNodeId = clickedInfo.LinkedId
+                });
+                
+                handled = true;
             }
             else
             {
@@ -176,41 +196,46 @@ public class LegsScreen : ScreenBase
             }
         }
 
-        _selectionInfo.GetRouteNode().IsSelected = false;
+        if (!handled)
+        {
+            _selectionInfo.GetRouteNode().IsSelected = false;
 
-        if (!string.IsNullOrEmpty(_scratchPadBuffer) &&
-            _scratchPadInterpreter.IsRelativeNodeOnDirection(out var distanceOnDirection, out var relativeNodeId))
-        {
-            _simulation.ExecuteInsertRelativeOnDirectionOnMod(new ExecuteRelativeOnDirectionOnMod
-                { FromNodeId = clickedInfo.LinkedId, Distance = distanceOnDirection, RelativeNodeId = relativeNodeId });
-        }
-        else if (!string.IsNullOrEmpty(_scratchPadBuffer) &&
-                 _scratchPadInterpreter.IsRelativeNode(out var angle, out var distance, out relativeNodeId))
-        {
-            // if this is a relative insert command
-            _simulation.ExecuteInsertRelativeOnMod(new InsertRelativeCommand
+            if (!string.IsNullOrEmpty(_scratchPadBuffer) &&
+                _scratchPadInterpreter.IsRelativeNodeOnDirection(out var distanceOnDirection, out var relativeNodeId))
             {
-                BeforeNodeId = clickedInfo.LinkedId, RawDegrees = angle, Distance = distance,
-                RelativeNodeId = relativeNodeId
-            });
-        }
-        else
-        {
-            Session.VisibleRoute.Points.GetNodeIndex(_selectionInfo.LinkedId, out var selectedIndex);
-            Session.VisibleRoute.Points.GetNodeIndex(clickedInfo.LinkedId, out var clickedIndex);
-
-            // when user clicks on the node below
-            if (selectedIndex < clickedIndex)
-            {
-                Debug.Log("error");
-                ClearCurrentOperation();
-                return;
+                _simulation.ExecuteInsertRelativeOnDirectionOnMod(new ExecuteRelativeOnDirectionOnMod
+                {
+                    FromNodeId = clickedInfo.LinkedId, Distance = distanceOnDirection, RelativeNodeId = relativeNodeId
+                });
             }
+            else if (!string.IsNullOrEmpty(_scratchPadBuffer) &&
+                     _scratchPadInterpreter.IsRelativeNode(out var angle, out var distance, out relativeNodeId))
+            {
+                // if this is a relative insert command
+                _simulation.ExecuteInsertRelativeOnMod(new InsertRelativeCommand
+                {
+                    BeforeNodeId = clickedInfo.LinkedId, RawDegrees = angle, Distance = distance,
+                    RelativeNodeId = relativeNodeId
+                });
+            }
+            else
+            {
+                Session.VisibleRoute.Points.GetNodeIndex(_selectionInfo.LinkedId, out var selectedIndex);
+                Session.VisibleRoute.Points.GetNodeIndex(clickedInfo.LinkedId, out var clickedIndex);
 
-            // if this is a shortcut command
-            Debug.Log("=shortcut=");
-            _simulation.ExecuteShortcutOnMod(new ExecuteShortcutOnModeCommand
-                { FromNodeId = clickedInfo.LinkedId, ToNodeId = _selectionInfo.LinkedId });
+                // when user clicks on the node below
+                if (selectedIndex < clickedIndex)
+                {
+                    Debug.Log("error");
+                    ClearCurrentOperation();
+                    return;
+                }
+
+                // if this is a shortcut command
+                Debug.Log("=shortcut=");
+                _simulation.ExecuteShortcutOnMod(new ExecuteShortcutOnModeCommand
+                    { FromNodeId = clickedInfo.LinkedId, ToNodeId = _selectionInfo.LinkedId });
+            }
         }
 
         ClearCurrentOperation();
@@ -543,7 +568,7 @@ public class LegsScreen : ScreenBase
         }
     }
 
-    private bool IsFutureNodeName(string text, out int lineIndex, out NodeSelection linkedSelection)
+    private bool IsFutureNodeInfo(string text, out int lineIndex, out NodeSelection linkedSelection)
     {
         lineIndex = -1;
         linkedSelection = null;
@@ -555,7 +580,7 @@ public class LegsScreen : ScreenBase
 
                 if (!linkedSelection.IsInvalid && !linkedSelection.IsEmpty)
                 {
-                    Session.VisibleRoute.GetPoint(linkedSelection.LinkedId, out var node);
+                    Session.VisibleRoute.GetPoint(linkedSelection.LinkedId, out var node, out _);
                     if (node.Name == text)
                     {
                         lineIndex = i;
@@ -576,8 +601,6 @@ public class LegsScreen : ScreenBase
     /// If the text represents a node in the original path route, which is not visible on screen anymore
     /// </summary>
     /// <param name="text"></param>
-    /// <param name="lineIndex"></param>
-    /// <param name="linkedSelection"></param>
     /// <returns></returns>
     private bool IsPassedOriginalNodeName(string text, out RoutePoint originalNodeInfo)
     {

@@ -296,7 +296,7 @@ public class Drawer : MonoBehaviour
             var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<LineDrawer>();
             drawer.name = $"{linesType} {point.Name}";
 
-            if (linesType == LinesType.Mod && Session.ActiveRoute.GetPoint(point.ID, out var activePoint))
+            if (linesType == LinesType.Mod && Session.ActiveRoute.GetPoint(point.ID, out var activePoint, out _))
             {
                 if (RoutePoint.HaveSamePosition(activePoint, point))
                 {
