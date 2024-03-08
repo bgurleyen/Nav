@@ -25,7 +25,7 @@ public class PFD_Animation : MonoBehaviour
     private float AttInc;
     private int maxFlapSpeedPos;
     public static int LimitSpeed;
-
+    public int CBank;
     public void Start()
     {
         upSpeed.transform.localPosition = new Vector2(92, upSpeedVal * 2 - 445);
@@ -122,17 +122,17 @@ public class PFD_Animation : MonoBehaviour
             AltIdx.transform.localPosition = new Vector2(122, (int)((RAltitude - CAltitude) * 0.22) - 1);
         }
     } //Locate the Altitude Selection index
-    public void AttRight_Click()
-    {
-        Att.transform.Rotate(0, 0, 1);
-        TopIndex.transform.Rotate(0, 0, 1);
 
-
-    }
-    public void AttLeft_Click()
+    public void PFD_Bank(int RBank)
     {
-        Att.transform.Rotate(0, 0, -1);
-        TopIndex.transform.Rotate(0, 0, -1);
+        int Step = RBank > CBank ? 1 : RBank < CBank ? -1 : 0;
+
+        if (Step != 0)
+        {
+            CBank += Step;
+            Att.transform.Rotate(0, 0, Step);
+            TopIndex.transform.Rotate(0, 0, Step);
+        }
     }
     public void AttUpdate(int Att)
     {
