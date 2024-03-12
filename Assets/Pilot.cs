@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using UnityEngine;
 
 namespace Navigation
@@ -33,7 +32,6 @@ namespace Navigation
                     Session.Settings.TickFlyingRotationDelayMultiplier);
 
                 CachedDisplayLastAngleDiff = -Geometry.AngleDelta(DisplayHeadingDegrees, HeadingDegrees);
-                Calculator.CachedDisplayLastAngleDiff = (int)CachedDisplayLastAngleDiff;
             }
         }
 

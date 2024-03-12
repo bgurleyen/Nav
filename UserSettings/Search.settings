@@ -1,5 +1,4 @@
 trackSelection = true
-refreshSearchWindowsInPlayMode = false
 fetchPreview = true
 defaultFlags = 0
 keepOpen = false
@@ -8,9 +7,6 @@ onBoardingDoNotAskAgain = true
 showPackageIndexes = false
 showStatusBar = false
 scopes = {
-	"last_search.3BE40471" = ""
-	"OpenInspectorPreview.3BE40471" = "0"
-	"currentGroup.3BE40471" = "all"
 }
 providers = {
 	find = {
@@ -53,11 +49,6 @@ providers = {
 		priority = 210
 		defaultAction = null
 	}
-	profilermarkers = {
-		active = false
-		priority = 100
-		defaultAction = null
-	}
 }
 objectSelectors = {
 }
@@ -67,12 +58,9 @@ searchItemFavorites = [
 ]
 savedSearchesSortOrder = 0
 showSavedSearchPanel = false
-hideTabs = false
 expandedQueries = [
 ]
 queryBuilder = false
 ignoredProperties = "id;name;classname;imagecontentshash"
 helperWidgetCurrentArea = "all"
 disabledIndexers = ""
-minIndexVariations = 2
-findProviderIndexHelper = true

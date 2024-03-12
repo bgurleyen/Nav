@@ -9,13 +9,15 @@ using Unyawn.Utils;
 using System;
 using UnityEditor;
 
-// GW :56.4,ZFW:45,Fuel:12,CI:0,CG:23.3
+//GW :56.4,ZFW:45,Fuel:12,CI:0,CG:23.3
 
 public class Calculator : MonoBehaviour
 {
     public float GlideSlope = 3;// change to dynamic
 
     public static int Level = 0;             // ***  Level
+
+    private Pilot _pilot;
 
     private string result;
     public Text txtRSpeed, txtRAltitude, txtRVS, txtRHeading;
@@ -36,7 +38,7 @@ public class Calculator : MonoBehaviour
     private int RVS;
     public static int RSpeed = (int)CSpeed, RHeading, RAltitude, CVS, CHeading;
 
-    public static int CTrack, Track, RTrack;
+    public static int CTrack, Track , RTrack;
     private double CMach, RMach, VNAV_VS;
     public static float TAS, GS;
     public Toggle co;//Landing Gear ,Speed Brake;
@@ -67,82 +69,82 @@ public class Calculator : MonoBehaviour
 
     private static WindTableScriptableObject CurrentWindTable => Session.CurrentLevel.WindTable;
 
-    private static double[,,] M = new double[9, 4, 4] { //speed,pitch,n1,ff VS-1
-        { {240, 300,9090,240 } , { -700, 100, 4780,95 } , { 200, 600,8690,212 } , { -500, 300, 4620,95 } },
-        { { 280, 200,9200,306 } , { -200, -100, 4640,95 } , { 220, 400,8060,220 } , { -400, 300, 4320,95 } },
-        { { 280, 200,8340,282 } , { -100, -100, 4540,95 } , { 220, 400,7770,222 } , { -300, 300, 4060,95 } },
-        { { 280, 200,8010,282 } , { -900, -100, 4000,95 } , { 220, 400,7520,221 } , { -300, 300, 3710,95 } },
+    private static double[,,] M = new double[9, 4, 4] { //speed,pitch,n1,ff
+        { {240, 300,9090,240 } , { -1700, 100, 4780,95 } , { 200, 600,8690,212 } , { -1500, 300, 4620,95 } },
+        { { 280, 200,9200,306 } , { -2200, -100, 4640,95 } , { 220, 400,8060,220 } , { -1400, 300, 4320,95 } },
+        { { 280, 200,8340,282 } , { -2100, -100, 4540,95 } , { 220, 400,7770,222 } , { -1300, 300, 4060,95 } },
+        { { 280, 200,8010,282 } , { -1900, -100, 4000,95 } , { 220, 400,7520,221 } , { -1300, 300, 3710,95 } },
         //noflaps identical
-        { { 280, 200,7820,282 } , { -800, -100, 3850,95 } , { 220, 400,7180,224 } , { -200, 200, 3530,95 } },
-        { { 280, 200,7510,279 } , { -700, -100, 3700,95 } , { 220, 400,6710,221 } , { -100, 300, 3420,95 } },
-        { { 280, 300,7100,276 } , { -600, -100, 3570,95 } , { 220, 400,6440,222 } , {-100, 300, 3300,95 } },
-        { { 280, 200,6800,275 } , { -500, 0, 3460,95 } , { 220, 500,6080,221 } , { -100, 200, 3200,95 } },
-        { { 280, 200,6530,274 } , { -400, 0, 3340,95 } , { 220, 450,5550,220 } , { -200, 100, 3120,95 } },
+        { { 280, 200,7820,282 } , { -1800, -100, 3850,95 } , { 220, 400,7180,224 } , { -1200, 200, 3530,95 } },
+        { { 280, 200,7510,279 } , { -1700, -100, 3700,95 } , { 220, 400,6710,221 } , { -1100, 300, 3420,95 } },
+        { { 280, 300,7100,276 } , { -1600, -100, 3570,95 } , { 220, 400,6440,222 } , {-1100, 300, 3300,95 } },
+        { { 280, 200,6800,275 } , { -1500, 0, 3460,95 } , { 220, 500,6080,221 } , { -1100, 200, 3200,95 } },
+        { { 280, 200,6530,274 } , { -1400, 0, 3340,95 } , { 220, 450,5550,220 } , { -1200, 100, 3120,95 } },
     };// Main Matrix
 
     private double[,,,] Mf = new double[9, 5, 4, 4] {{
         //noflaps
-        { { 280, 200,7820,282 } , { -800, -100, 3850,95 } , { 220, 400,7180,224 } , { -200, 200, 3530,95 } },
-        { { 280, 200,7510,279 } , { -700, -100, 3700,95 } , { 220, 400,6710,221 } , { -100, 300, 3420,95 } },
-        { { 280, 300,7100,276 } , { -600, -100, 3570,95 } , { 220, 400,6440,222 } , {-100, 300, 3300,95 } },
-        { { 280, 200,6800,275 } , { -500, 0, 3460,95 } , { 220, 500,6080,221 } , { -100, 200, 3200,95 } },
-        { { 280, 200,6530,274 } , { -400, 0, 3340,95 } , { 220, 450,5550,220 } , { -200, 100, 3120,95 } },},
+        { { 280, 200,7820,282 } , { -1800, -100, 3850,95 } , { 220, 400,7180,224 } , { -1200, 200, 3530,95 } },
+        { { 280, 200,7510,279 } , { -1700, -100, 3700,95 } , { 220, 400,6710,221 } , { -1100, 300, 3420,95 } },
+        { { 280, 300,7100,276 } , { -1600, -100, 3570,95 } , { 220, 400,6440,222 } , {-1100, 300, 3300,95 } },
+        { { 280, 200,6800,275 } , { -1500, 0, 3460,95 } , { 220, 500,6080,221 } , { -1100, 200, 3200,95 } },
+        { { 280, 200,6530,274 } , { -1400, 0, 3340,95 } , { 220, 450,5550,220 } , { -1200, 100, 3120,95 } },},
         //f1
         {
-        { { 240, 200,7110,251 }, { -300, 100, 3670,95 } , { 180, 600,6600,236 }, { -100, 400, 3370,95 } },
-        { { 240, 200,7110,251 }, { -300, 100, 3670,95 } , { 180, 600,6600,236 }, { -100, 400, 3370,95 } },
-        { { 240, 200,6700,247 }, { -300, 100, 3350,95 } , { 180, 500,6220,227 }, {-100, 400, 3250,95 } },
-        { { 240, 200,6420,244 }, { -300, 0, 3240,95 } , { 180, 600,5990,231 }, { -100, 400, 3150,95 } },
-        { { 240, 200,6150,244 }, { -300, 0, 3140,95 } , { 180, 400,5640,236 }, { -100, 400, 3060,95 } }},
+        { { 240, 200,7110,251 }, { -1300, 100, 3670,95 } , { 180, 600,6600,236 }, { -1100, 400, 3370,95 } },
+        { { 240, 200,7110,251 }, { -1300, 100, 3670,95 } , { 180, 600,6600,236 }, { -1100, 400, 3370,95 } },
+        { { 240, 200,6700,247 }, { -1300, 100, 3350,95 } , { 180, 500,6220,227 }, {-1100, 400, 3250,95 } },
+        { { 240, 200,6420,244 }, { -1300, 0, 3240,95 } , { 180, 600,5990,231 }, { -1100, 400, 3150,95 } },
+        { { 240, 200,6150,244 }, { -1300, 0, 3140,95 } , { 180, 400,5640,236 }, { -1100, 400, 3060,95 } }},
         //f2
         {
-        { { 240, 100,7250,268 }, { -500, 0, 3670,95 } , { 180, 500,6580,234 }, { -1200, 300, 3370,95 } },
-        { { 240, 100,7250,268 }, { -500, 0, 3670,95 } , { 180, 500,6580,234 }, { -1200, 300, 3370,95 } },
-        { { 240, 100,6800,266 }, { -500, 0, 3350,95 } , { 180, 400,6340,242 }, {-1200, 300, 3250,95 } },
-        { { 240, 100,6540,268 }, { -500, 0, 3240,95 } , { 180, 400,5970,229 }, { -1200,300, 3150,95 } },
-        { { 240, 100,6270,265 }, { -500, 0, 3140,95 } , { 180, 150,5630,233 }, { -1200, 300, 3060,95 } } },
+        { { 240, 100,7250,268 }, { -1500, 0, 3670,95 } , { 180, 500,6580,234 }, { -1200, 300, 3370,95 } },
+        { { 240, 100,7250,268 }, { -1500, 0, 3670,95 } , { 180, 500,6580,234 }, { -1200, 300, 3370,95 } },
+        { { 240, 100,6800,266 }, { -1500, 0, 3350,95 } , { 180, 400,6340,242 }, {-1200, 300, 3250,95 } },
+        { { 240, 100,6540,268 }, { -1500, 0, 3240,95 } , { 180, 400,5970,229 }, { -1200,300, 3150,95 } },
+        { { 240, 100,6270,265 }, { -1500, 0, 3140,95 } , { 180, 150,5630,233 }, { -1200, 300, 3060,95 } } },
         //f5
         {
-        { { 240, 0,7610,319 }, { -700, 0, 3670,95 } , { 180, 400,6850,267 }, { -300, 300, 3370,95 } },
-        { { 240, 0,7610,319 }, { -700, 0, 3670,95 } , { 180, 400,6850,267 }, { -300, 300, 3370,95 } },
-        { { 240, 0,7140,311 }, { -700, -100, 3350,95 } , { 180, 400,6480,264 }, {-300, 250, 3250,95 }},
-        { { 240, 0,6760,310 }, { -700, -100, 3240,95 } , { 180, 400,6190,260 }, { -300,250, 3150,95 }},
-        { { 240, 0,6600,314 }, { -700, -100, 3140,95 } , { 180, 400,5920,255 }, { -300, 250, 3060,95 } } },
+        { { 240, 0,7610,319 }, { -1700, 0, 3670,95 } , { 180, 400,6850,267 }, { -1300, 300, 3370,95 } },
+        { { 240, 0,7610,319 }, { -1700, 0, 3670,95 } , { 180, 400,6850,267 }, { -1300, 300, 3370,95 } },
+        { { 240, 0,7140,311 }, { -1700, -100, 3350,95 } , { 180, 400,6480,264 }, {-1300, 250, 3250,95 }},
+        { { 240, 0,6760,310 }, { -1700, -100, 3240,95 } , { 180, 400,6190,260 }, { -1300,250, 3150,95 }},
+        { { 240, 0,6600,314 }, { -1700, -100, 3140,95 } , { 180, 400,5920,255 }, { -1300, 250, 3060,95 } } },
         //f10
         {
-        { { 200, 200,7500,329 }, { -700, 0, 3670,95 } , { 160, 500,7210,315 }, { -400, 400, 3370,95 } },
-        { { 200, 200,7500,329 }, { -700, 0, 3670,95 } , { 160, 500,7210,315 }, { -400, 400, 3370,95 } },
-        { { 200, 200,7010,327 }, { -700, 0, 3350,95 } , { 160, 500,6480,312 }, {-400, 250, 3250,95 }},
-        { { 200, 200,6650,326 }, { -700, 0, 3240,95 } , { 160, 500,6190,334 }, { -400,250, 3150,95 }},
-        { { 200, 200,6510,334 }, { -700, 0, 3140,95 } , { 160, 600,5920,318 }, { -400, 250, 3060,95 }}},
+        { { 200, 200,7500,329 }, { -1700, 0, 3670,95 } , { 160, 500,7210,315 }, { -1400, 400, 3370,95 } },
+        { { 200, 200,7500,329 }, { -1700, 0, 3670,95 } , { 160, 500,7210,315 }, { -1400, 400, 3370,95 } },
+        { { 200, 200,7010,327 }, { -1700, 0, 3350,95 } , { 160, 500,6480,312 }, {-1400, 250, 3250,95 }},
+        { { 200, 200,6650,326 }, { -1700, 0, 3240,95 } , { 160, 500,6190,334 }, { -1400,250, 3150,95 }},
+        { { 200, 200,6510,334 }, { -1700, 0, 3140,95 } , { 160, 600,5920,318 }, { -1400, 250, 3060,95 }}},
         //f15
         {
-        { { 190, 200,7780,374 }, { -200, 0, 3670,95 } , { 150, 600,7700,351 }, { -900, 500, 3370,95 } },
-        { { 190, 200,7780,374 }, { -200, 0, 3670,95 } , { 150, 600,7700,351 }, { -900, 500, 3370,95 } },
-        { { 190, 200,7260,362 }, { -200, 0, 3350,95 } , { 150, 600,7000,348 }, {-900, 500, 3250,95 }},
-        { { 190, 200,6850,373 }, { -200, 0, 3240,95 } , { 150, 700,6600,355 }, { -900,500, 3150,95 }},
-        { { 190, 200,6600,358 }, { -200, 0, 3140,95 } , { 150, 700,6380,356 }, { -900, 500, 3060,95 }}},
+        { { 190, 200,7780,374 }, { -1200, 0, 3670,95 } , { 150, 600,7700,351 }, { -900, 500, 3370,95 } },
+        { { 190, 200,7780,374 }, { -1200, 0, 3670,95 } , { 150, 600,7700,351 }, { -900, 500, 3370,95 } },
+        { { 190, 200,7260,362 }, { -1200, 0, 3350,95 } , { 150, 600,7000,348 }, {-900, 500, 3250,95 }},
+        { { 190, 200,6850,373 }, { -1200, 0, 3240,95 } , { 150, 700,6600,355 }, { -900,500, 3150,95 }},
+        { { 190, 200,6600,358 }, { -1200, 0, 3140,95 } , { 150, 700,6380,356 }, { -900, 500, 3060,95 }}},
         //f25
         {
-        { { 180, 100,8070,446 }, { -500, -100, 3670,95 } , { 140, 600,7870,413 }, { -200, 500, 3370,95 } },
-        { { 180, 100,8070,446 }, { -500, -100, 3670,95 } , { 140, 600,7870,413 }, { -200, 500, 3370,95 } },
-        { { 180, 100,7810,446 }, { -500, -100, 3350,95 } , { 140, 600,7580,412 }, {-200, 500, 3250,95 }},
-        { { 180, 100,7460,438 }, { -500, -100, 3240,95 } , { 140, 600,6790,403 }, { -200,400, 3150,95 }},
-        { { 180, 100,6950,441 }, { -500, -100, 3140,95 } , { 140, 600,6580,405 }, { -200, 400, 3060,95 }}},
+        { { 180, 100,8070,446 }, { -1500, -100, 3670,95 } , { 140, 600,7870,413 }, { -1200, 500, 3370,95 } },
+        { { 180, 100,8070,446 }, { -1500, -100, 3670,95 } , { 140, 600,7870,413 }, { -1200, 500, 3370,95 } },
+        { { 180, 100,7810,446 }, { -1500, -100, 3350,95 } , { 140, 600,7580,412 }, {-1200, 500, 3250,95 }},
+        { { 180, 100,7460,438 }, { -1500, -100, 3240,95 } , { 140, 600,6790,403 }, { -1200,400, 3150,95 }},
+        { { 180, 100,6950,441 }, { -1500, -100, 3140,95 } , { 140, 600,6580,405 }, { -1200, 400, 3060,95 }}},
         //f30
         {
-        { { 170, -100,8150,469 }, { -700, -200, 3670,95 } , { 130, 600,7940,447 }, { -100, 500, 3370,95 } },
-        { { 170, -100,8150,469 }, { -700, -200, 3670,95 } , { 130, 600,7940,447 }, { -100, 500, 3370,95 } },
-        { { 170, -100,7950,476 }, { -700, -200, 3350,95 } , { 130, 600,7800,455 }, {-100, 400, 3250,95 }},
-        { { 170, -100,7660,475 }, { -700, -200, 3240,95 } , { 130, 600,7170,464 }, { -100,400, 3150,95 }},
-        { { 170, -100,6950,453 }, { -700, -200, 3140,95 } , { 130, 600,6760,455 }, { -100, 400, 3060,95 }}},
+        { { 170, -100,8150,469 }, { -1700, -200, 3670,95 } , { 130, 600,7940,447 }, { -1100, 500, 3370,95 } },
+        { { 170, -100,8150,469 }, { -1700, -200, 3670,95 } , { 130, 600,7940,447 }, { -1100, 500, 3370,95 } },
+        { { 170, -100,7950,476 }, { -1700, -200, 3350,95 } , { 130, 600,7800,455 }, {-1100, 400, 3250,95 }},
+        { { 170, -100,7660,475 }, { -1700, -200, 3240,95 } , { 130, 600,7170,464 }, { -1100,400, 3150,95 }},
+        { { 170, -100,6950,453 }, { -1700, -200, 3140,95 } , { 130, 600,6760,455 }, { -1100, 400, 3060,95 }}},
         //f40
         {
-        { { 160, -0,8410,520 }, { -800, -200, 3670,95 } , { 130, 500,8110,497 }, { -300, 300, 3370,95 } },
-        { { 160, -0,8410,520 }, { -800, -200, 3670,95 } , { 130, 500,8110,497 }, { -300, 300, 3370,95 } },
-        { { 160, -0,8050,509 }, { -800, -200, 3350,95 } , { 130, 500,7920,497 }, {-300, 300, 3250,95 }},
-        { { 160, -0,7940,530 }, { -800, -200, 3240,95 } , { 130, 500,7510,496 }, { -300,300, 3150,95 }},
-        { { 160, -100,7300,508 }, { -800, -200, 3140,95 } , { 130, 500,6920,488 }, { -300, 300, 3060,95 }}}
+        { { 160, -0,8410,520 }, { -1800, -200, 3670,95 } , { 130, 500,8110,497 }, { -1300, 300, 3370,95 } },
+        { { 160, -0,8410,520 }, { -1800, -200, 3670,95 } , { 130, 500,8110,497 }, { -1300, 300, 3370,95 } },
+        { { 160, -0,8050,509 }, { -1800, -200, 3350,95 } , { 130, 500,7920,497 }, {-1300, 300, 3250,95 }},
+        { { 160, -0,7940,530 }, { -1800, -200, 3240,95 } , { 130, 500,7510,496 }, { -1300,300, 3150,95 }},
+        { { 160, -100,7300,508 }, { -1800, -200, 3140,95 } , { 130, 500,6920,488 }, { -1300, 300, 3060,95 }}}
     };
 
     private static float[] Pressure = new float[9]
@@ -152,7 +154,6 @@ public class Calculator : MonoBehaviour
         { 575.34f, 576.22f, 589.2f, 601.77f, 614.1f, 626.27f, 638.17f, 649.13f, 663f }; //40000 to 0
 
     public static Calculator Instance;
-
     public float GetBananaPosition//Edit
     {
         get
@@ -169,24 +170,10 @@ public class Calculator : MonoBehaviour
     {
         Instance = this;
 
+        _pilot = new Pilot(Vector2.zero, Vector2.up, false);
     }
 
-
-
-    public static int CachedDisplayLastAngleDiff;
-
-    public void PFD_Bank()
-    {
-        PFD_Animation PFDScript = FindObjectOfType<PFD_Animation>();
-        int Angle = CachedDisplayLastAngleDiff;
-
-        int Bank = Angle < -3 ? -27 : Angle > 3 ? 27 : 0;
-
-        PFDScript.PFD_Bank(Bank);
-
-        Debug.Log("B  : " + Bank + "  a  : " + Angle);
-
-    }
+    public float HeadingDegrees => _pilot.HeadingDegrees;
 
     private void Start()
     {
@@ -219,15 +206,15 @@ public class Calculator : MonoBehaviour
 
     private IEnumerator ExecuteEachFrameSecond()
     {
-        //GlideSlope = infoFMC.Instance.Fmc.Initref.GlideSlope;
+          //GlideSlope = infoFMC.Instance.Fmc.Initref.GlideSlope;
         while (true)
         {
             CTrack = (int)Session.PlayerAircraft.DisplayHeadingDegrees;
-
+  
             MatchAltitudes();
             SetN1FF();
-            PFD_Bank();
-            yield return new WaitForSeconds(0.1f);
+
+           yield return new WaitForSeconds(0.1f);
         }
 
     }
@@ -244,11 +231,11 @@ public class Calculator : MonoBehaviour
             FlyVerticalPath();
             DisplayWindElements();
             CheckStabilization();
-
+            
             yield return new WaitForSeconds(1);
         }
     }
-
+  
     public void InterpolateVS()
     {
         double Altitude = CAltitude > 39900 ? 39900 : CAltitude;
@@ -257,7 +244,7 @@ public class Calculator : MonoBehaviour
 
         increasedSpeed = 0;
 
-        if (Session.State.VS || Session.State.AH || Session.State.VNAV || Session.State.GSCaptured)
+        if (Session.State.VS || Session.State.AH || Session.State.VNAV ||Session.State.GSCaptured)
         {
             int F = 8 - Mathf.FloorToInt((float)Altitude / 5000);
 
@@ -375,7 +362,7 @@ public class Calculator : MonoBehaviour
         {
             if (CVS != 0)
             {
-                CAltitude += (float)CVS / 60 * Session.Settings.SpeedMultiplier;
+                  CAltitude += (float)CVS / 60* Session.Settings.SpeedMultiplier;
 
                 if ((Mathf.Abs(RAltitude - (int)CAltitude) < 10) && (!Session.State.GSCaptured))
                 {
@@ -405,7 +392,7 @@ public class Calculator : MonoBehaviour
         if (RSpeed > increasedSpeed) RRSpeed = RSpeed; else RRSpeed = increasedSpeed;
 
 
-        PFD_Animation PFDScript = FindObjectOfType<PFD_Animation>();
+        PFD_Animation Script2 = FindObjectOfType<PFD_Animation>();
 
         if (RRSpeed != CSpeed)
         {
@@ -416,8 +403,8 @@ public class Calculator : MonoBehaviour
 
         }
         txtDTG.text = Move.Instance.DME().ToString("F1");
-        PFDScript.SpeedTapeUpdate();
-        PFDScript.SpeedIndexUpdate_Click();
+        Script2.SpeedTapeUpdate();
+        Script2.SpeedIndexUpdate_Click();
 
         int DeltaN1 = N1 - N1For(CAltitude, CVS, CSpeed);
         SpeedTime = (DeltaN1 == 0) ? 1 : (DeltaN1 > 0) ? 2000 / Mathf.Abs((float)DeltaN1) : 5380 / Mathf.Abs((float)DeltaN1);
@@ -425,15 +412,13 @@ public class Calculator : MonoBehaviour
         if (SpeedTime < 0.3) SpeedTime = 0.3f;
         DrawSpeedTrend(SpeedTime);
 
-        Invoke("Speed_Equalize", SpeedTime / Session.Settings.SpeedMultiplier);
+        Invoke("Speed_Equalize", SpeedTime/ Session.Settings.SpeedMultiplier);
     }
     private void SetAttPitch(int P)
     {
-        PFD_Animation PFDScript = FindObjectOfType<PFD_Animation>();
-        PFDScript.AttUpdate((int)P);
+        PFD_Animation Script2 = FindObjectOfType<PFD_Animation>();
+        Script2.AttUpdate((int)P);
     }
-
-
     public void DrawVDI()
     {
         double DeltaAlt, Alt1, Alt0, d, D;
@@ -448,21 +433,21 @@ public class Calculator : MonoBehaviour
         var node0 = _route.Points[PositionVirtualNode.PassedNodeIndex];
         var node1 = _route.Points[PositionVirtualNode.PassedNodeIndex + 1];
 
-        Alt0 = (double)(node0.Altitude.ComputedValue);
+        Alt0 = (double) (node0.Altitude.ComputedValue);
         if (Alt0 == -1) Alt0 = 22000; // first and last nodes missing altitude info
-        Alt1 = (double)(node1.Altitude.ComputedValue);
-        d = Session.PlayerAircraft.ComputedDistanceLeftOnSegment;
-        D = node1.Distance;
+        Alt1 = (double) (node1.Altitude.ComputedValue);
+        d = Session.PlayerAircraft.ComputedDistanceLeftOnSegment;  
+        D  = node1.Distance;
 
         double Target = (int)(Alt1 + (d * (Alt0 - Alt1)) / D);
         if (D == 0) DeltaAlt = 0;
         else DeltaAlt = CAltitude - Target;
-
-        VDI_Text.text = (Mathf.Abs((float)DeltaAlt) >= 50) ? "" + (int)DeltaAlt : "";
+ 
+        VDI_Text.text = (Mathf.Abs((float) DeltaAlt)>=50) ? "" + (int)DeltaAlt : "";
 
         //Debug.Log("Alt0: "  + (int)Alt0 + " Alt1: " + (int)Alt1 + "  d: "+ (int)d + "  D: " + D +  "  DeltaAlt: " +   (int)DeltaAlt + " T: " + Target);
 
-
+     
         posY = -((float)DeltaAlt / 5);
         if (posY > 100) posY = 100;
         if (posY < -100) posY = -100;
@@ -492,11 +477,12 @@ public class Calculator : MonoBehaviour
         if (D == 0) DeltaAlt = 0;
         else DeltaAlt = CAltitude - Target;
 
+       
+
         if (Session.State.GSCaptured)  // GlideSlope Logic
         {
             float DegreeToVS = -6076 * Mathf.Tan(GlideSlope * Mathf.Deg2Rad) * (GS / 60);
             VNAV_VS = DegreeToVS; //- Move.Instance.GsDeviation(GlideSlope)*200 ;
-                                  // VNAV_VS = - Move.Instance.GsDeviation(GlideSlope)*200 ;
             RVS = (int)VNAV_VS;
         }
         else if (Session.State.VNAV)  //VNAV Logic
@@ -515,7 +501,7 @@ public class Calculator : MonoBehaviour
         if (Session.State.LNAV) FMA2.text = "LNAV";
         if (Session.State.LNAVArmed) FMAarmed.text = "LNAV";
 
-
+        
         if (!Session.State.GSCaptured)
         {
             if (Session.State.LC)
@@ -551,7 +537,7 @@ public class Calculator : MonoBehaviour
 
                     if (Mathf.Abs(Move.Instance.GsDeviation(GlideSlope)) < 0.1)
                     {
-                        if (Session.State.VS == true) Session.State.GSCaptured = true;   // remove first part
+                       if (Session.State.VS == true) Session.State.GSCaptured = true;   // remove first part
 
                         FMA1.text = "MCP SPD";
                         FMA3.text = "GS";
@@ -567,9 +553,9 @@ public class Calculator : MonoBehaviour
     }
     private void MatchAltitudes()
     {
-        PFD_Animation PFDScript = FindObjectOfType<PFD_Animation>();
-        PFDScript.AltUpdate((int)CAltitude);
-        PFDScript.CheckAltitudeIndicator(RAltitude, (int)CAltitude);
+        PFD_Animation Script2 = FindObjectOfType<PFD_Animation>();
+        Script2.AltUpdate((int)CAltitude);
+        Script2.CheckAltitudeIndicator(RAltitude, (int)CAltitude);
         if (CAltitude >= 10000) Qnh.text = "STD";
         else Qnh.text = "1013";
     }
@@ -700,8 +686,8 @@ public class Calculator : MonoBehaviour
             Debug.LogError("Assign flapNeedle");
         }
 
-        PFD_Animation PFDScript = FindObjectOfType<PFD_Animation>();
-        PFDScript.Flaps_Indexchange(Flap_Idx);
+        PFD_Animation Script2 = FindObjectOfType<PFD_Animation>();
+        Script2.Flaps_Indexchange(Flap_Idx);
     }
     public void LG_Click()
     {
@@ -850,17 +836,17 @@ public class Calculator : MonoBehaviour
         {
             RHeading += 1;
             if (RHeading > 359) RHeading = 0;
-            if (Mathf.Abs(Mathf.DeltaAngle(RHeading, Move.Perpend)) < 90 - Move.teta)
+            if (Mathf.Abs(Mathf.DeltaAngle(RHeading, Move.Perpend)) < 90-Move.teta)
             {
                 Time.timeScale = 1;
-            }
+            } 
         }
         else
         {
             RHeading -= 1;
             if (RHeading < 0) RHeading = 359;
 
-            if (Mathf.Abs(Mathf.DeltaAngle(RHeading, Move.Perpend)) < 90 - Move.teta)
+            if (Mathf.Abs(Mathf.DeltaAngle(RHeading, Move.Perpend)) < 90-Move.teta)
             {
                 Time.timeScale = 1;
             }
@@ -991,7 +977,7 @@ public class Calculator : MonoBehaviour
         CWind = WE.WindD + "° / " + WE.WindM;
         GS = WE.GS;
         CHeading = CTrack - WE.HeadingWindAddition;
-        //     Debug.Log("CTrack:   " + CTrack + "HdgWingAddition:   " + WE.HeadingWindAddition + "rel:   " + WE.relativeWindD);
+   //     Debug.Log("CTrack:   " + CTrack + "HdgWingAddition:   " + WE.HeadingWindAddition + "rel:   " + WE.relativeWindD);
     }
     public class WindElements
     {
@@ -1034,7 +1020,7 @@ public class Calculator : MonoBehaviour
         WE.GS = (int)(WE.TAS - HeadWind);
         WE.HeadingWindAddition = (int)(Mathf.Atan((float)(CrossWind / WE.GS)) * Mathf.Rad2Deg);
 
-
+       
         return WE;
     }
     public void CheckStabilization()
@@ -1042,21 +1028,21 @@ public class Calculator : MonoBehaviour
         string LF = System.Environment.NewLine;
         if (CAltitude <= 1000)
         {
-            EditorUtility.DisplayDialog("NOT STABLE", "Localizer............ok" + LF +
+            EditorUtility.DisplayDialog("NOT STABLE", "Localizer............ok" + LF+
                                                       "Glide Slope..........ok" + LF +
                                                       "Vertical Speed.......ok" + LF +
                                                       "Speed................ok" + LF +
                                                       "Landing Gear.......Down" + LF +
                                                       "Flaps................30" + LF +
-                                                      "Speed Brake....Extended XXX" + LF, "Exit");
+                                                      "Speed Brake....Extended XXX" + LF , "Exit");
             QuitGame();
         }
     }
     public void QuitGame()
     {
-#if UNITY_EDITOR
+        #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
-#endif
+        #endif
         Application.Quit();
     }
 }
