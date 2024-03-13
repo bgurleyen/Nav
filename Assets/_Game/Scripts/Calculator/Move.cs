@@ -345,13 +345,17 @@ public class Move : Singleton<Move>
                         {
                             string WarningString = mode < 2 ? " Proceed Direct to " + Session.OriginalReferenceRoute.Points[point].Name
                                                             : "Fly Heading " + FactoredAngleToPoint;
+#if UNITY_EDITOR
                             EditorUtility.DisplayDialog("PILOT RESPONSE", "Please comply with instructions" + WarningString, "OK");
+#endif
                             Calculator.RHeading = FactoredAngleToPoint;
                         }
                         else
                         {
+#if UNITY_EDITOR
                             EditorUtility.DisplayDialog("PILOT RESPONSE ,FUEL PENALTY!! ",
                                                         "An instruction was missed, follow the new clearance with 100kg fuel penalty ", "OK");
+#endif
                             if (mode < 2) mode = 11;//if next mode zero 
 
                             Calculator.RHeading = TrackToPointFactored(_currentLevelData.ATCs[_currentInstructionIndex + 1].point);

@@ -1042,6 +1042,7 @@ public class Calculator : MonoBehaviour
         string LF = System.Environment.NewLine;
         if (CAltitude <= 1000)
         {
+#if UNITY_EDITOR
             EditorUtility.DisplayDialog("NOT STABLE", "Localizer............ok" + LF +
                                                       "Glide Slope..........ok" + LF +
                                                       "Vertical Speed.......ok" + LF +
@@ -1049,6 +1050,7 @@ public class Calculator : MonoBehaviour
                                                       "Landing Gear.......Down" + LF +
                                                       "Flaps................30" + LF +
                                                       "Speed Brake....Extended XXX" + LF, "Exit");
+#endif
             QuitGame();
         }
     }
