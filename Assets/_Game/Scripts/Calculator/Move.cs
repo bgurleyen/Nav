@@ -301,7 +301,7 @@ public class Move : Singleton<Move>
 
             NewPoint = false;
 
-            if (mode > 0 || XFR2.interactable || XFR3.interactable) SlowDown();
+           // if (mode > 0 || XFR2.interactable || XFR3.interactable) SlowDown(); Remove//
         }
         else // Not New
         {
@@ -331,8 +331,8 @@ public class Move : Singleton<Move>
 
                 if (Mathf.Abs(Mathf.DeltaAngle(Calculator.RTrack, Perpend)) >= 90 - teta) // Hdg rota tracki ve +-70 arasinda
                 {
-                    SlowDown();
-                    Time.timeScale = 0;  //Stop at Borders
+                    //SlowDown();
+                    //Time.timeScale = 0;  //Stop at Borders
                     Atc1.color = Color.red;
 
                     int FactoredAngleToPoint = TrackToPointFactored(point);
@@ -345,17 +345,13 @@ public class Move : Singleton<Move>
                         {
                             string WarningString = mode < 2 ? " Proceed Direct to " + Session.OriginalReferenceRoute.Points[point].Name
                                                             : "Fly Heading " + FactoredAngleToPoint;
-#if UNITY_EDITOR
-                            EditorUtility.DisplayDialog("PILOT RESPONSE", "Please comply with instructions" + WarningString, "OK");
-#endif
+                          //  EditorUtility.DisplayDialog("PILOT RESPONSE", "Please comply with instructions" + WarningString, "OK");
                             Calculator.RHeading = FactoredAngleToPoint;
                         }
                         else
                         {
-#if UNITY_EDITOR
-                            EditorUtility.DisplayDialog("PILOT RESPONSE ,FUEL PENALTY!! ",
-                                                        "An instruction was missed, follow the new clearance with 100kg fuel penalty ", "OK");
-#endif
+                           // EditorUtility.DisplayDialog("PILOT RESPONSE ,FUEL PENALTY!! ",
+                           //                             "An instruction was missed, follow the new clearance with 100kg fuel penalty ", "OK");
                             if (mode < 2) mode = 11;//if next mode zero 
 
                             Calculator.RHeading = TrackToPointFactored(_currentLevelData.ATCs[_currentInstructionIndex + 1].point);
