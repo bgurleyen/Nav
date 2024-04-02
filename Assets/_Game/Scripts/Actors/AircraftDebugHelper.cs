@@ -26,7 +26,7 @@ public class AircraftDebugHelper : MonoBehaviour
                 if (value < 0)
                     Debug.LogError(string.Format("--------------- m_segmentVertexIndex lesser than 0: given value ", value));
                 if (value > m_segmentVertexIndex && value - m_segmentVertexIndex > 1)
-                    Debug.LogError(string.Format("--------------- m_segmentVertexIndex incremented from {0} to {1}", m_segmentVertexIndex, value));
+                    Debug.LogWarning(string.Format("--------------- m_segmentVertexIndex incremented from {0} to {1}", m_segmentVertexIndex, value));
 #endif
                 m_segmentVertexIndex = value;
             }
