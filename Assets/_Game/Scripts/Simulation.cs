@@ -83,6 +83,45 @@ namespace Navigation
             }
         }
 
+        //[ESA] I splitted the Tick() functionality with prefix "Splitted" to accurately
+        //simulate the steps of the aircraft at 10x speedup enabled while minimizing performance impact.
+        //look at the GameManager.Update() function to see its use.
+        public void SplittedTickModHandling()
+        {
+            if (Session.IsMod && _queueEraseMode)
+            {
+                EraseMod();
+            }
+            _queueEraseMode = false;
+        }
+
+        public void SplittedTickComputeTrace()
+        {
+            if (Session.IsRunning)
+            {
+                Session.ActiveRoute.ComputeTrace();
+                ComputeMod();
+            }
+        }
+
+        public void SplittedTickSimulation()
+        {
+            if (Session.IsRunning)
+            {
+                _playerAircraft.SimulateTick();
+                Move.Instance.Tick();
+            }
+        }
+
+        public void SplittedTickDraw()
+        {
+            if (Session.IsRunning)
+            {
+                _drawer.Clear();
+                _drawer.Display();
+            }
+        }
+
         public void QueueEraseMode()
         {
             _queueEraseMode = true;

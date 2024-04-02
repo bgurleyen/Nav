@@ -67,21 +67,35 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        // normal time calculation, but big computations
-        // _pendingDeltaTime += Time.deltaTime;
-        // var tickDuration = Session.Settings.TickDuration(false) / Session.Settings.SpeedMultiplier;
-        // var ticksInDeltaTime = (int)(_pendingDeltaTime  / tickDuration);
-        // for (int i = 0; i < ticksInDeltaTime; i++)
-        // {
-        //     _simulation.Tick();
-        // }
-        //
-        // _pendingDeltaTime -= ticksInDeltaTime * tickDuration;
+        //// normal time calculation, but big computations
+        //_pendingDeltaTime += Time.deltaTime;
+        //var tickDuration = Session.Settings.TickDuration(false) / Session.Settings.SpeedMultiplier;
+        //var ticksInDeltaTime = (int)(_pendingDeltaTime / tickDuration);
+        //for (int i = 0; i < ticksInDeltaTime; i++)
+        //{
+        //    _simulation.Tick();
+        //}
+        //_pendingDeltaTime -= ticksInDeltaTime * tickDuration; 
 
-        // incorrect, but faster game speed up
-        Session.Settings.FlyingTickDuration =
-            Time.deltaTime * Session.Settings.SpeedMultiplier;
-        _simulation.Tick();
+        //// incorrect, but faster game speed up
+        //Session.Settings.FlyingTickDuration =
+        //    Time.deltaTime * Session.Settings.SpeedMultiplier;
+        //_simulation.Tick();
+
+        //[ESA] High Performance, normal time calculation attempt regarding the solution of the original developer.
+        //I am suspicious that SplittedTickComputeTrace() may be needed to run on demand for some situtations.
+        _pendingDeltaTime += Time.deltaTime;
+        var tickDuration = Session.Settings.TickDuration(false) / Session.Settings.SpeedMultiplier;
+        var ticksInDeltaTime = (int)(_pendingDeltaTime / tickDuration);
+
+        _simulation.SplittedTickModHandling();
+        _simulation.SplittedTickComputeTrace();
+        for (int i = 0; i < ticksInDeltaTime; i++)
+        {
+            _simulation.SplittedTickSimulation();
+        }
+        _simulation.SplittedTickDraw();
+        _pendingDeltaTime -= ticksInDeltaTime * tickDuration;
     }
 
     private void LEGS_OnLeftCornerPressErase()

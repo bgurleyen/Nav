@@ -139,7 +139,7 @@ public class Move : Singleton<Move>
         //int ptCount =  virtualPoints[Level].VirtualPointsItems.Length;
 
         return pt < 50 ? Session.OriginalReferenceRoute.GetCartesianPosition(pt) : VirtualPtsPos[pt - 50];
-     }
+    }
 
 
     private float TrackToPoint(int pt)
