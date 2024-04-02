@@ -27,6 +27,8 @@ public class Aircraft : MovingActor
 
     private RoutePosition _lastFoundRoutePosition = new() { SegmentIndex = 1 };
     private RoutePosition? _pendingJoinRoutePosition = new() { SegmentIndex = 1 };
+
+    private AircraftDebugHelper debugHelper = null;
     
     protected override void Awake()
     {
@@ -35,6 +37,8 @@ public class Aircraft : MovingActor
         _pilot = new Pilot(Vector2.zero, Vector2.up, false);
         
         _turningHeaderLine.positionCount = 10;
+
+        debugHelper = GetComponent<AircraftDebugHelper>();
     }
 
     public override void SimulateTick()
@@ -48,10 +52,17 @@ public class Aircraft : MovingActor
                 Session.Settings.PilotSeekDistancePathFollow,
                 out _lastFoundRoutePosition,
                 out var foundAtDistanceOnSegment,
-                out var reachedEnd,
+                out var reachedEnd, // Must use this to end the route
                 startFromSegmentIndex: _lastFoundRoutePosition.SegmentIndex,
                 startFromVertexIndex: _lastFoundRoutePosition.SegmentVertexIndex,
                 breakOnFistSolution: true);
+
+            if (debugHelper != null)
+            {
+                debugHelper.SegmentVertex = _lastFoundRoutePosition.SegmentVertex;
+                debugHelper.SegmentVertexIndex = _lastFoundRoutePosition.SegmentVertexIndex;
+                debugHelper.SegmentIndex = _lastFoundRoutePosition.SegmentIndex;
+            }
 
             if (!foundClosePathDestination)
             {

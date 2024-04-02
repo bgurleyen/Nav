@@ -1889,6 +1889,27 @@ Animator:
   m_AllowConstantClipSamplingOptimization: 1
   m_KeepAnimatorStateOnDisable: 0
   m_WriteDefaultValuesOnDisable: 0
+--- !u!1 &397459103 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 900472414036762827, guid: b693fc6bec1154ce785478e8e4a8f1eb,
+    type: 3}
+  m_PrefabInstance: {fileID: 664191028613169062}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &397459106
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 397459103}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 665d9f03e55aa1e4b8f2ce15f6e8a26a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  m_segmentVertex: {x: 0, y: 0}
+  m_segmentVertexIndex: 0
+  m_segmentIndex: 0
 --- !u!1 &410199593
 GameObject:
   m_ObjectHideFlags: 0
@@ -3976,7 +3997,7 @@ Light:
   serializedVersion: 10
   m_Type: 1
   m_Shape: 0
-  m_Color: {r: 1, g: 1, b: 1, a: 1}
+  m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
   m_Intensity: 0.38
   m_Range: 10
   m_SpotAngle: 30
@@ -7700,6 +7721,10 @@ PrefabInstance:
         type: 3}
       insertIndex: -1
       addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 900472414036762827, guid: b693fc6bec1154ce785478e8e4a8f1eb,
+        type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 397459106}
   m_SourcePrefab: {fileID: 100100000, guid: b693fc6bec1154ce785478e8e4a8f1eb, type: 3}
 --- !u!1001 &2719986833617758165
 PrefabInstance:
