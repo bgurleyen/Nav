@@ -23,7 +23,7 @@ MonoBehaviour:
   AirplaneDesignSpeed: 170
   SpeedMultiplier: 10
   ForwardThreshold: 1.5
-  PilotSeekDistancePathFollow: 1.2
+  PilotSeekDistancePathFollow: 2
   SegmentGranularity: 0.1
   _tracerTickDuration: 7
   FlyingTickDuration: 1.5713251
