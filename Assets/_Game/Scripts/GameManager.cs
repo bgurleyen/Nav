@@ -84,6 +84,8 @@ public class GameManager : MonoBehaviour
 
         //[ESA] High Performance, normal time calculation attempt regarding the solution of the original developer.
         //I am suspicious that SplittedTickComputeTrace() may be needed to run on demand for some situtations.
+        Session.Settings.FlyingTickDuration = Time.deltaTime * Session.Settings.SpeedMultiplier;
+
         _pendingDeltaTime += Time.deltaTime;
         var tickDuration = Session.Settings.TickDuration(false) / Session.Settings.SpeedMultiplier;
         var ticksInDeltaTime = (int)(_pendingDeltaTime / tickDuration);
