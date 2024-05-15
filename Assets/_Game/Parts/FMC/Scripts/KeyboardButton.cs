@@ -126,3 +126,7 @@ public static class Keys
     public const string Clr = "CLR";
     public const string Sp = "SP";
 }
+
+//Hi, it’s working but, the sequence of the operation is changed. The sequence should be: write waypoint, put to topline  ,
+//the mod will appear ( also white  dashed lines will appear on the map side) . Then u press execute to accept the change.
+//If u check bormal operation, like press first line Elnat will appear at the bottom line then same sequence

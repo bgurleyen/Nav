@@ -52,7 +52,6 @@ public class McpUI : MonoBehaviour
         }
     }
 
-
     public void RefreshHS()
     {
         headingText.text = Calculator.RHeading.ToString();

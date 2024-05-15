@@ -1,13 +1,11 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using Navigation;
-using Navigation.Data;
-using UnityEngine;
-using UnityEngine.EventSystems;
-using UnityEngine.UI;
 using TMPro;
-using Unyawn.Utils;
-using System;
 using UnityEditor;
+using UnityEngine;
+using UnityEngine.UI;
+using Unyawn.Utils;
 
 // GW :56.4,ZFW:45,Fuel:12,CI:0,CG:23.3
 
@@ -184,7 +182,7 @@ public class Calculator : MonoBehaviour
 
         PFDScript.PFD_Bank(Bank);
 
-        Debug.Log("B  : " + Bank + "  a  : " + Angle);
+        //Debug.Log("B  : " + Bank + "  a  : " + Angle);
 
     }
 

@@ -11,7 +11,7 @@ public class BgText : MonoBehaviour
     [SerializeField] private Color modifiedBackground;
     [SerializeField] private Color defaultColor;
     
-    [SerializeField] private TMP_Text label;
+    [SerializeField] internal TMP_Text label;
 
     public void Clear()
     {

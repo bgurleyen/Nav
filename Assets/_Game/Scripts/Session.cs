@@ -1,10 +1,8 @@
 using System;
-using Gamelogic.Extensions;
 using Navigation;
 using UnityEngine;
 
-namespace Navigation
-{
+namespace Navigation {
     public static class Session
     {
         public static bool IsRunning;
@@ -56,8 +54,8 @@ namespace Navigation
 [Serializable]
 public class ComputedRoutes
 {
-    [ReadOnly] public RouteScriptableObject ActiveRoute;
-    [ReadOnly] public RouteScriptableObject ModRoute;
-    [ReadOnly] public RouteScriptableObject ModeSetWithPosition;
-    [ReadOnly] public FixedPointsScriptableObject FixedPoints;
+    /*[ReadOnly]*/ public RouteScriptableObject ActiveRoute;
+    /*[ReadOnly]*/ public RouteScriptableObject ModRoute;
+    /*[ReadOnly]*/ public RouteScriptableObject ModeSetWithPosition;
+    /*[ReadOnly]*/ public FixedPointsScriptableObject FixedPoints;
 }

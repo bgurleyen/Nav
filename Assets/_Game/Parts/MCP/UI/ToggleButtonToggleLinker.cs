@@ -1,8 +1,5 @@
-﻿using System;
-using JetBrains.Annotations;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.EventSystems;
-using UnityEngine.UI;
 
 public class ToggleButtonToggleLinker : ToggleButtonLinker, IPointerUpHandler, IPointerDownHandler
 {

@@ -189,6 +189,7 @@ public class Aircraft : MovingActor
 
     public bool TryRejoinRoute()
     {
+        Debug.Log("Try-Re-Join-Route");
         if (Session.ActiveRoute.TracedRoute.FindCloseToRouteSegmentDestination(
                 Session.Settings.HDGCloseRejoinDistance,
                 out var routeIntersection,

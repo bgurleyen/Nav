@@ -139,17 +139,23 @@ namespace Navigation
             return intro + index.ToString("00");
         }
 
-        public RouteScriptableObject CloneAndInit()
-        {
+        public RouteScriptableObject CloneAndInit() {
+            Debug.Log("--- CloneAndInit ---");
+
             var newSet = CreateInstance<RouteScriptableObject>(); // new DataSetScriptableObject();
+            //Debug.Log("-------------- newSet: "+newSet.Points);    
             newSet.FirstAltRegulationNodeId = FirstAltRegulationNodeId;
+            //Debug.Log("FirstAltRegulationNodeID: "+FirstAltRegulationNodeId);
+
             newSet.FirstSpeedRegulationNodeId = FirstSpeedRegulationNodeId;
+            //Debug.Log("FirstSpeedRegulationNodeId: " + FirstSpeedRegulationNodeId);
             newSet.Points = new RoutePoint[Points.Length];
             for (var i = 0; i < Points.Length; i++)
             {
                 newSet.Points[i] = Points[i].Clone();
+               // Debug.Log("newSet.Point+"+i+":" + Points[i].ID+"||"+ Points[i].Name);
             }
-
+            
             newSet.Init(false);
             return newSet;
         }
