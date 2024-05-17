@@ -30,6 +30,7 @@ public class LegsScreen : ScreenBase {
 
     private ScratchPadInterpreter _scratchPadInterpreter;
     private string _scratchPadBuffer = "";
+    [SerializeField]
     private int _currentPage;
     private Simulation _simulation;
 
@@ -92,11 +93,12 @@ public class LegsScreen : ScreenBase {
             var linkedSelection = _nodesController.GetNodeInfoAtLineIndex(i, _currentPage);
 
             if (linkedSelection.IsInvalid || linkedSelection.IsEmpty) {
+                Debug.Log("IsInvalid OR IsEmpty");
                 nodes[i].ShowEmpty();
             }
             else {
                 Session.VisibleRoute.GetPoint(linkedSelection.LinkedId, out var _node, out _);
-                nodes[i].DisplayNodeDetails(_node, linkedSelection);
+                    nodes[i].DisplayNodeDetails(_node, linkedSelection);
             }
         }
     }
@@ -221,12 +223,12 @@ public class LegsScreen : ScreenBase {
     }
 
     public override void OnExecPress() {
-        //Debug.Log("main text" + mainScreen.scratchPadText.label.text);
+        Debug.Log("main text" + mainScreen.scratchPadText.label.text);
         //if (mainScreen.scratchPadText.label.text == "<size=35>NORTA</size>")
         //    CancelInvoke(nameof(DisplayCurrentPage));
 
-        OnExecButtonPress?.Invoke();
 
+        OnExecButtonPress?.Invoke();
         ClearCurrentOperation();
         ClearSelectionHistory();
 
@@ -259,7 +261,9 @@ public class LegsScreen : ScreenBase {
                 _scratchPadInterpreter.IsLinearApproach(out var angle)) {
                 Debug.Log("=linear approach= on " + _lastSelectionClicked.GetRouteNode().Name + " with: " + angle);
                 _simulation.ExecuteLinearApproachOnMod(new ExecuteAddLinearApproachCommand { ToNodeId = _lastSelectionClicked.LinkedId, Angle = angle });
+                Debug.Log("OnRightCornerPress");
             }
+
         }
     }
 
@@ -381,7 +385,6 @@ public class LegsScreen : ScreenBase {
 
     private void InterpretScratchpadOnTextChanged(bool handleSelection) {
 
-
         _scratchPadInterpreter = new ScratchPadInterpreter {
             IsValid = true,
             Angle = null,
@@ -444,6 +447,7 @@ public class LegsScreen : ScreenBase {
 
             if (_scratchPadInterpreter.IsValid) {
                 if (handleSelection && _scratchPadInterpreter.Node != null) {
+                    Debug.Log("_scratchPadIntrerpreter.IsValid: "+_scratchPadInterpreter.IsValid);
                     _selectionInfo = new NodeSelection {
                         IsEmpty = false,
                         LinkedId = _scratchPadInterpreter.Node.ID,

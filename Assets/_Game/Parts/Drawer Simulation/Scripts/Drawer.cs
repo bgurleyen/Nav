@@ -254,6 +254,7 @@ public class Drawer : MonoBehaviour
 
     private void DisplaySet(IReadOnlyList<TracedLine> lines, LinesType linesType)
     {
+        Debug.Log("LinesType: "+linesType.ToString());
         if (lines == null)
         {
             return;

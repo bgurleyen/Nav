@@ -24,6 +24,7 @@ public class LineDrawer : MonoBehaviour
 
 public void Display(TracedLine line, RoutePoint routePoint, bool hiddenLabel, bool hiddenLine, int fromPoint)
     {
+        Debug.Log("Display");
         if (!hiddenLine && !line.LinkedPoint.IsAfterDiscontinuity && !line.LinkedPoint.IsHiddenLine)
         {
             cacheLine = line;

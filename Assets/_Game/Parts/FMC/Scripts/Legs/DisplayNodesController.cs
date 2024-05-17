@@ -21,7 +21,9 @@ public class DisplayNodesController
 
     public void ComputeCorrections()
     {
+        Debug.Log("After TotalPageCorrrection: " + TotalPagesCorrection);
         TotalPagesCorrection = GetTotalNodesCorrections(out _, out _);
+        Debug.Log("Before TotalPageCorrrection: " + TotalPagesCorrection);
     }
 
     private static int GetTotalNodesCorrections(out int discontinuities, out int skipped)

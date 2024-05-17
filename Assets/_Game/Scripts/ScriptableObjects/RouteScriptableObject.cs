@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace Navigation
 {
@@ -15,7 +16,6 @@ namespace Navigation
         public void Init(bool regenerateIds)
         {
             TracedRoute = new TracedRoute();
-
             if (regenerateIds)
             {
             
@@ -140,24 +140,51 @@ namespace Navigation
         }
 
         public RouteScriptableObject CloneAndInit() {
-            Debug.Log("--- CloneAndInit ---");
+
+            //Debug.Log("--- CloneAndInit ---");
 
             var newSet = CreateInstance<RouteScriptableObject>(); // new DataSetScriptableObject();
-            //Debug.Log("-------------- newSet: "+newSet.Points);    
+
+            //Debug.Log("-------------- newSet: "+newSet.Points);
+            //New Code Shubham...
+            //FMC_Screens.Instance.CurrentScreen.OnExecPress();
+
             newSet.FirstAltRegulationNodeId = FirstAltRegulationNodeId;
-            //Debug.Log("FirstAltRegulationNodeID: "+FirstAltRegulationNodeId);
+           // Debug.Log("---------------FirstAltRegulationNodeID: "+FirstAltRegulationNodeId);
 
             newSet.FirstSpeedRegulationNodeId = FirstSpeedRegulationNodeId;
-            //Debug.Log("FirstSpeedRegulationNodeId: " + FirstSpeedRegulationNodeId);
+            // Debug.Log("---------------FirstSpeedRegulationNodeId: " + FirstSpeedRegulationNodeId);
             newSet.Points = new RoutePoint[Points.Length];
-            for (var i = 0; i < Points.Length; i++)
-            {
+
+            //Debug.Log("---------------Points.Length: " + Points.Length);
+
+            //Debug.Log("before points::" + Points.Length);
+
+            for (var i = 0; i < Points.Length; i++) {
                 newSet.Points[i] = Points[i].Clone();
-               // Debug.Log("newSet.Point+"+i+":" + Points[i].ID+"||"+ Points[i].Name);
             }
-            
+
+
             newSet.Init(false);
             return newSet;
+        }
+
+        // Method to remove duplicates that were added afterwards
+        public void RemoveSubsequentDuplicates() {
+            var seenIds = new HashSet<string>();
+            var uniquePoints = new List<RoutePoint>();
+
+            // Iterate through the Points array and add only the first occurrence of each ID to the new list
+            foreach (var point in Points) {
+                if (!seenIds.Contains(point.Name)) {
+                    seenIds.Add(point.Name);
+                    uniquePoints.Add(point);
+                }
+            }
+
+            // Assign the unique points back to the Points array
+            Points = uniquePoints.ToArray();
+            Debug.Log("Afterrasdasd ::" + Points.Length);
         }
 
         // to be executed on ACTIVE route
@@ -181,6 +208,7 @@ namespace Navigation
                 if (Points[i].IsHiddenLine ||
                     Points[i].IsAfterDiscontinuity) //$^% ask if we can join discontinuity segments
                 {
+                    Debug.Log("Ask if we can join discontinuity segments");
                     continue;
                 }
 
@@ -528,9 +556,10 @@ namespace Navigation
                 "",
                 "_rejoin_");
 
-
+            Debug.Log("================" +
+                " _reJoin ================");
             // If we want active route to contain also the path from the current position we can also insert position nodes
-            ConstructPositionNodes(Points[segmentIndex - 1], intersectionNodeToAdd,
+            ConstructPositionNodes(Points[segmentIndex-1], intersectionNodeToAdd,
                 out var airplanePositionNodeToAdd, out var frontOfAirplanePositionNodeToAdd);
 
 
@@ -636,10 +665,43 @@ namespace Navigation
 
             Points = newSet;
         }
+
+        //code for remove a point from the array at specific index
+        public void RemovePoint(int pointId) {
+            // Find the index of the point to be removed
+            int indexToRemove = -1;
+            for (int i = 0; i < Points.Length; i++) {
+                if (Points[i].ID == pointId) {
+                    indexToRemove = i;
+                    break;
+                }
+            }
+
+            // If the point was not found, exit the method
+            if (indexToRemove == -1) {
+                Debug.LogWarning($"Point with ID {pointId} not found.");
+                return;
+            }
+
+            // Create a new array with one less element
+            var newPoints = new RoutePoint[Points.Length - 1];
+
+            // Copy elements to the new array, skipping the element to be removed
+            for (int i = 0, j = 0; i < Points.Length; i++) {
+                if (i != indexToRemove) {
+                    newPoints[j++] = Points[i];
+                }
+            }
+
+            // Assign the new array to the Points field
+            Points = newPoints;
+        }
+
+        
     }
 }
 
-public struct RoutePosition
+public struct RoutePosition 
 {
     public Vector2 SegmentVertex;
     public int SegmentVertexIndex;

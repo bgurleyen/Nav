@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Navigation;
 using UnityEngine;
@@ -35,10 +36,10 @@ public class OtherAC
         finalPosition = Move.Instance.PointPos(_acItems[0].Point); //intial pos and alt
         
         _ac = GameObject.Find(_aircraftKey);
-            if (_ac == null)
-            {
-                Debug.LogWarning($"Not found aircraftKey: {_aircraftKey}");
-            }
+        if (_ac == null) {
+            //Debug.LogWarning($"Not found aircraftKey: {_aircraftKey}");
+            return;
+        }
     }
 
     public void Tick(Dictionary<string, string> acTexts, Dictionary<string, Vector2> acPositions)

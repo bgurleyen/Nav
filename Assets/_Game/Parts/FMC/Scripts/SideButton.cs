@@ -15,10 +15,12 @@ public class SideButton : MonoBehaviour
         {
             if (!isExtra)
             {
+                Debug.Log("*** lineIndex: " + lineIndex);
                 FMC_Screens.Instance.CurrentScreen.OnLineSelectLeft(lineIndex);
             }
             else
             {
+                //Debug.Log("OnLeftCornerPress");
                 FMC_Screens.Instance.CurrentScreen.OnLeftCornerPress();
             }
         }

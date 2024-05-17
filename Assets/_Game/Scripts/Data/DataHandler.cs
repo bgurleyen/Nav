@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Navigation;
 
@@ -113,6 +114,7 @@ public class DataHandler
         for (var i = 1; i < set.Points.Length; i++)
         {
             var point = set.Points[i];
+
             if (point.AltitudeRegulation != RoutePoint.AltitudeFlags.NotSet)
             {
                 set.FirstAltRegulationNodeId = point.ID;
@@ -123,6 +125,7 @@ public class DataHandler
 
     private static void ComputeRegulationsInterval(List<AltitudeRegulationNode> regulations, RouteScriptableObject set)
     {
+
         var anchoredFrom = regulations[0];
         var anchoredTo = regulations[regulations.Count - 1];
         anchoredFrom.AnchoredNext = anchoredTo;

@@ -157,9 +157,9 @@ namespace Navigation
             {
                 Destroy(Session.ModeSetWithPosition);
             }
-            Debug.Log("ComputeMod 4444444444");
+            //Debug.Log("ComputeMod 4444444444");
             if (Session.ModeSetWithPosition == null) {
-                Debug.Log("IF ComputeMod 4444444444");
+                //Debug.Log("IF ComputeMod 4444444444");
                 Session.ModeSetWithPosition = Session.ModRoute.CloneAndInit();
             }
             //Session.ModeSetWithPosition = Session.ModRoute.CloneAndInit(); // refactor use the existing modwithposition to avoid reinstantiating
@@ -313,6 +313,7 @@ namespace Navigation
 
         private void CheckModForOperation()
         {
+            //Debug.Log("CheckModForOperation");
             if (Session.IsMod) return;
 
             if (Session.ModRoute != null)
@@ -320,13 +321,13 @@ namespace Navigation
                 Destroy(Session.ModRoute);
             }
 
-            Debug.Log("Check Mode For Operaiton 555555");
+            //Debug.Log("Check Mode For Operaiton 555555");
             // if this is the first modification generate a new mod from current active
             Session.ModRoute = Session.ActiveRoute.CloneAndInit();
             //Debug.Log("Session.modeRoute: "+Session.ModRoute);
-            for (int i = 0; i < Session.ModRoute.Points.Length; i++) {
-                Debug.Log("Session.ModeRount[" + i + "]: " + Session.ModRoute.Points[i].ID + "||" + Session.ModRoute.Points[i].Name);
-            }
+            //for (int i = 0; i < Session.ModRoute.Points.Length; i++) {
+            //    Debug.Log("Session.ModeRount[" + i + "]: " + Session.ModRoute.Points[i].ID + "||" + Session.ModRoute.Points[i].Name);
+            //}
 
             _cachedCommands = new List<ICommand>();
             Session.IsMod = true;
