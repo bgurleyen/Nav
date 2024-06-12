@@ -3,8 +3,7 @@ using Navigation;
 using TMPro;
 using UnityEngine;
 
-public class LegsNodeLine : MonoBehaviour
-{
+public class LegsNodeLine : MonoBehaviour {
     [Header("header")]
     public TMP_Text hLeft;
     public TMP_Text hMiddle;
@@ -12,92 +11,83 @@ public class LegsNodeLine : MonoBehaviour
     [Header("header full")]
     public TMP_Text hFull;
 
-    [Header("footer")] 
+    [Header("footer")]
     public BgText fLeft;
     public TMP_Text fMiddle;
     public BgText fRight;
 
     private NodeSelection _selection;
 
-    public void DisplayNodeDetails(RoutePoint node, NodeSelection linkedInfo)
-    {
-        //Changes by Shubham 
-        Debug.Log("node Name: " + node.Name);
-        Debug.Log("node ID: " + node.ID);
+    public void DisplayNodeDetails(RoutePoint node, NodeSelection linkedInfo) {
 
-        SetRouteID(Session.ActiveRoute);
-        SetRouteID(Session.ModRoute);
-        SetRouteID(Session.ModeSetWithPosition);
-       /* if (Session.ActiveRoute != null) {
-            Debug.Log("-----------------------------Node ID changes-----------------------------");
-            for (int i = 0; i < Session.ActiveRoute.Points.Length; i++) {
-                //Debug.Log("Session.ActiveRoute[" + i + "]: " + "ID: [" + Session.ActiveRoute.Points[i].ID + "] => Name: [" + Session.ActiveRoute.Points[i].Name + "]");
-                if (Session.ActiveRoute.Points[i].Name == "ELNAT") {
-                    Session.ActiveRoute.Points[i].ID = 3;
-                }
 
-            }
-        }
+        /* //Changes By S.A
+          if (Session.ActiveRoute != null) {
+             Debug.Log("-----------------------------Node ID changes-----------------------------");
+             for (int i = 0; i < Session.ActiveRoute.Points.Length; i++) {
+                 //Debug.Log("Session.ActiveRoute[" + i + "]: " + "ID: [" + Session.ActiveRoute.Points[i].ID + "] => Name: [" + Session.ActiveRoute.Points[i].Name + "]");
+                 if (Session.ActiveRoute.Points[i].Name == "ELNAT") {
+                     Session.ActiveRoute.Points[i].ID = 3;
+                 }
 
-        if (Session.ModRoute != null) {
+             }
+         }
 
-            for (int i = 0; i < Session.ModRoute.Points.Length; i++) {
-                //Debug.Log("Session.ModRoute[" + i + "]: " + "ID: [" + Session.ModRoute.Points[i].ID + "] => Name: [" + Session.ModRoute.Points[i].Name + "]");
-                if (Session.ModRoute.Points[i].Name == "ELNAT") {
-                    Session.ModRoute.Points[i].ID = 3;
-                }
-            }
-        }
+         if (Session.ModRoute != null) {
 
-        if (Session.ModeSetWithPosition != null) {
-            for (int i = 0; i < Session.ModeSetWithPosition.Points.Length; i++) {
-                //Debug.Log("Session.ModeSetWithPosition[" + i + "]: " + "ID: [" + Session.ModeSetWithPosition.Points[i].ID + "] => Name: [" + Session.ModeSetWithPosition.Points[i].Name + "]");
-                if (Session.ModeSetWithPosition.Points[i].Name == "ELNAT") {
-                    Session.ModeSetWithPosition.Points[i].ID = 3;
-                }
-            }
-        }*/
+             for (int i = 0; i < Session.ModRoute.Points.Length; i++) {
+                 //Debug.Log("Session.ModRoute[" + i + "]: " + "ID: [" + Session.ModRoute.Points[i].ID + "] => Name: [" + Session.ModRoute.Points[i].Name + "]");
+                 if (Session.ModRoute.Points[i].Name == "ELNAT") {
+                     Session.ModRoute.Points[i].ID = 3;
+                 }
+             }
+         }
 
-        Debug.Log("LinkedId: " + linkedInfo.LinkedId);
-        Debug.Log("GetNodeToOnActiveID: " + PositionVirtualNode.GetNodeToOnActive.ID);
+         if (Session.ModeSetWithPosition != null) {
+             for (int i = 0; i < Session.ModeSetWithPosition.Points.Length; i++) {
+                 //Debug.Log("Session.ModeSetWithPosition[" + i + "]: " + "ID: [" + Session.ModeSetWithPosition.Points[i].ID + "] => Name: [" + Session.ModeSetWithPosition.Points[i].Name + "]");
+                 if (Session.ModeSetWithPosition.Points[i].Name == "ELNAT") {
+                     Session.ModeSetWithPosition.Points[i].ID = 3;
+                 }
+             }
+         }*/
+
 
         //Old Code...
         var distance = linkedInfo.LinkedId == PositionVirtualNode.GetNodeToOnActive.ID
             ? Session.PlayerAircraft.ComputedDistanceLeftOnSegment
             : node.Distance;
 
-        Debug.Log("IsAddedDiscontinuity: " + linkedInfo.IsAddedDiscontinuity);
-        if (linkedInfo.IsAddedDiscontinuity)
-        {
-            Debug.Log("If Condition");
+        //Debug.Log("IsAddedDiscontinuity: " + linkedInfo.IsAddedDiscontinuity);
+        if (linkedInfo.IsAddedDiscontinuity) {
+            //Debug.Log("If Condition");
             ShowAsDiscontinuity();
+            //SetRouteID(Session.ActiveRoute);
+            //SetRouteID(Session.ModRoute);
+            //SetRouteID(Session.ModeSetWithPosition);
         }
-        else
-        {
-            Debug.Log("Else Condition");
+        else {
+            //Debug.Log("Else Condition");
 
-            Debug.Log("IsAfterDiscontinuity: "+ node.IsAfterDiscontinuity);
+            //Debug.Log("IsAfterDiscontinuity: "+ node.IsAfterDiscontinuity);
 
             hFull.text = node.IsAfterDiscontinuity ? "--- ROUTE DISCONTINUITY ---" : "";
-            Debug.Log(hFull.text);
+            //Debug.Log(hFull.text);
 
             hLeft.text = node.IsAfterDiscontinuity ? "" : $"{node.RawDegrees:000}°";
             hMiddle.text = node.IsAfterDiscontinuity ? "" : $"{distance:F1}NM";
 
-            if (node.IsModified)
-            {
+            if (node.IsModified) {
                 fLeft.SetAsModified(node.Name);
-                Debug.Log("SetAsModified");
+                //Debug.Log("SetAsModified");
             }
-            else if (node.GetIsDisplayCurrent)
-            {
+            else if (node.GetIsDisplayCurrent) {
                 fLeft.SetAsMagenta(node.Name);
-                Debug.Log("SetAsMagenta");
+                //Debug.Log("SetAsMagenta");
             }
-            else
-            {
+            else {
                 fLeft.SetAsDefault(node.Name);
-                Debug.Log("SetAsDefault");
+                //Debug.Log("SetAsDefault");
             }
 
             fMiddle.text = linkedInfo.IsPlanCenter && Session.State.MapMode == MapMode.Plan
@@ -115,7 +105,7 @@ public class LegsNodeLine : MonoBehaviour
             var speedState = node.IsSpeedModified
                 ? BgText.TextState.ModSelection
                 : isSpeedRestriction
-                    ? node.ID == Session.VisibleRoute.FirstSpeedRegulationNodeId 
+                    ? node.ID == Session.VisibleRoute.FirstSpeedRegulationNodeId
                         ? BgText.TextState.Magenta
                         : BgText.TextState.TallText
                     : BgText.TextState.SmallText;
@@ -128,9 +118,9 @@ public class LegsNodeLine : MonoBehaviour
                         : BgText.TextState.TallText
                     : BgText.TextState.SmallText;
 
-            fRight.SetText(true,"/",
-                new BgText.TextBuilder {State = speedState, Text = speedDisplayValue},
-                new BgText.TextBuilder {State = altState, Text = altDisplayValue});
+            fRight.SetText(true, "/",
+                new BgText.TextBuilder { State = speedState, Text = speedDisplayValue },
+                new BgText.TextBuilder { State = altState, Text = altDisplayValue });
         }
     }
 
@@ -223,21 +213,19 @@ public class LegsNodeLine : MonoBehaviour
             }
         }
     }
-    private void ShowAsDiscontinuity()
-    {
-        Debug.Log("ShowAsDiscontinuity");
+    private void ShowAsDiscontinuity() {
+        //Debug.Log("ShowAsDiscontinuity");
         hLeft.text = "THEN";
         hMiddle.text = "";
         hFull.text = "";
 
-        fLeft.SetAsDefault( "□□□□□");
-        Debug.Log("THEN  □□□□□");
+        fLeft.SetAsDefault("□□□□□");
+        //Debug.Log("THEN  □□□□□");
 
         fRight.Clear();
     }
 
-    internal void ShowEmpty()
-    {
+    internal void ShowEmpty() {
         hLeft.text = "";
         hMiddle.text = "";
         hFull.text = "";

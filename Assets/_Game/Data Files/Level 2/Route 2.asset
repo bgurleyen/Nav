@@ -12,7 +12,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ba3b8b30b7d3d124482f44bf0dbbbfaf, type: 3}
   m_Name: Route 2
   m_EditorClassIdentifier: 
-  _gameConfig: {fileID: 11400000, guid: 60965bfde451d46d184d23158024db97, type: 2}
   Points:
   - ID: 0
     Name: _START_

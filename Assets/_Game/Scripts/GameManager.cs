@@ -43,11 +43,10 @@ public class GameManager : MonoBehaviour {
         levelData.MainRoute.ComputeCartesianPositions();
         //Debug.Log("Init For Level  1111111 ");
         Session.OriginalReferenceRoute = levelData.MainRoute.CloneAndInit();
-        for (int i = 0; i < Session.OriginalReferenceRoute.Points.Length; i++) {
+        /*for (int i = 0; i < Session.OriginalReferenceRoute.Points.Length; i++) {
             Debug.Log("Session.OriginalReferenceRoute["+i+"]: " + "ID: ["+Session.OriginalReferenceRoute.Points[i].ID+"] => Name: ["+Session.OriginalReferenceRoute.Points[i].Name+"]");
-        }
+        }*/
         //Debug.Log("OriginalReferenceRoute: "+ Session.OriginalReferenceRoute);
-
         //Debug.Log("Init For Level  222222 ");
         _routes.ActiveRoute = levelData.MainRoute.CloneAndInit();
         //Debug.Log("_routes.ActiveRoute: "+_routes.ActiveRoute);
@@ -57,7 +56,7 @@ public class GameManager : MonoBehaviour {
         for (var i = 0; i < currentRouteScriptableObject.Points.Length; i++) {
             Debug.Log("newSet.Point+" + i + ":" + currentRouteScriptableObject.Points[i].ID + "||" + currentRouteScriptableObject.Points[i].Name);
         }*/
-       
+
 
         Session.Routes = _routes;
 
@@ -123,7 +122,7 @@ public class GameManager : MonoBehaviour {
         }
     }
 
-    
+
 
     private void ApplyMod() {
 
@@ -152,9 +151,9 @@ public class GameManager : MonoBehaviour {
         //Session.ActiveRoute = Session.ModeSetWithPosition;
 
         //Debug.Log("Session.ActiveRoute: "+ Session.ActiveRoute);
-       // for (int i = 0; i < Session.ActiveRoute.Points.Length; i++) {
-            //Debug.Log("Session.ActiveRoute[" + i + "]: " + Session.ActiveRoute.Points[i].ID + "||" + Session.ActiveRoute.Points[i].Name);
-       // }
+        // for (int i = 0; i < Session.ActiveRoute.Points.Length; i++) {
+        //Debug.Log("Session.ActiveRoute[" + i + "]: " + Session.ActiveRoute.Points[i].ID + "||" + Session.ActiveRoute.Points[i].Name);
+        // }
 
         //Session.State.AutoSetLNAV(true, false);
 

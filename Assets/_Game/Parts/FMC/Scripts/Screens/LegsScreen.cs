@@ -92,13 +92,20 @@ public class LegsScreen : ScreenBase {
         for (var i = 0; i < nodes.Length; i++) {
             var linkedSelection = _nodesController.GetNodeInfoAtLineIndex(i, _currentPage);
 
+            //Debug.Log("linkedSelection :" + linkedSelection.LinkedId);
+            //Debug.Log("linkedSelection IsInvalid :" + linkedSelection.IsInvalid);
+            //Debug.Log("linkedSelection IsEmpty :" + linkedSelection.IsEmpty);
+
             if (linkedSelection.IsInvalid || linkedSelection.IsEmpty) {
-                Debug.Log("IsInvalid OR IsEmpty");
+                //Debug.Log("IsInvalid OR IsEmpty");
                 nodes[i].ShowEmpty();
             }
             else {
                 Session.VisibleRoute.GetPoint(linkedSelection.LinkedId, out var _node, out _);
-                    nodes[i].DisplayNodeDetails(_node, linkedSelection);
+                //Debug.Log("ID : Name :" + _node.ID + _node.Name);
+                //Debug.Log("ID :" + _node.ID);
+                nodes[i].DisplayNodeDetails(_node, linkedSelection);
+
             }
         }
     }
@@ -223,7 +230,7 @@ public class LegsScreen : ScreenBase {
     }
 
     public override void OnExecPress() {
-        Debug.Log("main text" + mainScreen.scratchPadText.label.text);
+        //Debug.Log("main text" + mainScreen.scratchPadText.label.text);
         //if (mainScreen.scratchPadText.label.text == "<size=35>NORTA</size>")
         //    CancelInvoke(nameof(DisplayCurrentPage));
 
@@ -344,7 +351,7 @@ public class LegsScreen : ScreenBase {
                 return false;
             }
 
-            Debug.Log("=relative insert=");
+            //Debug.Log("=relative insert=");
             distance = Distance.Value;
             angle = Angle.Value;
             relativeNodeId = Node.ID;
@@ -359,7 +366,7 @@ public class LegsScreen : ScreenBase {
                 return false;
             }
 
-            Debug.Log("=relative insert on direction=");
+            //Debug.Log("=relative insert on direction=");
             distance = Distance.Value;
             relativeNodeId = Node.ID;
             return true;
@@ -447,7 +454,7 @@ public class LegsScreen : ScreenBase {
 
             if (_scratchPadInterpreter.IsValid) {
                 if (handleSelection && _scratchPadInterpreter.Node != null) {
-                    Debug.Log("_scratchPadIntrerpreter.IsValid: "+_scratchPadInterpreter.IsValid);
+                    //Debug.Log("_scratchPadIntrerpreter.IsValid: "+_scratchPadInterpreter.IsValid);
                     _selectionInfo = new NodeSelection {
                         IsEmpty = false,
                         LinkedId = _scratchPadInterpreter.Node.ID,
@@ -541,13 +548,13 @@ public class LegsScreen : ScreenBase {
     }
 
     private void ClearCurrentOperation() {
-        Debug.Log("----- Clear Current Operation -----");
+        //Debug.Log("----- Clear Current Operation -----");
         _scratchPadBuffer = "";
         _selectionInfo = null;
     }
 
     private void ClearSelectionHistory() {
-        Debug.Log("----- Clear Selecation History -----");
+        //Debug.Log("----- Clear Selecation History -----");
         _lastSelectionClicked = null;
     }
 

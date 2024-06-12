@@ -27,28 +27,28 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 8000A9000B
     Details: 
-  - ID: 5
+  - ID: 2
     Name: DV581
     RawDegrees: 2
     Distance: 7.3
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 2
+  - ID: 3
     Name: ELNAT
     RawDegrees: 20
     Distance: 10
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 3
+  - ID: 4
     Name: NORTA
     RawDegrees: 5
     Distance: 10
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 4
+  - ID: 5
     Name: DLE-5
     RawDegrees: 6
     Distance: 10

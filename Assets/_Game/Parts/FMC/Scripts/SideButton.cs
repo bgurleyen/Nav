@@ -15,7 +15,7 @@ public class SideButton : MonoBehaviour
         {
             if (!isExtra)
             {
-                Debug.Log("*** lineIndex: " + lineIndex);
+                //Debug.Log("*** lineIndex: " + lineIndex);
                 FMC_Screens.Instance.CurrentScreen.OnLineSelectLeft(lineIndex);
             }
             else

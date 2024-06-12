@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using Unyawn.Utils;
 
-namespace Navigation
-{
-    public class Simulation : MonoBehaviour
-    {
+namespace Navigation {
+    public class Simulation : MonoBehaviour {
         [SerializeField] private Aircraft _playerAircraft;
 
         [SerializeField] private Drawer _drawer;
@@ -23,22 +21,21 @@ namespace Navigation
         // if we detect that during MOD the current node has passed we reExecute all the commands until that point
         private int _modReExecutedForIndex = -1;
 
-        private void Awake()
-        {
+        private void Awake() {
             UYServiceLocator.Register(this);
         }
 
-        private void Start()
-        {
+        private void Start() {
             _legsScreen = UYServiceLocator.Get<LegsScreen>();
         }
 
-        public void Init()
-        {
+        public void Init() {
             DataHandler.BuildSetDetails(Session.ActiveRoute);
 
             Session.PlayerAircraft = _playerAircraft;
-            Session.Routes.FixedPoints = FixedPointsScriptableObject.CreateDemo();
+
+            //changes by S.A
+            //Session.Routes.FixedPoints = FixedPointsScriptableObject.CreateDemo();
 
             Session.ActiveRoute.ComputeTrace();
 
@@ -52,24 +49,20 @@ namespace Navigation
 
         }
 
-        public void EraseMod()
-        {
+        public void EraseMod() {
             Session.ModRoute = null;
             Session.IsMod = false;
             _legsScreen.DisplayOperation("0k");
         }
 
-        public void Tick()
-        {
-            if (Session.IsMod && _queueEraseMode)
-            {
+        public void Tick() {
+            if (Session.IsMod && _queueEraseMode) {
                 EraseMod();
             }
 
             _queueEraseMode = false;
 
-            if (Session.IsRunning)
-            {
+            if (Session.IsRunning) {
                 Session.ActiveRoute.ComputeTrace();
                 ComputeMod();
 
@@ -77,7 +70,7 @@ namespace Navigation
 
 
                 Move.Instance.Tick();
-                
+
                 _drawer.Clear();
                 _drawer.Display();
             }
@@ -86,66 +79,52 @@ namespace Navigation
         //[ESA] I splitted the Tick() functionality with prefix "Splitted" to accurately
         //simulate the steps of the aircraft at 10x speedup enabled while minimizing performance impact.
         //look at the GameManager.Update() function to see its use.
-        public void SplittedTickModHandling()
-        {
-            if (Session.IsMod && _queueEraseMode)
-            {
+        public void SplittedTickModHandling() {
+            if (Session.IsMod && _queueEraseMode) {
                 EraseMod();
             }
             _queueEraseMode = false;
         }
 
-        public void SplittedTickComputeTrace()
-        {
-            if (Session.IsRunning)
-            {
+        public void SplittedTickComputeTrace() {
+            if (Session.IsRunning) {
                 Session.ActiveRoute.ComputeTrace();
                 ComputeMod();
             }
         }
 
-        public void SplittedTickSimulation()
-        {
-            if (Session.IsRunning)
-            {
+        public void SplittedTickSimulation() {
+            if (Session.IsRunning) {
                 _playerAircraft.SimulateTick();
                 Move.Instance.Tick();
             }
         }
 
-        public void SplittedTickDraw()
-        {
-            if (Session.IsRunning)
-            {
+        public void SplittedTickDraw() {
+            if (Session.IsRunning) {
                 _drawer.Clear();
                 _drawer.Display();
             }
         }
 
-        public void QueueEraseMode()
-        {
+        public void QueueEraseMode() {
             _queueEraseMode = true;
         }
 
 
-        private void ComputeMod()
-        {
-            if (Session.ModRoute == null)
-            {
+        private void ComputeMod() {
+            if (Session.ModRoute == null) {
                 _modReExecutedForIndex = -1;
                 return;
             }
 
-            if (Session.State.LNAV)
-            {
+            if (Session.State.LNAV) {
                 // mod always has to include the last passed active node ( all the passed nodes ) 
                 // otherwise it is invalid - will reapply all the commands
                 var passedNodeIndex = PositionVirtualNode.PassedNodeIndex;
 
-                if (passedNodeIndex != _modReExecutedForIndex)
-                {
-                    if (Session.ActiveRoute.Points[passedNodeIndex].ID != Session.ModRoute.Points[passedNodeIndex].ID)
-                    {
+                if (passedNodeIndex != _modReExecutedForIndex) {
+                    if (Session.ActiveRoute.Points[passedNodeIndex].ID != Session.ModRoute.Points[passedNodeIndex].ID) {
                         ReExecuteCachedCommands();
                         Debug.Log("Reapplied MOD");
                     }
@@ -153,8 +132,7 @@ namespace Navigation
                 }
             }
 
-            if (Session.ModeSetWithPosition != null)
-            {
+            if (Session.ModeSetWithPosition != null) {
                 Destroy(Session.ModeSetWithPosition);
             }
             //Debug.Log("ComputeMod 4444444444");
@@ -170,15 +148,12 @@ namespace Navigation
             Session.ModeSetWithPosition.ComputeTrace();
         }
 
-        public void ReExecuteCachedCommands()
-        {
+        public void ReExecuteCachedCommands() {
             EraseMod();
-            
-            for (var i = 0; i < _cachedCommands.Count; i++)
-            {
+
+            for (var i = 0; i < _cachedCommands.Count; i++) {
                 var command = _cachedCommands[i];
-                switch (command)
-                {
+                switch (command) {
                     case InsertRelativeCommand relativeCommand:
                         ExecuteInsertRelativeOnMod(relativeCommand);
                         break;
@@ -195,8 +170,7 @@ namespace Navigation
             }
         }
 
-        public void ExecuteDeleteRestrictions(DeleteRestrictionsCommand command)
-        {
+        public void ExecuteDeleteRestrictions(DeleteRestrictionsCommand command) {
             CheckModForOperation();
             _cachedCommands.Add(command);
 
@@ -209,8 +183,7 @@ namespace Navigation
             DataHandler.BuildSetDetails(Session.ModRoute);
         }
 
-        public void ExecuteAddSpeedRegulation(AddSpeedRegulationCommand command)
-        {
+        public void ExecuteAddSpeedRegulation(AddSpeedRegulationCommand command) {
             CheckModForOperation();
             _cachedCommands.Add(command);
 
@@ -223,8 +196,7 @@ namespace Navigation
             OnOperationMade?.Invoke();
         }
 
-        public void ExecuteAddAltitudeRegulation(AddAltitudeRegulationCommand command)
-        {
+        public void ExecuteAddAltitudeRegulation(AddAltitudeRegulationCommand command) {
             CheckModForOperation();
             _cachedCommands.Add(command);
 
@@ -238,8 +210,7 @@ namespace Navigation
             OnOperationMade?.Invoke();
         }
 
-        public void ExecuteShortcutOnMod(ExecuteShortcutOnModeCommand command)
-        {
+        public void ExecuteShortcutOnMod(ExecuteShortcutOnModeCommand command) {
             CheckModForOperation();
             _cachedCommands.Add(command);
 
@@ -251,13 +222,11 @@ namespace Navigation
             OnOperationMade?.Invoke();
         }
 
-        private static string ToDegreesDisplay(float value)
-        {
+        private static string ToDegreesDisplay(float value) {
             return $"{value:000}°";
         }
 
-        public void ExecuteInsertRelativeOnDirectionOnMod(ExecuteRelativeOnDirectionOnMod command)
-        {
+        public void ExecuteInsertRelativeOnDirectionOnMod(ExecuteRelativeOnDirectionOnMod command) {
             Debug.Log("=execute relative insert on direction=");
             CheckModForOperation();
             _cachedCommands.Add(command);
@@ -270,23 +239,21 @@ namespace Navigation
             OnOperationMade?.Invoke();
         }
 
-        public void ExecuteInsertOriginalOnMod(ExecuteOriginalInsertOnModCommand command)
-        {
-            Debug.Log("=execute insert original on MOD=");
+        public void ExecuteInsertOriginalOnMod(ExecuteOriginalInsertOnModCommand command) {
+            //Debug.Log("=execute insert original on MOD=");
             CheckModForOperation();
             _cachedCommands.Add(command);
-            
+
             Session.ModRoute.AddDirectToCartesianNodeBefore(command.OriginalRouteNodeId, command.OnTopNodeId);
-            
+
             DataHandler.BuildSetDetails(Session.ModRoute);
             _legsScreen.DisplayOperation(MainScreen.Keywords.ERASE);
-            
+
             OnOperationMade?.Invoke();
         }
 
-        public void ExecuteInsertRelativeOnMod(InsertRelativeCommand command)
-        {
-            Debug.Log("=execute relative insert simple=");
+        public void ExecuteInsertRelativeOnMod(InsertRelativeCommand command) {
+            //Debug.Log("=execute relative insert simple=");
             CheckModForOperation();
             _cachedCommands.Add(command);
 
@@ -298,9 +265,8 @@ namespace Navigation
             OnOperationMade?.Invoke();
         }
 
-        public void ExecuteLinearApproachOnMod(ExecuteAddLinearApproachCommand command)
-        {
-            Debug.Log("=linear approach=");
+        public void ExecuteLinearApproachOnMod(ExecuteAddLinearApproachCommand command) {
+            //Debug.Log("=linear approach=");
             CheckModForOperation();
             _cachedCommands.Add(command);
 
@@ -311,13 +277,11 @@ namespace Navigation
             OnOperationMade?.Invoke();
         }
 
-        private void CheckModForOperation()
-        {
+        private void CheckModForOperation() {
             //Debug.Log("CheckModForOperation");
             if (Session.IsMod) return;
 
-            if (Session.ModRoute != null)
-            {
+            if (Session.ModRoute != null) {
                 Destroy(Session.ModRoute);
             }
 
@@ -333,10 +297,8 @@ namespace Navigation
             Session.IsMod = true;
 
             // in case the aircraft was in free flight with intersection valid, shortcut mod until the node after intersection
-            if (Session.PlayerAircraft.IsJoining)
-            {
-                ExecuteShortcutOnMod(new ExecuteShortcutOnModeCommand
-                {
+            if (Session.PlayerAircraft.IsJoining) {
+                ExecuteShortcutOnMod(new ExecuteShortcutOnModeCommand {
                     FromNodeId = Session.ModRoute.Points[1].ID,
                     ToNodeId = Session.ModRoute.Points[Session.PlayerAircraft.CurrentSegmentIndex].ID
                 });

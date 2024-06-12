@@ -3,8 +3,7 @@ using Navigation;
 using UnityEngine;
 
 [Serializable]
-public class RoutePoint
-{
+public class RoutePoint {
     public int ID;
     public string Name = "";
     public float RawDegrees;
@@ -18,7 +17,7 @@ public class RoutePoint
     public AltitudeData Altitude { get; private set; } = new AltitudeData();
     public SpeedData Speed { get; private set; } = new SpeedData();
 
-    
+
 
     public bool IsSelected { get; internal set; }
     public bool IsModified { get; internal set; }
@@ -34,13 +33,13 @@ public class RoutePoint
 
     public AltitudeFlags AltitudeRegulation => Altitude.GetFlag(RawAltitude);
     public string DisplayAltitude => Altitude.GetDisplayValue(RawAltitude, out var _);
-    public int DisplayDegrees => (int) Degrees;
+    public int DisplayDegrees => (int)Degrees;
     public float GetAcceptedAltitude => Altitude.GetAcceptedValue();
 
     public bool IsSpeedRegulated => Speed.IsSpeedRegulated(RawSpeed);
 
     public void SetSpeedComputed(int lastRegulation) =>
-        Speed.SetComputedValue(lastRegulation, (int) GetAcceptedAltitude);
+        Speed.SetComputedValue(lastRegulation, (int)GetAcceptedAltitude);
 
     /// <summary>
     /// Can be less precise than compute node with degrees and distance directly
@@ -52,32 +51,32 @@ public class RoutePoint
     /// <param name="name"></param>
     /// <returns></returns>
     public static RoutePoint ConstructFromPosition(Vector2 position, RoutePoint previousPoint,
-        RoutePoint nextNodeToAdjust, int newId = -1, string details = "", string name = "")
-    {
+        RoutePoint nextNodeToAdjust, int newId = -1, string details = "", string name = "") {
+
+        Debug.Log($"position :{position} || previousPoint :{previousPoint} ||nextNodeToAdjust :{nextNodeToAdjust} || newId :{newId} || Details :{details} || Name :{name}");
+
         var rp = new RoutePoint { CartesianPosition = position, ID = 0 };
 
-        if (previousPoint == null)
-        {
+        if (previousPoint == null) {
             rp.Distance = 0;
+            Debug.Log("if RP :" + rp.Name);
             return rp;
         }
 
         rp.ID = newId < 0 ? previousPoint.ID + 1 : newId;
+        Debug.Log("RP ID :" + rp.ID);
         rp.Distance = Vector2.Distance(position, previousPoint.CartesianPosition);
         rp.RawDegrees = Geometry.AngleOfPosition(position, previousPoint.CartesianPosition);
-        if (details != "")
-        {
+        if (details != "") {
             rp.Details = details;
         }
 
-        if (name != "")
-        {
+        if (name != "") {
             rp.Name = name;
         }
 
 
-        if (nextNodeToAdjust != null)
-        {
+        if (nextNodeToAdjust != null) {
             // adjustNextNode distance and degrees
             var differencePosition = nextNodeToAdjust.CartesianPosition - position;
             var updatedAngle = Geometry.PositiveAngleBetween(differencePosition, Vector2.up);
@@ -85,18 +84,15 @@ public class RoutePoint
             nextNodeToAdjust.Distance = differencePosition.magnitude;
         }
 
+        Debug.Log("RP :" + rp.Name);
         return rp;
     }
 
-    public bool GetIsDisplayCurrent
-    {
-        get
-        {
+    public bool GetIsDisplayCurrent {
+        get {
             var nodeCursor = PositionVirtualNode.GetNodeToOnActive;
-            while (nodeCursor.IsPositionNode || nodeCursor.ID == ID)
-            {
-                if (nodeCursor.ID == ID)
-                {
+            while (nodeCursor.IsPositionNode || nodeCursor.ID == ID) {
+                if (nodeCursor.ID == ID) {
                     return true;
                 }
 
@@ -109,22 +105,18 @@ public class RoutePoint
         }
     }
 
-    public bool GetAltitudeIsRestricted(out string displayValue)
-    {
+    public bool GetAltitudeIsRestricted(out string displayValue) {
         displayValue = Altitude.GetDisplayValue(RawAltitude, out var isRestricted);
         return isRestricted;
     }
 
-    public bool GetSpeedIsRestricted(out string displayValue)
-    {
+    public bool GetSpeedIsRestricted(out string displayValue) {
         displayValue = Speed.GetDisplayValue(RawSpeed, out var isRestricted).ToString();
         return isRestricted;
     }
 
-    internal RoutePoint Clone()
-    {
-        return new RoutePoint
-        {
+    internal RoutePoint Clone() {
+        return new RoutePoint {
             ID = ID,
             Name = Name,
             Details = Details,
@@ -144,75 +136,60 @@ public class RoutePoint
     public bool IsSkippable => IsHiddenLine || IsPositionNode;
 
     // todo remove specific flags
-    public void ClearDetails()
-    {
+    public void ClearDetails() {
         Details = "";
     }
 
-    public void IndicateDiscontinuityBefore()
-    {
+    public void IndicateDiscontinuityBefore() {
         Details = "D";
     }
 
-    public void IndicateDirectApproach(int angle)
-    {
+    public void IndicateDirectApproach(int angle) {
         Details = "L";
         LinearApproachAngle = angle;
     }
 
-    public void IndicateHiddenLine()
-    {
+    public void IndicateHiddenLine() {
         Details = "H";
     }
 
-    public void IndicateFakeFar()
-    {
+    public void IndicateFakeFar() {
         Details = "F";
     }
 
-    public static bool HaveSamePosition(RoutePoint a, RoutePoint b)
-    {
+    public static bool HaveSamePosition(RoutePoint a, RoutePoint b) {
         return (a.CartesianPosition - b.CartesianPosition).sqrMagnitude < 0.01f;
     }
 
-    public class SpeedData
-    {
+    public class SpeedData {
         public int ComputedValue = -1;
 
         public bool IsSpeedRegulated(int rawSpeed) => rawSpeed != 0;
 
-        public SpeedData Clone()
-        {
-            return new SpeedData
-            {
+        public SpeedData Clone() {
+            return new SpeedData {
                 ComputedValue = ComputedValue
             };
         }
 
-        internal int GetDisplayValue(int rawSpeed, out bool isRestricted)
-        {
+        internal int GetDisplayValue(int rawSpeed, out bool isRestricted) {
             isRestricted = IsSpeedRegulated(rawSpeed);
 
             return isRestricted ? rawSpeed : ComputedValue;
         }
 
-        public void SetComputedValue(int lastRegulation, int acceptedAltitude)
-        {
-            if (acceptedAltitude > 10000)
-            {
+        public void SetComputedValue(int lastRegulation, int acceptedAltitude) {
+            if (acceptedAltitude > 10000) {
                 ComputedValue = lastRegulation;
             }
-            else
-            {
+            else {
                 ComputedValue = Mathf.Min(240, lastRegulation);
             }
         }
 
-        public int GetLinearValue(int rawSpeed, int acceptedAltitude)
-        {
+        public int GetLinearValue(int rawSpeed, int acceptedAltitude) {
             var displayed = GetDisplayValue(rawSpeed, out var _);
-            if (acceptedAltitude > 10000)
-            {
+            if (acceptedAltitude > 10000) {
                 return displayed;
             }
 
@@ -220,8 +197,7 @@ public class RoutePoint
         }
     }
 
-    public class AltitudeData
-    {
+    public class AltitudeData {
         public int RestrictionAbove = -1;
         public int RestrictionBelow = -1;
         public int RestrictionExact = -1;
@@ -231,10 +207,8 @@ public class RoutePoint
 
         private string parsedAltitude = null;
 
-        public AltitudeData Clone()
-        {
-            return new AltitudeData
-            {
+        public AltitudeData Clone() {
+            return new AltitudeData {
                 RestrictionAbove = RestrictionAbove,
                 RestrictionBelow = RestrictionBelow,
                 RestrictionExact = RestrictionExact,
@@ -244,8 +218,7 @@ public class RoutePoint
             };
         }
 
-        private void ParseRawAltitude(string rawAltitude)
-        {
+        private void ParseRawAltitude(string rawAltitude) {
             if (parsedAltitude == rawAltitude) return;
             ComputedValue = -1;
             DataHandler.ParseAltRegulation(rawAltitude, out RestrictionAbove, out RestrictionBelow,
@@ -253,8 +226,7 @@ public class RoutePoint
             parsedAltitude = rawAltitude;
         }
 
-        public AltitudeFlags GetFlag(string rawAltitude)
-        {
+        public AltitudeFlags GetFlag(string rawAltitude) {
             ParseRawAltitude(rawAltitude);
 
             return string.IsNullOrEmpty(rawAltitude)
@@ -268,25 +240,21 @@ public class RoutePoint
                             : AltitudeFlags.Exact;
         }
 
-        public string GetDisplayValue(string rawAltitude, out bool isRestricted)
-        {
+        public string GetDisplayValue(string rawAltitude, out bool isRestricted) {
             isRestricted = GetFlag(rawAltitude) != AltitudeFlags.NotSet;
             return !isRestricted
-                ? ((int) ComputedValue).ToString()
+                ? ((int)ComputedValue).ToString()
                 : parsedAltitude;
         }
 
-        public void SetComputedValue(float altitude, bool anchored)
-        {
+        public void SetComputedValue(float altitude, bool anchored) {
             ComputedValue = altitude;
             IsAnchored = anchored;
         }
 
-        internal float GetAcceptedValue()
-        {
+        internal float GetAcceptedValue() {
             var flag = GetFlag(parsedAltitude);
-            switch (flag)
-            {
+            switch (flag) {
                 case AltitudeFlags.Exact:
                     return RestrictionExact;
                 default:
@@ -295,8 +263,7 @@ public class RoutePoint
         }
     }
 
-    public enum AltitudeFlags
-    {
+    public enum AltitudeFlags {
         Above,
         Below,
         AboveBelow,
