@@ -29,7 +29,10 @@ public class Aircraft : MovingActor
     private RoutePosition? _pendingJoinRoutePosition = new() { SegmentIndex = 1 };
 
     private AircraftDebugHelper debugHelper = null;
-    
+
+    private bool reachRunway = false;
+
+
     protected override void Awake()
     {
         base.Awake();
@@ -105,6 +108,26 @@ public class Aircraft : MovingActor
             // both lnav and hg are off
             
             _pilot.TickAdvance();
+        }
+
+                if (!reachRunway)
+        {
+            var foundClosePathDestination = Session.ActiveRoute.TracedRoute.FindCloseToRouteSegmentDestination(
+Session.Settings.PilotSeekDistancePathFollow,
+out _lastFoundRoutePosition,
+out var foundAtDistanceOnSegment,
+out var reachedEnd, // Must use this to end the route
+startFromSegmentIndex: _lastFoundRoutePosition.SegmentIndex,
+startFromVertexIndex: _lastFoundRoutePosition.SegmentVertexIndex,
+breakOnFistSolution: true);
+
+            if (_lastFoundRoutePosition.SegmentIndex == Session.ActiveRoute.Points.Length - 1)
+            {
+                Debug.Log("HDG");
+                Session.State.AutoSetHDG(false);
+                Session.State.AutoSetLNAV(true, true);
+                reachRunway = true;
+            }
         }
     }
     
