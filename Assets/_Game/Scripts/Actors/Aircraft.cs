@@ -6,7 +6,7 @@ using UnityEngine;
 public class Aircraft : MovingActor
 {
     [SerializeField] private LineRenderer _turningHeaderLine;
-    
+
     public float NMWalkedOnCurrentSegment;
     public float DistanceToNextPoint;
     public int CurrentSegmentIndex;
@@ -30,7 +30,7 @@ public class Aircraft : MovingActor
 
     private AircraftDebugHelper debugHelper = null;
 
-    private bool reachRunway = false;
+    public bool isCatchRw = false;
 
 
     protected override void Awake()
@@ -38,7 +38,7 @@ public class Aircraft : MovingActor
         base.Awake();
 
         _pilot = new Pilot(Vector2.zero, Vector2.up, false);
-        
+
         _turningHeaderLine.positionCount = 10;
 
         debugHelper = GetComponent<AircraftDebugHelper>();
@@ -49,9 +49,96 @@ public class Aircraft : MovingActor
         DrawHeadingLine();
         CheckAdvancePointOnHDGProximity(out DistanceToNextPoint);
 
-        if (Session.State.LNAV)
+        if (Session.State.ILSCapture)
         {
-            var foundClosePathDestination = Session.ActiveRoute.TracedRoute.FindCloseToRouteSegmentDestination(
+            if (!isCatchRw)
+            {
+                if (Session.ILSRoute.TracedRoute.FindCloseToRouteSegmentDestination(
+                    Session.Settings.HDGCloseRejoinDistance,
+                    out var routeIntersection,
+                    out _,
+                    out _,
+                    segmentBeginningIsAlwaysValid: false) ||
+                    Session.ILSRoute.FindFreeFlightDirectExitScenario(out routeIntersection))
+                {
+                    ResetSeekProgress(routeIntersection.SegmentIndex, routeIntersection.SegmentVertexIndex);
+                    _pendingJoinRoutePosition = routeIntersection;
+                    isCatchRw = true;
+                }
+                else
+                {
+                    isCatchRw = false;
+                }
+            }
+        }
+
+
+        if (!isCatchRw)
+        {
+            if (Session.State.LNAV)
+            {
+                var foundClosePathDestination = Session.ActiveRoute.TracedRoute.FindCloseToRouteSegmentDestination(
+                    Session.Settings.PilotSeekDistancePathFollow,
+                    out _lastFoundRoutePosition,
+                    out var foundAtDistanceOnSegment,
+                    out var reachedEnd, // Must use this to end the route
+                    startFromSegmentIndex: _lastFoundRoutePosition.SegmentIndex,
+                    startFromVertexIndex: _lastFoundRoutePosition.SegmentVertexIndex,
+                    breakOnFistSolution: true);
+
+                if (debugHelper != null)
+                {
+                    debugHelper.SegmentVertex = _lastFoundRoutePosition.SegmentVertex;
+                    debugHelper.SegmentVertexIndex = _lastFoundRoutePosition.SegmentVertexIndex;
+                    debugHelper.SegmentIndex = _lastFoundRoutePosition.SegmentIndex;
+                }
+
+                if (!foundClosePathDestination)
+                {
+                    Debug.LogError("No Intersection Point Found");
+                    Session.State.AutoSetHDG(true);
+
+                    return;
+                }
+
+                if (_pendingJoinRoutePosition != null)
+                {
+                    if (_pendingJoinRoutePosition.Value != _lastFoundRoutePosition)
+                    {
+                        _pendingJoinRoutePosition = null;
+                    }
+                }
+
+                _pilot.TickSteerToPathFoundVertex(_lastFoundRoutePosition.SegmentVertex, out _);
+                _pilot.TickAdvance();
+
+                CurrentSegmentIndex = _lastFoundRoutePosition.SegmentIndex;
+                NMWalkedOnCurrentSegment = foundAtDistanceOnSegment;
+            }
+            else if (Session.State.HDG)
+            {
+                // airplane is on free flight
+
+                TargetHeading = Calculator.RTrack;
+
+                _pilot.TickSteerToTargetHeading(TargetHeading);
+
+                _pilot.TickAdvance();
+
+
+                // for display only
+                //GameManager.Instance.ActiveRoute.FindFreeFlightDirectExitScenario(out displayCenterOfTurn, out displayExitPoint, out _);
+            }
+            else
+            {
+                // both lnav and hg are off
+
+                _pilot.TickAdvance();
+            }
+        }
+        else if(isCatchRw)
+        {
+            var foundCloseILSPathDestination = Session.ILSRoute.TracedRoute.FindCloseToRouteSegmentDestination(
                 Session.Settings.PilotSeekDistancePathFollow,
                 out _lastFoundRoutePosition,
                 out var foundAtDistanceOnSegment,
@@ -60,18 +147,14 @@ public class Aircraft : MovingActor
                 startFromVertexIndex: _lastFoundRoutePosition.SegmentVertexIndex,
                 breakOnFistSolution: true);
 
-            if (debugHelper != null)
-            {
-                debugHelper.SegmentVertex = _lastFoundRoutePosition.SegmentVertex;
-                debugHelper.SegmentVertexIndex = _lastFoundRoutePosition.SegmentVertexIndex;
-                debugHelper.SegmentIndex = _lastFoundRoutePosition.SegmentIndex;
-            }
+            //Debug.Log($"_lastFoundRoutePosition : {_lastFoundRoutePosition} || foundAtDistanceOnSegment : {foundAtDistanceOnSegment} || reachedEnd : {reachedEnd} || startFromSegmentIndex : {_lastFoundRoutePosition.SegmentIndex} || startFromVertexIndex : {_lastFoundRoutePosition.SegmentVertexIndex}");
 
-            if (!foundClosePathDestination)
+            if (!foundCloseILSPathDestination)
             {
                 Debug.LogError("No Intersection Point Found");
                 Session.State.AutoSetHDG(true);
-
+                isCatchRw = false;
+                //Session.State.ILSCapture = false;
                 return;
             }
 
@@ -89,49 +172,41 @@ public class Aircraft : MovingActor
             CurrentSegmentIndex = _lastFoundRoutePosition.SegmentIndex;
             NMWalkedOnCurrentSegment = foundAtDistanceOnSegment;
         }
-        else if(Session.State.HDG)
-        {
-            // airplane is on free flight
-            
-            TargetHeading = Calculator.RTrack;
 
-            _pilot.TickSteerToTargetHeading(TargetHeading);
+        //}
+        //else
+        //{
 
-            _pilot.TickAdvance();
 
-            
-            // for display only
-            //GameManager.Instance.ActiveRoute.FindFreeFlightDirectExitScenario(out displayCenterOfTurn, out displayExitPoint, out _);
-        }
-        else 
-        {
-            // both lnav and hg are off
-            
-            _pilot.TickAdvance();
-        }
 
-                if (!reachRunway)
-        {
-            var foundClosePathDestination = Session.ActiveRoute.TracedRoute.FindCloseToRouteSegmentDestination(
-Session.Settings.PilotSeekDistancePathFollow,
-out _lastFoundRoutePosition,
-out var foundAtDistanceOnSegment,
-out var reachedEnd, // Must use this to end the route
-startFromSegmentIndex: _lastFoundRoutePosition.SegmentIndex,
-startFromVertexIndex: _lastFoundRoutePosition.SegmentVertexIndex,
-breakOnFistSolution: true);
+        //    Debug.Log($"_lastFoundRoutePosition : {_lastFoundRoutePosition} || foundAtDistanceOnSegment : {foundAtDistanceOnSegment} || reachedEnd : {reachedEnd} || startFromSegmentIndex : {_lastFoundRoutePosition.SegmentIndex} || startFromVertexIndex : {_lastFoundRoutePosition.SegmentVertexIndex}");
 
-            if (_lastFoundRoutePosition.SegmentIndex == Session.ActiveRoute.Points.Length - 1)
-            {
-                Debug.Log("HDG");
-                Session.State.AutoSetHDG(false);
-                Session.State.AutoSetLNAV(true, true);
-                reachRunway = true;
-            }
-        }
+        //    if (!foundClosePathDestination)
+        //    {
+        //        Debug.LogError("No Intersection Point Found");
+        //        Session.State.AutoSetHDG(true);
+        //        isDirect = false;
+
+        //        return;
+        //    }
+
+        //    if (_pendingJoinRoutePosition != null)
+        //    {
+        //        if (_pendingJoinRoutePosition.Value != _lastFoundRoutePosition)
+        //        {
+        //            _pendingJoinRoutePosition = null;
+        //        }
+        //    }
+
+        //    _pilot.TickSteerToPathFoundVertex(_lastFoundRoutePosition.SegmentVertex, out _);
+        //    _pilot.TickAdvance();
+
+        //    CurrentSegmentIndex = _lastFoundRoutePosition.SegmentIndex;
+        //    NMWalkedOnCurrentSegment = foundAtDistanceOnSegment;
+        //}
     }
-    
-    
+
+
 
     public void Init(float aircraftSpeed, float altitude)
     {
@@ -190,12 +265,12 @@ breakOnFistSolution: true);
     {
         _pilot.NMPosition = Vector2.zero;
         _pilot.HeadingDegrees = -Session.ActiveRoute.Points[1].Degrees;
-        
-         _pilot.NMPosition = Vector2.zero;
+
+        _pilot.NMPosition = Vector2.zero;
         NMWalkedOnCurrentSegment = 0;
         _pendingJoinRoutePosition = null;
-        Session.State.AutoSetLNAV(true,true);
-        ResetSeekProgress(1,0);
+        Session.State.AutoSetLNAV(true, true);
+        ResetSeekProgress(1, 0);
     }
 
     public void ResetSeekProgress(int atLine, int atVertexIndex)
@@ -263,7 +338,7 @@ breakOnFistSolution: true);
         }
 
         Gizmos.color = Color.green;
-        
+
         Gizmos.DrawWireSphere(transform.position + _pilot.NMPosition.ToDisplay(), 0.05f);
     }
 }

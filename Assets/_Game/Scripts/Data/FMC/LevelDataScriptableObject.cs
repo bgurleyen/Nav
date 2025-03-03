@@ -5,6 +5,7 @@ using UnityEngine;
 public class LevelDataScriptableObject : ScriptableObject
 {
     public RouteScriptableObject MainRoute;
+    public RouteScriptableObject ILSRoute;
     [Space]
     [SerializeField] private VirtualPointsScriptableObject virtualPoints;
     [SerializeField] private ATCInstructionsScriptableObject aTCs;

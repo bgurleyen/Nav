@@ -318,6 +318,7 @@ public class Move : Singleton<Move>
             
             float dev = LocDeviation(272);
             float gsD = GsDeviation(3);
+            float ils = ILSDeviation(272);
 
             float x = hyp * Mathf.Cos(Mathf.DeltaAngle(TrackToPoint(point), PrvTrackToPoint) * Mathf.Deg2Rad);
 
@@ -474,6 +475,27 @@ public class Move : Singleton<Move>
   
         return Deviation;
 
+    }
+
+    public float ILSDeviation(float course)
+    {
+        float Deviation = Mathf.DeltaAngle(course, TrackToPoint(RW));
+
+        if (Mathf.Abs(Mathf.DeltaAngle(course, Session.PlayerAircraft.HeadingDegrees)) > 90) Deviation *= -1;
+
+        if(DME() > 3)
+        {
+            if ((Mathf.Abs(Deviation) < 10) && (DME() < 15))
+            {
+                Session.State.ILSCapture = true;
+            }
+        }
+        else
+        {
+            Session.State.ILSCapture = false;
+        }
+
+        return Deviation;
     }
 
     private void DescentCheck()

@@ -83,6 +83,7 @@ namespace Navigation
                 Debug.LogError("Cannot reach trace destination");
             }
 
+            //Debug.Log($"tracePositions : {tracePositions.Count}");
             Vertexes = tracePositions.ToArray();
         }
 

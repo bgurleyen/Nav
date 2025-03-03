@@ -13,6 +13,7 @@ MonoBehaviour:
   m_Name: _ _ Level Data 0
   m_EditorClassIdentifier: 
   MainRoute: {fileID: 11400000, guid: 132977bcef502bb4090912b2fb14c782, type: 2}
+  ILSRoute: {fileID: 11400000, guid: 5da69c372eddf482ba8207f0565573bd, type: 2}
   virtualPoints: {fileID: 11400000, guid: c34560a0a564cb444bf437f6235c7cb5, type: 2}
   aTCs: {fileID: 11400000, guid: 16f6d547515daf84ba56b3af4fcaf877, type: 2}
   levelInfo: {fileID: 11400000, guid: 004af2526800efa49ab42f499a7ee3f1, type: 2}

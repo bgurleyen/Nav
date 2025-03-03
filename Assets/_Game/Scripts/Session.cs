@@ -27,6 +27,12 @@ namespace Navigation {
             set => Routes.ActiveRoute = value;
         }
 
+        public static RouteScriptableObject ILSRoute
+        {
+            get => Routes.ILSRoute;
+            set => Routes.ILSRoute = value;
+        }
+
         public static RouteScriptableObject ModRoute
         {
             get => Routes.ModRoute;
@@ -55,6 +61,7 @@ namespace Navigation {
 public class ComputedRoutes
 {
     /*[ReadOnly]*/ public RouteScriptableObject ActiveRoute;
+    /*[ReadOnly]*/ public RouteScriptableObject ILSRoute;
     /*[ReadOnly]*/ public RouteScriptableObject ModRoute;
     /*[ReadOnly]*/ public RouteScriptableObject ModeSetWithPosition;
     /*[ReadOnly]*/ public FixedPointsScriptableObject FixedPoints;

@@ -14,6 +14,7 @@ public class State
     public bool GSCaptured { get; set; }
     public bool AppArmed { get; set; }
     public bool LNAVArmed { get; }
+    public bool ILSCapture { get; set; }
 
     public ToggleLinkedBool Speed10X { get; }
 

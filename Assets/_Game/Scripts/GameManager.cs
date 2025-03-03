@@ -40,7 +40,10 @@ public class GameManager : MonoBehaviour {
         Session.CurrentLevel = levelData;
 
         levelData.MainRoute.Init(true);
+        levelData.ILSRoute.Init(true);
+
         levelData.MainRoute.ComputeCartesianPositions();
+        levelData.ILSRoute.ComputeCartesianPositions(true);
         //Debug.Log("Init For Level  1111111 ");
         Session.OriginalReferenceRoute = levelData.MainRoute.CloneAndInit();
         /*for (int i = 0; i < Session.OriginalReferenceRoute.Points.Length; i++) {
@@ -49,6 +52,8 @@ public class GameManager : MonoBehaviour {
         //Debug.Log("OriginalReferenceRoute: "+ Session.OriginalReferenceRoute);
         //Debug.Log("Init For Level  222222 ");
         _routes.ActiveRoute = levelData.MainRoute.CloneAndInit();
+        _routes.ILSRoute = levelData.ILSRoute.CloneAndInit();
+        //_routes.ActiveRoute = levelData.ILSRoute.CloneAndInit();
         //Debug.Log("_routes.ActiveRoute: "+_routes.ActiveRoute);
 
         /*currentRouteScriptableObject = levelData.MainRoute.CloneAndInit();

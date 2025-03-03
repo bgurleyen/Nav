@@ -38,6 +38,7 @@ namespace Navigation {
             //Session.Routes.FixedPoints = FixedPointsScriptableObject.CreateDemo();
 
             Session.ActiveRoute.ComputeTrace();
+            Session.ILSRoute.ComputeTrace();
 
             _playerAircraft.Init(Session.Settings.AirplaneDesignSpeed, 21600);
 

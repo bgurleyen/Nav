@@ -39,10 +39,10 @@ public class TracedRoute
         }
     }
 
-    
 
-    
-    
+
+
+
 
     public bool FindClosestVertexToPositionOnLineActive(Vector2 position, int lineIndex, out int vertexIndex,
         out Vector2 vertexPosition)

@@ -46,6 +46,22 @@ namespace Navigation {
             }
         }
 
+        public void ComputeCartesianPositions(bool isILS = true)
+        {
+            var currentPosition = Session.CurrentLevel.MainRoute.GetCartesianPosition(Session.CurrentLevel.MainRoute.Points.Length - 1);
+            var rIndx = Points.Length - 1;
+
+            for (var i = 0; i < Points.Length; i++)
+            {
+                if (i > 0)
+                {
+                    currentPosition = Geometry.GetPreviousPosition(currentPosition, Points[i].Distance, Points[i].Degrees);
+                }
+
+                Points[rIndx--].CartesianPosition = currentPosition;
+            }
+        }
+
         public void ComputeTrace() {
             TracedRoute.Compute(Points);
         }

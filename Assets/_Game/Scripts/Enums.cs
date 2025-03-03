@@ -11,7 +11,8 @@ namespace Navigation
     {
         Mod,
         Active,
-        Rejoin
+        Rejoin,
+        ILS,
     }
 
     public enum FMCScreens
