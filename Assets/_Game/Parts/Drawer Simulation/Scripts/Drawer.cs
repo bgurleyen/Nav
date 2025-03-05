@@ -8,26 +8,26 @@ using TMPro;
 using Unyawn.Utils;
 using Lean.Common.Examples;
 
-public class Drawer : MonoBehaviour 
+public class Drawer : MonoBehaviour
 {
     [SerializeField] private GameConfigScriptableObject _gameConfig;
 
     public Animator cameraAnimator;
-    [Space] [SerializeField] private Transform dynamicHolder;
+    [Space][SerializeField] private Transform dynamicHolder;
     [SerializeField] private Transform dynamicHolderMod;
     [SerializeField] private Transform dynamicHolderILS;
     [SerializeField] private Transform dynamicHolderCircles;
     [SerializeField] private Transform dynamicHolderRays;
     [SerializeField] private Transform dynamicHolderOtheriarcrafts;
 
-    [Space] [SerializeField] private LeanGameObjectPool linesPool;
+    [Space][SerializeField] private LeanGameObjectPool linesPool;
     [SerializeField] private LeanGameObjectPool linesPoolMod;
     [SerializeField] private LeanGameObjectPool linesPoolILS;
     [SerializeField] private LeanGameObjectPool circlePool;
     [SerializeField] private LeanGameObjectPool rayPool;
     [SerializeField] private LeanGameObjectPool otherAircraftsPool;
 
-    [Space] [SerializeField] private Transform pivot;
+    [Space][SerializeField] private Transform pivot;
     [SerializeField] private Transform compasPivot;
     [SerializeField] private Transform mobilePlaneIndicatorPivot;
     [SerializeField] private RadialIndicators radialPivots;
@@ -37,7 +37,7 @@ public class Drawer : MonoBehaviour
     [SerializeField] private TMP_Text _reference40;
     [SerializeField] private TMP_Text _reference80;
 
-    [Header("modes visuals")] 
+    [Header("modes visuals")]
     [SerializeField] private GameObject[] mapHolder;
     [SerializeField] private GameObject[] centerHolder;
     [SerializeField] private GameObject[] planHolder;
@@ -164,7 +164,7 @@ public class Drawer : MonoBehaviour
 
         var zoomDistance = Math.Round(80f / Session.ZoomMultiplier / 2f, 1);
         _reference40.text = zoomDistance.ToString();
-        _reference80.text = (zoomDistance*2).ToString();
+        _reference80.text = (zoomDistance * 2).ToString();
 
     }
 
@@ -176,7 +176,10 @@ public class Drawer : MonoBehaviour
             DisplaySet(Session.ModeSetWithPosition?.TracedRoute?.ComputedLines, LinesType.Mod);
         }
         //Debug.Log(Session.ILSRoute?.TracedRoute.ComputedLines);
-        DisplaySet(Session.ILSRoute?.TracedRoute.ComputedLines, LinesType.ILS);
+        if (Session.ILSRoute != null)
+        {
+            DisplaySet(Session.ILSRoute?.TracedRoute.ComputedLines, LinesType.ILS);
+        }
 
         DisplayFixCircles();
         DisplayFixRays();
@@ -201,7 +204,7 @@ public class Drawer : MonoBehaviour
             case MapMode.Map:
                 //rotate compass
                 compasPivot.SetLocalRotationZ(Session.PlayerAircraft.DisplayHeadingDegrees);
-                
+
                 _freeFlightPivot.SetLocalRotationZ(Session.PlayerAircraft.DisplayHeadingDegrees - Calculator.RHeading);
                 mobilePlaneIndicatorPivot.SetLocalRotationZ(0);
 
@@ -213,15 +216,15 @@ public class Drawer : MonoBehaviour
 
                 if (Session.State.HDG)
                 {
-                    _freeFlightPivot.SetLocalRotationZ(- Calculator.RTrack);
+                    _freeFlightPivot.SetLocalRotationZ(-Calculator.RTrack);
                 }
-                
+
                 break;
-           
+
             default:
                 throw new ArgumentOutOfRangeException();
         }
-        
+
         mobilePlaneIndicatorPivot.localPosition = Session.PlayerAircraft.NMPosition.ToDisplay();
     }
 
@@ -256,7 +259,7 @@ public class Drawer : MonoBehaviour
         objective.transform.localPosition = Vector2.zero.ToDisplay();
     }
 
- 
+
 
     private void DisplaySet(IReadOnlyList<TracedLine> lines, LinesType linesType)
     {
@@ -288,7 +291,7 @@ public class Drawer : MonoBehaviour
                 throw new ArgumentOutOfRangeException(nameof(linesType), linesType, null);
         }
 
-       
+
 
         for (var i = 0; i < lines.Count; i++)
         {
@@ -388,17 +391,17 @@ public class Drawer : MonoBehaviour
         {
             return;
         }
-        
+
         Gizmos.color = Color.green;
         var up = pivot.up;
         var r = 0.1f;
-        Gizmos.DrawSphere(pivot.position +  up * Session.Settings.MapReferenceLength80, r);
+        Gizmos.DrawSphere(pivot.position + up * Session.Settings.MapReferenceLength80, r);
 
         Gizmos.color = Color.blue;
         Gizmos.DrawSphere(pivot.position + up * Session.Settings.PlanReferenceLength80, r);
 
         Gizmos.color = Color.cyan;
-        Gizmos.DrawSphere(pivot.position + up * Session.Settings.PlanReferenceLength80 / 2f,r);
+        Gizmos.DrawSphere(pivot.position + up * Session.Settings.PlanReferenceLength80 / 2f, r);
 
 
         // if (GameManager.Instance.ActiveRoute?.PathLines?.ComputedLines == null)

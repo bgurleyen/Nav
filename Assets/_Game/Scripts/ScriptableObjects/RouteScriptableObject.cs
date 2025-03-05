@@ -48,7 +48,10 @@ namespace Navigation {
 
         public void ComputeCartesianPositions(bool isILS = true)
         {
-            var currentPosition = Session.CurrentLevel.MainRoute.GetCartesianPosition(Session.CurrentLevel.MainRoute.Points.Length - 1);
+            //Temorary changes refine logic
+            //var currentPosition = Geometry.GetPreviousPosition(Session.ActiveRoute.TracedRoute.ComputedLines[Session.ActiveRoute.TracedRoute.ComputedLines.Length - 1].EndNMPosition,1.5f, Session.CurrentLevel.levelInfo.Course);
+            var currentPosition = Geometry.GetPreviousPosition(Session.CurrentLevel.MainRoute.Points[Session.CurrentLevel.MainRoute.Points.Length - 1].CartesianPosition,1.5f, Session.CurrentLevel.levelInfo.Course);
+            //var currentPosition = Geometry.GetNextPosition(Session.CurrentLevel.MainRoute.Points[Session.CurrentLevel.MainRoute.Points.Length - 1].CartesianPosition,2,272);
             var rIndx = Points.Length - 1;
 
             for (var i = 0; i < Points.Length; i++)
@@ -628,6 +631,29 @@ namespace Navigation {
 
                 Debug.Log("ID :" + Points[i].ID + "|| Name :" + Points[i].Name + "|| Details :" + Points[i].Details);
             }
+        }
+
+        public void AddNodeAtLast(int NodeId, string name, float rawDegrees, int distance)
+        {
+            RoutePoint insertionNode = new RoutePoint
+            {
+                Name = name,
+                Distance = distance,
+                RawDegrees = rawDegrees,
+                ID = NodeId
+            };
+
+            var newSet = new RoutePoint[Points.Length + 1];
+
+            for (var i = 0; i < Points.Length; i++)
+            {
+                newSet[i] = Points[i];
+            }
+            newSet[Points.Length] = insertionNode;
+
+            Points = newSet;
+
+            //ComputeCartesianPositions(true);
         }
 
         //code for remove a point from the array at specific index

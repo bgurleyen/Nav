@@ -318,7 +318,7 @@ public class Move : Singleton<Move>
             
             float dev = LocDeviation(272);
             float gsD = GsDeviation(3);
-            float ils = ILSDeviation(272);
+            float ils = Session.ILSRoute != null ? ILSDeviation(Session.CurrentLevel.levelInfo.Course) : 0;
 
             float x = hyp * Mathf.Cos(Mathf.DeltaAngle(TrackToPoint(point), PrvTrackToPoint) * Mathf.Deg2Rad);
 

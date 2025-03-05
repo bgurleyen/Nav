@@ -151,7 +151,6 @@ public class Aircraft : MovingActor
 
             if (!foundCloseILSPathDestination)
             {
-                Debug.LogError("No Intersection Point Found");
                 Session.State.AutoSetHDG(true);
                 isCatchRw = false;
                 //Session.State.ILSCapture = false;

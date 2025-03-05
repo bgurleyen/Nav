@@ -3,7 +3,8 @@ using Navigation;
 using UnityEngine;
 using Unyawn.Utils;
 
-public class GameManager : MonoBehaviour {
+public class GameManager : MonoBehaviour
+{
     [SerializeField] private GameConfigScriptableObject _gameConfig;
 
     [SerializeField] private ComputedRoutes _routes = new();
@@ -14,14 +15,16 @@ public class GameManager : MonoBehaviour {
 
     //public RouteScriptableObject currentRouteScriptableObject;
 
-    private void Awake() {
+    private void Awake()
+    {
 
         UYServiceLocator.Register(this);
 
         Session.Settings = _gameConfig.Settings;
     }
 
-    private void Start() {
+    private void Start()
+    {
         var mcpUI = UYServiceLocator.Get<McpUI>();
 
         _simulation = UYServiceLocator.Get<Simulation>();
@@ -35,15 +38,15 @@ public class GameManager : MonoBehaviour {
         InitForLevel(0);
     }
 
-    private void InitForLevel(int index) {
+    private void InitForLevel(int index)
+    {
         var levelData = _gameConfig.LevelsData[index];
         Session.CurrentLevel = levelData;
 
         levelData.MainRoute.Init(true);
-        levelData.ILSRoute.Init(true);
 
         levelData.MainRoute.ComputeCartesianPositions();
-        levelData.ILSRoute.ComputeCartesianPositions(true);
+
         //Debug.Log("Init For Level  1111111 ");
         Session.OriginalReferenceRoute = levelData.MainRoute.CloneAndInit();
         /*for (int i = 0; i < Session.OriginalReferenceRoute.Points.Length; i++) {
@@ -52,9 +55,13 @@ public class GameManager : MonoBehaviour {
         //Debug.Log("OriginalReferenceRoute: "+ Session.OriginalReferenceRoute);
         //Debug.Log("Init For Level  222222 ");
         _routes.ActiveRoute = levelData.MainRoute.CloneAndInit();
-        _routes.ILSRoute = levelData.ILSRoute.CloneAndInit();
-        //_routes.ActiveRoute = levelData.ILSRoute.CloneAndInit();
+
+        _routes.ILSRoute = ComputeILS(4, 4);
+        _routes.ILSRoute.ComputeTrace();
+        //_routes.ILSRoute.ComputeCartesianPositions(true);
+        //_routes.ILSRoute.ComputeTrace();
         //Debug.Log("_routes.ActiveRoute: "+_routes.ActiveRoute);
+
 
         /*currentRouteScriptableObject = levelData.MainRoute.CloneAndInit();
 
@@ -71,9 +78,11 @@ public class GameManager : MonoBehaviour {
         _simulation.Init();
     }
 
-    private void OnDestroy() {
+    private void OnDestroy()
+    {
 
-        if (UYServiceLocator.Has<LegsScreen>()) {
+        if (UYServiceLocator.Has<LegsScreen>())
+        {
             var legsScreen = UYServiceLocator.Get<LegsScreen>();
             legsScreen.OnLeftCornerPressErase -= LEGS_OnLeftCornerPressErase;
             legsScreen.OnExecButtonPress -= LEGS_OnExecButtonPress;
@@ -82,7 +91,8 @@ public class GameManager : MonoBehaviour {
 
     private float _pendingDeltaTime;
 
-    private void Update() {
+    private void Update()
+    {
         //// normal time calculation, but big computations
         //_pendingDeltaTime += Time.deltaTime;
         //var tickDuration = Session.Settings.TickDuration(false) / Session.Settings.SpeedMultiplier;
@@ -108,20 +118,24 @@ public class GameManager : MonoBehaviour {
 
         _simulation.SplittedTickModHandling();
         _simulation.SplittedTickComputeTrace();
-        for (int i = 0; i < ticksInDeltaTime; i++) {
+        for (int i = 0; i < ticksInDeltaTime; i++)
+        {
             _simulation.SplittedTickSimulation();
         }
         _simulation.SplittedTickDraw();
         _pendingDeltaTime -= ticksInDeltaTime * tickDuration;
     }
 
-    private void LEGS_OnLeftCornerPressErase() {
+    private void LEGS_OnLeftCornerPressErase()
+    {
         _simulation.EraseMod();
     }
 
-    private void LEGS_OnExecButtonPress() {
+    private void LEGS_OnExecButtonPress()
+    {
         //Debug.Log("Session Mod " + Session.IsMod);
-        if (Session.IsMod) {
+        if (Session.IsMod)
+        {
             //Debug.Log("Apply Mod " + Session.IsMod);  
             ApplyMod();
         }
@@ -129,7 +143,8 @@ public class GameManager : MonoBehaviour {
 
 
 
-    private void ApplyMod() {
+    private void ApplyMod()
+    {
 
 
         //Current Rounte Scriptable Object 
@@ -165,18 +180,41 @@ public class GameManager : MonoBehaviour {
         Session.ModRoute = null;
         Session.IsMod = false;
         _legsScreen.DisplayOperation("0k");
-        if (Session.ActiveRoute.HasActiveDirectApproach(out var linearApproachIndex) && Session.State.LNAV) {
-            if (!Session.PlayerAircraft.TryRejoinRoute()) {
+        if (Session.ActiveRoute.HasActiveDirectApproach(out var linearApproachIndex) && Session.State.LNAV)
+        {
+            if (!Session.PlayerAircraft.TryRejoinRoute())
+            {
                 Session.PlayerAircraft.ResetSeekProgress(linearApproachIndex, 0);
             }
         }
-        else {
+        else
+        {
             Session.PlayerAircraft.ResetSeekProgress(PositionVirtualNode.PassedNodeIndex + 2, 0);
         }
     }
 
-    public static void RemoveAt<T>(ref T[] arr, int index) {
-        for (int a = index; a < arr.Length - 1; a++) {
+    private RouteScriptableObject ComputeILS(int nodeCount, int distanceBetween)
+    {
+        RouteScriptableObject _ILS = Session.CurrentLevel.MainRoute.CloneAndInit();
+
+        RoutePoint rwPoint = _ILS.Points[_ILS.Points.Length - 1];
+
+        int course = Session.CurrentLevel.levelInfo.Course;
+
+        _ILS.Points = new RoutePoint[] { rwPoint };
+
+        for (int i = 0; i < nodeCount; i++)
+        {
+            _ILS.AddNodeAtLast(1, $"NODE_{i}", course, distanceBetween);
+        }
+        _ILS.ComputeCartesianPositions(true);
+        return _ILS;
+    }
+
+    public static void RemoveAt<T>(ref T[] arr, int index)
+    {
+        for (int a = index; a < arr.Length - 1; a++)
+        {
             // moving elements downwards, to fill the gap at [index]
             arr[a] = arr[a + 1];
         }
