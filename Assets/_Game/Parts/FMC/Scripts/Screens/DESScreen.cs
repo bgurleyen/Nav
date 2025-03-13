@@ -20,7 +20,7 @@ public class DESScreen : ScreenBase
 
       Main.UpdatePageInfo(
          isMod: false,
-         secondInfo: "??",
+         secondInfo: "ECON",
          pageTitle: "DES",
          currentPage: 0, totalPages: 1);
   

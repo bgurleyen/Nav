@@ -107,9 +107,12 @@ namespace Navigation.Data
 
 
             Fmc.Arr.Destination = levelData.Destination;
-            Fmc.Arr.STAR = levelData.Runway;
+            /*Fmc.Arr.STAR = levelData.Runway;
             Fmc.Arr.Transition = levelData.Star;
-            Fmc.Arr.RW = levelData.Transition;
+            Fmc.Arr.RW = levelData.Transition;*/
+            Fmc.Arr.STAR = levelData.Star;
+            Fmc.Arr.Transition = levelData.Transition;
+            Fmc.Arr.RW = levelData.Runway;
 
 
             Fmc.Prog.PrvName = "" + activePoints.Points[prvWptIdx].Name;
