@@ -1,4 +1,5 @@
 using Navigation;
+using UnityEngine;
 
 public class MenuScreen : ScreenBase
 {
@@ -14,7 +15,19 @@ public class MenuScreen : ScreenBase
       }
    }
 
-   public override void Show()
+    public override void OnLineSelectRight(int index)
+    {
+        base.OnLineSelectRight(index);
+
+        switch (index)
+        {
+            case 4:
+                Application.OpenURL("https://games4pilot.com");
+                break;
+        }
+    }
+
+    public override void Show()
    {
       base.Show();
 

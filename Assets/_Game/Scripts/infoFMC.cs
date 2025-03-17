@@ -102,6 +102,9 @@ namespace Navigation.Data
 
 
             Fmc.Crz.Destination = levelData.Destination;
+            Fmc.Crz.Altitude = ""+levelData.CrzAltitude;
+            Fmc.Crz.Speed = ""+levelData.CrzSpeed;
+            Fmc.Crz.Destination = levelData.Destination;
             Fmc.Crz.FuelAtDestination = "" + System.Math.Round(fr_onpoint[WPTCount - 1], 2);
             Fmc.Crz.ActualWind = "" + Calculator.CWind;
 
@@ -234,7 +237,7 @@ namespace Navigation.Data
 
     public class CRZ
     {
-        public string Destination, FuelAtDestination, ActualWind;
+        public string Destination, FuelAtDestination, ActualWind, Altitude, Speed;
     }
 
     public class ARR

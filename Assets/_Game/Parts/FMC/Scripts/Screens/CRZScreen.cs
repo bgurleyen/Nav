@@ -38,8 +38,8 @@ public class CRZScreen : ScreenBase
         var initRef = infoFMC.Instance.Fmc.Initref;
         var crz = infoFMC.Instance.Fmc.Crz;
 
-        _crzAltitude.text = "??";
-        _crzSpeed.text = "??";
+        _crzAltitude.text = crz.Altitude;
+        _crzSpeed.text = crz.Speed;
         _actualWind.text = crz.ActualWind;
         _destination.text = initRef.Destination;
         _fuelAtDestination.text = crz.FuelAtDestination;
