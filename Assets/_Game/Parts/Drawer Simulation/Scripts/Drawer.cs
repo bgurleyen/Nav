@@ -132,32 +132,39 @@ public class Drawer : MonoBehaviour
         Extension.DespawnChildren<OtherAircrafIndicator>(dynamicHolderOtheriarcrafts, otherAircraftsPool);
     }
 
-    // public static bool GetCircleFix(RoutePoint linkedPoint, Vector3 from, FixedPointInfo linkedInfo,
-    //     out FixCircle circle)
-    // {
-    //     if (linkedInfo.NM != null)
-    //     {
-    //         circle = new FixCircle(linkedPoint, linkedInfo);
-    //         circle.Init(from);
-    //         return true;
-    //     }
-    //
-    //     circle = null;
-    //     return false;
-    // }
-    //
-    // public static bool GetRayFix(RoutePoint linkedPoint, Vector3 from, FixedPointInfo linkedInfo, out FixRay ray)
-    // {
-    //     if (linkedInfo.RawDegrees != null)
-    //     {
-    //         ray = new FixRay(linkedPoint, linkedInfo);
-    //         ray.Init(from);
-    //         return true;
-    //     }
-    //
-    //     ray = null;
-    //     return false;
-    // }
+    public static bool GetCircleFix(RoutePoint linkedPoint, Vector3 from, FixedPointInfo linkedInfo,
+        out FixCircle circle)
+    {
+        if (linkedInfo == null)
+        {
+            circle = new FixCircle(linkedPoint, linkedInfo);
+            circle.Init(from, true);
+            return true;
+        }
+
+        if (linkedInfo.NM != null)
+        {
+            circle = new FixCircle(linkedPoint, linkedInfo);
+            circle.Init(from);
+            return true;
+        }
+
+        circle = null;
+        return false;
+    }
+
+    public static bool GetRayFix(RoutePoint linkedPoint, Vector3 from, FixedPointInfo linkedInfo, out FixRay ray)
+    {
+        if (linkedInfo.RawDegrees != null)
+        {
+            ray = new FixRay(linkedPoint, linkedInfo);
+            ray.Init(from);
+            return true;
+        }
+
+        ray = null;
+        return false;
+    }
 
     public void RefreshDisplayDistances()
     {
@@ -340,48 +347,58 @@ public class Drawer : MonoBehaviour
 
     private void DisplayFixCircles()
     {
-        // var circles = Session.ActiveRoute.TracedRoute.ComputedCircles;
-        // var pool = circlePool;
-        // var holder = dynamicHolderCircles;
-        //
-        // for (var i = 0; i < circles.Count; i++)
-        // {
-        //     var line = circles[i];
-        //
-        //     if (line == null)
-        //     {
-        //         continue;
-        //     }
-        //
-        //     var point = line.LinkedPoint;
-        //
-        //     var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<FixedCircleDrawer>();
-        //     drawer.name = $"{line.GetName} {point.Name}";
-        //     drawer.Display(line);
-        // }
+        var circles = Session.ActiveRoute.TracedRoute.ComputedCircles;
+        var pool = circlePool;
+        var holder = dynamicHolderCircles;
+
+        if (circles == null)
+        {
+            return;
+        }
+
+        for (var i = 0; i < circles.Count; i++)
+        {
+            var line = circles[i];
+
+            if (line == null)
+            {
+                continue;
+            }
+
+            var point = line.LinkedPoint;
+
+            var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<FixedCircleDrawer>();
+            drawer.name = $"{line.GetName} {point.Name}";
+            drawer.Display(line);
+        }
     }
 
     private void DisplayFixRays()
     {
-        // var rays = Session.ActiveRoute.TracedRoute.ComputedRays;
-        // var pool = rayPool;
-        // var holder = dynamicHolderRays;
-        //
-        // for (var i = 0; i < rays.Count; i++)
-        // {
-        //     var ray = rays[i];
-        //
-        //     if (ray == null)
-        //     {
-        //         continue;
-        //     }
-        //
-        //     var point = ray.LinkedPoint;
-        //
-        //     var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<FixedRayDrawer>();
-        //     drawer.name = $"{ray.GetName} {point.Name}";
-        //     drawer.Display(ray);
-        // }
+        var rays = Session.ActiveRoute.TracedRoute.ComputedRays;
+        var pool = rayPool;
+        var holder = dynamicHolderRays;
+
+        if (rays == null)
+        {
+            return;
+        }
+
+        for (var i = 0; i < rays.Count; i++)
+        {
+            var ray = rays[i];
+
+            if (ray == null)
+            {
+                continue;
+            }
+
+            var point = ray.LinkedPoint;
+
+            var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<FixedRayDrawer>();
+            drawer.name = $"{ray.GetName} {point.Name}";
+            drawer.Display(ray);
+        }
     }
 
 

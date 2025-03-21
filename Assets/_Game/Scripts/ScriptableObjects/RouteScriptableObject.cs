@@ -65,8 +65,8 @@ namespace Navigation {
             }
         }
 
-        public void ComputeTrace() {
-            TracedRoute.Compute(Points);
+        public void ComputeTrace(bool isMod = false) {
+            TracedRoute.Compute(Points,isMod);
         }
 
         public void InitIds() {

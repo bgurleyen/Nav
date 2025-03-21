@@ -35,9 +35,10 @@ namespace Navigation {
             Session.PlayerAircraft = _playerAircraft;
 
             //changes by S.A
-            //Session.Routes.FixedPoints = FixedPointsScriptableObject.CreateDemo();
+            Session.Routes.FixedPoints = FixedPointsScriptableObject.CloneAndInit();
+            //Debug.Log(Session.Routes.FixedPoints.Entries.Length);
 
-            Session.ActiveRoute.ComputeTrace();
+            Session.ActiveRoute.ComputeTrace(transform);
             //Debug.Log(Session.ActiveRoute.TracedRoute.ComputedLines.Length);
 
             _playerAircraft.Init(Session.Settings.AirplaneDesignSpeed, 21600);

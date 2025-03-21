@@ -25,6 +25,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 988660702015700946}
+  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
@@ -33,7 +34,6 @@ Transform:
   - {fileID: 3245902935262049594}
   - {fileID: 4100802902976092957}
   m_Father: {fileID: 0}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1982940406357089975
 MonoBehaviour:
@@ -51,6 +51,7 @@ MonoBehaviour:
   drawer: {fileID: 988660702015700947}
 --- !u!120 &988660702015700947
 LineRenderer:
+  serializedVersion: 2
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -138,16 +139,20 @@ LineRenderer:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 2
       m_NumAlphaKeys: 2
     numCornerVertices: 0
     numCapVertices: 0
     alignment: 0
     textureMode: 3
+    textureScale: {x: 1, y: 1}
     shadowBias: 0.5
     generateLightingData: 0
+  m_MaskInteraction: 0
   m_UseWorldSpace: 0
   m_Loop: 0
+  m_ApplyActiveColorSpace: 0
 --- !u!1 &3245902935262049596
 GameObject:
   m_ObjectHideFlags: 0
@@ -172,16 +177,17 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 3245902935262049596}
+  serializedVersion: 2
   m_LocalRotation: {x: -0.26190007, y: -0, z: -0, w: 0.96509504}
   m_LocalPosition: {x: 0.085106194, y: 0.05019804, z: 0}
   m_LocalScale: {x: 0.11143318, y: 0.11143318, z: 0.11143318}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 988660702015700956}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: -30.366001, y: 0, z: 0}
 --- !u!120 &3245902935262049595
 LineRenderer:
+  serializedVersion: 2
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -275,16 +281,20 @@ LineRenderer:
       atime6: 0
       atime7: 0
       m_Mode: 0
+      m_ColorSpace: -1
       m_NumColorKeys: 2
       m_NumAlphaKeys: 2
     numCornerVertices: 0
     numCapVertices: 0
     alignment: 0
     textureMode: 0
+    textureScale: {x: 1, y: 1}
     shadowBias: 0.5
     generateLightingData: 0
+  m_MaskInteraction: 0
   m_UseWorldSpace: 0
   m_Loop: 1
+  m_ApplyActiveColorSpace: 0
 --- !u!1 &4100802901759877873
 GameObject:
   m_ObjectHideFlags: 0
@@ -308,6 +318,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4100802901759877873}
+  serializedVersion: 2
   m_LocalRotation: {x: -0.000000029802319, y: -0.000000014901159, z: -0.3486593, w: 0.93724954}
   m_LocalPosition: {x: 0.26, y: 1.18, z: 1.12}
   m_LocalScale: {x: 1, y: 1, z: 1}
@@ -315,7 +326,6 @@ Transform:
   m_Children:
   - {fileID: 4100802903220044034}
   m_Father: {fileID: 4100802902976092957}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: -40.811}
 --- !u!1 &4100802902976092946
 GameObject:
@@ -333,7 +343,7 @@ GameObject:
   m_Icon: {fileID: 4162164826716764455, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &4100802902976092957
 Transform:
   m_ObjectHideFlags: 0
@@ -341,6 +351,7 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 4100802902976092946}
+  serializedVersion: 2
   m_LocalRotation: {x: -0.27155688, y: -0, z: -0, w: 0.96242243}
   m_LocalPosition: {x: -0.591, y: 0.661, z: 0}
   m_LocalScale: {x: 0.13830361, y: 0.13830361, z: 0.13830361}
@@ -348,7 +359,6 @@ Transform:
   m_Children:
   - {fileID: 4100802901759877872}
   m_Father: {fileID: 988660702015700956}
-  m_RootOrder: 1
   m_LocalEulerAnglesHint: {x: -31.514002, y: 0, z: 0}
 --- !u!114 &4100802902976092956
 MonoBehaviour:
@@ -394,7 +404,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4100802901759877872}
-  m_RootOrder: 0
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
@@ -490,8 +499,8 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 8
-  m_fontSizeBase: 8
+  m_fontSize: 15.32
+  m_fontSizeBase: 15.32
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18

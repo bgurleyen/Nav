@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Navigation;
 using UnityEngine;
 
@@ -13,15 +14,15 @@ public class TracedRoute
 
     public List<FixCircle> ComputedCircles;
     public List<FixRay> ComputedRays;
-        
+
     public void Compute(RoutePoint[] pointsArray, bool hasOtherMarkers = false)
     {
         ComputedLines = new TracedLine[pointsArray.Length];
-        // if (hasOtherMarkers)
-        // {
-        //     ComputedCircles = new List<FixCircle>();
-        //     ComputedRays = new List<FixRay>();
-        // }
+        if (hasOtherMarkers)
+        {
+            ComputedCircles = new List<FixCircle>();
+            ComputedRays = new List<FixRay>();
+        }
 
         var pilot = new Pilot(
             nmPosition: pointsArray[0].CartesianPosition,
@@ -36,6 +37,41 @@ public class TracedRoute
                 pointsArray[i - 1].CartesianPosition,
                 pointsArray[i]);
             ComputedLines[i] = line;
+
+
+            // S.A. Code
+
+
+            if (hasOtherMarkers && FixedPoints != null)
+            {
+                var fixEntry = FixedPoints.Entries.FirstOrDefault(x => x.Name == line.LinkedPoint.Name);
+                if (fixEntry != null)
+                {
+                    //if (fixEntry <= 0)
+                    {
+                        if (Drawer.GetCircleFix(line.LinkedPoint, line.EndNMPosition, null,
+                            out var circleDraw))
+                        {
+                            ComputedCircles.Add(circleDraw);
+                        }
+                    }
+
+                    for (var j = 0; j < fixEntry.Infos.Length; j++)
+                    {
+                        if (Drawer.GetCircleFix(line.LinkedPoint, line.EndNMPosition, fixEntry.Infos[j],
+                            out var circleDraw))
+                        {
+                            ComputedCircles.Add(circleDraw);
+                        }
+
+                        if (Drawer.GetRayFix(line.LinkedPoint, line.EndNMPosition, fixEntry.Infos[j],
+                            out var rayDraw))
+                        {
+                            ComputedRays.Add(rayDraw);
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -86,7 +122,7 @@ public class TracedRoute
 
         var minFoundSqrDistance = computedLine.LinkedPoint.Distance * computedLine.LinkedPoint.Distance;
         foundVertexOnSegment.NMPosition = computedLine.SegmentVertices[0];
-        
+
         for (int j = 0; j < computedLine.SegmentVertices.Length; j++)
         {
             var segmentVertex = computedLine.SegmentVertices[j];

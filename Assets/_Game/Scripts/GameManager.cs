@@ -56,6 +56,9 @@ public class GameManager : MonoBehaviour
         //Debug.Log("Init For Level  222222 ");
         _routes.ActiveRoute = levelData.MainRoute.CloneAndInit();
 
+        //_routes.FixedPoints = FixedPointsScriptableObject.CreateDemo();
+        //Debug.Log(_routes.FixedPoints.Entries.Length);
+
         _routes.ILSRoute = ComputeILS(4, 4);
         _routes.ILSRoute.ComputeTrace();
         //_routes.ILSRoute.ComputeCartesianPositions(true);
