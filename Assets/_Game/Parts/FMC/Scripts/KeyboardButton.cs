@@ -111,6 +111,11 @@ public class KeyboardButton : MonoBehaviour
     {
         FMC_Screens.Instance.ShowPage(FMCScreens.Fix);
     }
+
+    public void OnPAUSEButtonClick()
+    {
+        Time.timeScale = Time.timeScale == 0 ? 1 : 0;
+    }
 }
 
 public static class Keys

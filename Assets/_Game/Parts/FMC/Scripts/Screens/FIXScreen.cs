@@ -1,4 +1,4 @@
-using Navigation;
+﻿using Navigation;
 using Navigation.Data;
 using System.Collections;
 using System.Collections.Generic;
@@ -23,18 +23,19 @@ public class FIXScreen : ScreenBase
     [SerializeField] private TMP_Text _dtgThird;
     [SerializeField] private TMP_Text _altThird;
 
+    [SerializeField] private TMP_Text[] _rads;
+
     private NodeSelection _selectionInfo;
     private NodeSelection _lastSelectionClicked;
 
     private RoutePoint selectedRouteNode;
 
+    private int TotalPages => 3;
+
     private ScratchPadInterpreter _scratchPadInterpreter;
     private string _scratchPadBuffer = "";
-
-    private bool isFixSelect;
-    private bool cir1;
-    private bool cir2;
-    private bool cir3;
+    [SerializeField]
+    private int _currentPage;
 
     public override void Show()
     {
@@ -44,87 +45,121 @@ public class FIXScreen : ScreenBase
 
         _scratchPadBuffer = MainScreen.Instance.scratchPadText.GetText();
 
-        InvokeRepeating(nameof(Refresh), 0, 1f);
+        InvokeRepeating(nameof(DisplayCurrentPage), 0, 0.2f);
     }
 
     public override void Hide()
     {
         base.Hide();
 
-        CancelInvoke(nameof(Refresh));
+        CancelInvoke(nameof(DisplayCurrentPage));
+    }
+
+    public override void DisplayNextPage()
+    {
+        _currentPage = Mathf.Min(TotalPages - 1, _currentPage + 1);
+    }
+
+    public override void DisplayPrevPage()
+    {
+        _currentPage = Mathf.Max(0, _currentPage - 1);
     }
 
     public override void OnLineSelectLeft(int index)
     {
         base.OnLineSelectLeft(index);
 
-        InterpretScratchpadOnTextChanged(true);
+        InterpretScratchpadOnTextChanged();
 
         if (_scratchPadInterpreter.IsValid)
         {
             switch (index)
             {
                 case 0:
-                    _pointName.text = _scratchPadBuffer;
-
-                    _scratchPadInterpreter.Node = Session.VisibleRoute.Points.FirstOrDefault(x => x.Name == _scratchPadBuffer);
-                    selectedRouteNode = _scratchPadInterpreter.Node;
-
-                    Session.Routes.FixedPoints.AddOrUpdateFixedPointEntry(_scratchPadInterpreter.Node.Name, null);
-                    InitData();
-                    ClearScratchPad();
+                    {
+                        Session.Routes.FixedPoints.AddOrUpdateFixedPoint(
+                            new FixedPointEntry()
+                            {
+                                Name = _scratchPadInterpreter.Node.Name,
+                                Infos = new FixedPointInfo[] { }
+                            }, _currentPage);
+                    }
                     break;
-
                 case 1:
-                    Session.Routes.FixedPoints.AddOrUpdateFixedPointEntry(selectedRouteNode.Name, new FixedPointInfo() { NM = _scratchPadInterpreter.NMRegulation, RawDegrees = _scratchPadInterpreter.DegreesRegulation });
-                    UpdateData(ref _rad, _scratchPadBuffer);
-                    ClearScratchPad();
+                    {
+                        Session.Routes.FixedPoints.AddOrUpdateFixedPointInfo(
+                            new FixedPointInfo()
+                            {
+                                NM = _scratchPadInterpreter.NMRegulation,
+                                RawDegrees = _scratchPadInterpreter.DegreesRegulation
+                            }, index - 1, _currentPage);
+                    }
                     break;
-
                 case 2:
-                    Session.Routes.FixedPoints.AddOrUpdateFixedPointEntry(selectedRouteNode.Name, new FixedPointInfo() { NM = _scratchPadInterpreter.NMRegulation, RawDegrees = _scratchPadInterpreter.DegreesRegulation });
-                    UpdateData(ref _radSecond, _scratchPadBuffer);
-                    ClearScratchPad();
+                    {
+                        Session.Routes.FixedPoints.AddOrUpdateFixedPointInfo(
+                            new FixedPointInfo()
+                            {
+                                NM = _scratchPadInterpreter.NMRegulation,
+                                RawDegrees = _scratchPadInterpreter.DegreesRegulation
+                            }, index - 1, _currentPage);
+                    }
                     break;
-
                 case 3:
-                    Session.Routes.FixedPoints.AddOrUpdateFixedPointEntry(selectedRouteNode.Name, new FixedPointInfo() { NM = _scratchPadInterpreter.NMRegulation, RawDegrees = _scratchPadInterpreter.DegreesRegulation });
-                    UpdateData(ref _radThird, _scratchPadBuffer);
-                    ClearScratchPad();
+                    {
+                        Session.Routes.FixedPoints.AddOrUpdateFixedPointInfo(
+                            new FixedPointInfo()
+                            {
+                                NM = _scratchPadInterpreter.NMRegulation,
+                                RawDegrees = _scratchPadInterpreter.DegreesRegulation
+                            }, index - 1, _currentPage);
+                    }
                     break;
             }
-
-            Session.Routes.ActiveRoute.ComputeTrace(true);
         }
+
+        ClearScratchPad();
+        Session.Routes.ActiveRoute.ComputeTrace(true);
     }
 
-    //public override void OnLineSelectRight(int index)
-    //{
-    //    base.OnLineSelectRight(index);
-
-    //    switch (index)
-    //    {
-    //        case 0:
-    //            break;
-    //    }
-    //}
-
-    private void Refresh()
+    public void DisplayCurrentPage()
     {
-        //var initRef = infoFMC.Instance.Fmc.Initref;
+        Main.UpdatePageInfo(
+            isMod: false,
+            firstInfo: "",
+            pageTitle: "",
+            secondInfo: "",
+            _currentPage,
+            TotalPages);
 
-        //_gwt.text = initRef.GWT;
-        //_destinationRw.text = initRef.Destination + initRef.RW;
-        //_field.text = initRef.Field;
-        //_rw.text = $"ILS {initRef.RW}/CRS";
 
-        //_freq.text = $"{initRef.Freq}/{initRef.Course}";
+        var fixPoints = Session.Routes.FixedPoints;
+        var wayPoint = fixPoints.GetWaypointAt(_currentPage);
 
-        //_f15.text = $"{initRef.F15}KT";
-        //_f30.text = $"{initRef.F30}KT";
-        //_f40.text = $"{initRef.F40}KT";
+        if (wayPoint == null)
+        {
+            _pointName.text = "□□□□□";
+            foreach (var rad in _rads)
+            {
+                rad.text = "";
+            }
+        }
+        else
+        {
+            _pointName.text = wayPoint.Name;
 
-        //_vRef.text = $"30/{initRef.Vref}";
+            for (int i = 0; i < 3; i++)
+            {
+                if (wayPoint.Infos.Length > i)
+                {
+                    _rads[i].text = $"{wayPoint.Infos[i].RawDegrees?.ToString() ?? "---"}/{wayPoint.Infos[i].NM?.ToString() ?? "---"}";
+                }
+                else
+                {
+                    _rads[i].text = "---";
+                }
+            }
+        }
     }
 
     public override void OnCharacterInput(char character)
@@ -138,7 +173,7 @@ public class FIXScreen : ScreenBase
             _scratchPadBuffer += character;
         }
 
-        InterpretScratchpadOnTextChanged(true);
+        InterpretScratchpadOnTextChanged();
 
         UpdateScratchPad(_scratchPadBuffer, _selectionInfo != null);
     }
@@ -172,8 +207,10 @@ public class FIXScreen : ScreenBase
         }
     }
 
-    private void InterpretScratchpadOnTextChanged(bool handleSelection)
+    private void InterpretScratchpadOnTextChanged()
     {
+        if (string.IsNullOrEmpty(_scratchPadBuffer))
+            return;
 
         _scratchPadInterpreter = new ScratchPadInterpreter
         {
@@ -183,74 +220,22 @@ public class FIXScreen : ScreenBase
             NMRegulation = null
         };
 
-        if (selectedRouteNode == null)
+        _scratchPadInterpreter.Node = Session.ActiveRoute.Points.FirstOrDefault(x => x.Name == _scratchPadBuffer);
+
+        if (_scratchPadInterpreter.Node != null)
         {
-            if (_scratchPadBuffer.Contains('/'))
+            if (_scratchPadInterpreter.Node != null)
             {
-                var indexOfSlash = _scratchPadBuffer.IndexOf('/');
-                var allLeft = _scratchPadBuffer[..indexOfSlash];
-                // ABC/-11 or ABC060/-11
-                _scratchPadInterpreter.Node = Session.VisibleRoute.Points.FirstOrDefault(x => x.Name == allLeft);
-                //if (_scratchPadInterpreter.Node == null)
-                //{
-                //    // ABC060/-11    ~~   Can be relative with angle and direction
-                //    if (int.TryParse(allLeft.Substring(allLeft.Length - 3, 3), out var angle))
-                //    {
-                //        _scratchPadInterpreter.Angle = angle;
-                //        var withoutAngle = allLeft[..^3];
-                //        _scratchPadInterpreter.Node = Session.VisibleRoute.Points.FirstOrDefault(x => x.Name == withoutAngle);
-                //    }
-                //    else
-                //    {
-                //        _scratchPadInterpreter.IsValid = false;
-                //    }
-                //}
-
-                // make sure the distance is ok 
-                //if (_scratchPadInterpreter.Node != null)
-                //{
-                //    var allRight =
-                //        _scratchPadBuffer.Substring(indexOfSlash + 1, _scratchPadBuffer.Length - (indexOfSlash + 1));
-                //    if (int.TryParse(allRight, out var distance))
-                //    {
-                //        _scratchPadInterpreter.Distance = distance;
-                //    }
-                //    else
-                //    {
-                //        _scratchPadInterpreter.IsValid = false;
-                //    }
-                //}
+                Debug.Log(_scratchPadInterpreter.Node.Name);
             }
-            else
+            if (_scratchPadInterpreter.Node == null)
             {
-                if (int.TryParse(_scratchPadBuffer, out var number))
-                {
-                    if (_scratchPadBuffer.Length == 3)
-                    {
-                        // Is linear approach
-                        //_scratchPadInterpreter.Angle = number;
-                    }
-
-
-                }
-                else
-                {
-                    _scratchPadInterpreter.Node = Session.VisibleRoute.Points.FirstOrDefault(x => x.Name == _scratchPadBuffer);
-
-                    if (_scratchPadInterpreter.Node != null)
-                    {
-                        Debug.Log(_scratchPadInterpreter.Node.Name);
-                    }
-                    if (_scratchPadInterpreter.Node == null)
-                    {
-                        _scratchPadInterpreter.IsValid = false;
-                    }
-                }
+                _scratchPadInterpreter.IsValid = false;
             }
 
             if (_scratchPadInterpreter.IsValid)
             {
-                if (handleSelection && _scratchPadInterpreter.Node != null)
+                if (_scratchPadInterpreter.Node != null)
                 {
                     Debug.Log("_scratchPadIntrerpreter.IsValid: " + _scratchPadInterpreter.IsValid);
                     _selectionInfo = new NodeSelection
@@ -269,26 +254,8 @@ public class FIXScreen : ScreenBase
                 Debug.LogWarning("Invalid Scratchpad Entry!");
             }
         }
-
         else
         {
-            if (_scratchPadBuffer.Length <= 0) return;
-            // look for regulations
-            //if (_scratchPadBuffer[0] == '/' && _scratchPadBuffer.Length > 1)
-            //{
-            //    // should be altitude only regulation
-            //    var value = _scratchPadBuffer.Substring(1, _scratchPadBuffer.Length - 1);
-
-            //    if (DataHandler.ParseAltRegulation(value, out _, out _, out _))
-            //    {
-            //        _scratchPadInterpreter.AltRegulation = value;
-            //        _scratchPadInterpreter.SpeedRegulation = null;
-            //    }
-            //    else
-            //    {
-            //        _scratchPadInterpreter.IsValid = false;
-            //    }
-            //}
             if (_scratchPadBuffer[0] == '/' && _scratchPadBuffer.Length > 1)
             {
                 // should be nm only regulation
@@ -339,11 +306,13 @@ public class FIXScreen : ScreenBase
                     _scratchPadInterpreter.IsValid = false;
                 }
             }
-            else if (int.TryParse(_scratchPadBuffer, out _))
+            else if (int.TryParse(_scratchPadBuffer, out var degreeRegulation))
             {
-                // can be altitude regulation
-                if (int.TryParse(_scratchPadBuffer, out var degreeRegulation))
                     _scratchPadInterpreter.DegreesRegulation = degreeRegulation;
+            }
+            else
+            {
+                _scratchPadInterpreter.IsValid = false;
             }
         }
     }

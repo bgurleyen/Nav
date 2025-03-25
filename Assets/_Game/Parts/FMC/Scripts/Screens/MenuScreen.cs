@@ -15,16 +15,24 @@ public class MenuScreen : ScreenBase
       }
    }
 
-    public override void OnLineSelectRight(int index)
-    {
-        base.OnLineSelectRight(index);
+    //public override void OnLineSelectRight(int index)
+    //{
+    //    base.OnLineSelectRight(index);
 
-        switch (index)
-        {
-            case 4:
-                Application.OpenURL("https://games4pilot.com");
-                break;
-        }
+    //    Debug.Log(index);
+
+    //    switch (index)
+    //    {
+    //        case 4:
+    //            break;
+    //    }
+    //}
+
+    public override void OnRightCornerPress()
+    {
+        base.OnRightCornerPress();
+
+        Application.OpenURL("https://games4pilot.com");
     }
 
     public override void Show()
