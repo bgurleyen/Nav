@@ -50,7 +50,7 @@ namespace Navigation {
         public static bool IsMod;
 
         public static float Zoom => (State.MapMode == MapMode.Plan
-            ? ZoomMultiplier * Settings.PlanReferenceLength80
+            ? ZoomMultiplier * Settings.PlanReferenceLength80 
             : ZoomMultiplier * Settings.MapReferenceLength80) / 80f;
 
         public static float ZoomMultiplier;

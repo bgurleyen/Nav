@@ -22,7 +22,7 @@ public class GameSettingsScriptableObject : ScriptableObject
     [Space]
     [Header("Map")]
     [Space] public float StartingZoom = 2;
-    public float MapReferenceLength80 = 2.82f;
+    public float MapReferenceLength80 = 2.82f; //2.56f -- TestValue
     public float PlanReferenceLength80 = 3.82f;
     
     [Header("Aircraft")]

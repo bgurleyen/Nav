@@ -50,4 +50,18 @@ public class RadialIndicators : MonoBehaviour
         _headingLine.gameObject.SetActive( Session.State.MapMode != MapMode.Plan && Session.State.HDG);
         _headingTop.gameObject.SetActive(Session.State.MapMode != MapMode.Plan);
     }
+
+    public void HeadingLineVisibility()
+    {
+        _headingLine.gameObject.SetActive(Session.State.MapMode != MapMode.Plan);
+        _headingTop.gameObject.SetActive(Session.State.MapMode != MapMode.Plan);
+
+        CancelInvoke("HideHeadingLine");
+        Invoke("HideHeadingLine", 10f);
+    }
+
+    private void HideHeadingLine()
+    {
+        _headingLine.gameObject.SetActive(false);
+    }
 }

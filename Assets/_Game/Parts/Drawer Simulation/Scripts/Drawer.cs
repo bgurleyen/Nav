@@ -37,6 +37,8 @@ public class Drawer : MonoBehaviour
     [SerializeField] private TMP_Text _reference40;
     [SerializeField] private TMP_Text _reference80;
 
+    [SerializeField] private TMP_Text _Mapreference40;
+
     [Header("modes visuals")]
     [SerializeField] private GameObject[] mapHolder;
     [SerializeField] private GameObject[] centerHolder;
@@ -109,7 +111,9 @@ public class Drawer : MonoBehaviour
     public void OnZoomIn()
     {
         Clear();
-        Session.ZoomMultiplier += 0.2f;
+        //Session.ZoomMultiplier *= 2f;
+        //Debug.Log($"Zoom : {Session.ZoomMultiplier}");
+        Session.ZoomMultiplier = Mathf.Clamp(Session.ZoomMultiplier * 2f, 0.125f, 16f);
         Display();
         RefreshDisplayDistances();
     }
@@ -117,7 +121,8 @@ public class Drawer : MonoBehaviour
     public void OnZoomOut()
     {
         Clear();
-        Session.ZoomMultiplier -= 0.2f;
+        //Session.ZoomMultiplier /= 2f;
+        Session.ZoomMultiplier = Mathf.Clamp(Session.ZoomMultiplier / 2f, 0.125f, 16f);
         Display();
         RefreshDisplayDistances();
     }
@@ -171,6 +176,7 @@ public class Drawer : MonoBehaviour
 
         var zoomDistance = Math.Round(80f / Session.ZoomMultiplier / 2f, 1);
         _reference40.text = zoomDistance.ToString();
+        _Mapreference40.text = (zoomDistance).ToString();
         _reference80.text = (zoomDistance * 2).ToString();
 
     }
@@ -190,7 +196,7 @@ public class Drawer : MonoBehaviour
 
         DisplayFixCircles();
         DisplayFixRays();
-        radialPivots.RefreshVisibility();
+        //radialPivots.RefreshVisibility();
         bananaIndicatorPivot.SetLocalY(Calculator.Instance.GetBananaPosition);
 
         DisplayOtherTraffic();
