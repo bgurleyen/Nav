@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Points:
   - ID: 0
-    Name: _START_
+    Name: _START
     RawDegrees: 0
     Distance: 0
     RawSpeed: 0

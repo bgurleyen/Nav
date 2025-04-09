@@ -41,7 +41,7 @@ public class State
         HDG = new ToggleLinkedBool(mcpUI.hsToggle, UIOnHDGAttemptToggle);
 
         LC = new ToggleLinkedBool(mcpUI._LCToggle, UIOnLCAttemptToggle);
-        VNAV = new ToggleLinkedBool(mcpUI._VNAVToggle);
+        VNAV = new ToggleLinkedBool(mcpUI._VNAVToggle, UIOnVNAVAttemptToggle);
         AH = new ToggleLinkedBool(mcpUI._AHToggle, UIOnAHAttemptToggle);
         VS = new ToggleLinkedBool(mcpUI._VSToggle, UIOnVSAttemptToggle);
 
@@ -81,6 +81,13 @@ public class State
     private void UIOnAHAttemptToggle()
     {
         AH.Switch();
+
+        if (AH)
+        {
+            VNAV.Set(false);
+            LC.Set(false);
+            VS.Set(false);
+        }
     }
 
     private void UIOnLCAttemptToggle()
@@ -92,7 +99,24 @@ public class State
 
         LC.Switch();
 
+        if (LC)
+        {
+            VNAV.Set(false);
+            AH.Set(false);
+            VS.Set(false);
+        }
+    }
 
+    private void UIOnVNAVAttemptToggle()
+    {
+        VNAV.Switch();
+
+        if (VNAV)
+        {
+            LC.Set(false);
+            AH.Set(false);
+            VS.Set(false);
+        }
     }
 
     private void UIOnVSAttemptToggle()
@@ -103,11 +127,25 @@ public class State
         }
 
         VS.Switch();
+
+        if (VS)
+        {
+            VNAV.Set(false);
+            AH.Set(false);
+            LC.Set(false);
+        }
     }
 
     public void AutoSetAH(bool state)
     {
         AH.Set(state);
+
+        if (state)
+        {
+            VNAV.Set(false);
+            VS.Set(false);
+            LC.Set(false);
+        }
     }
 
     private void UIOnHDGAttemptToggle()

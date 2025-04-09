@@ -36,8 +36,9 @@ public class PROGScreen : ScreenBase
 
         Main.UpdatePageInfo(
            isMod: false,
-           firstInfo: "-------",
-           secondInfo: "PROGRESS",
+           //firstInfo: "-------",
+           secondInfo: "--------------------",
+           pageTitle: "PROGRESS",
            currentPage: 0, totalPages: 1);
 
 

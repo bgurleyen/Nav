@@ -13,12 +13,11 @@ public class BgText : MonoBehaviour
     
     [SerializeField] internal TMP_Text label;
 
-    private string scratchpadTxt = "";
+    private string m_text;
 
     public void Clear()
     {
         label.text = "";
-        scratchpadTxt = "";
     }
 
     public void SetAsTall(string text)
@@ -76,17 +75,13 @@ public class BgText : MonoBehaviour
                     label.text += $"<size=35>{part.Text}</size>";
                     break;
             }
-            scratchpadTxt = part.Text;
+            m_text = part.Text;
         }
         //<size=46><font="HelveticaNeue-Bold SDF"><line-height=49> </line-height></font></size>
     }
 
-    public string GetText()
-    {
-        return scratchpadTxt;
-    }
-    
-    
+    public string GetText() => m_text;
+
     public struct TextBuilder
     {
         public TextState State;

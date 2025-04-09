@@ -39,6 +39,8 @@ public class Drawer : MonoBehaviour
 
     [SerializeField] private TMP_Text _Mapreference40;
 
+    [Space][SerializeField] private GameObject rangelineHolder;
+
     [Header("modes visuals")]
     [SerializeField] private GameObject[] mapHolder;
     [SerializeField] private GameObject[] centerHolder;
@@ -81,6 +83,7 @@ public class Drawer : MonoBehaviour
                 break;
         }
         ShowCurrentMode();
+        ShowRangeLine();
     }
 
 
@@ -106,6 +109,11 @@ public class Drawer : MonoBehaviour
 
         Clear();
         Display();
+    }
+
+    private void ShowRangeLine()
+    {
+        rangelineHolder.SetActive(Session.State.MapMode != MapMode.Plan);
     }
 
     public void OnZoomIn()
@@ -160,7 +168,7 @@ public class Drawer : MonoBehaviour
 
     public static bool GetRayFix(RoutePoint linkedPoint, Vector3 from, FixedPointInfo linkedInfo, out FixRay ray)
     {
-        if (linkedInfo.RawDegrees != null)
+        if (linkedInfo?.RawDegrees != null)
         {
             ray = new FixRay(linkedPoint, linkedInfo);
             ray.Init(from);
@@ -197,6 +205,7 @@ public class Drawer : MonoBehaviour
         DisplayFixCircles();
         DisplayFixRays();
         //radialPivots.RefreshVisibility();
+        radialPivots.RefreshZoomAndHDG();
         bananaIndicatorPivot.SetLocalY(Calculator.Instance.GetBananaPosition);
 
         DisplayOtherTraffic();
@@ -237,6 +246,7 @@ public class Drawer : MonoBehaviour
             default:
                 throw new ArgumentOutOfRangeException();
         }
+        _windPivot.SetLocalRotationZ(Calculator.HeadingWindAddition);
 
         mobilePlaneIndicatorPivot.localPosition = Session.PlayerAircraft.NMPosition.ToDisplay();
     }

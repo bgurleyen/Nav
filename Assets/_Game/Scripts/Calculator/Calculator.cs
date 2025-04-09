@@ -45,6 +45,7 @@ public class Calculator : MonoBehaviour
     private float SpeedTime;
     public Text windTxt;
     public static string CWind;
+    public static int HeadingWindAddition;
     public Text FMA1, FMA2, FMA3, FMAarmed;
     public Image windArrow, VSline, SpeedTrend;
     public GameObject Progres, FlapNeedle, LGlever;
@@ -442,6 +443,7 @@ public class Calculator : MonoBehaviour
 
         bool isMod = Session.IsMod;
         RouteScriptableObject _route = isMod ? modPoints : activePoints;
+        if (_route == null) _route = activePoints;
 
         var node0 = _route.Points[PositionVirtualNode.PassedNodeIndex];
         var node1 = _route.Points[PositionVirtualNode.PassedNodeIndex + 1];
@@ -989,7 +991,8 @@ public class Calculator : MonoBehaviour
         CWind = WE.WindD + "° / " + WE.WindM;
         GS = WE.GS;
         CHeading = CTrack - WE.HeadingWindAddition;
-        //     Debug.Log("CTrack:   " + CTrack + "HdgWingAddition:   " + WE.HeadingWindAddition + "rel:   " + WE.relativeWindD);
+        HeadingWindAddition = WE.HeadingWindAddition;
+             //Debug.Log("CTrack:   " + CTrack + "HdgWingAddition:   " + WE.HeadingWindAddition + "rel:   " + WE.relativeWindD);
     }
     public class WindElements
     {

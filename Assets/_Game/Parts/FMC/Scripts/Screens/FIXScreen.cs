@@ -71,7 +71,33 @@ public class FIXScreen : ScreenBase
 
         InterpretScratchpadOnTextChanged();
 
-        if (_scratchPadInterpreter.IsValid)
+        if (ScratchPadInterpreter.IsDeletePending(_scratchPadBuffer))
+        {
+            switch (index)
+            {
+                case 0:
+                    {
+                        Session.Routes.FixedPoints.RemovePoint(_currentPage);
+                    }
+                    break;
+                case 1:
+                    {
+                        Session.Routes.FixedPoints.RemovePointInfo(index - 1, _currentPage);
+                    }
+                    break;
+                case 2:
+                    {
+                        Session.Routes.FixedPoints.RemovePointInfo(index - 1, _currentPage);
+                    }
+                    break;
+                case 3:
+                    {
+                        Session.Routes.FixedPoints.RemovePointInfo(index - 1, _currentPage);
+                    }
+                    break;
+            }
+        }
+        else if (_scratchPadInterpreter.IsValid)
         {
             switch (index)
             {
@@ -152,7 +178,7 @@ public class FIXScreen : ScreenBase
             {
                 if (wayPoint.Infos.Length > i)
                 {
-                    _rads[i].text = $"{wayPoint.Infos[i].RawDegrees?.ToString() ?? "---"}/{wayPoint.Infos[i].NM?.ToString() ?? "---"}";
+                    _rads[i].text = $"{wayPoint.Infos[i]?.RawDegrees?.ToString() ?? "---"}/{wayPoint.Infos[i]?.NM?.ToString() ?? "---"}";
                 }
                 else
                 {
@@ -191,6 +217,12 @@ public class FIXScreen : ScreenBase
             _scratchPadBuffer = _scratchPadBuffer.Remove(_scratchPadBuffer.Length - 1);
         }
 
+        UpdateScratchPad(_scratchPadBuffer);
+    }
+
+    public override void OnDeletePress()
+    {
+        _scratchPadBuffer = MainScreen.Keywords.DELETE;
         UpdateScratchPad(_scratchPadBuffer);
     }
 

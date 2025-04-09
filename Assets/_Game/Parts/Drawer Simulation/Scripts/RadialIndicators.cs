@@ -1,7 +1,9 @@
 using System;
 using Gamelogic.Extensions;
 using Navigation;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public class RadialIndicators : MonoBehaviour
 {
@@ -12,6 +14,11 @@ public class RadialIndicators : MonoBehaviour
     [SerializeField] private LineRenderer _headingLine;
     [SerializeField] private Transform _headingTop;
     [SerializeField] private Transform _windTop;
+    [SerializeField] private Transform _hdgRangeTop;
+
+    [Space]
+    [SerializeField] TextMeshPro _headingText;
+    [SerializeField] TextMeshPro _rangeText;
 
     private float _onePivotHeight;
 
@@ -42,7 +49,7 @@ public class RadialIndicators : MonoBehaviour
         _headingLine.transform.localScale = scale;
         _headingTop.SetLocalY(scale.x * _onePivotHeight);
         _windTop.SetLocalY(scale.x * _onePivotHeight);
-        
+        _hdgRangeTop.SetLocalY(scale.x * _onePivotHeight);
     }
 
     public void RefreshVisibility()
@@ -51,13 +58,26 @@ public class RadialIndicators : MonoBehaviour
         _headingTop.gameObject.SetActive(Session.State.MapMode != MapMode.Plan);
     }
 
+    public void RefreshZoomAndHDG()
+    {
+        var displayHeadingDegrees = Mathf.RoundToInt(Session.PlayerAircraft.DisplayHeadingDegrees);
+        //Debug.Log(Session.PlayerAircraft.DisplayHeadingDegrees);
+        if (displayHeadingDegrees > 359) displayHeadingDegrees -= 360;
+        if (displayHeadingDegrees < 0) displayHeadingDegrees += 360;
+
+        displayHeadingDegrees = Mathf.Abs(displayHeadingDegrees) % 360;
+
+        _headingText.text = Mathf.RoundToInt(displayHeadingDegrees).ToString("D3");
+        _rangeText.text = Math.Round(80f / Session.ZoomMultiplier, 1).ToString();
+    }
+
     public void HeadingLineVisibility()
     {
         _headingLine.gameObject.SetActive(Session.State.MapMode != MapMode.Plan);
         _headingTop.gameObject.SetActive(Session.State.MapMode != MapMode.Plan);
 
-        CancelInvoke("HideHeadingLine");
-        Invoke("HideHeadingLine", 10f);
+        CancelInvoke(nameof(HideHeadingLine));
+        Invoke(nameof(HideHeadingLine), 10f);
     }
 
     private void HideHeadingLine()

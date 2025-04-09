@@ -44,7 +44,8 @@ public class TracedRoute
 
             if (hasOtherMarkers && FixedPoints != null)
             {
-                var fixEntry = FixedPoints.Entries.FirstOrDefault(x => x.Name == line.LinkedPoint.Name);
+                //var fixEntry = FixedPoints.Entries.FirstOrDefault(x => x.Name == line.LinkedPoint.Name);
+                var fixEntry = FixedPoints.Entries.FirstOrDefault(x => x != null && x.Name == line.LinkedPoint.Name);
                 if (fixEntry != null)
                 {
                     //if (fixEntry <= 0)

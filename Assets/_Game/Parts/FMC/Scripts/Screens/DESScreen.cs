@@ -9,7 +9,8 @@ public class DESScreen : ScreenBase
 {
 
     [SerializeField] private TMP_Text _rwAltitude;
-    [SerializeField] private TMP_Text _econSpeed_Mach;
+    //[SerializeField] private TMP_Text _econSpeed_Mach;
+    [SerializeField] private BgText _econSpeed_Mach;
     [SerializeField] private TMP_Text _wptAltFix;
     [SerializeField] private TMP_Text _arrTansition;
     [SerializeField] private TMP_Text _fpa;
@@ -25,10 +26,10 @@ public class DESScreen : ScreenBase
 
     private void Start()
     {
-        _econSpeed_Mach.text = $"??/??";
-
         lastHRight.text = "";
         lastHLeft.text = "";
+
+        _econSpeed_Mach.SetAsDefault($"??/??");
     }
 
     public override void Show()
@@ -36,12 +37,12 @@ public class DESScreen : ScreenBase
         base.Show();
 
 
-        //Main.UpdatePageInfo(
-        //   isMod: Session.IsMod,
-        //   secondInfo: "ECON",
-        //   pageTitle: "DES",
-        //   currentPage: 0, totalPages: 1);
-
+        Main.UpdatePageInfo(
+           isMod: Session.IsMod,
+           firstInfo: Session.IsMod ? "MOD" : "",
+           secondInfo: "ECON",
+           pageTitle: "DES",
+           currentPage: 0, totalPages: 1);
 
         InvokeRepeating(nameof(Refresh), 0, 1f);
     }
@@ -56,12 +57,17 @@ public class DESScreen : ScreenBase
 
     private void Refresh()
     {
+        Main.UpdatePageInfo(
+           isMod: Session.IsMod,
+           firstInfo: Session.IsMod ? "MOD" : "",
+           secondInfo: "ECON",
+           pageTitle: "DES",
+           currentPage: 0, totalPages: 1);
+
         var fmc = infoFMC.Instance.Fmc;
         var des = infoFMC.Instance.Fmc.Des;
 
         _rwAltitude.text = des.RWAltitude;
-        //_econSpeed_Mach.text = $"??/??";
-
         _wptAltFix.text = des.WptAltFix;
 
         _arrTansition.text = fmc.Arr.Transition;
@@ -72,25 +78,35 @@ public class DESScreen : ScreenBase
 
     public override void OnLineSelectLeft(int index)
     {
-        if (_scratchPadInterpreter.IsValid)
+        InterpretScratchpadOnTextChanged();
+
+        switch (index)
         {
-            switch (index)
-            {
-                case 1:
+            case 1:
+                {
+                    if (ScratchPadInterpreter.IsDeletePending(_scratchPadBuffer))
+                    {
+                        _scratchPadBuffer = string.Empty;
+                        _econSpeed_Mach.SetAsDefault($"??/??");
+                        ClearScratchPad();
+                        break;
+                    }
+
+                    if (!_scratchPadInterpreter.IsValid) break;
+
                     Session.IsMod = true;
+                    _econSpeed_Mach.SetAsModified(_scratchPadBuffer);
+                    ClearScratchPad();
                     break;
-            }
+                }
         }
     }
 
     public override void OnExecPress()
     {
-        //OnExecButtonPress?.Invoke();
-        //ClearCurrentOperation();
-        //ClearSelectionHistory();
-
         Session.IsMod = false;
-        _econSpeed_Mach.text = _scratchPadInterpreter.AltRegulation;
+        _econSpeed_Mach.SetAsDefault(_econSpeed_Mach.GetText());
+        //_econSpeed_Mach.text = _scratchPadInterpreter.AltRegulation;
     }
 
 
@@ -250,7 +266,11 @@ public class DESScreen : ScreenBase
         };
 
         // look for regulations
-        if (_scratchPadBuffer[0] == '/' && _scratchPadBuffer.Length > 1)
+        if (_scratchPadBuffer.Length < 1)
+        {
+            _scratchPadInterpreter.IsValid = false;
+        }
+        else if (_scratchPadBuffer[0] == '/' && _scratchPadBuffer.Length > 1)
         {
             // should be altitude only regulation
             var value = _scratchPadBuffer.Substring(1, _scratchPadBuffer.Length - 1);
@@ -316,7 +336,13 @@ public class DESScreen : ScreenBase
         MainScreen.Instance.scratchPadText.SetAsDefault(buffer);
         if (withStatus)
         {
-            lastHLeft.text = "ECON";
+            //lastHLeft.text = "ECON";
         }
+    }
+
+    private void ClearScratchPad()
+    {
+        _scratchPadBuffer = "";
+        MainScreen.Instance.scratchPadText.Clear();
     }
 }

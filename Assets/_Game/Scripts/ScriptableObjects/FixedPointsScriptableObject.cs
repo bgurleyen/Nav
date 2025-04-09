@@ -58,7 +58,7 @@ public class FixedPointsScriptableObject : ScriptableObject
         return newSet;
     }
 
-    public void AddOrUpdateFixedPointEntry(string _name, FixedPointInfo addPointInfo)
+    /*public void AddOrUpdateFixedPointEntry(string _name, FixedPointInfo addPointInfo)
     {
         //if(Entries.Length <= 0)
         //{
@@ -145,7 +145,7 @@ public class FixedPointsScriptableObject : ScriptableObject
         {
             Debug.LogWarning("Input FixedPointEntry");
         }
-    }
+    }*/
 
     public void AddOrUpdateFixedPoint(FixedPointEntry fixedPoint, int atIndex = -1)
     {
@@ -240,19 +240,21 @@ public class FixedPointsScriptableObject : ScriptableObject
 
                 Entries[entryIndx].Infos = newPointsInfo;
             }
+        }
+    }
 
+    public void RemovePoint(int atIndex)
+    {
+        if (atIndex < Entries.Length)
+            Entries[atIndex] = null;
+    }
 
-
-            //FixedPointInfo[] newPointsInfo = new FixedPointInfo[Entries[atIndex].Infos.Length];
-
-            //for (int i = 0; i < Entries[entryIndx].Infos.Length; i++)
-            //{
-            //    newPointsInfo[i] = Entries[entryIndx].Infos[i];
-            //}
-
-            //newPointsInfo[atIndex] = pointInfo;
-
-            //Entries[entryIndx].Infos = newPointsInfo;
+    public void RemovePointInfo(int atIndex, int entryIndx)
+    {
+        if (entryIndx < Entries.Length)
+        {
+            if (atIndex < Entries[entryIndx]?.Infos.Length)
+                Entries[entryIndx].Infos[atIndex] = null;
         }
     }
 
