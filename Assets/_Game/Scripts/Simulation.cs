@@ -212,6 +212,21 @@ namespace Navigation {
             OnOperationMade?.Invoke();
         }
 
+        public void ExecuteDeleteWayPoint(DeleteWayPointCommand command)
+        {
+            //CheckModForOperation();
+            //_cachedCommands.Add(command);
+
+            //Session.ModRoute.GetPoint(command.NodeId, out var node, out _);
+            _legsScreen.DisplayOperation("ERASE");
+            //Session.ModRoute.ShortcutNodes(command.NodeId - 1, command.NodeId + 1, out var _);
+            Session.ActiveRoute.RemovePoint(command.NodeId);
+            Session.ActiveRoute.ComputeTrace();
+            //DataHandler.BuildSetDetails(Session.ModRoute);
+
+            //OnOperationMade?.Invoke();
+        }
+
         public void ExecuteShortcutOnMod(ExecuteShortcutOnModeCommand command) {
             CheckModForOperation();
             _cachedCommands.Add(command);

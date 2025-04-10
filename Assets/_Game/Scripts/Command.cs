@@ -22,6 +22,10 @@ public struct AddSpeedRegulationCommand : ICommand
     public int Regulation;
 }
 
+public struct DeleteWayPointCommand : ICommand
+{
+    public int NodeId;
+}
 
 public struct InsertRelativeCommand : ICommand
 {

@@ -141,6 +141,14 @@ public class LegsScreen : ScreenBase {
             return;
         }
 
+        if (ScratchPadInterpreter.IsDeletePending(_scratchPadBuffer))
+        {
+            _simulation.ExecuteDeleteWayPoint(new DeleteWayPointCommand
+            {
+                NodeId = clickedInfo.LinkedId,
+            });
+        }
+
         var handled = false;
         _lastSelectionClicked = clickedInfo;
         // user clicks, none is previously selected

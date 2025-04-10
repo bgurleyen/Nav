@@ -95,6 +95,10 @@ public class LegsNodeLine : MonoBehaviour {
 
             var isSpeedRestriction = node.GetSpeedIsRestricted(out var speedDisplayValue);
             var isAltRestriction = node.GetAltitudeIsRestricted(out var altDisplayValue);
+
+            //this below line is only for display flight level in ui section not need remove this line only
+            altDisplayValue = int.TryParse(altDisplayValue, out int value) && value > 10000 ? $"FL{value / 100}" : altDisplayValue;
+
             // var _speedColor = 
             //     ? "#FF00C7"
             //     : "#EBE0C9";
