@@ -171,11 +171,11 @@ public class FixedPointsScriptableObject : ScriptableObject
             if (Entries.Length > atIndex)
             {
                 Entries[atIndex] = fixedPoint;
-                Debug.Log($"Updated {atIndex}: {Entries[atIndex].Name}");
+                //Debug.Log($"Updated {atIndex}: {Entries[atIndex].Name}");
             }
             else
             {
-                Debug.LogError("Index_Outof_Bound_Entry");
+                //Debug.LogError("Index_Outof_Bound_Entry");
 
                 //comment below code if not use it. add because of if getting elament null at index
                 FixedPointEntry[] newEntry = new FixedPointEntry[Entries.Length + 1];
@@ -227,7 +227,7 @@ public class FixedPointsScriptableObject : ScriptableObject
             }
             else
             {
-                Debug.LogError("Index_Outof_Bound_Info");
+                //Debug.LogError("Index_Outof_Bound_Info");
 
                 newPointsInfo = new FixedPointInfo[Entries[entryIndx].Infos.Length + 1];
 

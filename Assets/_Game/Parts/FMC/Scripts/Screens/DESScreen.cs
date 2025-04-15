@@ -70,7 +70,7 @@ public class DESScreen : ScreenBase
         _rwAltitude.text = des.RWAltitude;
         _wptAltFix.text = des.WptAltFix;
 
-        _arrTansition.text = fmc.Arr.Transition;
+        _arrTansition.text = "FL100";
         _fpa.text = des.FPA;
         _vb.text = des.VB;
         _vs.text = des.VS;

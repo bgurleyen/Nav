@@ -143,10 +143,14 @@ public class LegsScreen : ScreenBase {
 
         if (ScratchPadInterpreter.IsDeletePending(_scratchPadBuffer))
         {
+            if(clickedNode.ID == Session.ActiveRoute.Points[Session.ActiveRoute.Points.Length - 1].ID) return;
+
             _simulation.ExecuteDeleteWayPoint(new DeleteWayPointCommand
             {
                 NodeId = clickedInfo.LinkedId,
             });
+            return;
+            //_scratchPadBuffer = "";
         }
 
         var handled = false;

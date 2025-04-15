@@ -60,14 +60,16 @@ public class RadialIndicators : MonoBehaviour
 
     public void RefreshZoomAndHDG()
     {
-        var displayHeadingDegrees = Mathf.RoundToInt(Session.PlayerAircraft.DisplayHeadingDegrees);
-        //Debug.Log(Session.PlayerAircraft.DisplayHeadingDegrees);
-        if (displayHeadingDegrees > 359) displayHeadingDegrees -= 360;
-        if (displayHeadingDegrees < 0) displayHeadingDegrees += 360;
+        //var displayHeadingDegrees = Mathf.RoundToInt(Session.PlayerAircraft.DisplayHeadingDegrees);
+        ////Debug.Log(Session.PlayerAircraft.DisplayHeadingDegrees);
+        //if (displayHeadingDegrees > 359) displayHeadingDegrees -= 360;
+        //if (displayHeadingDegrees < 0) displayHeadingDegrees += 360;
 
-        displayHeadingDegrees = Mathf.Abs(displayHeadingDegrees) % 360;
+        //displayHeadingDegrees = Mathf.Abs(displayHeadingDegrees) % 360;
 
-        _headingText.text = Mathf.RoundToInt(displayHeadingDegrees).ToString("D3");
+        _headingText.text = Mathf.RoundToInt(Geometry.AbsAngle(Session.PlayerAircraft.DisplayHeadingDegrees)).ToString("D3");
+
+        //_headingText.text = Mathf.RoundToInt(displayHeadingDegrees).ToString("D3");
         _rangeText.text = Math.Round(80f / Session.ZoomMultiplier, 1).ToString();
     }
 

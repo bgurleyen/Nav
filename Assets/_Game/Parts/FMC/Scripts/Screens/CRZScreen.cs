@@ -1,7 +1,9 @@
 using Navigation;
 using Navigation.Data;
+using System.Runtime.Remoting.Messaging;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Windows;
 
 public class CRZScreen : ScreenBase
 {
@@ -51,11 +53,11 @@ public class CRZScreen : ScreenBase
         //_crzAltitude.SetAsDefault(crz.Altitude);
         if (Session.IsMod)
         {
-            _crzAltitude.SetAsModified(crzAltitude == null ? crz.Altitude : FLConvertion(crzAltitude));
+            _crzAltitude.SetAsModified(crzAltitude == null ? crz.Altitude : FLConvertions(crzAltitude));
         }
         else
         {
-            _crzAltitude.SetAsDefault(crzAltitude == null ? crz.Altitude : FLConvertion(crzAltitude));
+            _crzAltitude.SetAsDefault(crzAltitude == null ? crz.Altitude : FLConvertions(crzAltitude));
         }
         _crzSpeed.SetAsDefault(crz.Speed);
         _actualWind.text = crz.ActualWind;
@@ -87,8 +89,25 @@ public class CRZScreen : ScreenBase
 
                 if (!_scratchPadInterpreter.IsValid) break;
 
-                _crzAltitude.SetAsModified(FLConvertion(_scratchPadInterpreter.AltRegulation));
+                if (FLConvertions(_scratchPadInterpreter.AltRegulation) == null) break;
+
+                _crzAltitude.SetAsModified(FLConvertions(_scratchPadInterpreter.AltRegulation));
                 crzAltitude = _scratchPadInterpreter.AltRegulation;
+                Session.IsMod = true;
+                ClearScratchPad();
+                break;
+            case 1:
+                if (ScratchPadInterpreter.IsDeletePending(_scratchPadBuffer))
+                {
+                    _scratchPadBuffer = string.Empty;
+                    _crzSpeed = null;
+                    ClearScratchPad();
+                    break;
+                }
+
+                if (!_scratchPadInterpreter.IsValid) break;
+
+                _crzSpeed.SetAsModified(_scratchPadInterpreter.SpeedRegulation.ToString());
                 Session.IsMod = true;
                 ClearScratchPad();
                 break;
@@ -316,14 +335,14 @@ public class CRZScreen : ScreenBase
         else if (int.TryParse(_scratchPadBuffer, out var altRegulation))
         {
             // can be altitude regulation
-            if (altRegulation >= 10 && altRegulation <= 410)
+            _scratchPadInterpreter.AltRegulation = altRegulation;
+            /*if (altRegulation >= 10 && altRegulation <= 410)
             {
-                _scratchPadInterpreter.AltRegulation = altRegulation;
             }
             else
             {
                 _scratchPadInterpreter.IsValid = false;
-            }
+            }*/
         }
         else
         {
@@ -336,13 +355,44 @@ public class CRZScreen : ScreenBase
 
 
 
-    private string FLConvertion(int? _altRegulation)
+    //private string FLConvertion(int? _altRegulation)
+    //{
+    //    if (_altRegulation < 100)
+    //        return $"{_altRegulation * 100}";
+    //    else if (99 < _altRegulation && _altRegulation < 1000)
+    //        return $"FL{_altRegulation}";
+    //    else if (999 < _altRegulation && _altRegulation < 10000)
+    //        return $"{_altRegulation}";
+    //    else
+    //        return $"FL{_altRegulation}".Substring(0, 5);
+    //}
+
+    public string FLConvertions(int? _altRegulation)
     {
-        if (_altRegulation < 100)
-            return $"{_altRegulation * 100}";
+        if ((_altRegulation >= 1000 && _altRegulation <= 41000) || (_altRegulation >= 10 && _altRegulation <= 410))
+        {
+            if (_altRegulation >= 10 && _altRegulation <= 410)
+            {
+                _altRegulation *= 100;
+            }
+
+            if (_altRegulation > 10000)
+            {
+                _altRegulation /= 100;
+                return $"FL{_altRegulation}";
+            }
+            else
+            {
+                return $"{_altRegulation}";
+            }
+        }
         else
-            return $"FL{_altRegulation}";
+        {
+            //Debug.LogError("Input_Error");
+            return null;
+        }
     }
+
 
     public void UpdateScratchPad(string buffer, bool withStatus = true)
     {

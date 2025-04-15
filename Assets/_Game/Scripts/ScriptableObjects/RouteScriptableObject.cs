@@ -1,32 +1,41 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
 
-namespace Navigation {
+namespace Navigation
+{
     [CreateAssetMenu(fileName = "RouteData", menuName = "ScriptableObjects/RouteData")]
-    public class RouteScriptableObject : ScriptableObject {
+    public class RouteScriptableObject : ScriptableObject
+    {
         public RoutePoint[] Points;
         public TracedRoute TracedRoute { get; private set; }
 
         public int FirstSpeedRegulationNodeId { get; set; }
         public int FirstAltRegulationNodeId { get; set; }
 
-        public void Init(bool regenerateIds) {
+        public void Init(bool regenerateIds)
+        {
             TracedRoute = new TracedRoute();
-            if (regenerateIds) {
+            if (regenerateIds)
+            {
 
-                for (var i = 0; i < Points.Length; i++) {
+                for (var i = 0; i < Points.Length; i++)
+                {
                     Points[i].ID = i;
                 }
             }
         }
 
 
-        public bool HasActiveDirectApproach(out int linearPointIndex) {
+        public bool HasActiveDirectApproach(out int linearPointIndex)
+        {
             linearPointIndex = -1;
-            for (var index = 0; index < Points.Length; index++) {
+            for (var index = 0; index < Points.Length; index++)
+            {
                 var t = Points[index];
-                if (t.IsLinearApproach) {
+                if (t.IsLinearApproach)
+                {
                     linearPointIndex = index;
                     return true;
                 }
@@ -35,10 +44,13 @@ namespace Navigation {
             return false;
         }
 
-        public void ComputeCartesianPositions() {
+        public void ComputeCartesianPositions()
+        {
             var currentPosition = Vector2.zero;
-            for (var i = 0; i < Points.Length; i++) {
-                if (i > 0) {
+            for (var i = 0; i < Points.Length; i++)
+            {
+                if (i > 0)
+                {
                     currentPosition = Geometry.GetNextPosition(currentPosition, Points[i].Distance, Points[i].Degrees);
                 }
 
@@ -50,7 +62,7 @@ namespace Navigation {
         {
             //Temorary changes refine logic
             //var currentPosition = Geometry.GetPreviousPosition(Session.ActiveRoute.TracedRoute.ComputedLines[Session.ActiveRoute.TracedRoute.ComputedLines.Length - 1].EndNMPosition,1.5f, Session.CurrentLevel.levelInfo.Course);
-            var currentPosition = Geometry.GetPreviousPosition(Session.CurrentLevel.MainRoute.Points[Session.CurrentLevel.MainRoute.Points.Length - 1].CartesianPosition,1.5f, Session.CurrentLevel.levelInfo.Course);
+            var currentPosition = Geometry.GetPreviousPosition(Session.CurrentLevel.MainRoute.Points[Session.CurrentLevel.MainRoute.Points.Length - 1].CartesianPosition, 1.5f, Session.CurrentLevel.levelInfo.Course);
             //var currentPosition = Geometry.GetNextPosition(Session.CurrentLevel.MainRoute.Points[Session.CurrentLevel.MainRoute.Points.Length - 1].CartesianPosition,2,272);
             var rIndx = Points.Length - 1;
 
@@ -65,28 +77,36 @@ namespace Navigation {
             }
         }
 
-        public void ComputeTrace(bool isMod = false) {
-            TracedRoute.Compute(Points,isMod);
+        public void ComputeTrace(bool isMod = false)
+        {
+            TracedRoute.Compute(Points, isMod);
         }
 
-        public void InitIds() {
-            for (var i = 0; i < Points.Length; i++) {
+        public void InitIds()
+        {
+            for (var i = 0; i < Points.Length; i++)
+            {
                 Points[i].ID = i;
             }
         }
 
-        public Vector2 GetCartesianPosition(int lineIndex) {
-            if (Points.Length <= lineIndex) {
+        public Vector2 GetCartesianPosition(int lineIndex)
+        {
+            if (Points.Length <= lineIndex)
+            {
                 return Vector2.zero;
             }
 
             return Points[lineIndex].CartesianPosition;
         }
 
-        public bool GetPointByName(string pointName, out RoutePoint point) {
-            for (int i = 0; i < Points.Length; i++) {
+        public bool GetPointByName(string pointName, out RoutePoint point)
+        {
+            for (int i = 0; i < Points.Length; i++)
+            {
                 var p = Points[i];
-                if (p.Name == pointName) {
+                if (p.Name == pointName)
+                {
                     point = p;
                     return true;
                 }
@@ -96,13 +116,16 @@ namespace Navigation {
             return false;
         }
 
-        public bool GetPoint(int nodeId, out RoutePoint point, out int index) {
+        public bool GetPoint(int nodeId, out RoutePoint point, out int index)
+        {
             Points.GetNodeIndex(nodeId, out index);
             return GetPointAt(index, out point);
         }
 
-        public bool GetPointAt(int index, out RoutePoint point) {
-            if (Points.Length <= index || index < 0) {
+        public bool GetPointAt(int index, out RoutePoint point)
+        {
+            if (Points.Length <= index || index < 0)
+            {
                 point = null;
                 return false;
             }
@@ -112,27 +135,32 @@ namespace Navigation {
         }
 
 
-        private int GetNewId(bool safe = false) {
+        private int GetNewId(bool safe = false)
+        {
             var id = Points.Length;
-            while (Points.Any(x => x.ID == id)) {
+            while (Points.Any(x => x.ID == id))
+            {
                 id++;
             }
 
             return id + (safe ? 50 : 0);
         }
 
-        private string GetNewName(string fromNode) {
+        private string GetNewName(string fromNode)
+        {
             var intro = fromNode.Substring(0, 3);
             var index = 1;
 
-            while (Points.Any(x => x.Name == intro + index.ToString("00"))) {
+            while (Points.Any(x => x.Name == intro + index.ToString("00")))
+            {
                 index++;
             }
 
             return intro + index.ToString("00");
         }
 
-        public RouteScriptableObject CloneAndInit() {
+        public RouteScriptableObject CloneAndInit()
+        {
 
             //Debug.Log("--- CloneAndInit ---");
 
@@ -153,7 +181,8 @@ namespace Navigation {
 
             //Debug.Log("before points::" + Points.Length);
 
-            for (var i = 0; i < Points.Length; i++) {
+            for (var i = 0; i < Points.Length; i++)
+            {
                 newSet.Points[i] = Points[i].Clone();
             }
 
@@ -163,13 +192,16 @@ namespace Navigation {
         }
 
         // Method to remove duplicates that were added afterwards
-        public void RemoveSubsequentDuplicates() {
+        public void RemoveSubsequentDuplicates()
+        {
             var seenIds = new HashSet<string>();
             var uniquePoints = new List<RoutePoint>();
 
             // Iterate through the Points array and add only the first occurrence of each ID to the new list
-            foreach (var point in Points) {
-                if (!seenIds.Contains(point.Name)) {
+            foreach (var point in Points)
+            {
+                if (!seenIds.Contains(point.Name))
+                {
                     seenIds.Add(point.Name);
                     uniquePoints.Add(point);
                 }
@@ -181,7 +213,8 @@ namespace Navigation {
         }
 
         // to be executed on ACTIVE route
-        public bool FindFreeFlightDirectExitScenario(out RoutePosition routeIntersection) {
+        public bool FindFreeFlightDirectExitScenario(out RoutePosition routeIntersection)
+        {
             var nan = new Vector2(-100, -100);
 
             routeIntersection = new RoutePosition { SegmentIndex = -1, SegmentVertexIndex = -1, SegmentVertex = nan };
@@ -191,7 +224,8 @@ namespace Navigation {
             var segmentEnd = Vector2.zero;
 
 
-            for (var i = 1; i < Points.Length; i++) {
+            for (var i = 1; i < Points.Length; i++)
+            {
                 var segmentStart = segmentEnd;
 
                 segmentEnd = Points[i].CartesianPosition;
@@ -204,14 +238,16 @@ namespace Navigation {
                 }
 
                 if (Geometry.FindLineSegmentIntersection(aircraftPosition, aircraftDirection.x, aircraftDirection.y,
-                        segmentStart, segmentEnd, out var intersection)) {
+                        segmentStart, segmentEnd, out var intersection))
+                {
                     routeIntersection.SegmentIndex = i;
                     routeIntersection.SegmentVertex = intersection;
                     break;
                 }
             }
 
-            if (routeIntersection.SegmentIndex >= 0) {
+            if (routeIntersection.SegmentIndex >= 0)
+            {
 
                 TracedRoute.ComputedLines[routeIntersection.SegmentIndex].FindFurthestSeekTargetOnSegment(
                     routeIntersection.SegmentVertex,
@@ -237,14 +273,16 @@ namespace Navigation {
 
             var newSet = new RoutePoint[Points.Length - offset];
 
-            for (var i = 0; i < startIndex; i++) {
+            for (var i = 0; i < startIndex; i++)
+            {
                 newSet[i] = Points[i];
             }
 
             // compute new distance
             var endPosition =
                 Geometry.GetNextPosition(Vector2.zero, Points[startIndex].Distance, Points[startIndex].Degrees);
-            for (var i = startIndex; i < endIndex; i++) {
+            for (var i = startIndex; i < endIndex; i++)
+            {
                 endPosition = Geometry.GetNextPosition(endPosition, Points[i + 1].Distance, Points[i + 1].Degrees);
             }
 
@@ -259,7 +297,8 @@ namespace Navigation {
 
             newSet[startIndex] = reducedPoint;
 
-            for (var i = endIndex + 1; i < Points.Length; i++) {
+            for (var i = endIndex + 1; i < Points.Length; i++)
+            {
                 var newIndex = i - offset;
                 newSet[newIndex] = Points[i];
             }
@@ -267,8 +306,10 @@ namespace Navigation {
             Points = newSet;
         }
 
-        public void ClearModifiedFlags() {
-            for (var i = 0; i < Points.Length; i++) {
+        public void ClearModifiedFlags()
+        {
+            for (var i = 0; i < Points.Length; i++)
+            {
                 Points[i].IsModified = false;
                 Points[i].IsSpeedModified = false;
                 Points[i].IsAltitudeModified = false;
@@ -286,18 +327,21 @@ namespace Navigation {
             float distanceFromAfter;
             afterInsertion = null;
 
-            if (distance <= 0) {
+            if (distance <= 0)
+            {
                 afterInsertion = node;
                 distanceToBefore = -distance;
                 distanceFromAfter = afterInsertion.Distance - distanceToBefore;
             }
             else // if > 0
             {
-                if (Points.Length > nodeIndex + 1) {
+                if (Points.Length > nodeIndex + 1)
+                {
                     afterInsertion = Points[nodeIndex + 1];
                     distanceToBefore = afterInsertion.Distance - distance;
                 }
-                else {
+                else
+                {
                     Debug.LogError("Not Possible");
                     insertionNode = null;
                     return;
@@ -306,7 +350,8 @@ namespace Navigation {
                 distanceFromAfter = distance;
             }
 
-            insertionNode = new RoutePoint {
+            insertionNode = new RoutePoint
+            {
                 Name = GetNewName(node.Name),
                 Distance = distanceFromAfter,
                 RawDegrees = afterInsertion.RawDegrees,
@@ -318,8 +363,10 @@ namespace Navigation {
             // replace set with new set that also contains insertion node
             var newSet = new RoutePoint[Points.Length + 1];
             var offset = 0;
-            for (var i = 0; i < Points.Length; i++) {
-                if (i == nodeIndex + (distance > 0 ? 1 : 0)) {
+            for (var i = 0; i < Points.Length; i++)
+            {
+                if (i == nodeIndex + (distance > 0 ? 1 : 0))
+                {
                     newSet[i] = insertionNode;
                     offset = 1;
                 }
@@ -331,13 +378,15 @@ namespace Navigation {
         }
 
         private void AddRelativeNodeAfter(int relativeFromNodeId, float rawDegrees, int distance,
-            out RoutePoint insertionNode, out RoutePoint afterInsertion, bool addCurveOffset = true) {
+            out RoutePoint insertionNode, out RoutePoint afterInsertion, bool addCurveOffset = true)
+        {
             Points.GetNodeIndex(relativeFromNodeId, out var relativeFromNodeIndex);
             var relativeFromNode = Points[relativeFromNodeIndex];
 
             afterInsertion = Points[relativeFromNodeIndex + 1];
 
-            insertionNode = new RoutePoint {
+            insertionNode = new RoutePoint
+            {
                 Name = GetNewName(relativeFromNode.Name),
                 Distance = distance,
                 RawDegrees = rawDegrees,
@@ -361,8 +410,10 @@ namespace Navigation {
             // replace set with new set that also contains insertion node
             var newSet = new RoutePoint[Points.Length + 1];
             var offset = 0;
-            for (var i = 0; i < Points.Length; i++) {
-                if (i == relativeFromNodeIndex + 1) {
+            for (var i = 0; i < Points.Length; i++)
+            {
+                if (i == relativeFromNodeIndex + 1)
+                {
                     newSet[i] = insertionNode;
 
                     offset = 1;
@@ -374,7 +425,8 @@ namespace Navigation {
             Points = newSet;
         }
 
-        public void AddDirectToCartesianNodeBefore(int originalRouteNodeId, int nextNodeId) {
+        public void AddDirectToCartesianNodeBefore(int originalRouteNodeId, int nextNodeId)
+        {
             Session.OriginalReferenceRoute.GetPoint(originalRouteNodeId, out var originalRoutePoint, out _);
             GetPoint(nextNodeId, out var modeAfterNode, out var modIndexAfter);
             GetPointAt(modIndexAfter - 1, out var modNodeBefore);
@@ -411,7 +463,8 @@ namespace Navigation {
 
         public void AddRelativeNodeBefore(int beforeNodeId, float rawDegrees, int distance, int relativeNodeId,
             out RoutePoint insertionNode,
-            bool showDiscontinuity = false) {
+            bool showDiscontinuity = false)
+        {
             Points.GetNodeIndex(beforeNodeId, out var originalBeforeNodeIndex);
             Points.GetNodeIndex(relativeNodeId, out var relativeNodeIndex);
 
@@ -430,7 +483,8 @@ namespace Navigation {
 
             GetPoint(beforeNodeId, out var nodeAfterInsertion, out _);
 
-            insertionNode = new RoutePoint {
+            insertionNode = new RoutePoint
+            {
                 Name = GetNewName(relativeNode.Name),
                 Distance = insertionDistance,
                 RawDegrees = insertionAngle,
@@ -444,11 +498,13 @@ namespace Navigation {
             // update info of selected to be relative to the inserted instead of the previous which is now previous to inserted
             returnNode.RawDegrees = Geometry.AngleOfPosition(nodeAfterInsertion.CartesianPosition, insertPosition);
             returnNode.Distance = (nodeAfterInsertion.CartesianPosition - insertPosition).magnitude;
-            if (showDiscontinuity) {
+            if (showDiscontinuity)
+            {
                 returnNode.IndicateDiscontinuityBefore();
             }
 
-            if (isInThePast) {
+            if (isInThePast)
+            {
                 returnNode.ID = GetNewId() + Points.Length;
             }
 
@@ -456,22 +512,27 @@ namespace Navigation {
             var inThePastExtraNodes = indexBeforeInsertion - relativeNodeIndex + 1;
             var newSet = new RoutePoint[Points.Length + (isInThePast ? 1 + inThePastExtraNodes : 1)];
             var offset = 0;
-            for (var i = 0; i < Points.Length; i++) {
-                if (i == indexBeforeInsertion + 1) {
+            for (var i = 0; i < Points.Length; i++)
+            {
+                if (i == indexBeforeInsertion + 1)
+                {
                     newSet[i] = insertionNode;
 
-                    if (!isInThePast) {
+                    if (!isInThePast)
+                    {
                         newSet[i + 1] = returnNode;
                         offset = 1;
                         continue;
                     }
 
-                    else {
+                    else
+                    {
                         offset = 1;
                         newSet[i + offset] = returnNode;
 
                         // add all passed nodes after the insertion until current node
-                        for (var u = 0; u < inThePastExtraNodes; u++) {
+                        for (var u = 0; u < inThePastExtraNodes; u++)
+                        {
                             offset += 1;
                             newSet[i + offset] = Points[relativeNodeIndex + u + 1];
                         }
@@ -487,15 +548,18 @@ namespace Navigation {
 
         }
 
-        public void CreateLinearApproach(int toNodeId, int angle) {
+        public void CreateLinearApproach(int toNodeId, int angle)
+        {
             RoutePoint reducedPoint;
             var firstNodeToDissolve = PositionVirtualNode.GetNodeToOnActive.ID;
             // the TO point on active route can be already shortcuted on MOD
-            if (!Points.GetNodeIndex(firstNodeToDissolve, out _)) {
+            if (!Points.GetNodeIndex(firstNodeToDissolve, out _))
+            {
                 Points.GetNodeIndex(toNodeId, out var toNodeIndex);
                 reducedPoint = Points[toNodeIndex];
             }
-            else {
+            else
+            {
                 //execute shortcut node at [1] until toNode
                 ShortcutNodes(PositionVirtualNode.GetNodeToOnActive.ID, toNodeId, out reducedPoint);
             }
@@ -510,8 +574,10 @@ namespace Navigation {
             // AddRelativeNodeBefore(_veryFarNode.ID, angle, 500, out var _);
 
             // hide all lines until linear approach
-            for (var i = 0; i < Points.Length; i++) {
-                if (Points[i].IsLinearApproach) {
+            for (var i = 0; i < Points.Length; i++)
+            {
+                if (Points[i].IsLinearApproach)
+                {
                     break;
                 }
 
@@ -519,7 +585,8 @@ namespace Navigation {
             }
         }
 
-        public void AddRejoinIntersectionNode(Vector2 segmentVertex, int segmentIndex) {
+        public void AddRejoinIntersectionNode(Vector2 segmentVertex, int segmentIndex)
+        {
             var intersectionNodeToAdd = RoutePoint.ConstructFromPosition(
                 segmentVertex,
                 Points[segmentIndex - 1],
@@ -543,17 +610,21 @@ namespace Navigation {
             ComputeTrace();
         }
 
-        private int FindNodeBeforePlaneOnMode() {
+        private int FindNodeBeforePlaneOnMode()
+        {
             int foundIndex = 0;
             for (foundIndex = 0;
                  foundIndex < Session.ModRoute.Points.Length &&
-                 foundIndex < Session.ActiveRoute.Points.Length; foundIndex++) {
-                if (Session.ModRoute.Points[foundIndex].ID != Session.ActiveRoute.Points[foundIndex].ID) {
+                 foundIndex < Session.ActiveRoute.Points.Length; foundIndex++)
+            {
+                if (Session.ModRoute.Points[foundIndex].ID != Session.ActiveRoute.Points[foundIndex].ID)
+                {
                     foundIndex -= 1;
                     break;
                 }
 
-                if (foundIndex == PositionVirtualNode.PassedNodeIndex) {
+                if (foundIndex == PositionVirtualNode.PassedNodeIndex)
+                {
                     break;
                 }
             }
@@ -561,7 +632,8 @@ namespace Navigation {
             return foundIndex;
         }
 
-        public void AddModPositionNodes() {
+        public void AddModPositionNodes()
+        {
             var nodeBeforePlaneIndex = FindNodeBeforePlaneOnMode();
             var nodeBeforePosition = Points[nodeBeforePlaneIndex];
             int nodeAfterPlaneIndex = nodeBeforePlaneIndex + 1;
@@ -579,7 +651,8 @@ namespace Navigation {
         }
 
         private void ConstructPositionNodes(RoutePoint nodeBeforePosition, RoutePoint routeNextNode,
-            out RoutePoint airplanePositionNodeToAdd, out RoutePoint frontOfAirplanePositionNodeToAdd) {
+            out RoutePoint airplanePositionNodeToAdd, out RoutePoint frontOfAirplanePositionNodeToAdd)
+        {
             airplanePositionNodeToAdd = RoutePoint.ConstructFromPosition(
                 Session.PlayerAircraft.NMPosition,
                 nodeBeforePosition,
@@ -604,17 +677,22 @@ namespace Navigation {
 
 
             airplanePositionNodeToAdd.IndicateHiddenLine();
-            if (HasActiveDirectApproach(out _)) {
+            if (HasActiveDirectApproach(out _))
+            {
                 frontOfAirplanePositionNodeToAdd.IndicateHiddenLine();
             }
         }
 
-        private void InsertNodes(int beforeIndex, params RoutePoint[] nodes) {
+        private void InsertNodes(int beforeIndex, params RoutePoint[] nodes)
+        {
             var newSet = new RoutePoint[Points.Length + nodes.Length];
             var offset = 0;
-            for (var i = 0; i < Points.Length; i++) {
-                if (i == beforeIndex) {
-                    for (int j = 0; j < nodes.Length; j++) {
+            for (var i = 0; i < Points.Length; i++)
+            {
+                if (i == beforeIndex)
+                {
+                    for (int j = 0; j < nodes.Length; j++)
+                    {
                         newSet[i + j] = nodes[j];
                     }
 
@@ -627,7 +705,8 @@ namespace Navigation {
 
 
             Points = newSet;
-            for (int i = 0; i < Points.Length; i++) {
+            for (int i = 0; i < Points.Length; i++)
+            {
 
                 Debug.Log("ID :" + Points[i].ID + "|| Name :" + Points[i].Name + "|| Details :" + Points[i].Details);
             }
@@ -657,18 +736,22 @@ namespace Navigation {
         }
 
         //code for remove a point from the array at specific index
-        public void RemovePoint(int pointId) {
+        public void RemovePoint(int pointId)
+        {
             // Find the index of the point to be removed
             int indexToRemove = -1;
-            for (int i = 0; i < Points.Length; i++) {
-                if (Points[i].ID == pointId) {
+            for (int i = 0; i < Points.Length; i++)
+            {
+                if (Points[i].ID == pointId)
+                {
                     indexToRemove = i;
                     break;
                 }
             }
 
             // If the point was not found, exit the method
-            if (indexToRemove == -1) {
+            if (indexToRemove == -1)
+            {
                 Debug.LogWarning($"Point with ID {pointId} not found.");
                 return;
             }
@@ -677,8 +760,10 @@ namespace Navigation {
             var newPoints = new RoutePoint[Points.Length - 1];
 
             // Copy elements to the new array, skipping the element to be removed
-            for (int i = 0, j = 0; i < Points.Length; i++) {
-                if (i != indexToRemove) {
+            for (int i = 0, j = 0; i < Points.Length; i++)
+            {
+                if (i != indexToRemove)
+                {
                     newPoints[j++] = Points[i];
                 }
             }
@@ -687,11 +772,104 @@ namespace Navigation {
             Points = newPoints;
         }
 
+        /*public void RemoveNode(int nodeId, out RoutePoint removedNode)
+        {
+            Points.GetNodeIndex(nodeId, out var nodeIndexToRemove);
 
+            if (nodeIndexToRemove < 0 || nodeIndexToRemove >= Points.Length)
+            {
+                throw new ArgumentException($"Node with ID {nodeId} not found.");
+            }
+
+            removedNode = Points[nodeIndexToRemove].Clone();
+
+            var isInThePast = PositionVirtualNode.PassedNodeIndexForMode > nodeIndexToRemove;
+
+            var newSet = new RoutePoint[Points.Length - 1];
+            var offset = 0;
+
+            for (var i = 0; i < Points.Length; i++)
+            {
+                if (i == nodeIndexToRemove)
+                {
+                    offset = -1;
+                    continue;
+                }
+
+                if (i == nodeIndexToRemove + 1)
+                {
+                    Points[i].Details = "D";
+                }
+
+                newSet[i + offset] = Points[i];
+
+                if (i == nodeIndexToRemove + 1 && i < Points.Length)
+                {
+                    var previousIndex = nodeIndexToRemove - 1;
+                    if (previousIndex >= 0)
+                    {
+                        var previousPosition = Points[previousIndex].CartesianPosition;
+                        var currentPosition = Points[i].CartesianPosition;
+
+                        newSet[i + offset].Distance = (currentPosition - previousPosition).magnitude;
+                        newSet[i + offset].RawDegrees = Geometry.AngleOfPosition(currentPosition, previousPosition);
+
+                        if (Points[i].IsAfterDiscontinuity)
+                        {
+                            newSet[i + offset].IndicateDiscontinuityBefore();
+                        }
+                    }
+                }
+            }
+
+            Points = newSet;
+        }*/
+
+        public void RemoveNode(int nodeId, out RoutePoint removedNode)
+        {
+            Points.GetNodeIndex(nodeId, out var nodeIndexToRemove);
+
+            if (nodeIndexToRemove < 0 || nodeIndexToRemove >= Points.Length)
+            {
+                throw new ArgumentException($"Node with ID {nodeId} not found.");
+            }
+
+            removedNode = Points[nodeIndexToRemove].Clone();
+
+            var newSet = new RoutePoint[Points.Length - 1];
+            for (var i = 0; i < Points.Length; i++)
+            {
+                if (i == nodeIndexToRemove)
+                    continue;
+
+                var targetIndex = i < nodeIndexToRemove ? i : i - 1;
+                newSet[targetIndex] = Points[i];
+
+                if (i == nodeIndexToRemove + 1 && i < Points.Length)
+                {
+                    newSet[targetIndex].Details = "D";
+                    if (nodeIndexToRemove > 0)
+                    {
+                        var previousPosition = Points[nodeIndexToRemove - 1].CartesianPosition;
+                        var currentPosition = Points[i].CartesianPosition;
+                        newSet[targetIndex].Distance = (currentPosition - previousPosition).magnitude;
+                        newSet[targetIndex].RawDegrees = Geometry.AngleOfPosition(currentPosition, previousPosition);
+
+                        if (Points[i].IsAfterDiscontinuity)
+                        {
+                            newSet[targetIndex].IndicateDiscontinuityBefore();
+                        }
+                    }
+                }
+            }
+
+            Points = newSet;
+        }
     }
 }
 
-public struct RoutePosition {
+public struct RoutePosition
+{
     public Vector2 SegmentVertex;
     public int SegmentVertexIndex;
     public int SegmentIndex;
