@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 48b17ce8bcdb4cb98567e15496e10fd8, type: 3}
+  m_Name: _ _ Level Data 17
+  m_EditorClassIdentifier: 
+  MainRoute: {fileID: 11400000, guid: 3ff4384a55cf82d49a6d457b74e653cf, type: 2}
+  virtualPoints: {fileID: 11400000, guid: 501766a15fd5a1e4f985f680a1820dd0, type: 2}
+  aTCs: {fileID: 11400000, guid: 75be4da454cbadf4787ca2bb23b490ac, type: 2}
+  levelInfo: {fileID: 11400000, guid: d0fb72066bd98fe4ab052c50dd5ae70a, type: 2}
+  otherACs:
+  - {fileID: 11400000, guid: a07ea0bd0432ef847ad8dc281d8f1397, type: 2}
+  - {fileID: 11400000, guid: 19adff93d63337c41a2df00ea08b5bf5, type: 2}
+  - {fileID: 11400000, guid: 1403a2b57c3be0741a3c4f4cbea37bf8, type: 2}
+  - {fileID: 11400000, guid: 710b6dbd25e795e4091c2be085c62bf3, type: 2}
+  - {fileID: 11400000, guid: 889878cf891d6f140923086870d239bb, type: 2}
+  - {fileID: 11400000, guid: f373853d32f567a48a9fb263c4d3dfcd, type: 2}
+  WindTable: {fileID: 11400000, guid: 23041643501e3fb4b87632d3fd60c27b, type: 2}
