@@ -66,7 +66,7 @@ namespace Unyawn.Utils
         /// </summary>
         /// <param name="service">Service instance object.</param>
         /// <typeparam name="T">Type of the instance object.</typeparam>
-        public static void Register<T>(T service, bool overwrite = false) where T : class
+        public static void Register<T>(T service, bool overwrite = true) where T : class
         {
             if (!overwrite && Instance._services.ContainsKey(typeof(T)))
             {

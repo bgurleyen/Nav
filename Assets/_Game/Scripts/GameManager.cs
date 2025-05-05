@@ -35,7 +35,7 @@ public class GameManager : MonoBehaviour
         _legsScreen.OnLeftCornerPressErase += LEGS_OnLeftCornerPressErase;
         _legsScreen.OnExecButtonPress += LEGS_OnExecButtonPress;
 
-        InitForLevel(0);
+        InitForLevel(PlayerPrefsHolder.Level);
     }
 
     private void InitForLevel(int index)

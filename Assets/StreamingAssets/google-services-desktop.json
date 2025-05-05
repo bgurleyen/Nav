@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "701109879305",
+    "project_id": "navigationshare-alpha",
+    "storage_bucket": "navigationshare-alpha.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:701109879305:android:130ca62a244dcb6464aed8",
+        "android_client_info": {
+          "package_name": "com.DefaultCompany.Navigation"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCAmxN68XAMsXOV2FNjPcNmnYfnlrNPAa4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

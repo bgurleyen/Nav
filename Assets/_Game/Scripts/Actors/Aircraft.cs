@@ -151,6 +151,8 @@ public class Aircraft : MovingActor
 
             if (!foundCloseILSPathDestination)
             {
+                Debug.Log("Finish GAME");
+                GraphManage.OnGameFinish?.Invoke(true);
                 Session.State.AutoSetHDG(true);
                 isCatchRw = false;
                 //Session.State.ILSCapture = false;
