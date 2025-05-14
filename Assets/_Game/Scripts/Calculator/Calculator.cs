@@ -39,9 +39,10 @@ public class Calculator : MonoBehaviour
     public static float TAS, GS;
     public Toggle co;//Landing Gear ,Speed Brake;
     public static bool LGDown = false;
-    private bool SBDown = false;
+    public static bool SBDown = false;
     public Button FUP_Button, FDown_Button;
-    private int Flap_Idx, increasedSpeed, excessSpeedCo = 0;
+    private int increasedSpeed, excessSpeedCo = 0;
+    public static int Flap_Idx = 0;
     private float SpeedTime;
     public Text windTxt;
     public static string CWind;
@@ -49,8 +50,9 @@ public class Calculator : MonoBehaviour
     public Text FMA1, FMA2, FMA3, FMAarmed;
     public Image windArrow, VSline, SpeedTrend;
     public GameObject Progres, FlapNeedle, LGlever;
-    private int N1, FF, dispN1 = 77;
-    private double dispFF = 270;
+    private int N1, dispN1 = 77;
+    public static int FF = 77;
+    public static double dispFF = 270;
     public static double totalFuel = 1000; // 10 tons *100 
     //Speed:(NM per Hour = Knots)--> Show in PFD , map will move in this speed
     //Altitude:(Feet)--> Show in PFD ,no other effect
