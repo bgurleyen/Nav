@@ -1043,7 +1043,7 @@ public class Calculator : MonoBehaviour
     public void CheckStabilization()
     {
         string LF = System.Environment.NewLine;
-        if (CAltitude <= 1000)
+        if (CAltitude <= -1000)
         {
 #if UNITY_EDITOR
             EditorUtility.DisplayDialog("NOT STABLE", "Localizer............ok" + LF +
