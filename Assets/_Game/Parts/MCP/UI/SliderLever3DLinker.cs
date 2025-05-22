@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
+using MoreMountains.NiceVibrations;
 using Navigation;
 using UnityEngine;
 using UnityEngine.Events;
@@ -14,6 +15,7 @@ public class SliderLever3DLinker : MonoBehaviour
     [SerializeField] private int _minAngle;
     [SerializeField] private int _maxAngle;
     [SerializeField] private float _stepDuration = 0.2f;
+    [SerializeField] private bool _haptic = true;
     [SerializeField] private FloatUnityEvent _sliderCallback;
 
     private Sequence _leverSeq;
@@ -26,6 +28,7 @@ public class SliderLever3DLinker : MonoBehaviour
     {
         _slider = GetComponent<Slider>();
         _slider.onValueChanged.AddListener(SliderChanged);
+        if(_haptic) _slider.onValueChanged.AddListener(SliderChangedVibration);
         _angleStep = (_maxAngle - _minAngle) / _slider.maxValue;
         _initialRotation = _lever3D.localRotation;
 
@@ -48,5 +51,10 @@ public class SliderLever3DLinker : MonoBehaviour
         _cachedOldSliderValue = newValue;
         
         _sliderCallback?.Invoke(_slider.value);
+    }
+
+    private void SliderChangedVibration(float newValue)
+    {
+        MMVibrationManager.Haptic(HapticTypes.HeavyImpact);
     }
 }

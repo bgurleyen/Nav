@@ -1,6 +1,7 @@
 ﻿using System;
 using JetBrains.Annotations;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.EventSystems;
 
 public class ToggleButton3DLinker : ToggleButtonLinker, IPointerUpHandler, IPointerDownHandler
@@ -8,6 +9,7 @@ public class ToggleButton3DLinker : ToggleButtonLinker, IPointerUpHandler, IPoin
     [SerializeField] private Renderer indicatorMesh;
     [SerializeField] private Material onMat;
     [SerializeField] private Material offMat;
+    [SerializeField] private UnityEvent OnPressed;
 
     private Material[] _materials;
     private Animator _meshAnimator;
@@ -33,6 +35,7 @@ public class ToggleButton3DLinker : ToggleButtonLinker, IPointerUpHandler, IPoin
     public void OnPointerDown(PointerEventData eventData)
     {
         _meshAnimator.SetTrigger("Pressed");
+        OnPressed?.Invoke();
     }
 
     public void OnPointerUp(PointerEventData eventData)

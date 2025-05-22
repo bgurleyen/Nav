@@ -70,7 +70,7 @@ public class RadialIndicators : MonoBehaviour
         _headingText.text = Mathf.RoundToInt(Geometry.AbsAngle(Session.PlayerAircraft.DisplayHeadingDegrees)).ToString("D3");
 
         //_headingText.text = Mathf.RoundToInt(displayHeadingDegrees).ToString("D3");
-        _rangeText.text = Math.Round(80f / Session.ZoomMultiplier, 1).ToString();
+        _rangeText.text = $"RANGE\n{Math.Round(80f / Session.ZoomMultiplier, 1)}";
     }
 
     public void HeadingLineVisibility()

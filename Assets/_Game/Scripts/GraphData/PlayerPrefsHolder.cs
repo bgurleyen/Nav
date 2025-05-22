@@ -27,4 +27,16 @@ public static class PlayerPrefsHolder
             PlayerPrefs.SetInt("Agree", value);
         }
     }
+
+    public static string UserName
+    {
+        get
+        {
+            return PlayerPrefs.GetString("UserName",null);
+        }
+        set
+        {
+            PlayerPrefs.SetString("UserName", value);
+        }
+    }
 }

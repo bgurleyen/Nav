@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using MoreMountains.NiceVibrations;
 using Navigation;
 using TMPro;
 using UnityEditor;
@@ -668,6 +669,8 @@ public class Calculator : MonoBehaviour
             Flap_Idx += 1;
             SetFlaps();
             if (Flap_Idx > 7) Flap_Idx = 7;
+
+            MMVibrationManager.Haptic(HapticTypes.MediumImpact);
         }
     }
     public void FDown_Click()
@@ -677,6 +680,8 @@ public class Calculator : MonoBehaviour
             Flap_Idx -= 1;
             if (Flap_Idx < 0) Flap_Idx = 0;
             SetFlaps();
+
+            MMVibrationManager.Haptic(HapticTypes.MediumImpact);
         }
     }
     public void SetFlaps()
@@ -689,7 +694,7 @@ public class Calculator : MonoBehaviour
                 {
                     M[i + 4, j, k] = Mf[Flap_Idx, i, j, k];
                 }
-        if (LGDown) LG_Click();
+        if (LGDown) SetLG(false);
         if (SBDown) SetSB(false);
 
 
@@ -705,8 +710,13 @@ public class Calculator : MonoBehaviour
         PFD_Animation PFDScript = FindObjectOfType<PFD_Animation>();
         PFDScript.Flaps_Indexchange(Flap_Idx);
     }
-    public void LG_Click()
+    public void SetLG(bool down, bool fromUI = false)
     {
+        if (!fromUI)
+        {
+            UYServiceLocator.Get<McpUI>().LGLeverInteract(down, true);
+        }
+
         double[,] MVS = new double[9, 2] { { -2100, -1500 }, { -2700, -1500 }, { -2700, -1400 }, { -2600, -1300 }, { -2500, -1300 }, { -2300, -1200 }, { -1800, -600 }, { -1600, -500 }, { -1500, -300 } };
         double[,,] Wlg = new double[4, 2, 2] {
                                              { { 4300, 110 }, { 4170, 113 } },
@@ -719,7 +729,7 @@ public class Calculator : MonoBehaviour
                                              { { 3460, 95 }, { 3200, 95 } },
                                              { { 3340, 95 }, { 3120, 95 } }};
         int i;
-        LGDown = !LGDown;
+        LGDown = down;
         if (LGDown)
         {
             LGlever.transform.localEulerAngles = new Vector3(-45, 0, 0);

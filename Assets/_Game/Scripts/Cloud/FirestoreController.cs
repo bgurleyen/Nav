@@ -69,8 +69,8 @@ public class FirestoreController : MonoBehaviour
             var userData = new Dictionary<string, object>
             {
                 //["created_date"] = FieldValue.ServerTimestamp,
-                ["name"] = "TEST-User",
-                ["provider"] = "TEST-Net",
+                ["name"] = PlayerPrefsHolder.UserName,
+                ["provider"] = "NavigationShare",
                 //["uid"] = SystemInfo.deviceUniqueIdentifier,
                 ["uid"] = SystemInfo.deviceUniqueIdentifier,
             };

@@ -19,10 +19,12 @@ public class McpUI : MonoBehaviour
     
     public Text headingText;
     public Slider _SBSlider;
+    public Slider _LGSlider;
 
     public Action<MapMode> OnMapModeSet;
 
     private bool _cacheSilentSwitch;
+    private bool _cacheSilentSwitch_LG;
 
     private void Awake()
     {
@@ -67,7 +69,13 @@ public class McpUI : MonoBehaviour
         _SBSlider.value = down ? 0 : 1;
     }
 
-    
+    public void LGLeverInteract(bool down, bool isSilent = false)
+    {
+        _cacheSilentSwitch_LG = isSilent;
+        _LGSlider.value = down ? 1 : 0;
+    }
+
+
     public void OnSBSliderChanged(float newValue)
     {
         if (_cacheSilentSwitch)
@@ -79,4 +87,14 @@ public class McpUI : MonoBehaviour
         Calculator.Instance?.SetSB(newValue == 0, true);
     }
 
+    public void OnLGSliderChanged(float newValue)
+    {
+        if (_cacheSilentSwitch_LG)
+        {
+            _cacheSilentSwitch_LG = false;
+            return;
+        }
+
+        Calculator.Instance?.SetLG(newValue == 0, true);
+    }
 }
