@@ -228,6 +228,7 @@ public class GraphManage : MonoBehaviour
     private void ChartSetRuntimeData(ref LineChart chart, int serieIndex, DDL_data data)
     {
         Serie serie = chart.series[serieIndex];
+        XAxis xAxis2 = chart.GetChartComponent<XAxis>(1);
         Serie serie1 = RunTimeAddSeries(ref chart, serie);
 
         double lastSelectedSpeed = data.speed[0];
@@ -268,6 +269,15 @@ public class GraphManage : MonoBehaviour
                 AddFlapSymbol(ref sData, flapResult.Item2);
             }
 
+            if (serieIndex == 0)
+            {
+                var vModResult = IsVerticalModeChange(data.verticalMode, i);
+                if (vModResult.Item1 == true)
+                {
+                    AddVmodSymbol(ref xAxis2, vModResult.Item2);
+                }
+            }
+
             if (data.speedBrake[i] == 1)
             {
                 serie.data[i].ignore = true;
@@ -279,6 +289,7 @@ public class GraphManage : MonoBehaviour
     private void ChartSetRuntimeData(ref LineChart chart, int serieIndex, L_data data)
     {
         Serie serie = chart.series[serieIndex];
+        XAxis xAxis2 = chart.GetChartComponent<XAxis>(1);
         Serie serie1 = RunTimeAddSeries(ref chart, serie);
 
         double lastSelectedSpeed = data.speed[0];
@@ -315,6 +326,15 @@ public class GraphManage : MonoBehaviour
             if (flapResult.Item1 == true)
             {
                 AddFlapSymbol(ref sData, flapResult.Item2);
+            }
+
+            if (serieIndex == 0)
+            {
+                var vModResult = IsVerticalModeChange(data.verticalMode, i);
+                if (vModResult.Item1 == true)
+                {
+                    AddVmodSymbol(ref xAxis2, vModResult.Item2);
+                }
             }
 
             if (data.speedBrake[i] == 1)
@@ -548,13 +568,41 @@ public class GraphManage : MonoBehaviour
             return (true, speed[0]);
         }
 
-        if (Math.Abs(speed[index] - lastSelectedSpeed) >= 20)
+        if (Math.Abs(speed[index] - lastSelectedSpeed) >= 10)
         {
             lastSelectedSpeed = speed[index];
             return (true, speed[index]);
         }
 
         return (false, speed[index]);
+    }
+
+    //private (bool, double) IsVerticalModeChange(List<double> vMod, int index, ref double lastSelectedVmod)
+    //{
+    //    if (index == 0)
+    //    {
+    //        lastSelectedVmod = vMod[0];
+    //        return (true, vMod[0]);
+    //    }
+
+    //    if (Math.Abs(vMod[index] - lastSelectedVmod) >= 20)
+    //    {
+    //        lastSelectedVmod = vMod[index];
+    //        return (true, vMod[index]);
+    //    }
+
+    //    return (false, vMod[index]);
+    //}
+
+    private (bool, int) IsVerticalModeChange(List<double> check, int index)
+    {
+        if (index == 0) return (false, 0);
+
+        if (Mathf.RoundToInt((float)check[index]) != Mathf.RoundToInt((float)check[index - 1]))
+        {
+            return (true, Mathf.RoundToInt((float)check[index]));
+        }
+        return (false, 0);
     }
 
     #endregion
@@ -610,6 +658,38 @@ public class GraphManage : MonoBehaviour
                 break;
             case 7:
                 _Label.formatter = "40";
+                break;
+        }
+        //_Label.textStyle.show = true;
+        //_Label.textStyle = new TextStyle()
+        //{
+        //    color = Color.white,
+        //    fontSize = 15,
+        //};
+    }
+
+    private void AddVmodSymbol(ref XAxis xAxis, int vModIndex)
+    {
+
+        switch (vModIndex)
+        {
+            case 0:
+                xAxis.AddData("");
+                break;
+            case 1:
+                xAxis.AddData("LC");
+                break;
+            case 2:
+                xAxis.AddData("AH");
+                break;
+            case 3:
+                xAxis.AddData("VS");
+                break;
+            case 4:
+                xAxis.AddData("VNAV");
+                break;
+            case 5:
+                xAxis.AddData("GS");
                 break;
         }
         //_Label.textStyle.show = true;
