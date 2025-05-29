@@ -49,22 +49,22 @@ public class GraphManage : MonoBehaviour
 
     void Update()
     {
-        if (Input.GetKeyDown(KeyCode.K))
-        {
-            //DataViewInGraph();
-            //AvgDataViewInGraph();
-            //OnGameFinished(true);
-        }
+        //if (Input.GetKeyDown(KeyCode.K))
+        //{
+        //    DataViewInGraph();
+        //    //AvgDataViewInGraph();
+        //    //OnGameFinished(true);
+        //}
 
 
-        if (Input.GetKeyDown(KeyCode.Keypad0))
-        {
-            dataManage.LoadGame((data) =>
-            {
-                ChartSetRuntimeData(ref chart, 0, data);
-                Debug.Log("[GetMineProfileData] - LocalData (sucess)");
-            });
-        }
+        //if (Input.GetKeyDown(KeyCode.Keypad0))
+        //{
+        //    dataManage.LoadGame((data) =>
+        //    {
+        //        ChartSetRuntimeData(ref chart, 0, data);
+        //        Debug.Log("[GetMineProfileData] - LocalData (sucess)");
+        //    });
+        //}
     }
 
     void DataViewInGraph()
@@ -79,6 +79,7 @@ public class GraphManage : MonoBehaviour
 
             //Mine-Series
             ChartSetRuntimeData(ref chart, 0, data);
+            //ChartSetRuntimeData(ref chart, "ME", "MEx", data);
             Debug.Log("[GetMineProfileData] - LocalData (sucess)");
 
             //Best-Series
@@ -120,9 +121,10 @@ public class GraphManage : MonoBehaviour
 
                 Debug.Log(averageData.altitude.Count);
                 ChartSetRuntimeData(ref chart, 2, averageData);
+                //ChartSetRuntimeData(ref chart, "AVERAGE", "AVERAGEx", averageData);
 
-                var lastVal = chart.EnsureChartComponent<YAxis>().GetLastLabelValue();
-                chart.EnsureChartComponent<YAxis>().interval = lastVal - 1000;
+                //var lastVal = chart.EnsureChartComponent<YAxis>().GetLastLabelValue();
+                //chart.EnsureChartComponent<YAxis>().interval = lastVal - 1000;
 
                 chart.RefreshChart(2);
             });
@@ -199,7 +201,7 @@ public class GraphManage : MonoBehaviour
 
     private void ChartInitRuntimeSetting(ref LineChart chart, int serieIndex, bool isShowAxisLabel)
     {
-        chart.DefaultTimeLineChart();
+        //chart.DefaultTimeLineChart();
 
         chart.GetChartComponent<XAxis>().axisLabel.show = isShowAxisLabel;
 
@@ -211,10 +213,10 @@ public class GraphManage : MonoBehaviour
     {
         Serie serie = chart.series[serieIndex];
 
-        DateTime timeSeries = DateTime.Parse("08-05-2025 12:03:46").AddHours(-5).AddMinutes(-30);
+        //DateTime timeSeries = DateTime.Parse("08-05-2025 12:03:46").AddHours(-5).AddMinutes(-30);
         for (int i = 0; i < lineData.Count; i++)
         {
-            timeSeries = timeSeries.AddSeconds(1);
+            //timeSeries = timeSeries.AddSeconds(1);
             //chart.AddData(serieIndex, timeSeries, lineData[i]);
             chart.series[serieIndex].AddData(lineData[i]);
         }
@@ -223,23 +225,90 @@ public class GraphManage : MonoBehaviour
 
 
 
+    private void ChartSetRuntimeData(ref LineChart chart, string sSerie, string dSeries, DDL_data data)
+    {
+        Serie serie = chart.GetSerie(sSerie);
+        Serie serie1 = chart.GetSerie(dSeries);
+        XAxis xAxis = chart.GetChartComponent<XAxis>();
+        SingleAxis sAxis = chart.GetChartComponent<SingleAxis>();
+        //Serie serie1 = RunTimeAddSeries(ref chart, serie);
 
+        DateTime timeSeries = DateTime.Parse("00:00:00");
+        double lastSelectedSpeed = data.speed[0];
+
+        //DateTime timeSeries = DateTime.Parse("15-05-2025 00:00:00").AddHours(-5).AddMinutes(-30);
+        for (int i = 0; i < data.altitude.Count; i++)
+        {
+            if (xAxis.data.Count <= i) chart.AddXAxisData(timeSeries.ToString("mm:ss"));
+            serie.AddData(data.altitude[i]);
+            serie1.AddData(data.altitude[i]);
+            timeSeries = timeSeries.AddSeconds(1);
+            serie.largeThreshold = data.altitude.Count + 1;
+            //serie1.largeThreshold = data.altitude.Count + 1;
+
+            SerieData sData = serie.data[i];
+
+            var speedResult = IsSpeedChange(data.speed, i, ref lastSelectedSpeed);
+            if (speedResult.Item1 == true)
+            {
+                AddLabelSymbol(ref sData, Convert.ToInt32(speedResult.Item2));
+            }
+
+            var landingResult = IsValueChange(data.landingGear, i);
+            if (landingResult.Item1 == true)
+            {
+                if (landingResult.Item2 == true)
+                {
+                    AddArrowDownSymbol(ref sData);
+                }
+                else
+                {
+                    AddArrowUpSymbol(ref sData);
+                }
+            }
+
+            var flapResult = IsFlapValueChange(data.flap, i);
+            if (flapResult.Item1 == true)
+            {
+                AddFlapSymbol(ref sData, flapResult.Item2);
+            }
+
+            if (serie1.serieName == "ME")
+            {
+                var vModResult = IsVerticalModeChange(data.verticalMode, i);
+                if (vModResult.Item1 == true)
+                {
+                    AddVmodSymbol(ref sAxis, vModResult.Item2);
+                }
+            }
+
+            if (data.speedBrake[i] == 1)
+            {
+                //serie.data[i].ignore = true;
+                //chart.AddData($"Dash_{serie.serieName}", timeSeries, data.altitude[i]);
+                //chart.AddData($"Dash_{serie.serieName}", i, data.altitude[i]);
+                serie.UpdateData(i, 1, float.NaN);
+                //serie1.UpdateData(i, 1, data.altitude[i]);
+            }
+        }
+    }
 
     private void ChartSetRuntimeData(ref LineChart chart, int serieIndex, DDL_data data)
     {
         Serie serie = chart.series[serieIndex];
-        XAxis xAxis2 = chart.GetChartComponent<XAxis>(1);
+        XAxis xAxis = chart.GetChartComponent<XAxis>();
+        SingleAxis sAxis = chart.GetChartComponent<SingleAxis>();
         Serie serie1 = RunTimeAddSeries(ref chart, serie);
 
+        DateTime timeSeries = DateTime.Parse("00:00:00");
         double lastSelectedSpeed = data.speed[0];
 
-        DateTime timeSeries = DateTime.Parse("00:00:00").AddHours(-5).AddMinutes(-30);
         //DateTime timeSeries = DateTime.Parse("15-05-2025 00:00:00").AddHours(-5).AddMinutes(-30);
         for (int i = 0; i < data.altitude.Count; i++)
         {
+            if (xAxis.data.Count <= i) chart.AddXAxisData(timeSeries.ToString("mm:ss"));
+            serie.AddData(data.altitude[i]);
             timeSeries = timeSeries.AddSeconds(1);
-            chart.AddData(serieIndex, timeSeries, data.altitude[i]);
-            //chart.series[serieIndex].AddData(data.altitude[i]);
             chart.series[serieIndex].largeThreshold = data.altitude.Count + 1;
 
             SerieData sData = chart.series[serieIndex].data[i];
@@ -274,14 +343,76 @@ public class GraphManage : MonoBehaviour
                 var vModResult = IsVerticalModeChange(data.verticalMode, i);
                 if (vModResult.Item1 == true)
                 {
-                    AddVmodSymbol(ref xAxis2, vModResult.Item2);
+                    AddVmodSymbol(ref sAxis, vModResult.Item2);
                 }
             }
 
             if (data.speedBrake[i] == 1)
             {
                 serie.data[i].ignore = true;
-                chart.AddData(3,timeSeries,data.altitude[i]);
+                chart.AddData(3, timeSeries, data.altitude[i]);
+            }
+        }
+    }
+
+    private void ChartSetRuntimeData(ref LineChart chart, string sSerie, string dSeries, L_data data)
+    {
+        Serie serie = chart.GetSerie(sSerie);
+        Serie serie1 = chart.GetSerie(dSeries);
+        XAxis xAxis = chart.GetChartComponent<XAxis>();
+        SingleAxis sAxis = chart.GetChartComponent<SingleAxis>();
+
+        DateTime timeSeries = DateTime.Parse("00:00:00");
+        double lastSelectedSpeed = data.speed[0];
+
+        for (int i = 0; i < data.altitude.Count; i++)
+        {
+            if (xAxis.data.Count <= i) chart.AddXAxisData(timeSeries.ToString("mm:ss"));
+            serie.AddData(data.altitude[i]);
+            serie1.AddData(data.altitude[i]);
+            timeSeries = timeSeries.AddSeconds(1);
+            serie.largeThreshold = data.altitude.Count + 1;
+            //serie1.largeThreshold = data.altitude.Count + 1;
+
+            SerieData sData = serie.data[i];
+
+            var speedResult = IsSpeedChange(data.speed, i, ref lastSelectedSpeed);
+            if (speedResult.Item1 == true)
+            {
+                AddLabelSymbol(ref sData, Convert.ToInt32(speedResult.Item2));
+            }
+
+            var landingResult = IsValueChange(data.landingGear, i);
+            if (landingResult.Item1 == true)
+            {
+                if (landingResult.Item2 == true)
+                {
+                    AddArrowDownSymbol(ref sData);
+                }
+                else
+                {
+                    AddArrowUpSymbol(ref sData);
+                }
+            }
+
+            var flapResult = IsFlapValueChange(data.flap, i);
+            if (flapResult.Item1 == true)
+            {
+                AddFlapSymbol(ref sData, flapResult.Item2);
+            }
+
+            if (serie1.serieName == "ME")
+            {
+                var vModResult = IsVerticalModeChange(data.verticalMode, i);
+                if (vModResult.Item1 == true)
+                {
+                    AddVmodSymbol(ref sAxis, vModResult.Item2);
+                }
+            }
+
+            if (data.speedBrake[i] == 1)
+            {
+                serie.UpdateData(i, 1, float.NaN);
             }
         }
     }
@@ -289,16 +420,18 @@ public class GraphManage : MonoBehaviour
     private void ChartSetRuntimeData(ref LineChart chart, int serieIndex, L_data data)
     {
         Serie serie = chart.series[serieIndex];
-        XAxis xAxis2 = chart.GetChartComponent<XAxis>(1);
+        XAxis xAxis = chart.GetChartComponent<XAxis>();
+        SingleAxis sAxis = chart.GetChartComponent<SingleAxis>();
         Serie serie1 = RunTimeAddSeries(ref chart, serie);
 
+        DateTime timeSeries = DateTime.Parse("00:00:00");
         double lastSelectedSpeed = data.speed[0];
 
-        DateTime timeSeries = DateTime.Parse("00:00:00").AddHours(-5).AddMinutes(-30);
         for (int i = 0; i < data.altitude.Count; i++)
         {
+            if (xAxis.data.Count <= i) chart.AddXAxisData(timeSeries.ToString("mm:ss"));
+            serie.AddData(data.altitude[i]);
             timeSeries = timeSeries.AddSeconds(1);
-            chart.AddData(serieIndex, timeSeries, data.altitude[i]);
             chart.series[serieIndex].largeThreshold = data.altitude.Count + 1;
 
             SerieData sData = chart.series[serieIndex].data[i];
@@ -333,14 +466,14 @@ public class GraphManage : MonoBehaviour
                 var vModResult = IsVerticalModeChange(data.verticalMode, i);
                 if (vModResult.Item1 == true)
                 {
-                    AddVmodSymbol(ref xAxis2, vModResult.Item2);
+                    AddVmodSymbol(ref sAxis, vModResult.Item2);
                 }
             }
 
             if (data.speedBrake[i] == 1)
             {
                 serie.data[i].ignore = true;
-                
+
                 chart.AddData($"Dash_{serie.serieName}", timeSeries, data.altitude[i]);
             }
         }
@@ -387,7 +520,8 @@ public class GraphManage : MonoBehaviour
     {
         Serie serie = chart.AddSerie<XCharts.Runtime.Line>($"Dash_{actualSerie.serieName}", true, false);
 
-        serie.lineStyle = new LineStyle() {
+        serie.lineStyle = new LineStyle()
+        {
             type = LineStyle.Type.Dashed,
             width = actualSerie.lineStyle.width,
             color = actualSerie.lineStyle.color,
@@ -395,7 +529,7 @@ public class GraphManage : MonoBehaviour
 
         serie.lineType = LineType.Smooth;
         serie.symbol.show = false;
-        
+
         return serie;
     }
 
@@ -668,28 +802,28 @@ public class GraphManage : MonoBehaviour
         //};
     }
 
-    private void AddVmodSymbol(ref XAxis xAxis, int vModIndex)
+    private void AddVmodSymbol(ref SingleAxis sAxis, int vModIndex)
     {
 
         switch (vModIndex)
         {
             case 0:
-                xAxis.AddData("");
+                sAxis.AddData("");
                 break;
             case 1:
-                xAxis.AddData("LC");
+                sAxis.AddData("LC");
                 break;
             case 2:
-                xAxis.AddData("AH");
+                sAxis.AddData("AH");
                 break;
             case 3:
-                xAxis.AddData("VS");
+                sAxis.AddData("VS");
                 break;
             case 4:
-                xAxis.AddData("VNAV");
+                sAxis.AddData("VNAV");
                 break;
             case 5:
-                xAxis.AddData("GS");
+                sAxis.AddData("GS");
                 break;
         }
         //_Label.textStyle.show = true;
@@ -698,6 +832,7 @@ public class GraphManage : MonoBehaviour
         //    color = Color.white,
         //    fontSize = 15,
         //};
+        Debug.Log("vModIndex  " + vModIndex);
     }
 
     private void AddLabelSymbol(ref SerieData serieData, int knots)

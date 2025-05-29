@@ -4,6 +4,8 @@ using Navigation;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEditor;
+using TMPro;
+using System;
 
 [System.Serializable]
 public class Move : Singleton<Move>
@@ -49,6 +51,7 @@ public class Move : Singleton<Move>
     float NextInstructionDistance = 1.3f;
 
     public Button XFR1, XFR2, XFR3;
+    public TextMeshProUGUI XFR1Txt, XFR2Txt, XFR3Txt;
     public static int XFRSpeed = 0;
     public static long XFRAltitude = 0;
     public static int XFRHdg = 0;
@@ -286,8 +289,11 @@ public class Move : Singleton<Move>
             NextInstructionDistance = Speed_nx > 2 ? Speed_nx : 1.3f;
 
             XFR1.interactable = mode == 2 ? true : false;
+            XFR1Txt.fontMaterial.SetFloat(ShaderUtilities.ID_GlowPower, Convert.ToInt32(XFR1.interactable));
             XFR2.interactable = Altitude > 0 ? true : false;
+            XFR2Txt.fontMaterial.SetFloat(ShaderUtilities.ID_GlowPower, Convert.ToInt32(XFR2.interactable));
             XFR3.interactable = (Speed > 0) ? true : false;
+            XFR3Txt.fontMaterial.SetFloat(ShaderUtilities.ID_GlowPower, Convert.ToInt32(XFR3.interactable));
 
             if (Speed > 0) XFRSpeed = Speed;
             if (mode == 2) XFRHdg = TrackToPointFactored(point);
@@ -306,8 +312,11 @@ public class Move : Singleton<Move>
         else // Not New
         {
             if (XFRHdg == Calculator.RHeading) XFR1.interactable = false;
+            if (XFRHdg == Calculator.RHeading) XFR1Txt.fontMaterial.SetFloat(ShaderUtilities.ID_GlowPower, Convert.ToInt32(false));
             if (XFRAltitude == Calculator.RAltitude) XFR2.interactable = false;
+            if (XFRAltitude == Calculator.RAltitude) XFR2Txt.fontMaterial.SetFloat(ShaderUtilities.ID_GlowPower, Convert.ToInt32(false));
             if (XFRSpeed == Calculator.RSpeed) XFR3.interactable = false;
+            if (XFRSpeed == Calculator.RSpeed) XFR3Txt.fontMaterial.SetFloat(ShaderUtilities.ID_GlowPower, Convert.ToInt32(false));
 
             // Debug.Log(XFRHdg +"H"+ Calculator.RHeading+  "     "+ XFRAltitude +"A"+ Calculator.RAltitude + "   " + Speed +"S"+ Calculator.RSpeed);
 
