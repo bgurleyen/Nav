@@ -30,10 +30,15 @@ public class DataManage : MonoBehaviour
         InvokeRepeating(nameof(FillDataInArray), 0, 1f);
     }
 
+    public double ConvertToLowerHundred(double value)
+    {
+        return Math.Floor(value / 100.0) * 100;
+    }
+
     public void FillDataInArray()
     {
         m_data.speed.Add(Calculator.CSpeed);
-        m_data.altitude.Add(Calculator.CAltitude);
+        m_data.altitude.Add(ConvertToLowerHundred(Calculator.CAltitude));
         m_data.flap.Add(Calculator.Flap_Idx);
         m_data.speedBrake.Add(Convert.ToInt32(Calculator.SBDown));
         m_data.landingGear.Add(Convert.ToInt32(Calculator.LGDown));
@@ -57,8 +62,38 @@ public class DataManage : MonoBehaviour
         }
     }
 
+
+    float timer = 0f;
+    float repeatRate = 1f;
+
     void Update()
     {
+        //timer += Time.deltaTime;
+
+        //if (timer >= repeatRate)
+        //{
+        //    timer = 0f;
+
+        //    if (Session.State.Speed10X)
+        //    {
+        //        FillDataInArray();
+        //        FillDataInArray();
+        //        FillDataInArray();
+        //        FillDataInArray();
+        //        FillDataInArray();
+        //        FillDataInArray();
+        //        FillDataInArray();
+        //        FillDataInArray();
+        //        FillDataInArray();
+        //        FillDataInArray();
+        //    }
+        //    else
+        //    {
+        //        FillDataInArray();
+        //    }
+        //}
+
+
         if (Input.GetKeyDown(KeyCode.S))
         {
             //m_time.Add(DateTime.Now.ToString());
@@ -139,7 +174,7 @@ public class DataManage : MonoBehaviour
     {
         progress_data = await saveLoadManager.LoadAsync<Progress_Data>(saveProgressPath);
 
-        if(progress_data == null)
+        if (progress_data == null)
         {
             progress_data = new Progress_Data();
             //progress_data.progress = new List<double>();
@@ -148,7 +183,7 @@ public class DataManage : MonoBehaviour
             {
                 progress_data.progress.Add(0);
 
-                if(i== PlayerPrefsHolder.Level)
+                if (i == PlayerPrefsHolder.Level)
                 {
                     progress_data.progress[PlayerPrefsHolder.Level] = _remainingFuel;
                 }

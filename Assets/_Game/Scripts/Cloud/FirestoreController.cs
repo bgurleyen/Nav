@@ -467,7 +467,7 @@ public class FirestoreController : MonoBehaviour
 
                     if (myUserData.average_stats.stats.ContainsKey($"{i}"))
                     {
-                        s_Data.count += sStats[i].count;
+                        s_Data.count = sStats[i].count;
                         s_Data.altitude = (s_Data.altitude + sStats[i].altitude) / s_Data.count;
                         s_Data.speed = (s_Data.speed + sStats[i].speed) / s_Data.count;
                         s_Data.flap = (s_Data.flap + sStats[i].flap) / s_Data.count;

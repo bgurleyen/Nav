@@ -43,6 +43,9 @@ public class GraphManage : MonoBehaviour
         ChartInitRuntimeSetting(ref chart, 0, true);
         ChartInitRuntimeSetting(ref chart, 1, true);
         ChartInitRuntimeSetting(ref chart, 2, true);
+        ChartInitRuntimeSetting(ref chart, 3, true);
+        ChartInitRuntimeSetting(ref chart, 4, true);
+        ChartInitRuntimeSetting(ref chart, 5, true);
 
         ChartInitRuntimeProgressSetting(ref LevelChart);
     }
@@ -78,8 +81,8 @@ public class GraphManage : MonoBehaviour
             //FLIGHT PROFILE
 
             //Mine-Series
-            ChartSetRuntimeData(ref chart, 0, data);
-            //ChartSetRuntimeData(ref chart, "ME", "MEx", data);
+            //ChartSetRuntimeData(ref chart, 0, data);
+            ChartSetRuntimeData(ref chart, "ME", "MEx", data);
             Debug.Log("[GetMineProfileData] - LocalData (sucess)");
 
             //Best-Series
@@ -87,13 +90,15 @@ public class GraphManage : MonoBehaviour
             (callback1) =>
             {
                 Debug.Log(callback1);
-                ChartSetRuntimeData(ref chart, 1, data);
+                //ChartSetRuntimeData(ref chart, 1, data);
+                ChartSetRuntimeData(ref chart, "BEST", "BESTx", data);
                 chart.RefreshChart(1);
             },
             (callback2) =>
             {
                 Debug.Log(callback2);
-                ChartSetRuntimeData(ref chart, 1, dataManage.firestoreController.bestPlayerLevels[PlayerPrefsHolder.Level]);
+                //ChartSetRuntimeData(ref chart, 1, dataManage.firestoreController.bestPlayerLevels[PlayerPrefsHolder.Level]);
+                ChartSetRuntimeData(ref chart, "BEST", "BESTx", dataManage.firestoreController.bestPlayerLevels[PlayerPrefsHolder.Level]);
                 chart.RefreshChart(1);
             });
 
@@ -120,8 +125,8 @@ public class GraphManage : MonoBehaviour
                 }
 
                 Debug.Log(averageData.altitude.Count);
-                ChartSetRuntimeData(ref chart, 2, averageData);
-                //ChartSetRuntimeData(ref chart, "AVERAGE", "AVERAGEx", averageData);
+                //ChartSetRuntimeData(ref chart, 2, averageData);
+                ChartSetRuntimeData(ref chart, "AVERAGE", "AVERAGEx", averageData);
 
                 //var lastVal = chart.EnsureChartComponent<YAxis>().GetLastLabelValue();
                 //chart.EnsureChartComponent<YAxis>().interval = lastVal - 1000;
@@ -199,6 +204,8 @@ public class GraphManage : MonoBehaviour
     }
 
 
+    int c_flap = 0;
+
     private void ChartInitRuntimeSetting(ref LineChart chart, int serieIndex, bool isShowAxisLabel)
     {
         //chart.DefaultTimeLineChart();
@@ -222,11 +229,10 @@ public class GraphManage : MonoBehaviour
         }
     }
 
-
-
-
     private void ChartSetRuntimeData(ref LineChart chart, string sSerie, string dSeries, DDL_data data)
     {
+        c_flap = 0;
+
         Serie serie = chart.GetSerie(sSerie);
         Serie serie1 = chart.GetSerie(dSeries);
         XAxis xAxis = chart.GetChartComponent<XAxis>();
@@ -244,14 +250,15 @@ public class GraphManage : MonoBehaviour
             serie1.AddData(data.altitude[i]);
             timeSeries = timeSeries.AddSeconds(1);
             serie.largeThreshold = data.altitude.Count + 1;
-            //serie1.largeThreshold = data.altitude.Count + 1;
+            serie1.largeThreshold = data.altitude.Count + 1;
 
-            SerieData sData = serie.data[i];
+            SerieData sData = serie1.data[i];
 
             var speedResult = IsSpeedChange(data.speed, i, ref lastSelectedSpeed);
             if (speedResult.Item1 == true)
             {
-                AddLabelSymbol(ref sData, Convert.ToInt32(speedResult.Item2));
+                //AddLabelSymbol(ref sData, Convert.ToInt32(speedResult.Item2));
+                AddLabelSymbol(ref sData, Convert.ToInt32(speedResult.Item2), ref serie1);
             }
 
             var landingResult = IsValueChange(data.landingGear, i);
@@ -259,18 +266,22 @@ public class GraphManage : MonoBehaviour
             {
                 if (landingResult.Item2 == true)
                 {
-                    AddArrowDownSymbol(ref sData);
+                    AddArrowDownSymbol(ref sData, ref serie1);
                 }
-                else
-                {
-                    AddArrowUpSymbol(ref sData);
-                }
+                //else
+                //{
+                //    AddArrowUpSymbol(ref sData);
+                //}
             }
 
-            var flapResult = IsFlapValueChange(data.flap, i);
-            if (flapResult.Item1 == true)
+            if(c_flap < data.flap[i])
             {
-                AddFlapSymbol(ref sData, flapResult.Item2);
+                var flapResult = IsFlapValueChange(data.flap, i);
+                if (flapResult.Item1 == true)
+                {
+                    AddFlapSymbol(ref sData, flapResult.Item2, ref serie1);
+                    c_flap++;
+                }
             }
 
             if (serie1.serieName == "ME")
@@ -308,15 +319,17 @@ public class GraphManage : MonoBehaviour
         {
             if (xAxis.data.Count <= i) chart.AddXAxisData(timeSeries.ToString("mm:ss"));
             serie.AddData(data.altitude[i]);
+            serie1.AddData(data.altitude[i]);
             timeSeries = timeSeries.AddSeconds(1);
             chart.series[serieIndex].largeThreshold = data.altitude.Count + 1;
+            serie1.largeThreshold = data.altitude.Count + 1;
 
             SerieData sData = chart.series[serieIndex].data[i];
 
             var speedResult = IsSpeedChange(data.speed, i, ref lastSelectedSpeed);
             if (speedResult.Item1 == true)
             {
-                AddLabelSymbol(ref sData, Convert.ToInt32(speedResult.Item2));
+                AddLabelSymbol(ref sData, Convert.ToInt32(speedResult.Item2), ref serie1);
             }
 
             var landingResult = IsValueChange(data.landingGear, i);
@@ -324,18 +337,18 @@ public class GraphManage : MonoBehaviour
             {
                 if (landingResult.Item2 == true)
                 {
-                    AddArrowDownSymbol(ref sData);
+                    AddArrowDownSymbol(ref sData, ref serie1);
                 }
-                else
-                {
-                    AddArrowUpSymbol(ref sData);
-                }
+                //else
+                //{
+                //    AddArrowUpSymbol(ref sData);
+                //}
             }
 
             var flapResult = IsFlapValueChange(data.flap, i);
             if (flapResult.Item1 == true)
             {
-                AddFlapSymbol(ref sData, flapResult.Item2);
+                AddFlapSymbol(ref sData, flapResult.Item2, ref serie1);
             }
 
             if (serieIndex == 0)
@@ -349,14 +362,18 @@ public class GraphManage : MonoBehaviour
 
             if (data.speedBrake[i] == 1)
             {
-                serie.data[i].ignore = true;
-                chart.AddData(3, timeSeries, data.altitude[i]);
+                serie.UpdateData(i, 1, float.NaN);
+
+                //serie.data[i].ignore = true;
+                //chart.AddData(3, timeSeries, data.altitude[i]);
             }
         }
     }
 
     private void ChartSetRuntimeData(ref LineChart chart, string sSerie, string dSeries, L_data data)
     {
+        c_flap = 0;
+
         Serie serie = chart.GetSerie(sSerie);
         Serie serie1 = chart.GetSerie(dSeries);
         XAxis xAxis = chart.GetChartComponent<XAxis>();
@@ -372,14 +389,14 @@ public class GraphManage : MonoBehaviour
             serie1.AddData(data.altitude[i]);
             timeSeries = timeSeries.AddSeconds(1);
             serie.largeThreshold = data.altitude.Count + 1;
-            //serie1.largeThreshold = data.altitude.Count + 1;
+            serie1.largeThreshold = data.altitude.Count + 1;
 
-            SerieData sData = serie.data[i];
+            SerieData sData = serie1.data[i];
 
             var speedResult = IsSpeedChange(data.speed, i, ref lastSelectedSpeed);
             if (speedResult.Item1 == true)
             {
-                AddLabelSymbol(ref sData, Convert.ToInt32(speedResult.Item2));
+                AddLabelSymbol(ref sData, Convert.ToInt32(speedResult.Item2), ref serie1);
             }
 
             var landingResult = IsValueChange(data.landingGear, i);
@@ -387,18 +404,22 @@ public class GraphManage : MonoBehaviour
             {
                 if (landingResult.Item2 == true)
                 {
-                    AddArrowDownSymbol(ref sData);
+                    AddArrowDownSymbol(ref sData, ref serie1);
                 }
-                else
-                {
-                    AddArrowUpSymbol(ref sData);
-                }
+                //else
+                //{
+                //    AddArrowUpSymbol(ref sData);
+                //}
             }
 
-            var flapResult = IsFlapValueChange(data.flap, i);
-            if (flapResult.Item1 == true)
+            if (c_flap < data.flap[i])
             {
-                AddFlapSymbol(ref sData, flapResult.Item2);
+                var flapResult = IsFlapValueChange(data.flap, i);
+                if (flapResult.Item1 == true)
+                {
+                    AddFlapSymbol(ref sData, flapResult.Item2, ref serie1);
+                    c_flap++;
+                }
             }
 
             if (serie1.serieName == "ME")
@@ -431,15 +452,17 @@ public class GraphManage : MonoBehaviour
         {
             if (xAxis.data.Count <= i) chart.AddXAxisData(timeSeries.ToString("mm:ss"));
             serie.AddData(data.altitude[i]);
+            serie1.AddData(data.altitude[i]);
             timeSeries = timeSeries.AddSeconds(1);
             chart.series[serieIndex].largeThreshold = data.altitude.Count + 1;
+            serie1.largeThreshold = data.altitude.Count + 1;
 
             SerieData sData = chart.series[serieIndex].data[i];
 
             var speedResult = IsSpeedChange(data.speed, i, ref lastSelectedSpeed);
             if (speedResult.Item1 == true)
             {
-                AddLabelSymbol(ref sData, Convert.ToInt32(speedResult.Item2));
+                AddLabelSymbol(ref sData, Convert.ToInt32(speedResult.Item2), ref serie1);
             }
 
             var landingResult = IsValueChange(data.landingGear, i);
@@ -447,18 +470,18 @@ public class GraphManage : MonoBehaviour
             {
                 if (landingResult.Item2 == true)
                 {
-                    AddArrowDownSymbol(ref sData);
+                    AddArrowDownSymbol(ref sData, ref serie1);
                 }
-                else
-                {
-                    AddArrowUpSymbol(ref sData);
-                }
+                //else
+                //{
+                //    AddArrowUpSymbol(ref sData);
+                //}
             }
 
             var flapResult = IsFlapValueChange(data.flap, i);
             if (flapResult.Item1 == true)
             {
-                AddFlapSymbol(ref sData, flapResult.Item2);
+                AddFlapSymbol(ref sData, flapResult.Item2, ref serie1);
             }
 
             if (serieIndex == 0)
@@ -472,9 +495,10 @@ public class GraphManage : MonoBehaviour
 
             if (data.speedBrake[i] == 1)
             {
-                serie.data[i].ignore = true;
+                serie.UpdateData(i, 1, float.NaN);
 
-                chart.AddData($"Dash_{serie.serieName}", timeSeries, data.altitude[i]);
+                //serie.data[i].ignore = true;
+                //chart.AddData($"Dash_{serie.serieName}", timeSeries, data.altitude[i]);
             }
         }
     }
@@ -743,7 +767,7 @@ public class GraphManage : MonoBehaviour
 
     #region Symbols
 
-    private void AddArrowDownSymbol(ref SerieData serieData)
+    private void AddArrowDownSymbol(ref SerieData serieData, ref Serie serie)
     {
         SerieSymbol _Symbol = serieData.EnsureComponent<SerieSymbol>();
 
@@ -759,14 +783,19 @@ public class GraphManage : MonoBehaviour
         _Symbol.size = 0.05f;
     }
 
-    private void AddFlapSymbol(ref SerieData serieData, int flapIndex)
+    private void AddFlapSymbol(ref SerieData serieData, int flapIndex, ref Serie serie)
     {
         SerieSymbol _Symbol = serieData.EnsureComponent<SerieSymbol>();
 
         _Symbol.type = SymbolType.Circle;
         _Symbol.size = 15f;
 
+        //if label used take last node label
+        //if (serieData.labelStyle != null)
+        //    serieData = serie.data[serieData.index - 1];
+
         LabelStyle _Label = serieData.EnsureComponent<LabelStyle>();
+
         switch (flapIndex)
         {
             case 0:
@@ -794,12 +823,13 @@ public class GraphManage : MonoBehaviour
                 _Label.formatter = "40";
                 break;
         }
-        //_Label.textStyle.show = true;
-        //_Label.textStyle = new TextStyle()
-        //{
-        //    color = Color.white,
-        //    fontSize = 15,
-        //};
+
+        _Label.textStyle.show = true;
+        _Label.textStyle = new TextStyle()
+        {
+            color = new Color(0.09803922f, 0.09803922f, 0.2941177f, 1),
+            fontSize = 15,
+        };
     }
 
     private void AddVmodSymbol(ref SingleAxis sAxis, int vModIndex)
@@ -835,7 +865,7 @@ public class GraphManage : MonoBehaviour
         Debug.Log("vModIndex  " + vModIndex);
     }
 
-    private void AddLabelSymbol(ref SerieData serieData, int knots)
+    private void AddLabelSymbol(ref SerieData serieData, int knots, ref Serie serie)
     {
         LabelStyle _Label = serieData.EnsureComponent<LabelStyle>();
 
@@ -845,7 +875,7 @@ public class GraphManage : MonoBehaviour
         _Label.textStyle.show = true;
         _Label.textStyle = new TextStyle()
         {
-            color = Color.white,
+            color = serie.lineStyle.color,
             fontSize = 15,
         };
         //_Label.size = 0.05f;
