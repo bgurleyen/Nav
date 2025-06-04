@@ -8,6 +8,7 @@ using System.Collections;
 using System.Linq;
 using JetBrains.Annotations;
 using System.Xml.Linq;
+using XCharts.Runtime;
 
 public class FirestoreController : MonoBehaviour
 {
@@ -407,8 +408,11 @@ public class FirestoreController : MonoBehaviour
         }
     }
 
+    bool n_lg = false;
+    int n_flap = 0;
     public void UpdateAverageStats(DDL_data newStats, Action<string> callback)
     {
+        Another local_another = new Another();
         averagePlayer = new List<S_data>();
 
         try
@@ -422,13 +426,40 @@ public class FirestoreController : MonoBehaviour
                 if (snapshot.Exists)
                 {
                     myUserData.average_stats = snapshot.ConvertTo<Average_Stats>();
+                    Debug.Log($"another.count :: {myUserData.average_stats.another.count}");
+                    //Debug.Log($"another.count :: {myUserData.average_stats.another.flap}");
+                    //for (int i = 0; i < myUserData.average_stats.another.flap.Count; i++)
+                    //{
+                    //    Debug.Log($"flap :: {myUserData.average_stats.another.flap[i]}");
+                    //}
+
+                    List<double> flapList = myUserData.average_stats.another.flap;
+                    if (flapList != null)
+                    {
+                        for (int i = 0; i < flapList.Count; i++)
+                        {
+                            Debug.Log($"flap[{i}] :: {flapList[i]}");
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning("Flap list is null.");
+                    }
                 }
 
                 if (myUserData.average_stats == null)
                 {
                     myUserData.average_stats = new Average_Stats();
                     myUserData.average_stats.stats = new Dictionary<string, object>();
+
+                    myUserData.average_stats.another = new Another();
+
+                    myUserData.average_stats.another.count = 0;
+                    myUserData.average_stats.another.landingGear = 0;
+                    myUserData.average_stats.another.flap = new List<double>() { 0, 0, 0, 0, 0, 0, 0, 0 };
                 }
+
+                local_another = myUserData.average_stats.another;
 
                 List<S_data> sStats = new List<S_data>() { };
 
@@ -450,6 +481,15 @@ public class FirestoreController : MonoBehaviour
                     //Debug.Log($"{i} --> {sStats[i].altitude} --> {sStats[i].speed} --> {sStats[i].flap} --> {sStats[i].speedBrake} --> {sStats[i].landingGear} --> {sStats[i].count}");
                 }
 
+
+                for (int i = 0; i < myUserData.average_stats.another.flap.Count; i++)
+                {
+                    myUserData.average_stats.another.flap[i] *= myUserData.average_stats.another.count;
+                }
+                myUserData.average_stats.another.landingGear *= myUserData.average_stats.another.count;
+                myUserData.average_stats.another.count++;
+
+
                 int loopCount = Math.Max(sStats.Count, newStats.altitude.Count);
                 for (int i = 0; i < loopCount; i++)
                 {
@@ -463,11 +503,33 @@ public class FirestoreController : MonoBehaviour
                         s_Data.flap = newStats.flap[i];
                         s_Data.speedBrake = newStats.speedBrake[i];
                         s_Data.landingGear = newStats.landingGear[i];
+
+
+
+                        try
+                        {
+                            if (newStats.landingGear[i] == 1 && n_lg == false)
+                            {
+                                myUserData.average_stats.another.landingGear = (myUserData.average_stats.another.landingGear + i) / myUserData.average_stats.another.count;
+                                n_lg = true;
+                            }
+                            if (n_flap <= newStats.flap[i])
+                            {
+                                //myUserData.average_stats.another.flap[n_flap] *= (myUserData.average_stats.another.count - 1);
+
+                                myUserData.average_stats.another.flap[n_flap] = (myUserData.average_stats.another.flap[n_flap] + i) / myUserData.average_stats.another.count;
+                                n_flap++;
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            Debug.Log(e);
+                        }
                     }
 
                     if (myUserData.average_stats.stats.ContainsKey($"{i}"))
                     {
-                        s_Data.count = sStats[i].count;
+                        s_Data.count += sStats[i].count;
                         s_Data.altitude = (s_Data.altitude + sStats[i].altitude) / s_Data.count;
                         s_Data.speed = (s_Data.speed + sStats[i].speed) / s_Data.count;
                         s_Data.flap = (s_Data.flap + sStats[i].flap) / s_Data.count;
@@ -482,6 +544,26 @@ public class FirestoreController : MonoBehaviour
                     }
                     averagePlayer.Add(s_Data);
                 }
+
+
+                try
+                {
+                    //if (n_lg == false) myUserData.average_stats.another.landingGear /= myUserData.average_stats.another.count;
+                    if (n_lg == false) myUserData.average_stats.another.landingGear = (myUserData.average_stats.another.landingGear + local_another.landingGear) / myUserData.average_stats.another.count;
+                    //if (n_lg == false) myUserData.average_stats.another.landingGear = (myUserData.average_stats.another.landingGear * 2) / myUserData.average_stats.another.count;
+
+                    for (int i = 0; i < myUserData.average_stats.another.flap.Count; i++)
+                    {
+                        //if (n_flap < i) myUserData.average_stats.another.flap[i] /= myUserData.average_stats.another.count;
+                        if (n_flap < i) myUserData.average_stats.another.flap[i] = (myUserData.average_stats.another.flap[i] + local_another.flap[i]) / myUserData.average_stats.another.count;
+                        //if (n_flap < i) myUserData.average_stats.another.flap[i] = (myUserData.average_stats.another.flap[i] * 2) / myUserData.average_stats.another.count;
+                    }
+                }
+                catch (Exception e) 
+                { 
+                Debug.Log(e);
+                }
+
 
                 AddAverageStatsField(myUserData.average_stats, (res) =>
                 {
@@ -656,7 +738,7 @@ public class FirestoreController : MonoBehaviour
                             }
 
                         }
-                            myUserData.average_progress_stats[$"LEVEL {i}"] = a_Data;
+                        myUserData.average_progress_stats[$"LEVEL {i}"] = a_Data;
                     }
                     else
                     {
@@ -878,6 +960,7 @@ public class Game_Stats
 public class Average_Stats
 {
     [FirestoreProperty] public Dictionary<string, object> stats { get; set; }
+    [FirestoreProperty] public Another another { get; set; }
 }
 
 [FirestoreData]
@@ -945,4 +1028,12 @@ public class A_data
 {
     [FirestoreProperty] public int count { get; set; }
     [FirestoreProperty] public double remainingFuel { get; set; }
+}
+
+[FirestoreData]
+public class Another
+{
+    [FirestoreProperty] public int count { get; set; }
+    [FirestoreProperty] public double landingGear { get; set; }
+    [FirestoreProperty] public List<double> flap { get; set; }
 }

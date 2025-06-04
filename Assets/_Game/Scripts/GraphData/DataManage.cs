@@ -27,7 +27,7 @@ public class DataManage : MonoBehaviour
     public void Start()
     {
         m_data.time.Add(DateTime.Now.ToString());
-        InvokeRepeating(nameof(FillDataInArray), 0, 1f);
+        //InvokeRepeating(nameof(FillDataInArray), 0, 1f);
     }
 
     public double ConvertToLowerHundred(double value)
@@ -35,9 +35,14 @@ public class DataManage : MonoBehaviour
         return Math.Floor(value / 100.0) * 100;
     }
 
+    public double RoundDownToNearestTen(double value)
+    {
+        return Math.Floor(value / 10) * 10;
+    }
+
     public void FillDataInArray()
     {
-        m_data.speed.Add(Calculator.CSpeed);
+        m_data.speed.Add(RoundDownToNearestTen(Calculator.CSpeed));
         m_data.altitude.Add(ConvertToLowerHundred(Calculator.CAltitude));
         m_data.flap.Add(Calculator.Flap_Idx);
         m_data.speedBrake.Add(Convert.ToInt32(Calculator.SBDown));
@@ -68,30 +73,22 @@ public class DataManage : MonoBehaviour
 
     void Update()
     {
-        //timer += Time.deltaTime;
+        timer += Time.deltaTime;
 
-        //if (timer >= repeatRate)
-        //{
-        //    timer = 0f;
+        if (timer >= repeatRate)
+        {
+            timer = 0f;
 
-        //    if (Session.State.Speed10X)
-        //    {
-        //        FillDataInArray();
-        //        FillDataInArray();
-        //        FillDataInArray();
-        //        FillDataInArray();
-        //        FillDataInArray();
-        //        FillDataInArray();
-        //        FillDataInArray();
-        //        FillDataInArray();
-        //        FillDataInArray();
-        //        FillDataInArray();
-        //    }
-        //    else
-        //    {
-        //        FillDataInArray();
-        //    }
-        //}
+            FillDataInArray();
+            if (Session.State.Speed10X)
+            {
+                for (int i = 0; i < 9; i++)
+                {
+                    Debug.Log(i);
+                    FillDataInArray();
+                }
+            }
+        }
 
 
         if (Input.GetKeyDown(KeyCode.S))

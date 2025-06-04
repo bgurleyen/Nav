@@ -84,6 +84,8 @@ public class GraphManage : MonoBehaviour
             //ChartSetRuntimeData(ref chart, 0, data);
             ChartSetRuntimeData(ref chart, "ME", "MEx", data);
             Debug.Log("[GetMineProfileData] - LocalData (sucess)");
+            chart.RefreshChart(0);
+            chart.RefreshChart(1);
 
             //Best-Series
             dataManage.firestoreController.UpdateBestStats(data.remainingFuel,
@@ -92,14 +94,16 @@ public class GraphManage : MonoBehaviour
                 Debug.Log(callback1);
                 //ChartSetRuntimeData(ref chart, 1, data);
                 ChartSetRuntimeData(ref chart, "BEST", "BESTx", data);
-                chart.RefreshChart(1);
+                chart.RefreshChart(2);
+                chart.RefreshChart(3);
             },
             (callback2) =>
             {
                 Debug.Log(callback2);
                 //ChartSetRuntimeData(ref chart, 1, dataManage.firestoreController.bestPlayerLevels[PlayerPrefsHolder.Level]);
                 ChartSetRuntimeData(ref chart, "BEST", "BESTx", dataManage.firestoreController.bestPlayerLevels[PlayerPrefsHolder.Level]);
-                chart.RefreshChart(1);
+                chart.RefreshChart(2);
+                chart.RefreshChart(3);
             });
 
             //Average-Series
@@ -118,7 +122,7 @@ public class GraphManage : MonoBehaviour
                 for (int i = 0; i < averageRawData.Count; i++)
                 {
                     averageData.altitude.Add(averageRawData[i].altitude);
-                    averageData.speed.Add(averageRawData[i].speed);
+                    averageData.speed.Add(RoundDownToNearestTen(averageRawData[i].speed));
                     averageData.landingGear.Add(averageRawData[i].landingGear);
                     averageData.flap.Add(averageRawData[i].flap);
                     averageData.speedBrake.Add(averageRawData[i].speedBrake);
@@ -126,12 +130,14 @@ public class GraphManage : MonoBehaviour
 
                 Debug.Log(averageData.altitude.Count);
                 //ChartSetRuntimeData(ref chart, 2, averageData);
-                ChartSetRuntimeData(ref chart, "AVERAGE", "AVERAGEx", averageData);
+                //ChartSetRuntimeData(ref chart, "AVERAGE", "AVERAGEx", averageData);
+                ChartSetRuntimeData(ref chart, "AVERAGE", "AVERAGEx", averageData, dataManage.firestoreController.myUserData.average_stats.another);
 
                 //var lastVal = chart.EnsureChartComponent<YAxis>().GetLastLabelValue();
                 //chart.EnsureChartComponent<YAxis>().interval = lastVal - 1000;
 
-                chart.RefreshChart(2);
+                chart.RefreshChart(4);
+                chart.RefreshChart(5);
             });
         });
     }
@@ -205,6 +211,7 @@ public class GraphManage : MonoBehaviour
 
 
     int c_flap = 0;
+    bool c_lg = false;
 
     private void ChartInitRuntimeSetting(ref LineChart chart, int serieIndex, bool isShowAxisLabel)
     {
@@ -232,6 +239,7 @@ public class GraphManage : MonoBehaviour
     private void ChartSetRuntimeData(ref LineChart chart, string sSerie, string dSeries, DDL_data data)
     {
         c_flap = 0;
+        c_lg = false;
 
         Serie serie = chart.GetSerie(sSerie);
         Serie serie1 = chart.GetSerie(dSeries);
@@ -262,7 +270,7 @@ public class GraphManage : MonoBehaviour
             }
 
             var landingResult = IsValueChange(data.landingGear, i);
-            if (landingResult.Item1 == true)
+            if (landingResult.Item1 == true && c_lg == false)
             {
                 if (landingResult.Item2 == true)
                 {
@@ -272,9 +280,10 @@ public class GraphManage : MonoBehaviour
                 //{
                 //    AddArrowUpSymbol(ref sData);
                 //}
+                c_lg = true;
             }
 
-            if(c_flap < data.flap[i])
+            if (c_flap < data.flap[i])
             {
                 var flapResult = IsFlapValueChange(data.flap, i);
                 if (flapResult.Item1 == true)
@@ -284,7 +293,7 @@ public class GraphManage : MonoBehaviour
                 }
             }
 
-            if (serie1.serieName == "ME")
+            if (serie.serieName == "ME")
             {
                 var vModResult = IsVerticalModeChange(data.verticalMode, i);
                 if (vModResult.Item1 == true)
@@ -293,13 +302,9 @@ public class GraphManage : MonoBehaviour
                 }
             }
 
-            if (data.speedBrake[i] == 1)
+            if (data.speedBrake[i] > 0.5f && i < data.altitude.Count - 2)
             {
-                //serie.data[i].ignore = true;
-                //chart.AddData($"Dash_{serie.serieName}", timeSeries, data.altitude[i]);
-                //chart.AddData($"Dash_{serie.serieName}", i, data.altitude[i]);
-                serie.UpdateData(i, 1, float.NaN);
-                //serie1.UpdateData(i, 1, data.altitude[i]);
+                serie.UpdateData(i, 1, double.NaN);
             }
         }
     }
@@ -373,6 +378,7 @@ public class GraphManage : MonoBehaviour
     private void ChartSetRuntimeData(ref LineChart chart, string sSerie, string dSeries, L_data data)
     {
         c_flap = 0;
+        c_lg = false;
 
         Serie serie = chart.GetSerie(sSerie);
         Serie serie1 = chart.GetSerie(dSeries);
@@ -400,7 +406,7 @@ public class GraphManage : MonoBehaviour
             }
 
             var landingResult = IsValueChange(data.landingGear, i);
-            if (landingResult.Item1 == true)
+            if (landingResult.Item1 == true && c_lg == false)
             {
                 if (landingResult.Item2 == true)
                 {
@@ -410,6 +416,7 @@ public class GraphManage : MonoBehaviour
                 //{
                 //    AddArrowUpSymbol(ref sData);
                 //}
+                c_lg = true;
             }
 
             if (c_flap < data.flap[i])
@@ -422,7 +429,7 @@ public class GraphManage : MonoBehaviour
                 }
             }
 
-            if (serie1.serieName == "ME")
+            if (serie.serieName == "ME")
             {
                 var vModResult = IsVerticalModeChange(data.verticalMode, i);
                 if (vModResult.Item1 == true)
@@ -431,10 +438,99 @@ public class GraphManage : MonoBehaviour
                 }
             }
 
-            if (data.speedBrake[i] == 1)
+            if (data.speedBrake[i] > 0.5f && i < data.altitude.Count - 2)
             {
-                serie.UpdateData(i, 1, float.NaN);
+                serie.UpdateData(i, 1, double.NaN);
             }
+        }
+    }
+
+    public double RoundDownToNearestTen(double value)
+    {
+        return Math.Floor(value / 10) * 10;
+    }
+    private void ChartSetRuntimeData(ref LineChart chart, string sSerie, string dSeries, L_data data, Another another)
+    {
+        c_flap = 0;
+        c_lg = false;
+
+        Serie serie = chart.GetSerie(sSerie);
+        Serie serie1 = chart.GetSerie(dSeries);
+        XAxis xAxis = chart.GetChartComponent<XAxis>();
+        SingleAxis sAxis = chart.GetChartComponent<SingleAxis>();
+
+        DateTime timeSeries = DateTime.Parse("00:00:00");
+        double lastSelectedSpeed = data.speed[0];
+
+        for (int i = 0; i < data.altitude.Count; i++)
+        {
+            if (xAxis.data.Count <= i) chart.AddXAxisData(timeSeries.ToString("mm:ss"));
+            serie.AddData(data.altitude[i]);
+            serie1.AddData(data.altitude[i]);
+            timeSeries = timeSeries.AddSeconds(1);
+            serie.largeThreshold = data.altitude.Count + 1;
+            serie1.largeThreshold = data.altitude.Count + 1;
+
+            SerieData sData = serie1.data[i];
+
+            var speedResult = IsSpeedChange(data.speed, i, ref lastSelectedSpeed);
+            if (speedResult.Item1 == true)
+            {
+                AddLabelSymbol(ref sData, Convert.ToInt32(speedResult.Item2), ref serie1);
+            }
+
+            //var landingResult = IsValueChange(data.landingGear, i);
+            //if (landingResult.Item1 == true && c_lg == false)
+            //{
+            //    if (landingResult.Item2 == true)
+            //    {
+            //        AddArrowDownSymbol(ref sData, ref serie1);
+            //    }
+            //    //else
+            //    //{
+            //    //    AddArrowUpSymbol(ref sData);
+            //    //}
+            //    c_lg = true;
+            //}
+
+            //if (c_flap < data.flap[i])
+            //{
+            //    var flapResult = IsFlapValueChange(data.flap, i);
+            //    if (flapResult.Item1 == true)
+            //    {
+            //        AddFlapSymbol(ref sData, flapResult.Item2, ref serie1);
+            //        c_flap++;
+            //    }
+            //}
+
+            if (serie.serieName == "ME")
+            {
+                var vModResult = IsVerticalModeChange(data.verticalMode, i);
+                if (vModResult.Item1 == true)
+                {
+                    AddVmodSymbol(ref sAxis, vModResult.Item2);
+                }
+            }
+
+            if (data.speedBrake[i] > 0.5f && i < data.altitude.Count - 2)
+            {
+                serie.UpdateData(i, 1, double.NaN);
+            }
+        }
+
+        if ((int)another.landingGear != 0 && c_lg == false)
+        {
+            AddArrowDownSymbol(serie1.data[(int)another.landingGear], ref serie1);
+            c_lg = true;
+        }
+
+        for (int i = 0; i < another.flap.Count; i++)
+        {
+            if ((int)another.flap[i] != 0)
+            {
+                AddFlapSymbol(serie1.data[(int)another.flap[i]], i, ref serie1);
+            }
+            c_flap++;
         }
     }
 
@@ -775,6 +871,14 @@ public class GraphManage : MonoBehaviour
         _Symbol.size = 0.05f;
     }
 
+    private void AddArrowDownSymbol(SerieData serieData, ref Serie serie)
+    {
+        SerieSymbol _Symbol = serieData.EnsureComponent<SerieSymbol>();
+
+        _Symbol.type = SymbolType.DownArrow;
+        _Symbol.size = 0.05f;
+    }
+
     private void AddArrowUpSymbol(ref SerieData serieData)
     {
         SerieSymbol _Symbol = serieData.EnsureComponent<SerieSymbol>();
@@ -791,8 +895,63 @@ public class GraphManage : MonoBehaviour
         _Symbol.size = 15f;
 
         //if label used take last node label
-        //if (serieData.labelStyle != null)
-        //    serieData = serie.data[serieData.index - 1];
+        if (serieData.labelStyle != null)
+        {
+            serieData.labelStyle.offset = new Vector3(0, 0, 0);
+            serieData.labelStyle.rotate = 0;
+        }
+
+        LabelStyle _Label = serieData.EnsureComponent<LabelStyle>();
+
+        switch (flapIndex)
+        {
+            case 0:
+                _Label.formatter = "UP";
+                break;
+            case 1:
+                _Label.formatter = "2";
+                break;
+            case 2:
+                _Label.formatter = "5";
+                break;
+            case 3:
+                _Label.formatter = "10";
+                break;
+            case 4:
+                _Label.formatter = "15";
+                break;
+            case 5:
+                _Label.formatter = "25";
+                break;
+            case 6:
+                _Label.formatter = "30";
+                break;
+            case 7:
+                _Label.formatter = "40";
+                break;
+        }
+
+        _Label.textStyle.show = true;
+        _Label.textStyle = new TextStyle()
+        {
+            color = new Color(0.09803922f, 0.09803922f, 0.2941177f, 1),
+            fontSize = 15,
+        };
+    }
+
+    private void AddFlapSymbol(SerieData serieData, int flapIndex, ref Serie serie)
+    {
+        SerieSymbol _Symbol = serieData.EnsureComponent<SerieSymbol>();
+
+        _Symbol.type = SymbolType.Circle;
+        _Symbol.size = 15f;
+
+        //if label used take last node label
+        if (serieData.labelStyle != null)
+        {
+            serieData.labelStyle.offset = new Vector3(0, 0, 0);
+            serieData.labelStyle.rotate = 0;
+        }
 
         LabelStyle _Label = serieData.EnsureComponent<LabelStyle>();
 

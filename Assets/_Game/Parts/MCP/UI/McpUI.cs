@@ -72,7 +72,7 @@ public class McpUI : MonoBehaviour
     public void LGLeverInteract(bool down, bool isSilent = false)
     {
         _cacheSilentSwitch_LG = isSilent;
-        _LGSlider.value = down ? 1 : 0;
+        _LGSlider.value = down ? 0 : 1;
     }
 
 
