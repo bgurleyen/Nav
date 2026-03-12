@@ -228,7 +228,7 @@ public class Move : Singleton<Move>
     }
 
     void ATCCall()
-        //mode      pt  Alt VS  nx          Speed   nx
+        //mode              pt  Alt VS  nx          Speed   nx
         //0..NoChg				0..exact	        0..exact
         //1..DCT				1..min	   	        1..min
         //2..HDG				2..max		        2..max
@@ -270,8 +270,6 @@ public class Move : Singleton<Move>
                 mode == 2 ? "Turn " + TurnDirection(TrackToPoint(point)) + "Heading " +TrackToPointFactored(point) : "";
 
       
-
-
             string s = VS < 0 ? ", ROD " + (-VS) + " fpm" + NxToString(VS_nx) : "";
 
             if (Altitude > 0) Atc2.text = "Descent altitude " + Altitude + " feet" + s;
@@ -325,8 +323,8 @@ public class Move : Singleton<Move>
                 : PrvTrackToPoint - 90;
 
             
-            float dev = LocDeviation(272);
-            float gsD = GsDeviation(3);
+            float dev = LocDeviation(Session.CurrentLevel.levelInfo.Course);
+            float gsD = GsDeviation(Session.CurrentLevel.levelInfo.GlideSlope);
             float ils = Session.ILSRoute != null ? ILSDeviation(Session.CurrentLevel.levelInfo.Course) : 0;
 
             float x = hyp * Mathf.Cos(Mathf.DeltaAngle(TrackToPoint(point), PrvTrackToPoint) * Mathf.Deg2Rad);
@@ -341,8 +339,8 @@ public class Move : Singleton<Move>
 
                 if (Mathf.Abs(Mathf.DeltaAngle(Calculator.RTrack, Perpend)) >= 90 - teta) // Hdg rota tracki ve +-70 arasinda
                 {
-                    //SlowDown();
-                    //Time.timeScale = 0;  //Stop at Borders
+                   // SlowDown();
+                   // Time.timeScale = 0;  //Stop at Borders
                     Atc1.color = Color.red;
 
                     int FactoredAngleToPoint = TrackToPointFactored(point);
@@ -355,13 +353,13 @@ public class Move : Singleton<Move>
                         {
                             string WarningString = mode < 2 ? " Proceed Direct to " + Session.OriginalReferenceRoute.Points[point].Name
                                                             : "Fly Heading " + FactoredAngleToPoint;
-                          //  EditorUtility.DisplayDialog("PILOT RESPONSE", "Please comply with instructions" + WarningString, "OK");
+                          //   EditorUtility.DisplayDialog("PILOT RESPONSE", "Please comply with instructions" + WarningString, "OK");
                             Calculator.RHeading = FactoredAngleToPoint;
                         }
                         else
                         {
-                           // EditorUtility.DisplayDialog("PILOT RESPONSE ,FUEL PENALTY!! ",
-                           //                             "An instruction was missed, follow the new clearance with 100kg fuel penalty ", "OK");
+                            // EditorUtility.DisplayDialog("PILOT RESPONSE ,FUEL PENALTY!! ",
+                            //                            "An instruction was missed, follow the new clearance with 100kg fuel penalty ", "OK");
                             if (mode < 2) mode = 11;//if next mode zero 
 
                             Calculator.RHeading = TrackToPointFactored(_currentLevelData.ATCs[_currentInstructionIndex + 1].point);
@@ -448,13 +446,25 @@ public class Move : Singleton<Move>
     }
     public float LocDeviation(float course)
     {
-        float Deviation = Mathf.DeltaAngle(course, TrackToPoint(RW));
+        Vector2 runwayPos = PointPos(RW);
+        Vector2 aircraftPos = Session.PlayerAircraft.NMPosition;
 
-        if (Mathf.Abs(Mathf.DeltaAngle(course, Session.PlayerAircraft.HeadingDegrees)) > 90) Deviation *= -1;
+        float inboundCourseRad = course * Mathf.Deg2Rad;
+        Vector2 inboundDirection = new Vector2(Mathf.Sin(inboundCourseRad), Mathf.Cos(inboundCourseRad));
+        Vector2 localizerDirection = -inboundDirection; // Extended centerline away from runway
+
+        Vector2 relToRunway = aircraftPos - runwayPos;
+        float alongTrackDistance = Vector2.Dot(relToRunway, localizerDirection);
+
+        float lateralDistance = localizerDirection.x * relToRunway.y - localizerDirection.y * relToRunway.x;
+
+        float Deviation = -Mathf.Atan2(lateralDistance, Mathf.Max(alongTrackDistance, 0.05f)) * Mathf.Rad2Deg;
         if (((Mathf.Abs(Deviation) < 35) && (DME() < 10)) || ((Mathf.Abs(Deviation) < 10) && (DME() < 25)))
         {
             LOCIndex.enabled = true;
-            LOCIndex.transform.localPosition = new Vector2(Mathf.Clamp(Deviation * 1000, -1243, 1243), -645);
+            float locFullScaleDegrees = 2.5f;
+            float locNeedleX = Mathf.Clamp((Deviation / locFullScaleDegrees) * 1243f, -1243f, 1243f);
+            LOCIndex.transform.localPosition = new Vector2(locNeedleX, -645);
         }
         else
         {
@@ -471,7 +481,7 @@ public class Move : Singleton<Move>
 
         if (Session.State.GSCaptured) Deviation = 0;
 
-        if ((Mathf.Abs(LocDeviation(272)) < 5) && (DME() < 20))
+        if ((Mathf.Abs(LocDeviation(_currentLevelData.levelInfo.Course)) < 5) && (DME() < 20))
         {
             GSIndex.enabled = true;
             GSIndex.transform.localPosition = new Vector2(1373, Mathf.Clamp(-Deviation * 1500, -541, 541));
@@ -480,7 +490,7 @@ public class Move : Singleton<Move>
         {
             GSIndex.enabled = false;
         }
-       // Debug.Log(Deviation + "   L" + LocDeviation(272) + "  " + "   G" + Deviation + "  " );
+    
   
         return Deviation;
 

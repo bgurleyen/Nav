@@ -46,8 +46,12 @@ public class DataHandler
         }
     }
 
-    private static void BuildAltitudes(RouteScriptableObject set, int startFrom = 22000)
+    
+    private static void BuildAltitudes(RouteScriptableObject set, int? startFrom = null)
     {
+        startFrom = (int)Session.CurrentLevel.levelInfo.CrzAltitude; ;
+
+
         if (set.Points[0].AltitudeRegulation == RoutePoint.AltitudeFlags.NotSet)
         {
             set.Points[0].RawAltitude = startFrom.ToString();

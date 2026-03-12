@@ -7,6 +7,7 @@ using Navigation;
 using TMPro;
 using Unyawn.Utils;
 using Lean.Common.Examples;
+using Gamelogic.Extensions.Internal;
 
 public class Drawer : MonoBehaviour
 {
@@ -206,8 +207,10 @@ public class Drawer : MonoBehaviour
         DisplayFixRays();
         //radialPivots.RefreshVisibility();
         radialPivots.RefreshZoomAndHDG();
-        bananaIndicatorPivot.SetLocalY(Calculator.Instance.GetBananaPosition);
-
+        float BananaPos = Calculator.Instance.GetBananaPosition;
+        bananaIndicatorPivot.SetLocalY(BananaPos);
+        if (BananaPos == 0) bananaIndicatorPivot.SetLocalY(-1000);
+        //Debug.Log(BananaPos);
         DisplayOtherTraffic();
 
         DisplayRotations();
@@ -217,6 +220,7 @@ public class Drawer : MonoBehaviour
     {
         if (!Session.IsRunning)
         {
+            return;
             return;
         }
 

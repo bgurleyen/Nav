@@ -84,7 +84,7 @@ public class McpUI : MonoBehaviour
             return;
         }
 
-        Calculator.Instance?.SetSB(newValue == 0, true);
+        Calculator.Instance?.SetSB(newValue==0, true);
     }
 
     public void OnLGSliderChanged(float newValue)
@@ -95,6 +95,7 @@ public class McpUI : MonoBehaviour
             return;
         }
 
-        Calculator.Instance?.SetLG(newValue == 0, true);
+        Calculator.Instance?.SetLG(newValue != 0, true);
+ 
     }
 }

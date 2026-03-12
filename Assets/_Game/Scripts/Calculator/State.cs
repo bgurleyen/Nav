@@ -42,6 +42,7 @@ public class State
 
         LC = new ToggleLinkedBool(mcpUI._LCToggle, UIOnLCAttemptToggle);
         VNAV = new ToggleLinkedBool(mcpUI._VNAVToggle, UIOnVNAVAttemptToggle);
+        VNAV.Set(true);
         AH = new ToggleLinkedBool(mcpUI._AHToggle, UIOnAHAttemptToggle);
         VS = new ToggleLinkedBool(mcpUI._VSToggle, UIOnVSAttemptToggle);
 
@@ -69,7 +70,7 @@ public class State
 
     private void UIOnLNAVAttemptToggle()
     {
-        LNAV.Switch();
+        LNAV.Switch_Oneway();
         if (LNAV)
         {
             HDG.Set(false);
@@ -80,7 +81,8 @@ public class State
 
     private void UIOnAHAttemptToggle()
     {
-        AH.Switch();
+        AH.Switch_Oneway();
+        NotifyVerticalModeChanged();
 
         if (AH)
         {
@@ -97,7 +99,7 @@ public class State
             return;
         }
 
-        LC.Switch();
+        LC.Switch_Oneway();
 
         if (LC)
         {
@@ -109,7 +111,7 @@ public class State
 
     private void UIOnVNAVAttemptToggle()
     {
-        VNAV.Switch();
+        VNAV.Switch_Oneway();
 
         if (VNAV)
         {
@@ -126,7 +128,8 @@ public class State
             return;
         }
 
-        VS.Switch();
+        VS.Switch_Oneway();
+        NotifyVerticalModeChanged();
 
         if (VS)
         {
@@ -139,6 +142,7 @@ public class State
     public void AutoSetAH(bool state)
     {
         AH.Set(state);
+        NotifyVerticalModeChanged();
 
         if (state)
         {
@@ -147,10 +151,14 @@ public class State
             LC.Set(false);
         }
     }
+private static void NotifyVerticalModeChanged()
+{
+    Calculator.Instance?.Toggle_Change();
+}
 
-    private void UIOnHDGAttemptToggle()
+private void UIOnHDGAttemptToggle()
     {
-        HDG.Switch();
+        HDG.Switch_Oneway();
 
         if (HDG)
         {

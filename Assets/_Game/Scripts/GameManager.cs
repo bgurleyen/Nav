@@ -40,6 +40,8 @@ public class GameManager : MonoBehaviour
 
     private void InitForLevel(int index)
     {
+
+        index = 0; //sil baslangic level i
         var levelData = _gameConfig.LevelsData[index];
         Session.CurrentLevel = levelData;
 

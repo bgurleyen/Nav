@@ -75,5 +75,8 @@ public class ToggleLinkedBool
     {
         Set(!_linkedToggle.State);
     }
-
+    public void Switch_Oneway()
+    {
+        if (!_linkedToggle.State) Set(!_linkedToggle.State);
+    }
 }
