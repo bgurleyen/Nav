@@ -12,8 +12,7 @@ using Unyawn.Utils;
 
 public class Calculator : MonoBehaviour
 {
-    public float GlideSlope = 3;// change to dynamic
-
+   
     public static int Level = 0;             // ***  Level
 
     private string result;
@@ -504,7 +503,7 @@ public class Calculator : MonoBehaviour
 
         if (Session.State.GSCaptured)  // GlideSlope Logic
         {
-            float DegreeToVS = -6076 * Mathf.Tan(GlideSlope * Mathf.Deg2Rad) * (GS / 60);
+            float DegreeToVS = -6076 * Mathf.Tan(Session.CurrentLevel.levelInfo.GlideSlope * Mathf.Deg2Rad) * (GS / 60);
             VNAV_VS = DegreeToVS; //- Move.Instance.GsDeviation(GlideSlope)*200 ;
                                   // VNAV_VS = - Move.Instance.GsDeviation(GlideSlope)*200 ;
             RVS = (int)VNAV_VS;
@@ -563,9 +562,9 @@ public class Calculator : MonoBehaviour
 
                     //Debug.Log("   G" + Move.Instance.GsDeviation(GlideSlope) + "  ");
 
-                    if (Mathf.Abs(Move.Instance.GsDeviation(GlideSlope)) < 0.1)
+                    if (Mathf.Abs(Move.Instance.GsDeviation(Session.CurrentLevel.levelInfo.GlideSlope)) < 0.1)
                     {
-                        if (Session.State.VS == true) Session.State.GSCaptured = true;   // remove first part
+                        Session.State.GSCaptured = true;  
 
                         FMA1.text = "MCP SPD";
                         FMA3.text = "GS";

@@ -490,8 +490,8 @@ public class Move : Singleton<Move>
         {
             GSIndex.enabled = false;
         }
-    
-  
+
+        //Debug.Log(Deviation);
         return Deviation;
 
     }
