@@ -94,7 +94,7 @@ public class McpUI : MonoBehaviour
             _cacheSilentSwitch_LG = false;
             return;
         }
-
+        
         Calculator.Instance?.SetLG(newValue != 0, true);
  
     }

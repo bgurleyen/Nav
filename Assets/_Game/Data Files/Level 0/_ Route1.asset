@@ -25,7 +25,7 @@ MonoBehaviour:
     RawDegrees: 3
     Distance: 5
     RawSpeed: 0
-    RawAltitude: 8000A9000B
+    RawAltitude: 30000A
     Details: 
   - ID: 2
     Name: DV581

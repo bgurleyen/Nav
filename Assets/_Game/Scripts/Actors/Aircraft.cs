@@ -64,6 +64,7 @@ public class Aircraft : MovingActor
                     ResetSeekProgress(routeIntersection.SegmentIndex, routeIntersection.SegmentVertexIndex);
                     _pendingJoinRoutePosition = routeIntersection;
                     isCatchRw = true;
+                    Session.State.LOCCaptured = true;
                 }
                 else
                 {

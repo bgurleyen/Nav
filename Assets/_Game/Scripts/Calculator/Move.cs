@@ -444,21 +444,35 @@ public class Move : Singleton<Move>
         myAC.GetComponent<UnityEngine.UI.Text>().text = "#";
         prvWptIdx = point;
     }
-    public float LocDeviation(float course)
+    public float ILSDeviation(float course)
     {
-        Vector2 runwayPos = PointPos(RW);
-        Vector2 aircraftPos = Session.PlayerAircraft.NMPosition;
+        float Deviation = Mathf.DeltaAngle(course, TrackToPoint(RW));
 
-        float inboundCourseRad = course * Mathf.Deg2Rad;
-        Vector2 inboundDirection = new Vector2(Mathf.Sin(inboundCourseRad), Mathf.Cos(inboundCourseRad));
-        Vector2 localizerDirection = -inboundDirection; // Extended centerline away from runway
+        if (Mathf.Abs(Mathf.DeltaAngle(course, Session.PlayerAircraft.HeadingDegrees)) > 90) Deviation *= -1;
 
-        Vector2 relToRunway = aircraftPos - runwayPos;
-        float alongTrackDistance = Vector2.Dot(relToRunway, localizerDirection);
+        if (DME() > 3)
+        {
+            if ((Mathf.Abs(Deviation) < 10) && (DME() < 15))
+            {
+                Session.State.ILSCapture = true;
+            }
+        }
+        else
+        {
+            Session.State.ILSCapture = false;
+        }
 
-        float lateralDistance = localizerDirection.x * relToRunway.y - localizerDirection.y * relToRunway.x;
+        return Deviation;
+    }
 
-        float Deviation = -Mathf.Atan2(lateralDistance, Mathf.Max(alongTrackDistance, 0.05f)) * Mathf.Rad2Deg;
+    public float LocDeviation(float course)   
+    {
+        float Deviation = Mathf.DeltaAngle(course, TrackToPoint(RW)) - 0.75f ;
+
+        if (Mathf.Abs(Mathf.DeltaAngle(course, Session.PlayerAircraft.HeadingDegrees)) > 90) Deviation *= -1;
+
+        Debug.Log(Deviation);
+
         if (((Mathf.Abs(Deviation) < 35) && (DME() < 10)) || ((Mathf.Abs(Deviation) < 10) && (DME() < 25)))
         {
             LOCIndex.enabled = true;
@@ -474,7 +488,15 @@ public class Move : Singleton<Move>
         return Deviation;
     }
 
-    public  float GsDeviation(float GS)
+    public float GsAltitudeDeviation(float GS)
+    {
+        float GSAltitude = Mathf.Tan(GS * Mathf.Deg2Rad)* DME() * 6076.12f ;
+        float Difference = (float)Calculator.CAltitude - GSAltitude;
+
+        return Difference;
+
+    }
+    public float GsDeviation(float GS)
     {
         float DescentAngle = Mathf.Atan2((float)Calculator.CAltitude, DME() * 6076.12f) * Mathf.Rad2Deg;
         float Deviation = Mathf.DeltaAngle(GS, DescentAngle);
@@ -496,27 +518,7 @@ public class Move : Singleton<Move>
 
     }
 
-    public float ILSDeviation(float course)
-    {
-        float Deviation = Mathf.DeltaAngle(course, TrackToPoint(RW));
-
-        if (Mathf.Abs(Mathf.DeltaAngle(course, Session.PlayerAircraft.HeadingDegrees)) > 90) Deviation *= -1;
-
-        if(DME() > 3)
-        {
-            if ((Mathf.Abs(Deviation) < 10) && (DME() < 15))
-            {
-                Session.State.ILSCapture = true;
-            }
-        }
-        else
-        {
-            Session.State.ILSCapture = false;
-        }
-
-        return Deviation;
-    }
-
+    
     private void DescentCheck()
     {
         int AltAbove, AltBelow, AltExact, AltRef; // First Altitude Restriction

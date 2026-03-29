@@ -125,6 +125,8 @@ namespace Navigation.Data
                 Fmc.Prog.PrvCrossAltitude = "" + Calculator.CAltitude;
                 Fmc.Prog.PrvActualTime = "" + GameTime.timerFMC;
                 Fmc.Prog.PrvActualFuel = "" + System.Math.Round(Calculator.totalFuel / 100, 1);
+
+        
             }
 
             previousPrvIndex = prvWptIdx;

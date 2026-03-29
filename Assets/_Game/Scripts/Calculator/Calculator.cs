@@ -73,7 +73,7 @@ public class Calculator : MonoBehaviour
         { { 280, 200,9200,306 } , { -2200, -100, 4640,95 } , { 220, 400,8060,220 } , { -1400, 300, 4320,95 } },
         { { 280, 200,8340,282 } , { -2100, -100, 4540,95 } , { 220, 400,7770,222 } , { -1300, 300, 4060,95 } },
         { { 280, 200,8010,282 } , { -1900, -100, 4000,95 } , { 220, 400,7520,221 } , { -1300, 300, 3710,95 } },
-        //noflaps identical
+        //Mf noflaps identical
         { { 280, 200,7820,282 } , { -1800, -100, 3850,95 } , { 220, 400,7180,224 } , { -1200, 200, 3530,95 } },
         { { 280, 200,7510,279 } , { -1700, -100, 3700,95 } , { 220, 400,6710,221 } , { -1100, 300, 3420,95 } },
         { { 280, 300,7100,276 } , { -1600, -100, 3570,95 } , { 220, 400,6440,222 } , {-1100, 300, 3300,95 } },
@@ -325,7 +325,8 @@ public class Calculator : MonoBehaviour
             for (int i = 0; i < 4; i++)
             {
 
-                s1 = (M[F, 1, i] - M[F, 3, i]) / (M[F, 0, 0] - M[F, 2, 0]) * (CSpeed - M[F, 2, 0]) + M[F, 3, i];
+          
+              s1 = (M[F, 1, i] - M[F, 3, i]) / (M[F, 0, 0] - M[F, 2, 0]) * (CSpeed - M[F, 2, 0]) + M[F, 3, i];
                 s2 = (M[F - 1, 1, i] - M[F - 1, 3, i]) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (CSpeed - M[F - 1, 2, 0]) + M[F - 1, 3, i];
                 a[i] = (s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2;
             }
@@ -467,9 +468,14 @@ public class Calculator : MonoBehaviour
         if (D == 0) DeltaAlt = 0;
         else DeltaAlt = CAltitude - Target;
 
-        VDI_Text.text = (Mathf.Abs((float)DeltaAlt) >= 50) ? "" + (int)DeltaAlt : "";
+        if (Session.State.LOCCaptured)
+        {
+ 
+             DeltaAlt = Move.Instance.GsAltitudeDeviation(Session.CurrentLevel.levelInfo.GlideSlope);
+        }
+            VDI_Text.text = (Mathf.Abs((float)DeltaAlt) >= 50) ? "" + (int)DeltaAlt : "";
 
-        Debug.Log("Alt0: "  + (int)Alt0 + " Alt1: " + (int)Alt1 + "  d: "+ (int)d + "  D: " + D +  "  DeltaAlt: " +   (int)DeltaAlt + " T: " + Target);
+       // Debug.Log("Alt0: "  + (int)Alt0 + " Alt1: " + (int)Alt1 + "  d: "+ (int)d + "  D: " + D +  "  DeltaAlt: " +   (int)DeltaAlt + " T: " + Target);
     
 
         posY = -((float)DeltaAlt / 5);
@@ -519,8 +525,7 @@ public class Calculator : MonoBehaviour
 
     public void SetFMA()
     {
-        Session.State.LOCCaptured = true;  // Remove after setting the LOC logic
-
+     
         if (Session.State.HDG) FMA2.text = "HDG";
         if (Session.State.LNAV) FMA2.text = "LNAV";
         if (Session.State.LNAVArmed) FMAarmed.text = "LNAV";
@@ -736,11 +741,11 @@ public class Calculator : MonoBehaviour
                                              { { 3460, 95 }, { 3200, 95 } },
                                              { { 3340, 95 }, { 3120, 95 } }};
         int i;
-        if (fromUI) LGDown = down;
         if (down)
 
         {
-   
+            if (fromUI) LGDown = down;
+
             for (i = 0; i < 9; i++)
             {
                 M[i, 1, 0] += MVS[i, 0];
