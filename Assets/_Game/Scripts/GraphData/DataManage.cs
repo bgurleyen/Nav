@@ -45,7 +45,7 @@ public class DataManage : MonoBehaviour
         m_data.speed.Add(RoundDownToNearestTen(Calculator.CSpeed));
         m_data.altitude.Add(ConvertToLowerHundred(Calculator.CAltitude));
         m_data.flap.Add(Calculator.Flap_Idx);
-        m_data.speedBrake.Add(Convert.ToInt32(Calculator.SBDown));
+        m_data.speedBrake.Add(Convert.ToInt32(Calculator.SBUp));
         m_data.landingGear.Add(Convert.ToInt32(Calculator.LGDown));
         m_data.fuelFlow.Add((Calculator.dispFF + (Calculator.FF - Calculator.FF / 10 * 10)) / 100);
 

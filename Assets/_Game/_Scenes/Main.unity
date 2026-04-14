@@ -46649,7 +46649,7 @@ PrefabInstance:
     - target: {fileID: 7330376348139547527, guid: b5794f15c83f88842a1c994d7dcd80e1,
         type: 3}
       propertyPath: _sliderCallback.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
-      value: 4
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7330376348139547527, guid: b5794f15c83f88842a1c994d7dcd80e1,
         type: 3}
@@ -46671,6 +46671,11 @@ PrefabInstance:
         type: 3}
       propertyPath: _sliderCallback.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
       value: McpUI, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 7330376348139547527, guid: b5794f15c83f88842a1c994d7dcd80e1,
+        type: 3}
+      propertyPath: _sliderCallback.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_FloatArgument
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 7330376348139547527, guid: b5794f15c83f88842a1c994d7dcd80e1,
         type: 3}
@@ -79177,7 +79182,28 @@ PrefabInstance:
         type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 35611999}
+      objectReference: {fileID: 2719986833695062058, guid: 9104df00b47524a3bba9d5718acc7432,
+        type: 3}
+    - target: {fileID: 2719986832843926379, guid: 9104df00b47524a3bba9d5718acc7432,
+        type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2719986832843926379, guid: 9104df00b47524a3bba9d5718acc7432,
+        type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: LG_Click
+      objectReference: {fileID: 0}
+    - target: {fileID: 2719986832843926379, guid: 9104df00b47524a3bba9d5718acc7432,
+        type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: McpUI, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 2719986832843926379, guid: 9104df00b47524a3bba9d5718acc7432,
+        type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
     - target: {fileID: 2719986833007842040, guid: 9104df00b47524a3bba9d5718acc7432,
         type: 3}
       propertyPath: m_LocalRotation.w
@@ -79648,6 +79674,11 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 2719986833695062058, guid: 9104df00b47524a3bba9d5718acc7432,
+        type: 3}
+      propertyPath: LG_Root
+      value: 
+      objectReference: {fileID: 1598167356}
     - target: {fileID: 2719986833695062058, guid: 9104df00b47524a3bba9d5718acc7432,
         type: 3}
       propertyPath: _LGSlider

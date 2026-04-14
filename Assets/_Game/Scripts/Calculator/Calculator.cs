@@ -37,8 +37,8 @@ public class Calculator : MonoBehaviour
     private double CMach, RMach, VNAV_VS;
     public static float TAS, GS;
     public Toggle co;//Landing Gear ,Speed Brake;
-    public static bool LGDown; 
-    public static bool SBDown; 
+    public static bool LGDown=false; 
+    public static bool SBUp=false; 
     public Button FUP_Button, FDown_Button;
     private int increasedSpeed, excessSpeedCo = 0;
     public static int Flap_Idx = 0;
@@ -329,7 +329,7 @@ public class Calculator : MonoBehaviour
               s1 = (M[F, 1, i] - M[F, 3, i]) / (M[F, 0, 0] - M[F, 2, 0]) * (CSpeed - M[F, 2, 0]) + M[F, 3, i];
                 s2 = (M[F - 1, 1, i] - M[F - 1, 3, i]) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (CSpeed - M[F - 1, 2, 0]) + M[F - 1, 3, i];
                 a[i] = (s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2;
-            }
+             } 
 
             N1 = (int)a[2];
             FF = (int)a[3];
@@ -727,7 +727,8 @@ public class Calculator : MonoBehaviour
     }
     public void SetLG(bool down, bool fromUI)
     {
-   
+       
+        if (LGDown == down) return;
 
         double[,] MVS = new double[9, 2] { { -2100, -1500 }, { -2700, -1500 }, { -2700, -1400 }, { -2600, -1300 }, { -2500, -1300 }, { -2300, -1200 }, { -1800, -600 }, { -1600, -500 }, { -1500, -300 } };
         double[,,] Wlg = new double[4, 2, 2] {
@@ -741,10 +742,12 @@ public class Calculator : MonoBehaviour
                                              { { 3460, 95 }, { 3200, 95 } },
                                              { { 3340, 95 }, { 3120, 95 } }};
         int i;
+        if (fromUI) LGDown = down;
+
         if (down)
 
         {
-            if (fromUI) LGDown = down;
+           
 
             for (i = 0; i < 9; i++)
             {
@@ -783,15 +786,15 @@ public class Calculator : MonoBehaviour
             }
         }
     }
-    public void SetSB(bool down, bool fromUI)
+    public void SetSB(bool Up, bool fromUI)
     {
-     
+        if (SBUp == !Up) return;
 
         double[,] Msb = new double[9, 2] { { -900, -600 }, { -900, -600 }, { -900, -500 }, { -900, -500 }, { -900, -400 }, { -900, -400 }, { -900, -400 }, { -900, -500 }, { -900, -400 } };
 
         int i;
-        if (fromUI) SBDown = down;
-        if (!down)
+        if (fromUI) SBUp = !Up;
+        if (!Up)
         {
             for (i = 0; i < 9; i++)
             {
@@ -817,12 +820,22 @@ public class Calculator : MonoBehaviour
             }
         }
     }
+    public static int NormalizeHeading360(int heading)
+    {
+        heading %= 360;
+        if (heading < 0)
+        {
+            heading += 360;
+        }
+
+        return heading;
+    }
+
     public void XFR1_Click()
     {
-        RHeading = Move.XFRHdg;
+        RHeading = NormalizeHeading360(Move.XFRHdg);
         AddWindEffectToRHeading();
         UYServiceLocator.Get<McpUI>().RefreshHS();
-
     }
     public void XFR2_Click()
     {
@@ -891,15 +904,12 @@ public class Calculator : MonoBehaviour
 
     public void AddWindEffectToRHeading()
     {
-        WindElements WE = CalculateWindElements(CAltitude, CSpeed, RHeading);
+        WindElements we = CalculateWindElements(CAltitude, CSpeed, RHeading);
+        HeadingWindAddition = we.HeadingWindAddition;
+        RTrack = NormalizeHeading360(RHeading - we.HeadingWindAddition);
 
-        RTrack = RHeading - WE.HeadingWindAddition;  // Rtrackteki ruzgar etkisini kullanmak gerekiyor?
-
-        // Debug.Log("Rtrack:   " + RTrack + "HdgWingAddition:   " + WE.HeadingWindAddition + "rel:   " + WE.relativeWindD);
-
-
-        UYServiceLocator.Get<McpUI>().RefreshHS();
-
+        UYServiceLocator.Get<McpUI>().RefreshHS(); 
+    
     }
 
 
@@ -1002,19 +1012,18 @@ public class Calculator : MonoBehaviour
 
         }
     }
+
     public void DisplayWindElements()
     {
-
-        WindElements WE = CalculateWindElements(CAltitude, CSpeed, CTrack); //Change to Current Heading
-        windArrow.transform.localEulerAngles = new Vector3(0, 0, 180 - WE.relativeWindD);
-        windTxt.text = "GS" + WE.GS + "   TAS" + WE.TAS + "\n" + WE.WindD + "° / " + WE.WindM;
-        CWind = WE.WindD + "° / " + WE.WindM;
-        GS = WE.GS;
-        CHeading = CTrack - WE.HeadingWindAddition;
-        HeadingWindAddition = WE.HeadingWindAddition;
-             //Debug.Log("CTrack:   " + CTrack + "HdgWingAddition:   " + WE.HeadingWindAddition + "rel:   " + WE.relativeWindD);
+        WindElements we = CalculateWindElements(CAltitude, CSpeed, CTrack); //Change to Current Heading
+        windArrow.transform.localEulerAngles = new Vector3(0, 0, 180 - we.relativeWindD);
+        windTxt.text = "GS" + we.GS + "   TAS" + we.TAS + "\n" + we.WindD + "° / " + we.WindM;
+        CWind = we.WindD + "° / " + we.WindM;
+        GS = we.GS;
+        HeadingWindAddition = we.HeadingWindAddition;
+        CHeading = NormalizeHeading360(CTrack - we.HeadingWindAddition);
     }
-    public class WindElements
+        public class WindElements
     {
         public int GS, HeadingWindAddition, relativeWindD, WindM, WindD, TAS;
     }

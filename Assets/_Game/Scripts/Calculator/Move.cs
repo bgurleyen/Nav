@@ -354,7 +354,7 @@ public class Move : Singleton<Move>
                             string WarningString = mode < 2 ? " Proceed Direct to " + Session.OriginalReferenceRoute.Points[point].Name
                                                             : "Fly Heading " + FactoredAngleToPoint;
                           //   EditorUtility.DisplayDialog("PILOT RESPONSE", "Please comply with instructions" + WarningString, "OK");
-                            Calculator.RHeading = FactoredAngleToPoint;
+                       //..     Calculator.RHeading = FactoredAngleToPoint;
                         }
                         else
                         {
@@ -362,7 +362,7 @@ public class Move : Singleton<Move>
                             //                            "An instruction was missed, follow the new clearance with 100kg fuel penalty ", "OK");
                             if (mode < 2) mode = 11;//if next mode zero 
 
-                            Calculator.RHeading = TrackToPointFactored(_currentLevelData.ATCs[_currentInstructionIndex + 1].point);
+                         //..   Calculator.RHeading = TrackToPointFactored(_currentLevelData.ATCs[_currentInstructionIndex + 1].point);
                             MoveOnNextInstruction();
 
                             FuelPenalty += 0.01; //100 kg FuelPenalty for shortcut
@@ -448,11 +448,13 @@ public class Move : Singleton<Move>
     {
         float Deviation = Mathf.DeltaAngle(course, TrackToPoint(RW));
 
+
+
         if (Mathf.Abs(Mathf.DeltaAngle(course, Session.PlayerAircraft.HeadingDegrees)) > 90) Deviation *= -1;
 
         if (DME() > 3)
         {
-            if ((Mathf.Abs(Deviation) < 10) && (DME() < 15))
+            if ((Mathf.Abs(Deviation) < 3) && (DME() < 23))
             {
                 Session.State.ILSCapture = true;
             }
@@ -467,7 +469,7 @@ public class Move : Singleton<Move>
 
     public float LocDeviation(float course)   
     {
-        float Deviation = Mathf.DeltaAngle(course, TrackToPoint(RW)) - 0.75f ;
+        float Deviation = Mathf.DeltaAngle(course, TrackToPoint(RW))  ;
 
         if (Mathf.Abs(Mathf.DeltaAngle(course, Session.PlayerAircraft.HeadingDegrees)) > 90) Deviation *= -1;
 
