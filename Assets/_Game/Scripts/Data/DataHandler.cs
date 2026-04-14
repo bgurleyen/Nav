@@ -299,7 +299,7 @@ public class DataHandler
                 var regulation = regulations[i];
                 var dif = regulation.DistanceToPrevious * lossForMile;
                 regulation.LinkedPoint.Altitude.SetComputedValue(set.Points[i - 1].GetAcceptedAltitude + dif, false);
-            }
+              }
         }
 
         // fil in altitudes for points between regulations

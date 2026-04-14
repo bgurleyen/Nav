@@ -382,15 +382,26 @@ public class Calculator : MonoBehaviour
         {
             if (CVS != 0)
             {
+                var previousAltitude = CAltitude;
+
                 CAltitude += (float)CVS / 60 * Session.Settings.SpeedMultiplier;
 
-                if ((Mathf.Abs(RAltitude - (int)CAltitude) < 10) && (!Session.State.GSCaptured))
+                if (!Session.State.GSCaptured)
+
                 {
-                    CAltitude = RAltitude;
-                    txtRAltitude.text = "" + RAltitude; txtRAltitude_overTape.text = txtRAltitude.text;
-                    CVS = 0;
-                    RVS = 0;
-                    Session.State.AutoSetAH(true);
+                    bool crossedTargetAltitude =
+                      (previousAltitude <= RAltitude && CAltitude >= RAltitude) ||
+                      (previousAltitude >= RAltitude && CAltitude <= RAltitude);
+
+                    if (crossedTargetAltitude || (Mathf.Abs(RAltitude - (int)CAltitude) < 10))
+                    {
+                        CAltitude = RAltitude;
+                        txtRAltitude.text = "" + RAltitude;
+                        txtRAltitude_overTape.text = txtRAltitude.text;
+                        CVS = 0;
+                        RVS = 0;
+                        Session.State.AutoSetAH(true);
+                    }
                 }
                 txtCAltitude.text = "" + (int)(CAltitude / 10) * 10;
                 txtMeter.text = "" + (int)(CAltitude / 3.28084 / 10) * 10 + "M";

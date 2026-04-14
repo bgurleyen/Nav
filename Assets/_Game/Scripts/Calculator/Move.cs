@@ -469,9 +469,27 @@ public class Move : Singleton<Move>
 
     public float LocDeviation(float course)   
     {
-        float Deviation = Mathf.DeltaAngle(course, TrackToPoint(RW))  ;
+        // float Deviation = Mathf.DeltaAngle(course, TrackToPoint(RW))  ;
+        Vector2 aircraftPosition = Session.PlayerAircraft.NMPosition;
+        Vector2 courseDirection = new Vector2(Mathf.Sin(course * Mathf.Deg2Rad), Mathf.Cos(course * Mathf.Deg2Rad));
 
-        if (Mathf.Abs(Mathf.DeltaAngle(course, Session.PlayerAircraft.HeadingDegrees)) > 90) Deviation *= -1;
+        // ILS hattına yakın bir referans noktası (varsa aktif ILS noktası, yoksa RW) alıyoruz.
+        int ilsReferencePoint = point >= 50 ? point : RW;
+        Vector2 ilsReferencePosition = PointPos(ilsReferencePoint);
+
+        float alongTrack = Vector2.Dot(aircraftPosition - ilsReferencePosition, courseDirection);
+        Vector2 closestPointOnCourse = ilsReferencePosition + (alongTrack * courseDirection);
+
+        // Sabit look-ahead ile (NM), paralel ofsette mesafeye bağlı yalancı drift'i azaltıyoruz.
+        const float lookAheadNm = 10f;
+        Vector2 aimPointOnCourse = closestPointOnCourse + (courseDirection * lookAheadNm);
+
+        float bearingToAimPoint = Mathf.Atan2(aimPointOnCourse.x - aircraftPosition.x, aimPointOnCourse.y - aircraftPosition.y) *
+                                  Mathf.Rad2Deg;
+        if (bearingToAimPoint < 0) bearingToAimPoint += 360;
+
+        float Deviation = Mathf.DeltaAngle(course, bearingToAimPoint)-0.3f;
+
 
         Debug.Log(Deviation);
 
