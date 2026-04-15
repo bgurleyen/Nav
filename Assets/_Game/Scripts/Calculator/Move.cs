@@ -491,7 +491,7 @@ public class Move : Singleton<Move>
         float Deviation = Mathf.DeltaAngle(course, bearingToAimPoint)-0.3f;
 
 
-        Debug.Log(Deviation);
+       // Debug.Log(Deviation);
 
         if (((Mathf.Abs(Deviation) < 35) && (DME() < 10)) || ((Mathf.Abs(Deviation) < 10) && (DME() < 25)))
         {

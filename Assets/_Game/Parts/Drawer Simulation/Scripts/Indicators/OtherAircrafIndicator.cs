@@ -1,16 +1,33 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 
 public class OtherAircrafIndicator : MonoBehaviour
 {
     [SerializeField] private TMP_Text label;
+    [SerializeField] private SpriteRenderer background;
 
+    private void Awake()
+    {
+        if (background != null)
+        {
+            return;
+        }
 
-    public void Init(string text, Color color)
+        background = GetComponentInChildren<SpriteRenderer>(true);
+    }
+
+    public void Init(string text, Color color, float backgroundAlpha = 1f)
     {
         label.text = text;
         label.color = color;
+
+        if (background == null)
+        {
+            return;
+        }
+
+        var bgColor = background.color;
+        bgColor.a = Mathf.Clamp01(backgroundAlpha);
+        background.color = bgColor;
     }
 }

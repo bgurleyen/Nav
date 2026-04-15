@@ -28,10 +28,10 @@ public class Calculator : MonoBehaviour
 
     public Transform VDI_Index;
     public double StartAltitude;
-    public static double CSpeed, CAltitude ; // Current Altitude*************************
+    public static double CSpeed, CAltitude; // Current Altitude*************************
     //                            
     private int RVS;
-    public static int RSpeed = (int)CSpeed, RHeading, RAltitude, CVS, CHeading;
+    public static int RSpeed = (int)CSpeed, minimumSpeed = 110, RHeading, RAltitude, CVS, CHeading;
 
     public static int CTrack, Track, RTrack;
     private double CMach, RMach, VNAV_VS;
@@ -486,7 +486,7 @@ public class Calculator : MonoBehaviour
         }
             VDI_Text.text = (Mathf.Abs((float)DeltaAlt) >= 50) ? "" + (int)DeltaAlt : "";
 
-       // Debug.Log("Alt0: "  + (int)Alt0 + " Alt1: " + (int)Alt1 + "  d: "+ (int)d + "  D: " + D +  "  DeltaAlt: " +   (int)DeltaAlt + " T: " + Target);
+       Debug.Log("Alt0: "  + (int)Alt0 + " Alt1: " + (int)Alt1 + "  d: "+ (int)d + "  D: " + D +  "  DeltaAlt: " +   (int)DeltaAlt + " T: " + Target);
     
 
         posY = -((float)DeltaAlt / 5);
@@ -588,7 +588,7 @@ public class Calculator : MonoBehaviour
                     }
                     else FMAarmed.text = "                             GS";
                 }
-                else FMAarmed.text = "LOC                     GS";
+                else FMAarmed.text = "LOC                 GS";
             }
 
         }
@@ -713,6 +713,8 @@ public class Calculator : MonoBehaviour
     public void SetFlaps()
     {
         int[] Fps = new int[9] { -179, -145, -103, -64, -35, -3, 29, 57, 86 };
+        int[] FlapMinSpeeds = new int[9] { 206, 187, 187, 167, 167, 157, 145, 145, 145 };
+
         int i, j, k;
         for (i = 0; i < 5; i++)
             for (j = 0; j < 4; j++)
@@ -720,8 +722,7 @@ public class Calculator : MonoBehaviour
                 {
                     M[i + 4, j, k] = Mf[Flap_Idx, i, j, k];
                 }
-        //SetLG(LGDown, false);
-        //SetSB(SBDown, false);
+
 
 
         if (FlapNeedle != null)
@@ -735,6 +736,7 @@ public class Calculator : MonoBehaviour
 
         PFD_Animation PFDScript = FindObjectOfType<PFD_Animation>();
         PFDScript.Flaps_Indexchange(Flap_Idx);
+        minimumSpeed = FlapMinSpeeds[Flap_Idx];
     }
     public void SetLG(bool down, bool fromUI)
     {
@@ -871,7 +873,7 @@ public class Calculator : MonoBehaviour
         }
         else
         {                                               //IAS 
-            if (RSpeed < 110) RSpeed = 110;
+            if (RSpeed < minimumSpeed) RSpeed = minimumSpeed;
             if (RSpeed > PFD_Animation.LimitSpeed) RSpeed = PFD_Animation.LimitSpeed;
             Calculator.Instance.txtRSpeed.text = "" + RSpeed;
         }

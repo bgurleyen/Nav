@@ -23,7 +23,7 @@ MonoBehaviour:
   - ID: 1
     Name: DLE
     RawDegrees: 3
-    Distance: 5
+    Distance: 20
     RawSpeed: 0
     RawAltitude: 30000A
     Details: 

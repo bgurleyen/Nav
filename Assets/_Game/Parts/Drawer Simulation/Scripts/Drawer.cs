@@ -50,6 +50,9 @@ public class Drawer : MonoBehaviour
 
     [SerializeField] private float _debugStarDistance = 1.3f;
 
+    [SerializeField] private float _topOfDescentOffsetNm = 10f;
+    [SerializeField] private float _topOfDescentRightOffsetNm = 1f;
+
     private void Awake()
     {
         Session.ZoomMultiplier = _gameConfig.Settings.StartingZoom;
@@ -214,6 +217,8 @@ public class Drawer : MonoBehaviour
         DisplayOtherTraffic();
 
         DisplayRotations();
+
+        DisplayTopOfDescentMarker();
     }
 
     private void DisplayRotations()
@@ -363,6 +368,34 @@ public class Drawer : MonoBehaviour
 
             drawer.Display(line, point, hiddenLabel || linesType == LinesType.Rejoin, hiddenLine, fromPointIndex);
         }
+    }
+
+    private void DisplayTopOfDescentMarker()
+    {
+        var route = Session.ActiveRoute;
+        if (route == null || route.Points == null || route.Points.Length < 2)
+        {
+            return;
+        }
+
+        var startPoint = route.Points[0].CartesianPosition;
+        var firstLegDegrees = route.Points[1].Degrees;
+        var topOfDescentPosition = Geometry.GetNextPosition(startPoint, _topOfDescentOffsetNm, firstLegDegrees);
+
+        var firstLegDirection = (route.Points[1].CartesianPosition - startPoint).normalized;
+        if (firstLegDirection == Vector2.zero)
+        {
+            firstLegDirection = Geometry.GetDirectionFromHeading(firstLegDegrees);
+        }
+
+        var rightOffset = new Vector2(firstLegDirection.y, -firstLegDirection.x) * _topOfDescentRightOffsetNm;
+        var shiftedTopOfDescentPosition = topOfDescentPosition + rightOffset;
+
+        var todMarker = otherAircraftsPool.Spawn(Vector3.zero, Quaternion.identity, dynamicHolderOtheriarcrafts)
+            .GetComponent<OtherAircrafIndicator>();
+        todMarker.name = "Top Of Descent";
+        todMarker.Init("●TOD", Color.green, 0f);
+        todMarker.transform.localPosition = shiftedTopOfDescentPosition.ToDisplay();
     }
 
     private void DisplayFixCircles()

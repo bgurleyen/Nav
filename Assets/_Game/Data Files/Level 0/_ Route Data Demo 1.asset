@@ -20,6 +20,13 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 
     Details: 
+  - ID: 99
+    Name: TOD
+    RawDegrees: 2
+    Distance: 2
+    RawSpeed: 0
+    RawAltitude: 33000
+    Details: 
   - ID: 1
     Name: DV581
     RawDegrees: 2
