@@ -250,7 +250,7 @@ public class Calculator : MonoBehaviour
             FlyVerticalPath();
             DisplayWindElements();
             CheckStabilization();
-
+            
             yield return new WaitForSeconds(1);
         }
     }
@@ -486,7 +486,7 @@ public class Calculator : MonoBehaviour
         }
             VDI_Text.text = (Mathf.Abs((float)DeltaAlt) >= 50) ? "" + (int)DeltaAlt : "";
 
-       Debug.Log("Alt0: "  + (int)Alt0 + " Alt1: " + (int)Alt1 + "  d: "+ (int)d + "  D: " + D +  "  DeltaAlt: " +   (int)DeltaAlt + " T: " + Target);
+       //Debug.Log("Alt0: "  + (int)Alt0 + " Alt1: " + (int)Alt1 + "  d: "+ (int)d + "  D: " + D +  "  DeltaAlt: " +   (int)DeltaAlt + " T: " + Target);
     
 
         posY = -((float)DeltaAlt / 5);
@@ -1034,9 +1034,11 @@ public class Calculator : MonoBehaviour
         CWind = we.WindD + "° / " + we.WindM;
         GS = we.GS;
         HeadingWindAddition = we.HeadingWindAddition;
+        Move.PrvHdg = Calculator.CHeading;
         CHeading = NormalizeHeading360(CTrack - we.HeadingWindAddition);
+
     }
-        public class WindElements
+    public class WindElements
     {
         public int GS, HeadingWindAddition, relativeWindD, WindM, WindD, TAS;
     }
@@ -1083,7 +1085,7 @@ public class Calculator : MonoBehaviour
     public void CheckStabilization()
     {
         string LF = System.Environment.NewLine;
-        if (CAltitude <= -1000)
+        if (CAltitude <= 1000)
         {
 #if UNITY_EDITOR
             EditorUtility.DisplayDialog("NOT STABLE", "Localizer............ok" + LF +
@@ -1094,7 +1096,13 @@ public class Calculator : MonoBehaviour
                                                       "Flaps................30" + LF +
                                                       "Speed Brake....Extended XXX" + LF, "Exit");
 #endif
-            QuitGame();
+
+            Aircraft aircraft = UnityEngine.Object.FindAnyObjectByType<Aircraft>();
+            if (aircraft != null)
+            {
+                aircraft.FinishGame();
+                CAltitude = 10000;    
+            }
         }
     }
     public void QuitGame()

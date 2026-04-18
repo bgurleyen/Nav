@@ -44,6 +44,15 @@ public class Aircraft : MovingActor
         debugHelper = GetComponent<AircraftDebugHelper>();
     }
 
+    public void FinishGame()
+    {
+        Debug.Log("Finish GAME");
+        GraphManage.OnGameFinish?.Invoke(true);
+        Session.State.AutoSetHDG(true);
+        isCatchRw = false;
+        return;
+        //Session.State.ILSCapture = false;
+    }        
     public override void SimulateTick()
     {
         DrawHeadingLine();
@@ -152,12 +161,7 @@ public class Aircraft : MovingActor
 
             if (!foundCloseILSPathDestination)
             {
-                Debug.Log("Finish GAME");
-                GraphManage.OnGameFinish?.Invoke(true);
-                Session.State.AutoSetHDG(true);
-                isCatchRw = false;
-                //Session.State.ILSCapture = false;
-                return;
+                FinishGame();
             }
 
             if (_pendingJoinRoutePosition != null)

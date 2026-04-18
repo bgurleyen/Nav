@@ -255,7 +255,7 @@ public class Drawer : MonoBehaviour
             default:
                 throw new ArgumentOutOfRangeException();
         }
-        _windPivot.SetLocalRotationZ(Calculator.HeadingWindAddition);
+        _windPivot.SetLocalRotationZ(-Calculator.HeadingWindAddition);
 
         mobilePlaneIndicatorPivot.localPosition = Session.PlayerAircraft.NMPosition.ToDisplay();
     }

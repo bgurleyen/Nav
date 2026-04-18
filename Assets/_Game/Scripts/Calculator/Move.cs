@@ -39,7 +39,9 @@ public class Move : Singleton<Move>
 
     private LevelDataScriptableObject _currentLevelData;
     private OtherAC[] _otherACs;
-    float DistanceToPoint;
+    float DistanceToPoint, PrvDistanceToPoint;
+    int PrvPoint;
+    public static int PrvHdg;
 
     float PrvTrackToPoint = 0, hyp;
     int prvWptIdx = -1;
@@ -104,6 +106,7 @@ public class Move : Singleton<Move>
          RW = Session.OriginalReferenceRoute.Points.Length - 1;
     }
 
+   
     public void Tick()
     {
         for (int i = 0; i < _otherACs.Length; i++)
@@ -248,7 +251,8 @@ public class Move : Singleton<Move>
         Speed_nx = currentInstruction.Speed_nx;
 
         hyp = Vector2.Distance(Session.PlayerAircraft.NMPosition, PointPos(point));
-
+        PrvDistanceToPoint= Vector2.Distance(Session.PlayerAircraft.NMPosition, PointPos(PrvPoint));
+        DistanceToPoint = Vector2.Distance(Session.PlayerAircraft.NMPosition, PointPos(point));
 
         if (point < 50 && point > 1) RawSpeed = Session.OriginalReferenceRoute.Points[point - 1].RawSpeed;
 
@@ -267,7 +271,8 @@ public class Move : Singleton<Move>
         
 
             Atc1.text = mode == 1 ? "Proceed direct to  " + Session.OriginalReferenceRoute.Points[point].Name :
-                mode == 2 ? "Turn " + TurnDirection(TrackToPoint(point)) + "Heading " +TrackToPointFactored(point) : "";
+                mode == 2 ? "Turn " + TurnDirection(TrackToPoint(point)) 
+                          + "Heading " +Calculator.NormalizeHeading360(TrackToPointFactored(point)) : "";
 
       
             string s = VS < 0 ? ", ROD " + (-VS) + " fpm" + NxToString(VS_nx) : "";
@@ -305,7 +310,8 @@ public class Move : Singleton<Move>
 
             NewPoint = false;
 
-           // if (mode > 0 || XFR2.interactable || XFR3.interactable) SlowDown(); Remove//
+            if (mode > 0 || XFR2.interactable || XFR3.interactable) SlowDown();
+
         }
         else // Not New
         {
@@ -330,50 +336,55 @@ public class Move : Singleton<Move>
             float x = hyp * Mathf.Cos(Mathf.DeltaAngle(TrackToPoint(point), PrvTrackToPoint) * Mathf.Deg2Rad);
 
             teta = Mathf.Atan2(DistanceFromRoute()-1.3f,x) * Mathf.Rad2Deg;//noktanin 1.3 nm uzerine aci
+            bool NoTurn = (Calculator.CHeading == PrvHdg);
 
-            //Debug.Log(DistanceFromRoute() + "   Pp: " + Perpend + "  Tp: " + TrackToPoint(point) + 
-            //       " prv:" + PrvTrackToPoint + " hyp: " + hyp + " x: " + x + " Pt: " + point);
+           // Debug.Log("D: " + DistanceFromRoute()
+           //        + " Pt: " + point
+           //        + " prvPtDis: " + PrvDistanceToPoint
+           //        + " PtDis: " + DistanceToPoint
+           //        + "NoTurn  :" + NoTurn
+           //        + "CH  :" + Calculator.CHeading
+           //        + "PH  :" + PrvHdg  );
 
-            if (DistanceFromRoute() > Mathf.Tan(20 * Mathf.Deg2Rad) * x + 1.3) //(20 degrees koni) Warning 
+            
+            float warningDistance = (Atc1.text == "ATC Rerouting") ? 7 :1.3f;
+
+            if ((NoTurn) & (DistanceFromRoute() >warningDistance) & (PrvDistanceToPoint > 4)) 
             {
 
-                if (Mathf.Abs(Mathf.DeltaAngle(Calculator.RTrack, Perpend)) >= 90 - teta) // Hdg rota tracki ve +-70 arasinda
-                {
-                   // SlowDown();
-                   // Time.timeScale = 0;  //Stop at Borders
-                    Atc1.color = Color.red;
+                SlowDown();
+                    Time.timeScale = 0; 
+     
 
                     int FactoredAngleToPoint = TrackToPointFactored(point);
                     int FactoredAngleDifference = Mathf.Abs((int)Mathf.DeltaAngle(Calculator.CTrack, TrackToPointFactored(point)));
-
-                    if (Calculator.RHeading != FactoredAngleToPoint)
+                if (Atc1.text == "ATC Rerouting")
+                {
+                    EditorUtility.DisplayDialog("DEVIATION FROM ATC!!", "FLIGHT REJECTED","Exit");
+                    Calculator.Instance.QuitGame();
+                  
+                }
+                else if (Calculator.RHeading != FactoredAngleToPoint)
                     {
-                        if (FactoredAngleDifference < 20 * DistanceToPoint)
 
-                        {
-                            string WarningString = mode < 2 ? " Proceed Direct to " + Session.OriginalReferenceRoute.Points[point].Name
-                                                            : "Fly Heading " + FactoredAngleToPoint;
-                          //   EditorUtility.DisplayDialog("PILOT RESPONSE", "Please comply with instructions" + WarningString, "OK");
-                       //..     Calculator.RHeading = FactoredAngleToPoint;
-                        }
-                        else
-                        {
-                            // EditorUtility.DisplayDialog("PILOT RESPONSE ,FUEL PENALTY!! ",
-                            //                            "An instruction was missed, follow the new clearance with 100kg fuel penalty ", "OK");
-                            if (mode < 2) mode = 11;//if next mode zero 
+                        EditorUtility.DisplayDialog("PILOT RESPONSE", "Please comply with instructions"
+                            + "Fly Heading " + FactoredAngleToPoint, "OK");
+                        Calculator.RHeading = FactoredAngleToPoint;
 
-                         //..   Calculator.RHeading = TrackToPointFactored(_currentLevelData.ATCs[_currentInstructionIndex + 1].point);
-                            MoveOnNextInstruction();
+                        Atc1.color = Color.red;
+                        Atc1.text = "ATC Rerouting";
+                        XFR1.interactable = false;
+                        mode = 2;
+                    Calculator.Instance.OnClick_HDG(false); //harekete devam icin -1 hdg
+                    Calculator.Instance.OnClick_HDG(true); //harekete devam icin  +1
 
-                            FuelPenalty += 0.01; //100 kg FuelPenalty for shortcut
-                        }
-
-                    }
                 }
 
+
             }
-        //    else  Atc1.color = Color.white;
-         
+
+            
+            else  Atc1.color = Color.white;
         }
 
         if ((Altitude > 0) && (Altitude != ATCAltitude)) //Descent clr changed
@@ -432,6 +443,7 @@ public class Move : Singleton<Move>
             if ((point != prvWptIdx) && ((DistanceToPoint < NextInstructionDistance)))  // next instruction NextInstructionDistance nm before next pt
             {
                 MoveOnNextInstruction();
+                PrvPoint = point;
             }
         }
     }
