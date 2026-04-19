@@ -293,15 +293,17 @@ public class DataHandler
 
             var totalDiff = to.LinkedPoint.GetAcceptedAltitude - from.LinkedPoint.GetAcceptedAltitude;
             var lossForMile = totalDiff / totalDistance;
+            var altitudeFrom = from.LinkedPoint.GetAcceptedAltitude;
+            var cumulativeDistance = 0f;
 
             for (var i = from.IndexInList + 1; i <= to.IndexInList; i++)
             {
                 var regulation = regulations[i];
-                var dif = regulation.DistanceToPrevious * lossForMile;
-                regulation.LinkedPoint.Altitude.SetComputedValue(set.Points[i - 1].GetAcceptedAltitude + dif, false);
-              }
+                cumulativeDistance += regulation.DistanceToPrevious;
+                var computedAltitude = altitudeFrom + cumulativeDistance * lossForMile;
+                regulation.LinkedPoint.Altitude.SetComputedValue(computedAltitude, false);
+            }
         }
-
         // fil in altitudes for points between regulations
         anchoredFrom = regulations[0];
         while (anchoredFrom.Next != null)

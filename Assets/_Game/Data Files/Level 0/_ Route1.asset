@@ -32,7 +32,7 @@ MonoBehaviour:
     RawDegrees: 2
     Distance: 7.3
     RawSpeed: 0
-    RawAltitude: 
+    RawAltitude: 30000A
     Details: 
   - ID: 3
     Name: ELNAT

@@ -12,7 +12,7 @@ using Unyawn.Utils;
 
 public class Calculator : MonoBehaviour
 {
-   
+
     public static int Level = 0;             // ***  Level
 
     private string result;
@@ -37,8 +37,8 @@ public class Calculator : MonoBehaviour
     private double CMach, RMach, VNAV_VS;
     public static float TAS, GS;
     public Toggle co;//Landing Gear ,Speed Brake;
-    public static bool LGDown=false; 
-    public static bool SBUp=false; 
+    public static bool LGDown = false;
+    public static bool SBUp = false;
     public Button FUP_Button, FDown_Button;
     private int increasedSpeed, excessSpeedCo = 0;
     public static int Flap_Idx = 0;
@@ -192,7 +192,7 @@ public class Calculator : MonoBehaviour
 
     private void Start()
     {
-        StartAltitude= Session.CurrentLevel.levelInfo.CrzAltitude;
+        StartAltitude = Session.CurrentLevel.levelInfo.CrzAltitude;
         CSpeed = Session.CurrentLevel.levelInfo.CrzSpeed;
         CAltitude = StartAltitude;
         RAltitude = (int)CAltitude;
@@ -220,7 +220,7 @@ public class Calculator : MonoBehaviour
         SetFlaps();
 
         Session.Settings.SpeedMultiplier = 1;
-        
+
     }
 
     private IEnumerator ExecuteEachFrameSecond()
@@ -250,7 +250,7 @@ public class Calculator : MonoBehaviour
             FlyVerticalPath();
             DisplayWindElements();
             CheckStabilization();
-            
+
             yield return new WaitForSeconds(1);
         }
     }
@@ -325,11 +325,11 @@ public class Calculator : MonoBehaviour
             for (int i = 0; i < 4; i++)
             {
 
-          
-              s1 = (M[F, 1, i] - M[F, 3, i]) / (M[F, 0, 0] - M[F, 2, 0]) * (CSpeed - M[F, 2, 0]) + M[F, 3, i];
+
+                s1 = (M[F, 1, i] - M[F, 3, i]) / (M[F, 0, 0] - M[F, 2, 0]) * (CSpeed - M[F, 2, 0]) + M[F, 3, i];
                 s2 = (M[F - 1, 1, i] - M[F - 1, 3, i]) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (CSpeed - M[F - 1, 2, 0]) + M[F - 1, 3, i];
                 a[i] = (s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2;
-             } 
+            }
 
             N1 = (int)a[2];
             FF = (int)a[3];
@@ -467,27 +467,27 @@ public class Calculator : MonoBehaviour
         var node0 = _route.Points[PositionVirtualNode.PassedNodeIndex];
         var node1 = _route.Points[PositionVirtualNode.PassedNodeIndex + 1];
 
-         Alt1 = (double)(node1.Altitude.ComputedValue);
+        Alt1 = (double)(node1.Altitude.ComputedValue);
         d = Session.PlayerAircraft.ComputedDistanceLeftOnSegment;
         D = node1.Distance;
 
         double Target;
         Alt0 = (double)(node0.Altitude.ComputedValue);
         if (Alt0 != -1) Target = (double)(Alt1 + (d * (Alt0 - Alt1)) / D);
-        else Target = (double)(Alt1 + 318 * d); 
-        
+        else Target = (double)(Alt1 + 318 * d);
+
         if (D == 0) DeltaAlt = 0;
         else DeltaAlt = CAltitude - Target;
 
         if (Session.State.LOCCaptured)
         {
- 
-             DeltaAlt = Move.Instance.GsAltitudeDeviation(Session.CurrentLevel.levelInfo.GlideSlope);
-        }
-            VDI_Text.text = (Mathf.Abs((float)DeltaAlt) >= 50) ? "" + (int)DeltaAlt : "";
 
-       //Debug.Log("Alt0: "  + (int)Alt0 + " Alt1: " + (int)Alt1 + "  d: "+ (int)d + "  D: " + D +  "  DeltaAlt: " +   (int)DeltaAlt + " T: " + Target);
-    
+            DeltaAlt = Move.Instance.GsAltitudeDeviation(Session.CurrentLevel.levelInfo.GlideSlope);
+        }
+        VDI_Text.text = (Mathf.Abs((float)DeltaAlt) >= 50) ? "" + (int)DeltaAlt : "";
+
+        //Debug.Log("Alt0: "  + (int)Alt0 + " Alt1: " + (int)Alt1 + "  d: "+ (int)d + "  D: " + D +  "  DeltaAlt: " +   (int)DeltaAlt + " T: " + Target);
+
 
         posY = -((float)DeltaAlt / 5);
         if (posY > 100) posY = 100;
@@ -507,10 +507,15 @@ public class Calculator : MonoBehaviour
 
         var node0 = _route.Points[PositionVirtualNode.PassedNodeIndex];
         var node1 = _route.Points[PositionVirtualNode.PassedNodeIndex + 1];
+        var node2 = _route.Points[PositionVirtualNode.PassedNodeIndex + 2];
 
         Alt0 = (double)(node0.Altitude.ComputedValue);
-        if (Alt0 == -1) Alt0 =StartAltitude; // first and last nodes missing altitude info
+        if (Alt0 == -1) Alt0 = StartAltitude; // first and last nodes missing altitude info
         Alt1 = (double)(node1.Altitude.ComputedValue);
+        double Alt2 = (double)(node2.Altitude.ComputedValue);
+        Debug.Log("Alt0    :" + Alt0 +
+                   "Alt1    :" + Alt1 +
+                   "Alt2    :" + Alt2);
         d = Session.PlayerAircraft.ComputedDistanceLeftOnSegment;
         D = node1.Distance;
 
@@ -525,18 +530,67 @@ public class Calculator : MonoBehaviour
                                   // VNAV_VS = - Move.Instance.GsDeviation(GlideSlope)*200 ;
             RVS = (int)VNAV_VS;
         }
-        else if (Session.State.VNAV)  //VNAV Logic
+        else if (Session.State.VNAV)
         {
-            VNAV_VS = -((CAltitude - Alt1) * GS) / (60 * d) - DeltaAlt * 2;
-            RVS = (DeltaAlt < -50) ? -100 : (int)VNAV_VS;
-        //    Debug.Log("TOD:" + (CAltitude-Alt1)/318+ "NM");
+            if (D < 0.01) return;
+            if (d < 0.1) d = 0.1;
+
+            if (Alt0 == -1) Alt0 = StartAltitude;
+            if (Alt1 == -1) Alt1 = Alt0;
+
+            double fpaRad = Math.Atan((Alt1 - Alt0) / (D * 6076.0));
+            double baseVS = GS * 101.27 * Math.Tan(fpaRad);
+
+            double ratio = (D - d) / D;
+            double targetAlt = Alt0 + ratio * (Alt1 - Alt0);
+
+            double deviation = CAltitude - targetAlt;
+
+            double Kp = 0.5;
+            double correction = Kp * deviation;
+
+            VNAV_VS = baseVS - correction;
+
+            // -------- LEVEL OFF LOGIC --------
+            bool willLevelOff = Alt2 >= Alt1;
+
+            if (willLevelOff)
+            {
+                // 1) Early compensation
+                double anticipationStart = 8.0;
+                double extraBias = 0;
+
+                if (d < anticipationStart)
+                {
+                    double factor = (anticipationStart - d) / anticipationStart;
+                    extraBias = factor * 800;
+                }
+
+                VNAV_VS -= extraBias;
+
+                // 2) Flare (smooth capture)
+                double altError = CAltitude - Alt1;
+                double flareBand = 300;
+
+                if (Math.Abs(altError) < flareBand)
+                {
+                    double t = Math.Clamp(Math.Abs(altError) / flareBand, 0, 1);
+                    t = t * t;
+
+                    VNAV_VS = VNAV_VS * t;
+                }
+            }
+
+            VNAV_VS = Mathf.Clamp((float)VNAV_VS, -4000, 2000);
+
+            RVS = (int)VNAV_VS;
         }
 
     }
 
     public void SetFMA()
     {
-     
+
         if (Session.State.HDG) FMA2.text = "HDG";
         if (Session.State.LNAV) FMA2.text = "LNAV";
         if (Session.State.LNAVArmed) FMAarmed.text = "LNAV";
@@ -580,7 +634,7 @@ public class Calculator : MonoBehaviour
 
                     if (Mathf.Abs(Move.Instance.GsDeviation(Session.CurrentLevel.levelInfo.GlideSlope)) < 0.1)
                     {
-                        Session.State.GSCaptured = true;  
+                        Session.State.GSCaptured = true;
 
                         FMA1.text = "MCP SPD";
                         FMA3.text = "GS";
@@ -740,7 +794,7 @@ public class Calculator : MonoBehaviour
     }
     public void SetLG(bool down, bool fromUI)
     {
-       
+
         if (LGDown == down) return;
 
         double[,] MVS = new double[9, 2] { { -2100, -1500 }, { -2700, -1500 }, { -2700, -1400 }, { -2600, -1300 }, { -2500, -1300 }, { -2300, -1200 }, { -1800, -600 }, { -1600, -500 }, { -1500, -300 } };
@@ -760,7 +814,7 @@ public class Calculator : MonoBehaviour
         if (down)
 
         {
-           
+
 
             for (i = 0; i < 9; i++)
             {
@@ -921,8 +975,8 @@ public class Calculator : MonoBehaviour
         HeadingWindAddition = we.HeadingWindAddition;
         RTrack = NormalizeHeading360(RHeading - we.HeadingWindAddition);
 
-        UYServiceLocator.Get<McpUI>().RefreshHS(); 
-    
+        UYServiceLocator.Get<McpUI>().RefreshHS();
+
     }
 
 
@@ -966,7 +1020,7 @@ public class Calculator : MonoBehaviour
         int value;
         if (int.TryParse(txtRVS.text, out value))
         {
-            RVS=value;
+            RVS = value;
         }
         if (Session.State.VS) //VS
         {
@@ -990,7 +1044,7 @@ public class Calculator : MonoBehaviour
         }
         if (Session.State.AH)
         {
-            RVS= 0;
+            RVS = 0;
         }
 
     }
@@ -1045,17 +1099,41 @@ public class Calculator : MonoBehaviour
 
     private static int GetWindDirection(double altitude)
     {
-        int baseAlt = 8 - (int)System.Math.Truncate(altitude / 5000);
-        return (int)Mathf.LerpAngle((float)CurrentWindTable.WindInfoItems[baseAlt].Degrees,
-                                           (float)CurrentWindTable.WindInfoItems[baseAlt - 1].Degrees,
-                                           (float)(altitude % 5000) / 5000);
+        altitude = Math.Max(0, altitude);
+
+        int maxIndex = CurrentWindTable.WindInfoItems.Length - 1;
+
+        int baseAlt = maxIndex - (int)(altitude / 5000.0);
+        baseAlt = Mathf.Clamp(baseAlt, 1, maxIndex);
+
+        double frac = (altitude % 5000.0) / 5000.0;
+
+        float deg1 = Mathf.Repeat((float)CurrentWindTable.WindInfoItems[baseAlt].Degrees, 360f);
+        float deg2 = Mathf.Repeat((float)CurrentWindTable.WindInfoItems[baseAlt - 1].Degrees, 360f);
+
+        float result = Mathf.LerpAngle(deg1, deg2, (float)frac);
+
+        return (int)result;
     }
     public static int GetWindMagnitude(double altitude)
     {
-        int baseAlt = 8 - (int)System.Math.Truncate(altitude / 5000);
-        return (int)Mathf.LerpUnclamped(CurrentWindTable.WindInfoItems[baseAlt].Knots,
-                                            CurrentWindTable.WindInfoItems[baseAlt - 1].Knots,
-                                            (float)(altitude % 5000) / 5000);
+        altitude = Math.Max(0, altitude);
+
+        int maxIndex = CurrentWindTable.WindInfoItems.Length - 1;
+
+        int baseAlt = maxIndex - (int)(altitude / 5000.0);
+        baseAlt = Mathf.Clamp(baseAlt, 1, maxIndex);
+
+        double frac = (altitude % 5000.0) / 5000.0;
+
+        float kts1 = CurrentWindTable.WindInfoItems[baseAlt].Knots;
+        float kts2 = CurrentWindTable.WindInfoItems[baseAlt - 1].Knots;
+
+        float result = Mathf.Lerp(kts1, kts2, (float)frac);
+
+        result = Mathf.Max(0, result);
+
+        return (int)result;
     }
     public static WindElements CalculateWindElements(double Altitude, double IAS, int Track)
     {
@@ -1101,7 +1179,7 @@ public class Calculator : MonoBehaviour
             if (aircraft != null)
             {
                 aircraft.FinishGame();
-                CAltitude = 10000;    
+                CAltitude = 10000;
             }
         }
     }
