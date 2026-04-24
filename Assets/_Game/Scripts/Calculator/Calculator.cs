@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using JetBrains.Annotations;
 using MoreMountains.NiceVibrations;
 using Navigation;
 using TMPro;
@@ -14,6 +15,8 @@ public class Calculator : MonoBehaviour
 {
 
     public static int Level = 0;             // ***  Level
+
+    public int prvIndex4Speed;
 
     private string result;
     public Text txtRSpeed, txtRAltitude, txtRVS, txtRHeading;
@@ -250,7 +253,7 @@ public class Calculator : MonoBehaviour
             FlyVerticalPath();
             DisplayWindElements();
             CheckStabilization();
-
+            //Debug.Log(Move.Instance.FuelPenalty);
             yield return new WaitForSeconds(1);
         }
     }
@@ -422,6 +425,7 @@ public class Calculator : MonoBehaviour
         float speedbandspeed = 1f;// Session.Settings.SpeedMultiplier;
         if (RSpeed > increasedSpeed) RRSpeed = RSpeed; else RRSpeed = increasedSpeed;
 
+        RSpeed = ApplyVnavPointSpeedLimit(RSpeed);
 
         PFD_Animation PFDScript = FindObjectOfType<PFD_Animation>();
 
@@ -480,10 +484,10 @@ public class Calculator : MonoBehaviour
         else DeltaAlt = CAltitude - Target;
 
         if (Session.State.LOCCaptured)
-        {
-
+         {
+           
             DeltaAlt = Move.Instance.GsAltitudeDeviation(Session.CurrentLevel.levelInfo.GlideSlope);
-        }
+         }
         VDI_Text.text = (Mathf.Abs((float)DeltaAlt) >= 50) ? "" + (int)DeltaAlt : "";
 
         //Debug.Log("Alt0: "  + (int)Alt0 + " Alt1: " + (int)Alt1 + "  d: "+ (int)d + "  D: " + D +  "  DeltaAlt: " +   (int)DeltaAlt + " T: " + Target);
@@ -497,6 +501,24 @@ public class Calculator : MonoBehaviour
         if (DeltaAlt < 0) VDI_Text.transform.localPosition = new Vector2(0.1f, -1);
         else VDI_Text.transform.localPosition = new Vector2(0.1f, 1);
     }
+    private int ApplyVnavPointSpeedLimit(int targetSpeed)
+    {
+        if (!Session.State.VNAV || Session.ActiveRoute?.Points == null || Session.ActiveRoute.Points.Length == 0)
+        {
+            return targetSpeed;
+        }
+
+        var pointIndex = Mathf.Clamp(PositionVirtualNode.NextNodeIndex, 0, Session.ActiveRoute.Points.Length - 1);
+        var pointSpeed = Session.ActiveRoute.Points[pointIndex].RawSpeed;
+
+        pointSpeed = (prvIndex4Speed != pointIndex) ? pointSpeed:0;
+        prvIndex4Speed = pointIndex;
+
+         return pointSpeed > 0 ? Mathf.Min(targetSpeed, pointSpeed) : targetSpeed;
+
+
+         
+    }
     public void FlyVerticalPath()  // Recode more modular
     {
         double DeltaAlt, Alt1, Alt0, d, D;
@@ -507,15 +529,16 @@ public class Calculator : MonoBehaviour
 
         var node0 = _route.Points[PositionVirtualNode.PassedNodeIndex];
         var node1 = _route.Points[PositionVirtualNode.PassedNodeIndex + 1];
-        var node2 = _route.Points[PositionVirtualNode.PassedNodeIndex + 2];
+        var node2 = (activePoints.Points.Length> PositionVirtualNode.PassedNodeIndex + 2) 
+                   ?_route.Points[PositionVirtualNode.PassedNodeIndex + 2]: _route.Points[0];
 
         Alt0 = (double)(node0.Altitude.ComputedValue);
         if (Alt0 == -1) Alt0 = StartAltitude; // first and last nodes missing altitude info
         Alt1 = (double)(node1.Altitude.ComputedValue);
         double Alt2 = (double)(node2.Altitude.ComputedValue);
-        Debug.Log("Alt0    :" + Alt0 +
-                   "Alt1    :" + Alt1 +
-                   "Alt2    :" + Alt2);
+        //Debug.Log("Alt0    :" + Alt0 +
+        //           "Alt1    :" + Alt1 +
+        //           "Alt2    :" + Alt2);
         d = Session.PlayerAircraft.ComputedDistanceLeftOnSegment;
         D = node1.Distance;
 
@@ -640,7 +663,7 @@ public class Calculator : MonoBehaviour
                         FMA3.text = "GS";
                         FMAarmed.text = "";
                     }
-                    else FMAarmed.text = "                             GS";
+                    else FMAarmed.text = "                         GS";
                 }
                 else FMAarmed.text = "LOC                 GS";
             }

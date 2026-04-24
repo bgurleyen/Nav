@@ -712,7 +712,7 @@ namespace Navigation
             }
         }
 
-        public void AddNodeAtLast(int NodeId, string name, float rawDegrees, int distance)
+        public void AddNodeAtLast(int NodeId, string name, float rawDegrees, float distance)
         {
             RoutePoint insertionNode = new RoutePoint
             {

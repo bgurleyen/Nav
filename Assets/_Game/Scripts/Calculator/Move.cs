@@ -35,7 +35,7 @@ public class Move : Singleton<Move>
     private int modD = 0, modS = 0;
     private int RawSpeed = 0;
     private int AltAbove, AltBelow, AltExact;
-    private double FuelPenalty = 0;
+    public double FuelPenalty = 0;
 
     private LevelDataScriptableObject _currentLevelData;
     private OtherAC[] _otherACs;
@@ -215,6 +215,7 @@ public class Move : Singleton<Move>
 
             Atc3.color = Color.red;
             FuelPenalty += 0.001;
+
         }
 
         isSpeedChecked = true;
@@ -310,7 +311,7 @@ public class Move : Singleton<Move>
 
             NewPoint = false;
 
-            if (mode > 0 || XFR2.interactable || XFR3.interactable) SlowDown();
+            //if (mode > 0 || XFR2.interactable || XFR3.interactable) SlowDown();
 
         }
         else // Not New
