@@ -56,6 +56,8 @@ public class Calculator : MonoBehaviour
     public static int FF = 77;
     public static double dispFF = 270;
     public static double totalFuel = 1000; // 10 tons *100 
+    public RouteScriptableObject routeMain;
+
     //Speed:(NM per Hour = Knots)--> Show in PFD , map will move in this speed
     //Altitude:(Feet)--> Show in PFD ,no other effect
     //VS:(Feet per minute)--> Show in PFD ,no other effect
@@ -195,7 +197,11 @@ public class Calculator : MonoBehaviour
 
     private void Start()
     {
+        
+        // Session.CurrentLevel.levelInfo.CrzAltitude = (long) Session.ActiveRoute.Points[0].Altitude.RestrictionExact;
+        routeMain.Points[0].RawAltitude = Session.CurrentLevel.levelInfo.CrzAltitude.ToString();
         StartAltitude = Session.CurrentLevel.levelInfo.CrzAltitude;
+
         CSpeed = Session.CurrentLevel.levelInfo.CrzSpeed;
         CAltitude = StartAltitude;
         RAltitude = (int)CAltitude;

@@ -18,13 +18,13 @@ MonoBehaviour:
     RawDegrees: 0
     Distance: 0
     RawSpeed: 0
-    RawAltitude: 
+    RawAltitude: 30000
     Details: 
   - ID: 1
     Name: DLE
     RawDegrees: 3
     Distance: 15
-    RawSpeed: 250
+    RawSpeed: 0
     RawAltitude: 
     Details: 
   - ID: 2
