@@ -14,7 +14,7 @@ using Unyawn.Utils;
 public class Calculator : MonoBehaviour
 {
 
-    public static int Level = 0;             // ***  Level
+    public static int Level =0 ;             // ***  Level
 
     public int prvIndex4Speed;
 
@@ -57,6 +57,7 @@ public class Calculator : MonoBehaviour
     public static double dispFF = 270;
     public static double totalFuel = 1000; // 10 tons *100 
     public RouteScriptableObject routeMain;
+
 
     //Speed:(NM per Hour = Knots)--> Show in PFD , map will move in this speed
     //Altitude:(Feet)--> Show in PFD ,no other effect
@@ -198,8 +199,7 @@ public class Calculator : MonoBehaviour
     private void Start()
     {
         
-        // Session.CurrentLevel.levelInfo.CrzAltitude = (long) Session.ActiveRoute.Points[0].Altitude.RestrictionExact;
-        routeMain.Points[0].RawAltitude = Session.CurrentLevel.levelInfo.CrzAltitude.ToString();
+        Session.CurrentLevel.levelInfo.CrzAltitude = (long) Session.ActiveRoute.Points[0].Altitude.RestrictionExact;
         StartAltitude = Session.CurrentLevel.levelInfo.CrzAltitude;
 
         CSpeed = Session.CurrentLevel.levelInfo.CrzSpeed;
@@ -230,6 +230,8 @@ public class Calculator : MonoBehaviour
 
         Session.Settings.SpeedMultiplier = 1;
 
+        var levelInfo = FindFirstObjectByType<LevelStartInformation>();
+        levelInfo.ShowInfo();
     }
 
     private IEnumerator ExecuteEachFrameSecond()
@@ -473,7 +475,7 @@ public class Calculator : MonoBehaviour
         bool isMod = Session.IsMod;
         RouteScriptableObject _route = isMod ? modPoints : activePoints;
         if (_route == null) _route = activePoints;
-
+        if (PositionVirtualNode.PassedNodeIndex<0) return;
         var node0 = _route.Points[PositionVirtualNode.PassedNodeIndex];
         var node1 = _route.Points[PositionVirtualNode.PassedNodeIndex + 1];
 
@@ -532,7 +534,7 @@ public class Calculator : MonoBehaviour
         RouteScriptableObject activePoints = Session.ActiveRoute;
 
         RouteScriptableObject _route = activePoints;
-
+        if ( PositionVirtualNode.PassedNodeIndex<0) return;
         var node0 = _route.Points[PositionVirtualNode.PassedNodeIndex];
         var node1 = _route.Points[PositionVirtualNode.PassedNodeIndex + 1];
         var node2 = (activePoints.Points.Length> PositionVirtualNode.PassedNodeIndex + 2) 

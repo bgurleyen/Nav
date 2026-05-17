@@ -363,6 +363,7 @@ public class Drawer : MonoBehaviour
 
             if (linesType == LinesType.ILS)
             {
+                hiddenLine = true;
                 hiddenLabel = true;
             }
 

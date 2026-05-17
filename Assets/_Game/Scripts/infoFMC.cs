@@ -17,9 +17,12 @@ namespace Navigation.Data
 
         public FMC Fmc = new FMC();
 
+        
+
         private void Start()
         {
              InvokeRepeating(nameof(DisplayFields), 1f, 1f) ;
+
         }
 
         private void ComputeFMCFields()
@@ -44,7 +47,7 @@ namespace Navigation.Data
             double fuelBurn, fuelRemaining = Calculator.totalFuel / 100;
             float DirectDistance = (Vector2.Distance(Session.ActiveRoute.GetCartesianPosition(WPTCount - 1),
                 Session.PlayerAircraft.NMPosition));
-
+            if (prvWptIdx < 0) return;
             for (int i = prvWptIdx + 1; i < activePoints.Points.Length; i++)
             {
                 Altitude = (int)activePoints.Points[i].Altitude.ComputedValue;
@@ -208,6 +211,7 @@ namespace Navigation.Data
                          "     wind     : " + Fmc.Prog.ActualWind + "   " +
                          "     fuel qty : " + Fmc.Prog.FuelQty + "\n";
         }
+ 
     }
 
     public class FMC

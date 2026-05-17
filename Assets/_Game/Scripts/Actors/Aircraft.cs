@@ -322,7 +322,7 @@ public class Aircraft : MovingActor
         {
             return;
         }
-
+        if (firstNextPoint < 0) firstNextPoint=0;
         var nodePosition = Session.ActiveRoute.Points[firstNextPoint].CartesianPosition;
         proximityDistance = Vector2.Distance(nodePosition, _pilot.NMPosition);
         if (proximityDistance <= Session.Settings.HDGProximityAdvanceDistance)

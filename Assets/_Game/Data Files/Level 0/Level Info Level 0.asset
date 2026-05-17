@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 87156d1d85bb4244793ffd45c46286cf, type: 3}
   m_Name: Level Info Level 0
   m_EditorClassIdentifier: 
-  LevelNumber: 1
+  LevelNumber: 0
   Destination: EDDV
   Star: ELNA2P
   Transition: DL27R
@@ -22,7 +22,7 @@ MonoBehaviour:
   Course: 271
   ZFW: 174.6
   Fuel: 11
-  CrzAltitude: 30000
+  CrzAltitude: 20000
   CrzSpeed: 270
   F30Speed: 120
   DesEconSpeed: 270

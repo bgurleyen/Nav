@@ -84,7 +84,7 @@ public class DataManage : MonoBehaviour
             {
                 for (int i = 0; i < 9; i++)
                 {
-                    Debug.Log(i);
+                   // Debug.Log(i);
                     FillDataInArray();
                 }
             }

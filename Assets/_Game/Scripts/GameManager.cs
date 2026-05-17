@@ -40,9 +40,9 @@ public class GameManager : MonoBehaviour
 
     private void InitForLevel(int index)
     {
-
-        index =0;
+       
         var levelData = _gameConfig.LevelsData[index];
+        
         Session.CurrentLevel = levelData;
 
         levelData.MainRoute.Init(true);
