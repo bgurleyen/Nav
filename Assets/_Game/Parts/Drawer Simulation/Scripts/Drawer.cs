@@ -125,7 +125,7 @@ public class Drawer : MonoBehaviour
         Clear();
         //Session.ZoomMultiplier *= 2f;
         //Debug.Log($"Zoom : {Session.ZoomMultiplier}");
-        Session.ZoomMultiplier = Mathf.Clamp(Session.ZoomMultiplier * 2f, 0.125f, 16f);
+        Session.ZoomMultiplier = Mathf.Clamp(Session.ZoomMultiplier * 2f, 0.5f, 16f);
         Display();
         RefreshDisplayDistances();
     }
@@ -134,7 +134,7 @@ public class Drawer : MonoBehaviour
     {
         Clear();
         //Session.ZoomMultiplier /= 2f;
-        Session.ZoomMultiplier = Mathf.Clamp(Session.ZoomMultiplier / 2f, 0.125f, 16f);
+        Session.ZoomMultiplier = Mathf.Clamp(Session.ZoomMultiplier / 2f, 0.5f, 16f);
         Display();
         RefreshDisplayDistances();
     }
@@ -226,7 +226,6 @@ public class Drawer : MonoBehaviour
         if (!Session.IsRunning)
         {
             return;
-            return;
         }
 
         switch (Session.State.MapMode)
@@ -236,7 +235,7 @@ public class Drawer : MonoBehaviour
                 //rotate compass
                 compasPivot.SetLocalRotationZ(Session.PlayerAircraft.DisplayHeadingDegrees);
 
-                _freeFlightPivot.SetLocalRotationZ(Session.PlayerAircraft.DisplayHeadingDegrees - Calculator.RHeading);
+                _freeFlightPivot.SetLocalRotationZ(Session.PlayerAircraft.DisplayHeadingDegrees - Calculator.RHeading-1);
                 mobilePlaneIndicatorPivot.SetLocalRotationZ(0);
 
                 break;
@@ -255,8 +254,8 @@ public class Drawer : MonoBehaviour
             default:
                 throw new ArgumentOutOfRangeException();
         }
-        _windPivot.SetLocalRotationZ(-Calculator.HeadingWindAddition);
-
+        _windPivot.SetLocalRotationZ(-Calculator.CHeadingWindAddition);
+     
         mobilePlaneIndicatorPivot.localPosition = Session.PlayerAircraft.NMPosition.ToDisplay();
     }
 
@@ -363,7 +362,7 @@ public class Drawer : MonoBehaviour
 
             if (linesType == LinesType.ILS)
             {
-                hiddenLine = true;
+                //hiddenLine = true;  //hide ils line
                 hiddenLabel = true;
             }
 

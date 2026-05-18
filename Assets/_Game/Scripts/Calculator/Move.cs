@@ -239,6 +239,7 @@ public class Move : Singleton<Move>
         //                      3..CLEAR ILS       >2..NextInstructionDistance
 
     {
+       
         var currentInstruction = _currentLevelData.ATCs[_currentInstructionIndex];
 
         int oncemode = mode;
@@ -353,24 +354,24 @@ public class Move : Singleton<Move>
             if ((NoTurn) & (DistanceFromRoute() >warningDistance) & (PrvDistanceToPoint > 4)) 
             {
 
-                SlowDown();
-                    Time.timeScale = 0; 
+                //SlowDown();
+                  //  Time.timeScale = 0; 
      
 
                     int FactoredAngleToPoint = TrackToPointFactored(point);
                     int FactoredAngleDifference = Mathf.Abs((int)Mathf.DeltaAngle(Calculator.CTrack, TrackToPointFactored(point)));
                 if (Atc1.text == "ATC Rerouting")
                 {
-                    EditorUtility.DisplayDialog("DEVIATION FROM ATC!!", "FLIGHT REJECTED","Exit");
-                    Calculator.Instance.QuitGame();
+                 //   EditorUtility.DisplayDialog("DEVIATION FROM ATC!!", "FLIGHT REJECTED","Exit");
+                 //   Calculator.Instance.QuitGame();
                   
                 }
                 else if (Calculator.RHeading != FactoredAngleToPoint)
                     {
 
-                        EditorUtility.DisplayDialog("PILOT RESPONSE", "Please comply with instructions"
-                            + "Fly Heading " + FactoredAngleToPoint, "OK");
-                        Calculator.RHeading = FactoredAngleToPoint;
+                //        EditorUtility.DisplayDialog("PILOT RESPONSE", "Please comply with instructions"
+                 //           + "Fly Heading " + FactoredAngleToPoint, "OK");
+                   //     Calculator.RHeading = FactoredAngleToPoint;
 
                         Atc1.color = Color.red;
                         Atc1.text = "ATC Rerouting";
@@ -501,7 +502,7 @@ public class Move : Singleton<Move>
                                   Mathf.Rad2Deg;
         if (bearingToAimPoint < 0) bearingToAimPoint += 360;
 
-        float Deviation = Mathf.DeltaAngle(course, bearingToAimPoint)-0.3f;
+        float Deviation = Mathf.DeltaAngle(course, bearingToAimPoint);
 
 
        // Debug.Log(Deviation);

@@ -12,14 +12,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ba3b8b30b7d3d124482f44bf0dbbbfaf, type: 3}
   m_Name: Route 31
   m_EditorClassIdentifier: 
-  _gameConfig: {fileID: 11400000, guid: 60965bfde451d46d184d23158024db97, type: 2}
   Points:
   - ID: 0
     Name: _START_
     RawDegrees: 0
     Distance: 0
     RawSpeed: 0
-    RawAltitude: 
+    RawAltitude: 20000
     Details: 
   - ID: 0
     Name: 'NOLSI '

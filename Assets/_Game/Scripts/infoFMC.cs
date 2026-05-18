@@ -1,8 +1,5 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using System.Diagnostics;
+﻿
 using Gamelogic.Extensions;
-using Navigation;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -120,8 +117,9 @@ namespace Navigation.Data
             Fmc.Arr.Transition = levelData.Transition;
             Fmc.Arr.RW = levelData.Runway;
 
+              Fmc.Prog.PrvName = "" + activePoints.Points[prvWptIdx].Name; 
+       
 
-            Fmc.Prog.PrvName = "" + activePoints.Points[prvWptIdx].Name;
 
             if (prvWptIdx != previousPrvIndex) // Catch the actual info while passing the point
             {
@@ -129,7 +127,7 @@ namespace Navigation.Data
                 Fmc.Prog.PrvActualTime = "" + GameTime.timerFMC;
                 Fmc.Prog.PrvActualFuel = "" + System.Math.Round(Calculator.totalFuel / 100, 1);
 
-        
+
             }
 
             previousPrvIndex = prvWptIdx;
@@ -162,7 +160,7 @@ namespace Navigation.Data
             Fmc.Prog.ActualWind = "" + Calculator.CWind;
             Fmc.Prog.FuelQty = "" + System.Math.Round(Calculator.totalFuel / 100, 1);
 
-        }
+            }
 
         private void DisplayFields()
         {

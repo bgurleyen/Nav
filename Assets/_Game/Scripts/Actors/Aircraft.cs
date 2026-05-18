@@ -263,7 +263,7 @@ public class Aircraft : MovingActor
         }
     }
 
-    public float HeadingDegrees => _pilot.HeadingDegrees;
+    public float HeadingDegrees => Calculator.CTrack;
     public float DisplayHeadingDegrees => _pilot.DisplayHeadingDegrees;
 
 

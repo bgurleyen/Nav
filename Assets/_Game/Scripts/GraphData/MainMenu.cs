@@ -57,10 +57,7 @@ public class MainMenu : MonoBehaviour
     {
         if (isNewGame) PlayerPrefsHolder.Level = 0;
 
-        //if (asyncLoad != null)
-        //{
-        //    asyncLoad.allowSceneActivation = true;
-        //}
+
         SceneManager.LoadScene(sceneName);
     }
 

@@ -40,7 +40,8 @@ public class GameManager : MonoBehaviour
 
     private void InitForLevel(int index)
     {
-       
+        index = 0; //Start Level  remove
+
         var levelData = _gameConfig.LevelsData[index];
         
         Session.CurrentLevel = levelData;
@@ -82,7 +83,7 @@ public class GameManager : MonoBehaviour
 
         _simulation.Init();
     }
-
+ 
     private void OnDestroy()
     {
 
@@ -204,13 +205,13 @@ public class GameManager : MonoBehaviour
   
         RouteScriptableObject _ILS = Session.CurrentLevel.MainRoute.CloneAndInit();
 
-        RoutePoint rwPoint = _ILS.Points[_ILS.Points.Length - 1];
+        RoutePoint rwPoint = Session.CurrentLevel.MainRoute.Points[nodeCount];
 
         int course = Session.CurrentLevel.levelInfo.Course;
 
         _ILS.Points = new RoutePoint[] { rwPoint };
 
-        for (int i = 0; i < nodeCount; i++)
+        for (int i = 0; (i < nodeCount); i++)
         {
             float distanceBetween = Session.CurrentLevel.MainRoute.Points[nodeCount-i].Distance;
             _ILS.AddNodeAtLast(1, $"NODE_{i}", course, distanceBetween);

@@ -14,7 +14,7 @@ using Unyawn.Utils;
 public class Calculator : MonoBehaviour
 {
 
-    public static int Level =0 ;             // ***  Level
+    public static int Level =11 ;             // ***  Level
 
     public int prvIndex4Speed;
 
@@ -48,7 +48,7 @@ public class Calculator : MonoBehaviour
     private float SpeedTime;
     public Text windTxt;
     public static string CWind;
-    public static int HeadingWindAddition;
+    public static int HeadingWindAddition, CHeadingWindAddition;
     public Text FMA1, FMA2, FMA3, FMAarmed;
     public Image windArrow, VSline, SpeedTrend;
     public GameObject Progres, FlapNeedle, LGlever;
@@ -261,6 +261,7 @@ public class Calculator : MonoBehaviour
             FlyVerticalPath();
             DisplayWindElements();
             CheckStabilization();
+  
             //Debug.Log(Move.Instance.FuelPenalty);
             yield return new WaitForSeconds(1);
         }
@@ -1007,10 +1008,12 @@ public class Calculator : MonoBehaviour
         RTrack = NormalizeHeading360(RHeading - we.HeadingWindAddition);
 
         UYServiceLocator.Get<McpUI>().RefreshHS();
-
     }
-
-
+    public void AddWindEffectToCHeading()
+    {
+        WindElements we = CalculateWindElements(CAltitude, CSpeed, CHeading);
+        CHeadingWindAddition = we.HeadingWindAddition;
+    }
     private object Distancefromroute()
     {
         throw new NotImplementedException();
@@ -1113,16 +1116,15 @@ public class Calculator : MonoBehaviour
 
     public void DisplayWindElements()
     {
-        WindElements we = CalculateWindElements(CAltitude, CSpeed, CTrack); //Change to Current Heading
+        WindElements we = CalculateWindElements(CAltitude, CSpeed, CTrack);
         windArrow.transform.localEulerAngles = new Vector3(0, 0, 180 - we.relativeWindD);
         windTxt.text = "GS" + we.GS + "   TAS" + we.TAS + "\n" + we.WindD + "° / " + we.WindM;
         CWind = we.WindD + "° / " + we.WindM;
         GS = we.GS;
-        HeadingWindAddition = we.HeadingWindAddition;
-        Move.PrvHdg = Calculator.CHeading;
-        CHeading = NormalizeHeading360(CTrack - we.HeadingWindAddition);
-
+        CHeading = NormalizeHeading360(CTrack + we.HeadingWindAddition);
+        CHeadingWindAddition = we.HeadingWindAddition;
     }
+       
     public class WindElements
     {
         public int GS, HeadingWindAddition, relativeWindD, WindM, WindD, TAS;
@@ -1194,7 +1196,7 @@ public class Calculator : MonoBehaviour
     public void CheckStabilization()
     {
         string LF = System.Environment.NewLine;
-        if (CAltitude <= 1000)
+        if ((CAltitude <= 1000)||(Move.Instance.DME() < 1))
         {
 #if UNITY_EDITOR
             EditorUtility.DisplayDialog("NOT STABLE", "Localizer............ok" + LF +
@@ -1219,6 +1221,5 @@ public class Calculator : MonoBehaviour
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #endif
-        Application.Quit();
-    }
+     }
 }

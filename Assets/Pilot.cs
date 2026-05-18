@@ -46,11 +46,11 @@ namespace Navigation
 
         public void TickSteerToTargetHeading(float targetHeading)
         {
-            var difDegrees = -Geometry.AngleDelta(HeadingDegrees, targetHeading);
+            var difDegrees =   -Geometry.AngleDelta(HeadingDegrees, targetHeading);
 
-            UpdateHeadingTowardsAngleDiff(difDegrees);
-            
-            
+                UpdateHeadingTowardsAngleDiff(difDegrees);
+      
+
         }
 
         private void UpdateHeadingTowardsAngleDiff(float difDegrees)
@@ -59,10 +59,10 @@ namespace Navigation
             var currentTurningDegrees = lerpDirection *
                                         Mathf.Min(Session.Settings.TickMaxRotation(_isTracer), Mathf.Abs(difDegrees));
 
+            
             HeadingDegrees += currentTurningDegrees;
 
             HeadingDegrees %= 360;
-     
         }
     }
 }

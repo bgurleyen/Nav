@@ -60,10 +60,8 @@ namespace Navigation
 
         public void ComputeCartesianPositions(bool isILS = true)
         {
-            //Temorary changes refine logic
-            //var currentPosition = Geometry.GetPreviousPosition(Session.ActiveRoute.TracedRoute.ComputedLines[Session.ActiveRoute.TracedRoute.ComputedLines.Length - 1].EndNMPosition,1.5f, Session.CurrentLevel.levelInfo.Course);
-            var currentPosition = Geometry.GetPreviousPosition(Session.CurrentLevel.MainRoute.Points[Session.CurrentLevel.MainRoute.Points.Length - 1].CartesianPosition, 1.5f, Session.CurrentLevel.levelInfo.Course);
-            //var currentPosition = Geometry.GetNextPosition(Session.CurrentLevel.MainRoute.Points[Session.CurrentLevel.MainRoute.Points.Length - 1].CartesianPosition,2,272);
+            //var currentPosition = Geometry.GetPreviousPosition(Session.CurrentLevel.MainRoute.Points[Session.CurrentLevel.MainRoute.Points.Length - 1].CartesianPosition, 1.5f, Session.CurrentLevel.levelInfo.Course);
+            var currentPosition = Geometry.GetPreviousPosition(Session.CurrentLevel.MainRoute.Points[Session.CurrentLevel.MainRoute.Points.Length - 1].CartesianPosition, 0.1f, Session.CurrentLevel.levelInfo.Course);
             var rIndx = Points.Length - 1;
 
             for (var i = 0; i < Points.Length; i++)
