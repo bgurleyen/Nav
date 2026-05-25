@@ -1,1063 +1,423 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.SceneManagement;
-using UnityEngine.Tilemaps;
-using XCharts.Runtime;
-using XUGL;
+using UnityEngine.UI;
 
 public class GraphManage : MonoBehaviour
 {
     public DataManage dataManage;
-    public LineChart chart;
-    public LineChart FFChart;
-    public LineChart LevelChart;
+    public DebriefSummaryPanel debriefPanel;
+    public LevelsRanksPanel levelsPanel;
+    public Button continueButton;
+    public Button levelsContinueButton;
 
-    public static Action<bool> OnGameFinish;
+    public static System.Action<bool> OnGameFinish;
 
-
-    [Header("Other-Temp")]
     public CanvasGroup mainGroup;
     public CanvasGroup graphGroup;
 
-    private void Awake()
+    static readonly string[] LegacyGraphNames =
     {
+        "FLIGHT PROFILE",
+        "FUEL FLOW",
+        "LEVEL PROFILE",
+        "LineChart_Smooth",
+    };
+
+    DDL_data _meData;
+    L_data _averageData;
+    L_data _bestData;
+    int _totalPlayers;
+    bool _debriefLogged;
+    bool _showingLevelsPanel;
+
+    void Awake()
+    {
+        EnsureGraphCanvasVisible();
+        EnsureDebriefPanelExists();
+        EnsureLevelsPanelExists();
     }
 
-    private void OnEnable()
+    void OnEnable() => OnGameFinish += OnGameFinished;
+
+    void OnDisable() => OnGameFinish -= OnGameFinished;
+
+    void EnsureGraphCanvasVisible()
     {
-        OnGameFinish += OnGameFinished;
+        if (graphGroup == null)
+            return;
+
+        Transform canvasTransform = graphGroup.transform;
+        if (canvasTransform.localScale.sqrMagnitude < 0.0001f)
+            canvasTransform.localScale = Vector3.one;
     }
 
-    private void OnDisable()
+    void EnsureDebriefPanelExists()
     {
-        OnGameFinish -= OnGameFinished;
-    }
+        if (debriefPanel != null)
+            return;
 
-    void Start()
-    {
-        ChartInitRuntimeSetting(ref FFChart, 0, false);
+        if (graphGroup != null)
+            debriefPanel = graphGroup.GetComponentInChildren<DebriefSummaryPanel>(true);
 
-        ChartInitRuntimeSetting(ref chart, 0, true);
-        ChartInitRuntimeSetting(ref chart, 1, true);
-        ChartInitRuntimeSetting(ref chart, 2, true);
-        ChartInitRuntimeSetting(ref chart, 3, true);
-        ChartInitRuntimeSetting(ref chart, 4, true);
-        ChartInitRuntimeSetting(ref chart, 5, true);
-
-        ChartInitRuntimeProgressSetting(ref LevelChart);
-    }
-
-    void Update()
-    {
-        //if (Input.GetKeyDown(KeyCode.K))
-        //{
-        //    DataViewInGraph();
-        //    //AvgDataViewInGraph();
-        //    //OnGameFinished(true);
-        //}
-
-
-        //if (Input.GetKeyDown(KeyCode.Keypad0))
-        //{
-        //    dataManage.LoadGame((data) =>
-        //    {
-        //        ChartSetRuntimeData(ref chart, 0, data);
-        //        Debug.Log("[GetMineProfileData] - LocalData (sucess)");
-        //    });
-        //}
-    }
-
-    void ClearResultsCharts()
-    {
-        c_flap = 0;
-        c_lg = false;
-
-        if (chart != null)
-            chart.ClearData();
-
-        if (FFChart != null)
-            FFChart.ClearSerieData();
-    }
-
-    void DataViewInGraph()
-    {
-        dataManage.LoadGame((data) =>
+        if (debriefPanel == null && graphGroup != null)
         {
-            ClearResultsCharts();
-
-            //FUEL FLOW
-            ChartSetRuntimeData(ref FFChart, 0, data.fuelFlow);
-            Debug.Log("[GetMineFuelFlowData] - LocalData (sucess)");
-            FFChart.RefreshChart();
-
-            //FLIGHT PROFILE — Mine
-            ChartSetRuntimeData(ref chart, "ME", "MEx", data);
-            Debug.Log("[GetMineProfileData] - LocalData (sucess)");
-            chart.RefreshChart();
-
-            //Best-Series
-            dataManage.firestoreController.UpdateBestStats(data.remainingFuel,
-            (callback1) =>
+            Transform host = FindDebriefHost();
+            Transform existing = host.Find("Debrief Panel");
+            if (existing != null)
             {
-                Debug.Log(callback1);
-                ChartSetRuntimeData(ref chart, "BEST", "BESTx", data);
-                chart.RefreshChart();
-            },
-            (callback2) =>
+                debriefPanel = existing.GetComponent<DebriefSummaryPanel>();
+                if (debriefPanel == null)
+                    debriefPanel = existing.gameObject.AddComponent<DebriefSummaryPanel>();
+            }
+            else
             {
-                Debug.Log(callback2);
-                L_data bestData = dataManage.firestoreController.GetBestPlayerLevelData(PlayerPrefsHolder.Level);
-                if (bestData != null)
-                    ChartSetRuntimeData(ref chart, "BEST", "BESTx", bestData);
-                else
-                    Debug.LogWarning($"[GetBestProfileData] No best data for LEVEL {PlayerPrefsHolder.Level}");
-                chart.RefreshChart();
-            });
+                debriefPanel = CreateDebriefPanel(host);
+            }
+        }
 
-            //Average-Series
-            dataManage.firestoreController.UpdateAverageStats(data, (x) =>
+        if (debriefPanel == null)
+        {
+            Debug.LogWarning("[GraphManage] debriefPanel could not be created.");
+            return;
+        }
+
+        debriefPanel.EnsureLayoutBuilt();
+    }
+
+    void EnsureLevelsPanelExists()
+    {
+        if (levelsPanel != null)
+            return;
+
+        Transform host = FindDebriefHost();
+        if (host != null)
+        {
+            Transform existing = host.Find("LevelsPanel");
+            if (existing != null)
+                levelsPanel = existing.GetComponent<LevelsRanksPanel>();
+        }
+
+        if (levelsPanel == null && graphGroup != null)
+            levelsPanel = graphGroup.GetComponentInChildren<LevelsRanksPanel>(true);
+
+        if (levelsPanel == null && graphGroup != null && host != null)
+            levelsPanel = CreateLevelsPanel(host);
+    }
+
+    LevelsRanksPanel CreateLevelsPanel(Transform parent)
+    {
+        GameObject panelGo = new GameObject(
+            "LevelsPanel",
+            typeof(RectTransform),
+            typeof(CanvasRenderer),
+            typeof(Image),
+            typeof(DebriefLayoutScaler),
+            typeof(LevelsRanksPanel));
+
+        panelGo.layer = parent.gameObject.layer;
+        panelGo.transform.SetParent(parent, false);
+        StretchRect(panelGo.GetComponent<RectTransform>());
+
+        Image image = panelGo.GetComponent<Image>();
+        image.color = LevelsLayoutSpec.PageBg;
+        image.raycastTarget = false;
+
+        return panelGo.GetComponent<LevelsRanksPanel>();
+    }
+
+    Transform FindDebriefHost()
+    {
+        Transform graphUi = graphGroup.transform.Find("Graph UI") ?? graphGroup.transform;
+        Transform nestedGraphUi = graphUi.Find("Graph UI");
+        return nestedGraphUi != null ? nestedGraphUi : graphUi;
+    }
+
+    DebriefSummaryPanel CreateDebriefPanel(Transform parent)
+    {
+        GameObject panelGo = new GameObject(
+            "Debrief Panel",
+            typeof(RectTransform),
+            typeof(CanvasRenderer),
+            typeof(Image),
+            typeof(DebriefLayoutScaler),
+            typeof(DebriefSummaryPanel));
+
+        panelGo.layer = parent.gameObject.layer;
+        panelGo.transform.SetParent(parent, false);
+        StretchRect(panelGo.GetComponent<RectTransform>());
+
+        Image image = panelGo.GetComponent<Image>();
+        image.color = DebriefLayoutSpec.PageBg;
+        image.raycastTarget = false;
+
+        return panelGo.GetComponent<DebriefSummaryPanel>();
+    }
+
+    void ShowDebriefUi()
+    {
+        _showingLevelsPanel = false;
+        HideLegacyGraphUi();
+        HideLevelsPanel();
+        EnsureGraphCanvasVisible();
+        EnsureDebriefPanelExists();
+
+        if (debriefPanel != null)
+        {
+            debriefPanel.gameObject.SetActive(true);
+            debriefPanel.PrepareForDebrief();
+            continueButton = debriefPanel.EnsureContinueButton();
+            WireDebriefContinueButton();
+        }
+        else
+        {
+            Debug.LogWarning("[GraphManage] Continue button unavailable because debriefPanel is missing.");
+        }
+    }
+
+    void ShowLevelsPanel()
+    {
+        _showingLevelsPanel = true;
+        EnsureGraphCanvasVisible();
+        EnsureLevelsPanelExists();
+        ResolveLevelsContinueButton();
+
+        Transform host = FindDebriefHost();
+        if (host != null)
+            host.gameObject.SetActive(true);
+
+        if (debriefPanel != null)
+            debriefPanel.gameObject.SetActive(false);
+
+        if (continueButton != null)
+            continueButton.gameObject.SetActive(false);
+
+        if (levelsPanel == null)
+        {
+            Debug.LogError("[GraphManage] LevelsPanel could not be found or created.");
+            return;
+        }
+
+        if (host != null && levelsPanel.transform.parent != host)
+            levelsPanel.transform.SetParent(host, false);
+
+        StretchRect(levelsPanel.GetComponent<RectTransform>());
+        levelsPanel.PrepareForDisplay();
+        levelsPanel.BindPlaceholder();
+        levelsPanel.gameObject.SetActive(true);
+        levelsPanel.transform.SetAsLastSibling();
+
+        if (levelsContinueButton != null)
+        {
+            levelsContinueButton.gameObject.SetActive(true);
+            levelsContinueButton.transform.SetAsLastSibling();
+            WireLevelsContinueButton();
+        }
+
+        RefreshLevelsPanelRanks();
+    }
+
+    static void ReplaceButtonListener(Button button, UnityAction listener)
+    {
+        if (button == null)
+            return;
+
+        button.onClick = new Button.ButtonClickedEvent();
+        button.onClick.AddListener(listener);
+    }
+
+    void WireDebriefContinueButton()
+    {
+        ReplaceButtonListener(continueButton, OnDebriefContinueClick);
+    }
+
+    void WireLevelsContinueButton()
+    {
+        ReplaceButtonListener(levelsContinueButton, OnContinueButtonClick);
+    }
+
+    void ResolveLevelsContinueButton()
+    {
+        if (levelsContinueButton != null)
+            return;
+
+        EnsureLevelsPanelExists();
+        if (levelsPanel == null)
+            return;
+
+        Button[] buttons = levelsPanel.GetComponentsInChildren<Button>(true);
+        if (buttons.Length > 0)
+            levelsContinueButton = buttons[0];
+    }
+
+    void RefreshLevelsPanelRanks()
+    {
+        if (levelsPanel == null || dataManage?.firestoreController == null)
+            return;
+
+        double currentFuel = _meData?.remainingFuel ?? 0;
+        dataManage.firestoreController.FetchAllLevelRanks(
+            PlayerPrefsHolder.Level,
+            currentFuel,
+            ranks => levelsPanel.BindRanks(ranks));
+    }
+
+    public void OnDebriefContinueClick()
+    {
+        ShowLevelsPanel();
+    }
+
+    void HideLevelsPanel()
+    {
+        if (levelsPanel != null)
+            levelsPanel.gameObject.SetActive(false);
+
+        if (levelsContinueButton != null)
+            levelsContinueButton.gameObject.SetActive(false);
+    }
+
+    void HideLegacyGraphUi()
+    {
+        if (graphGroup == null)
+            return;
+
+        Transform[] transforms = graphGroup.GetComponentsInChildren<Transform>(true);
+        for (int i = 0; i < transforms.Length; i++)
+        {
+            string name = transforms[i].name;
+            for (int j = 0; j < LegacyGraphNames.Length; j++)
             {
-                Debug.Log(x);
-                List<S_data> averageRawData = dataManage.firestoreController.averagePlayer;
-                L_data averageData = new L_data();
+                if (name != LegacyGraphNames[j])
+                    continue;
 
-                averageData.altitude = new List<double>();
-                averageData.speed = new List<double>();
-                averageData.flap = new List<double>();
-                averageData.speedBrake = new List<double>();
-                averageData.landingGear = new List<double>();
-
-                for (int i = 0; i < averageRawData.Count; i++)
-                {
-                    averageData.altitude.Add(averageRawData[i].altitude);
-                    averageData.speed.Add(RoundDownToNearestTen(averageRawData[i].speed));
-                    averageData.landingGear.Add(averageRawData[i].landingGear);
-                    averageData.flap.Add(averageRawData[i].flap);
-                    averageData.speedBrake.Add(averageRawData[i].speedBrake);
-                }
-
-                Debug.Log(averageData.altitude.Count);
-
-                if (averageData.altitude.Count > 0)
-                {
-                    var another = dataManage.firestoreController.myUserData?.average_stats?.another;
-                    ChartSetRuntimeData(ref chart, "AVERAGE", "AVERAGEx", averageData, another);
-                }
-
-                chart.RefreshChart();
-            });
-        });
+                transforms[i].gameObject.SetActive(false);
+                break;
+            }
+        }
     }
 
     void OnGameFinished(bool isFinish)
     {
-        dataManage.SaveGame();
-        //dataManage.SaveProgress();
+        if (dataManage == null)
+        {
+            Debug.LogError("[GraphManage] dataManage is not assigned.");
+            return;
+        }
+
+        DDL_data flightData = dataManage.CaptureFlightSnapshot();
+        dataManage.PushFlightToCloud(flightData);
+
         mainGroup.alpha = 0;
         graphGroup.alpha = 1;
         graphGroup.blocksRaycasts = true;
-        DataViewInGraph();
+        graphGroup.interactable = true;
+        PresentDebrief(flightData);
     }
 
-    void OnFinish2()
+    void PresentDebrief(DDL_data flightData)
     {
-        FFChart.gameObject.SetActive(false);
-        chart.gameObject.SetActive(false);
-        LevelChart.gameObject.SetActive(true);
+        _meData = flightData;
+        _averageData = null;
+        _bestData = null;
+        _totalPlayers = 0;
+        _debriefLogged = false;
 
-        dataManage.LoadProgress((data) =>
+        ShowDebriefUi();
+
+        if (!DataManage.HasValidDistanceData(flightData))
         {
-            ChartInitRuntimeProgressSetting(ref LevelChart);
+            Debug.LogWarning($"[Debrief] LEVEL {PlayerPrefsHolder.Level + 1}: invalid flight data.");
+            return;
+        }
 
-            //Mine-ProgressSeries
-            ChartSetRuntimeProgressData(ref LevelChart, 0, data.progress);
-            LevelChart.RefreshChart(0);
-            Debug.Log("[GetMineProgressData] - LocalData (sucess)");
+        RefreshDebriefPanel();
 
-            //Best-ProgressSeries
-            dataManage.firestoreController.GetBestPlayerProgressData(dataManage.firestoreController.myUserData.best_stats.uid,
-            (callback1) =>
-            {
-                Debug.Log(callback1);
-                ChartSetRuntimeProgressData(ref LevelChart, 1, data.progress);
-                chart.RefreshChart(1);
-            },
-            (callback2) =>
-            {
-                Debug.Log(callback2);
-                ChartSetRuntimeProgressData(ref LevelChart, 1, dataManage.firestoreController.bestPlayerProgress);
-                chart.RefreshChart(1);
-            });
-
-            //Average-ProgressSeries
-            dataManage.firestoreController.UpdateAverageProgressStats(
-                DataManage.GetProgressValue(data, PlayerPrefsHolder.Level), (x) =>
-            {
-                Debug.Log(x);
-                ChartSetRuntimeProgressData(ref LevelChart, 2, dataManage.firestoreController.averagePlayerProgress);
-                LevelChart.RefreshChart(2);
-            });
+        dataManage.firestoreController.UpdateBestStats(flightData, _ =>
+        {
+            _bestData = ResolveBestProfile(flightData);
+            RefreshDebriefPanel();
         });
 
-        LevelChart.RefreshChart();
+        dataManage.firestoreController.UpdateAverageStats(flightData, _ =>
+        {
+            List<S_data> averageRawData = dataManage.firestoreController.averagePlayer;
+            _averageData = DebriefMetrics.BuildAverageProfile(flightData, averageRawData);
+            _totalPlayers = dataManage.firestoreController.myUserData?.average_stats?.another?.count ?? 0;
+            RefreshDebriefPanel(preferLog: true);
+        });
     }
 
-    int Click = 0;
+    void RefreshDebriefPanel(bool preferLog = false)
+    {
+        if (_showingLevelsPanel || debriefPanel == null || _meData == null)
+            return;
+
+        if (!debriefPanel.HasValidBindings())
+            debriefPanel.PrepareForDebrief();
+
+        debriefPanel.BindSubtitle(PlayerPrefsHolder.Level);
+
+        int? rank = TryEstimateRank(_meData.remainingFuel, _bestData, _totalPlayers);
+        debriefPanel.BindAll(_meData, _averageData, _bestData, rank, _totalPlayers);
+
+        continueButton = debriefPanel.EnsureContinueButton();
+        WireDebriefContinueButton();
+
+        if (!_debriefLogged && (preferLog || _averageData != null))
+        {
+            DebriefMetrics.LogPanel(_meData, _averageData, _bestData, rank, _totalPlayers);
+            _debriefLogged = true;
+        }
+    }
+
+    static int? TryEstimateRank(double remainingFuel, L_data best, int totalPlayers)
+    {
+        if (totalPlayers <= 0)
+            return null;
+
+        if (best == null)
+            return null;
+
+        if (remainingFuel >= best.remainingFuel - 0.01)
+            return 1;
+
+        return null;
+    }
+
+    L_data ResolveBestProfile(DDL_data flightData)
+    {
+        L_data best = dataManage.firestoreController.GetBestLevelProfile();
+        if (DataManage.HasValidDistanceData(best))
+            return best;
+
+        L_data fromBestPlayer = dataManage.firestoreController.GetBestPlayerLevelData(PlayerPrefsHolder.Level);
+        DataManage.TryNormalizeProfile(fromBestPlayer);
+        if (DataManage.HasValidDistanceData(fromBestPlayer))
+            return fromBestPlayer;
+
+        double bestFuel = dataManage.firestoreController.myUserData?.best_stats?.remainingFuel ?? 0;
+        if (flightData != null && bestFuel > 0 && flightData.remainingFuel >= bestFuel - 0.01)
+            return DataManage.ToLData(flightData);
+
+        return best;
+    }
 
     public void OnContinueButtonClick()
     {
-        if (Click == 1)
-        {
-            if (PlayerPrefsHolder.Level < DataManage.DefaultProgressLevelCount - 1)
-                PlayerPrefsHolder.Level += 1;
-            SceneManager.LoadScene("EMPTY");
-        }
+        if (PlayerPrefsHolder.Level < DataManage.DefaultProgressLevelCount - 1)
+            PlayerPrefsHolder.Level += 1;
 
-        if (Click == 0)
-        {
-            OnFinish2();
-            Click = 1;
-        }
+        SceneManager.LoadScene("EMPTY");
     }
 
-
-    int c_flap = 0;
-    bool c_lg = false;
-
-    private void ChartInitRuntimeSetting(ref LineChart chart, int serieIndex, bool isShowAxisLabel)
+    static void StretchRect(RectTransform rect)
     {
-        //chart.DefaultTimeLineChart();
-
-        chart.GetChartComponent<XAxis>().axisLabel.show = isShowAxisLabel;
-
-        Serie serie = chart.series[serieIndex];
-        serie.ClearData();
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
+        rect.localScale = Vector3.one;
+        rect.localPosition = Vector3.zero;
     }
-
-    private void ChartSetRuntimeData(ref LineChart chart, int serieIndex, List<double> lineData)
-    {
-        Serie serie = chart.series[serieIndex];
-
-        //DateTime timeSeries = DateTime.Parse("08-05-2025 12:03:46").AddHours(-5).AddMinutes(-30);
-        for (int i = 0; i < lineData.Count; i++)
-        {
-            //timeSeries = timeSeries.AddSeconds(1);
-            //chart.AddData(serieIndex, timeSeries, lineData[i]);
-            chart.series[serieIndex].AddData(lineData[i]);
-        }
-    }
-
-    private void ChartSetRuntimeData(ref LineChart chart, string sSerie, string dSeries, DDL_data data)
-    {
-        c_flap = 0;
-        c_lg = false;
-
-        Serie serie = chart.GetSerie(sSerie);
-        Serie serie1 = chart.GetSerie(dSeries);
-        XAxis xAxis = chart.GetChartComponent<XAxis>();
-        SingleAxis sAxis = chart.GetChartComponent<SingleAxis>();
-        //Serie serie1 = RunTimeAddSeries(ref chart, serie);
-
-        DateTime timeSeries = DateTime.Parse("00:00:00");
-        double lastSelectedSpeed = data.speed[0];
-
-        //DateTime timeSeries = DateTime.Parse("15-05-2025 00:00:00").AddHours(-5).AddMinutes(-30);
-        for (int i = 0; i < data.altitude.Count; i++)
-        {
-            if (xAxis.data.Count <= i) chart.AddXAxisData(timeSeries.ToString("mm:ss"));
-            serie.AddData(data.altitude[i]);
-            serie1.AddData(data.altitude[i]);
-            timeSeries = timeSeries.AddSeconds(1);
-            serie.largeThreshold = data.altitude.Count + 1;
-            serie1.largeThreshold = data.altitude.Count + 1;
-
-            SerieData sData = serie1.data[i];
-
-            var speedResult = IsSpeedChange(data.speed, i, ref lastSelectedSpeed);
-            if (speedResult.Item1 == true)
-            {
-                //AddLabelSymbol(ref sData, Convert.ToInt32(speedResult.Item2));
-                AddLabelSymbol(ref sData, Convert.ToInt32(speedResult.Item2), ref serie1);
-            }
-
-            var landingResult = IsValueChange(data.landingGear, i);
-            if (landingResult.Item1 == true && c_lg == false)
-            {
-                if (landingResult.Item2 == true)
-                {
-                    AddArrowDownSymbol(ref sData, ref serie1);
-                }
-                //else
-                //{
-                //    AddArrowUpSymbol(ref sData);
-                //}
-                c_lg = true;
-            }
-
-            if (c_flap < data.flap[i])
-            {
-                var flapResult = IsFlapValueChange(data.flap, i);
-                if (flapResult.Item1 == true)
-                {
-                    AddFlapSymbol(ref sData, flapResult.Item2, ref serie1);
-                    c_flap++;
-                }
-            }
-
-            if (serie.serieName == "ME")
-            {
-                var vModResult = IsVerticalModeChange(data.verticalMode, i);
-                if (vModResult.Item1 == true)
-                {
-                    AddVmodSymbol(ref sAxis, vModResult.Item2);
-                }
-            }
-
-            if (data.speedBrake[i] > 0.5f && i < data.altitude.Count - 2)
-            {
-                serie.UpdateData(i, 1, double.NaN);
-            }
-        }
-    }
-
-    private void ChartSetRuntimeData(ref LineChart chart, int serieIndex, DDL_data data)
-    {
-        Serie serie = chart.series[serieIndex];
-        XAxis xAxis = chart.GetChartComponent<XAxis>();
-        SingleAxis sAxis = chart.GetChartComponent<SingleAxis>();
-        Serie serie1 = RunTimeAddSeries(ref chart, serie);
-
-        DateTime timeSeries = DateTime.Parse("00:00:00");
-        double lastSelectedSpeed = data.speed[0];
-
-        //DateTime timeSeries = DateTime.Parse("15-05-2025 00:00:00").AddHours(-5).AddMinutes(-30);
-        for (int i = 0; i < data.altitude.Count; i++)
-        {
-            if (xAxis.data.Count <= i) chart.AddXAxisData(timeSeries.ToString("mm:ss"));
-            serie.AddData(data.altitude[i]);
-            serie1.AddData(data.altitude[i]);
-            timeSeries = timeSeries.AddSeconds(1);
-            chart.series[serieIndex].largeThreshold = data.altitude.Count + 1;
-            serie1.largeThreshold = data.altitude.Count + 1;
-
-            SerieData sData = chart.series[serieIndex].data[i];
-
-            var speedResult = IsSpeedChange(data.speed, i, ref lastSelectedSpeed);
-            if (speedResult.Item1 == true)
-            {
-                AddLabelSymbol(ref sData, Convert.ToInt32(speedResult.Item2), ref serie1);
-            }
-
-            var landingResult = IsValueChange(data.landingGear, i);
-            if (landingResult.Item1 == true)
-            {
-                if (landingResult.Item2 == true)
-                {
-                    AddArrowDownSymbol(ref sData, ref serie1);
-                }
-                //else
-                //{
-                //    AddArrowUpSymbol(ref sData);
-                //}
-            }
-
-            var flapResult = IsFlapValueChange(data.flap, i);
-            if (flapResult.Item1 == true)
-            {
-                AddFlapSymbol(ref sData, flapResult.Item2, ref serie1);
-            }
-
-            if (serieIndex == 0)
-            {
-                var vModResult = IsVerticalModeChange(data.verticalMode, i);
-                if (vModResult.Item1 == true)
-                {
-                    AddVmodSymbol(ref sAxis, vModResult.Item2);
-                }
-            }
-
-            if (data.speedBrake[i] == 1)
-            {
-                serie.UpdateData(i, 1, float.NaN);
-
-                //serie.data[i].ignore = true;
-                //chart.AddData(3, timeSeries, data.altitude[i]);
-            }
-        }
-    }
-
-    private void ChartSetRuntimeData(ref LineChart chart, string sSerie, string dSeries, L_data data)
-    {
-        c_flap = 0;
-        c_lg = false;
-
-        Serie serie = chart.GetSerie(sSerie);
-        Serie serie1 = chart.GetSerie(dSeries);
-        XAxis xAxis = chart.GetChartComponent<XAxis>();
-        SingleAxis sAxis = chart.GetChartComponent<SingleAxis>();
-
-        DateTime timeSeries = DateTime.Parse("00:00:00");
-        double lastSelectedSpeed = data.speed[0];
-
-        for (int i = 0; i < data.altitude.Count; i++)
-        {
-            if (xAxis.data.Count <= i) chart.AddXAxisData(timeSeries.ToString("mm:ss"));
-            serie.AddData(data.altitude[i]);
-            serie1.AddData(data.altitude[i]);
-            timeSeries = timeSeries.AddSeconds(1);
-            serie.largeThreshold = data.altitude.Count + 1;
-            serie1.largeThreshold = data.altitude.Count + 1;
-
-            SerieData sData = serie1.data[i];
-
-            var speedResult = IsSpeedChange(data.speed, i, ref lastSelectedSpeed);
-            if (speedResult.Item1 == true)
-            {
-                AddLabelSymbol(ref sData, Convert.ToInt32(speedResult.Item2), ref serie1);
-            }
-
-            var landingResult = IsValueChange(data.landingGear, i);
-            if (landingResult.Item1 == true && c_lg == false)
-            {
-                if (landingResult.Item2 == true)
-                {
-                    AddArrowDownSymbol(ref sData, ref serie1);
-                }
-                //else
-                //{
-                //    AddArrowUpSymbol(ref sData);
-                //}
-                c_lg = true;
-            }
-
-            if (c_flap < data.flap[i])
-            {
-                var flapResult = IsFlapValueChange(data.flap, i);
-                if (flapResult.Item1 == true)
-                {
-                    AddFlapSymbol(ref sData, flapResult.Item2, ref serie1);
-                    c_flap++;
-                }
-            }
-
-            if (serie.serieName == "ME")
-            {
-                var vModResult = IsVerticalModeChange(data.verticalMode, i);
-                if (vModResult.Item1 == true)
-                {
-                    AddVmodSymbol(ref sAxis, vModResult.Item2);
-                }
-            }
-
-            if (data.speedBrake[i] > 0.5f && i < data.altitude.Count - 2)
-            {
-                serie.UpdateData(i, 1, double.NaN);
-            }
-        }
-    }
-
-    public double RoundDownToNearestTen(double value)
-    {
-        return Math.Floor(value / 10) * 10;
-    }
-    private void ChartSetRuntimeData(ref LineChart chart, string sSerie, string dSeries, L_data data, Another another)
-    {
-        c_flap = 0;
-        c_lg = false;
-
-        Serie serie = chart.GetSerie(sSerie);
-        Serie serie1 = chart.GetSerie(dSeries);
-        XAxis xAxis = chart.GetChartComponent<XAxis>();
-        SingleAxis sAxis = chart.GetChartComponent<SingleAxis>();
-
-        DateTime timeSeries = DateTime.Parse("00:00:00");
-        double lastSelectedSpeed = data.speed[0];
-
-        for (int i = 0; i < data.altitude.Count; i++)
-        {
-            if (xAxis.data.Count <= i) chart.AddXAxisData(timeSeries.ToString("mm:ss"));
-            serie.AddData(data.altitude[i]);
-            serie1.AddData(data.altitude[i]);
-            timeSeries = timeSeries.AddSeconds(1);
-            serie.largeThreshold = data.altitude.Count + 1;
-            serie1.largeThreshold = data.altitude.Count + 1;
-
-            SerieData sData = serie1.data[i];
-
-            var speedResult = IsSpeedChange(data.speed, i, ref lastSelectedSpeed);
-            if (speedResult.Item1 == true)
-            {
-                AddLabelSymbol(ref sData, Convert.ToInt32(speedResult.Item2), ref serie1);
-            }
-
-            //var landingResult = IsValueChange(data.landingGear, i);
-            //if (landingResult.Item1 == true && c_lg == false)
-            //{
-            //    if (landingResult.Item2 == true)
-            //    {
-            //        AddArrowDownSymbol(ref sData, ref serie1);
-            //    }
-            //    //else
-            //    //{
-            //    //    AddArrowUpSymbol(ref sData);
-            //    //}
-            //    c_lg = true;
-            //}
-
-            //if (c_flap < data.flap[i])
-            //{
-            //    var flapResult = IsFlapValueChange(data.flap, i);
-            //    if (flapResult.Item1 == true)
-            //    {
-            //        AddFlapSymbol(ref sData, flapResult.Item2, ref serie1);
-            //        c_flap++;
-            //    }
-            //}
-
-            if (serie.serieName == "ME")
-            {
-                var vModResult = IsVerticalModeChange(data.verticalMode, i);
-                if (vModResult.Item1 == true)
-                {
-                    AddVmodSymbol(ref sAxis, vModResult.Item2);
-                }
-            }
-
-            if (data.speedBrake[i] > 0.5f && i < data.altitude.Count - 2)
-            {
-                serie.UpdateData(i, 1, double.NaN);
-            }
-        }
-
-        if (another == null)
-            return;
-
-        if ((int)another.landingGear != 0 && c_lg == false)
-        {
-            AddArrowDownSymbol(serie1.data[(int)another.landingGear], ref serie1);
-            c_lg = true;
-        }
-
-        if (another.flap == null)
-            return;
-
-        for (int i = 0; i < another.flap.Count; i++)
-        {
-            if ((int)another.flap[i] != 0)
-            {
-                AddFlapSymbol(serie1.data[(int)another.flap[i]], i, ref serie1);
-            }
-            c_flap++;
-        }
-    }
-
-    private void ChartSetRuntimeData(ref LineChart chart, int serieIndex, L_data data)
-    {
-        Serie serie = chart.series[serieIndex];
-        XAxis xAxis = chart.GetChartComponent<XAxis>();
-        SingleAxis sAxis = chart.GetChartComponent<SingleAxis>();
-        Serie serie1 = RunTimeAddSeries(ref chart, serie);
-
-        DateTime timeSeries = DateTime.Parse("00:00:00");
-        double lastSelectedSpeed = data.speed[0];
-
-        for (int i = 0; i < data.altitude.Count; i++)
-        {
-            if (xAxis.data.Count <= i) chart.AddXAxisData(timeSeries.ToString("mm:ss"));
-            serie.AddData(data.altitude[i]);
-            serie1.AddData(data.altitude[i]);
-            timeSeries = timeSeries.AddSeconds(1);
-            chart.series[serieIndex].largeThreshold = data.altitude.Count + 1;
-            serie1.largeThreshold = data.altitude.Count + 1;
-
-            SerieData sData = chart.series[serieIndex].data[i];
-
-            var speedResult = IsSpeedChange(data.speed, i, ref lastSelectedSpeed);
-            if (speedResult.Item1 == true)
-            {
-                AddLabelSymbol(ref sData, Convert.ToInt32(speedResult.Item2), ref serie1);
-            }
-
-            var landingResult = IsValueChange(data.landingGear, i);
-            if (landingResult.Item1 == true)
-            {
-                if (landingResult.Item2 == true)
-                {
-                    AddArrowDownSymbol(ref sData, ref serie1);
-                }
-                //else
-                //{
-                //    AddArrowUpSymbol(ref sData);
-                //}
-            }
-
-            var flapResult = IsFlapValueChange(data.flap, i);
-            if (flapResult.Item1 == true)
-            {
-                AddFlapSymbol(ref sData, flapResult.Item2, ref serie1);
-            }
-
-            if (serieIndex == 0)
-            {
-                var vModResult = IsVerticalModeChange(data.verticalMode, i);
-                if (vModResult.Item1 == true)
-                {
-                    AddVmodSymbol(ref sAxis, vModResult.Item2);
-                }
-            }
-
-            if (data.speedBrake[i] == 1)
-            {
-                serie.UpdateData(i, 1, float.NaN);
-
-                //serie.data[i].ignore = true;
-                //chart.AddData($"Dash_{serie.serieName}", timeSeries, data.altitude[i]);
-            }
-        }
-    }
-
-
-
-
-
-    #region Progress_Chart
-    private void ChartInitRuntimeProgressSetting(ref LineChart chart)
-    {
-        XAxis xAxis = chart.EnsureChartComponent<XAxis>();
-
-        xAxis.ClearData();
-        for (int i = 0; i < 40; i++)
-        {
-            xAxis.data.Add($"{i}");
-        }
-
-        chart.series[0].data.Clear();
-        chart.series[1].data.Clear();
-        chart.series[2].data.Clear();
-    }
-
-    private void ChartSetRuntimeProgressData(ref LineChart chart, int serieIndex, List<double> lineData)
-    {
-        Serie serie = chart.series[serieIndex];
-
-        for (int i = 0; i < 40; i++)
-        {
-            if (i >= lineData.Count || lineData[i] == 0)
-                break;
-            else
-                serie.AddData(lineData[i]);
-        }
-    }
-    #endregion
-
-
-
-
-    Serie RunTimeAddSeries(ref LineChart chart, Serie actualSerie)
-    {
-        Serie serie = chart.AddSerie<XCharts.Runtime.Line>($"Dash_{actualSerie.serieName}", true, false);
-
-        serie.lineStyle = new LineStyle()
-        {
-            type = LineStyle.Type.Dashed,
-            width = actualSerie.lineStyle.width,
-            color = actualSerie.lineStyle.color,
-        };
-
-        serie.lineType = LineType.Smooth;
-        serie.symbol.show = false;
-
-        return serie;
-    }
-
-
-    #region ValueChange
-
-    private (bool, bool) IsValueChange(bool[] check, int index)
-    {
-        if (index == 0) return (false, false);
-
-        if (check[index] != check[index - 1])
-        {
-            return (true, check[index]);
-        }
-        return (false, false);
-    }
-
-    //private (bool, bool) IsValueChange(List<Avg> check, int index)
-    //{
-    //    if (index == 0) return (false, false);
-
-    //    if (Mathf.Round((float)check[index].landingGear) != Mathf.Round((float)check[index - 1].landingGear))
-    //    {
-    //        return (true, Convert.ToBoolean(check[index].landingGear));
-    //    }
-    //    return (false, false);
-    //}
-
-    //SpecialCase (Refine code Remain)
-    //private (bool, int) IsValueFlapChange(List<Avg> check, int index)
-    //{
-    //    if (index == 0) return (false, 0);
-
-    //    if (check[index].flap != check[index - 1].flap)
-    //    {
-    //        return (true, Convert.ToInt32(check[index].flap));
-    //    }
-    //    return (false, 0);
-    //}
-
-    private (bool, bool) IsValueChange(float[] check, int index)
-    {
-        if (index == 0) return (false, false);
-
-        if (check[index] != check[index - 1])
-        {
-            return (true, Convert.ToBoolean(check[index]));
-        }
-        return (false, false);
-    }
-
-    private (bool, bool) IsValueChange(List<bool> check, int index)
-    {
-        if (index == 0) return (false, false);
-
-        if (check[index] != check[index - 1])
-        {
-            return (true, check[index]);
-        }
-        return (false, false);
-    }
-
-    private (bool, int) IsValueChange(int[] check, int index)
-    {
-        if (index == 0) return (false, 0);
-
-        if (check[index] != check[index - 1])
-        {
-            return (true, check[index]);
-        }
-        return (false, 0);
-    }
-
-
-    private (bool, int) IsSpeedChange(int[] speed, int index, ref float lastSelectedSpeed)
-    {
-        if (index == 0)
-        {
-            lastSelectedSpeed = speed[0];
-            return (true, speed[0]);
-        }
-
-        if (Mathf.Abs(speed[index] - lastSelectedSpeed) >= 20)
-        {
-            lastSelectedSpeed = speed[index];
-            return (true, speed[index]);
-        }
-
-        return (false, speed[index]);
-    }
-
-    //private (bool, double) IsSpeedChange(List<Avg> speed, int index, ref double lastSelectedSpeed)
-    //{
-    //    if (index == 0)
-    //    {
-    //        lastSelectedSpeed = speed[0].speed;
-    //        return (true, speed[0].speed);
-    //    }
-
-    //    if (Math.Abs(speed[index].speed - lastSelectedSpeed) >= 20)
-    //    {
-    //        lastSelectedSpeed = speed[index].speed;
-    //        return (true, speed[index].speed);
-    //    }
-
-    //    return (false, speed[index].speed);
-    //}
-
-    private (bool, double) IsSpeedChange(double[] speed, int index, ref double lastSelectedSpeed)
-    {
-        if (index == 0)
-        {
-            lastSelectedSpeed = speed[0];
-            return (true, speed[0]);
-        }
-
-        if (Math.Abs(speed[index] - lastSelectedSpeed) >= 20)
-        {
-            lastSelectedSpeed = speed[index];
-            return (true, speed[index]);
-        }
-
-        return (false, speed[index]);
-    }
-
-    private (bool, int) IsSpeedChange(List<int> speed, int index, ref float lastSelectedSpeed)
-    {
-        if (index == 0)
-        {
-            lastSelectedSpeed = speed[0];
-            return (true, speed[0]);
-        }
-
-        if (Mathf.Abs(speed[index] - lastSelectedSpeed) >= 20)
-        {
-            lastSelectedSpeed = speed[index];
-            return (true, speed[index]);
-        }
-
-        return (false, speed[index]);
-    }
-
-
-
-    private (bool, bool) IsValueChange(List<double> check, int index)
-    {
-        if (index == 0) return (false, false);
-
-        if (Mathf.RoundToInt((float)check[index]) != Mathf.RoundToInt((float)check[index - 1]))
-        {
-            return (true, Convert.ToBoolean(Mathf.RoundToInt((float)check[index])));
-        }
-        return (false, false);
-    }
-    private (bool, int) IsFlapValueChange(List<double> check, int index)
-    {
-        if (index == 0) return (false, 0);
-
-        if (Mathf.RoundToInt((float)check[index]) != Mathf.RoundToInt((float)check[index - 1]))
-        {
-            return (true, Mathf.RoundToInt((float)check[index]));
-        }
-        return (false, 0);
-    }
-    private (bool, double) IsSpeedChange(List<double> speed, int index, ref double lastSelectedSpeed)
-    {
-        if (index == 0)
-        {
-            lastSelectedSpeed = speed[0];
-            return (true, speed[0]);
-        }
-
-        if (Math.Abs(speed[index] - lastSelectedSpeed) >= 10)
-        {
-            lastSelectedSpeed = speed[index];
-            return (true, speed[index]);
-        }
-
-        return (false, speed[index]);
-    }
-
-    //private (bool, double) IsVerticalModeChange(List<double> vMod, int index, ref double lastSelectedVmod)
-    //{
-    //    if (index == 0)
-    //    {
-    //        lastSelectedVmod = vMod[0];
-    //        return (true, vMod[0]);
-    //    }
-
-    //    if (Math.Abs(vMod[index] - lastSelectedVmod) >= 20)
-    //    {
-    //        lastSelectedVmod = vMod[index];
-    //        return (true, vMod[index]);
-    //    }
-
-    //    return (false, vMod[index]);
-    //}
-
-    private (bool, int) IsVerticalModeChange(List<double> check, int index)
-    {
-        if (index == 0) return (false, 0);
-
-        if (Mathf.RoundToInt((float)check[index]) != Mathf.RoundToInt((float)check[index - 1]))
-        {
-            return (true, Mathf.RoundToInt((float)check[index]));
-        }
-        return (false, 0);
-    }
-
-    #endregion
-
-    #region Symbols
-
-    private void AddArrowDownSymbol(ref SerieData serieData, ref Serie serie)
-    {
-        SerieSymbol _Symbol = serieData.EnsureComponent<SerieSymbol>();
-
-        _Symbol.type = SymbolType.DownArrow;
-        _Symbol.size = 0.05f;
-    }
-
-    private void AddArrowDownSymbol(SerieData serieData, ref Serie serie)
-    {
-        SerieSymbol _Symbol = serieData.EnsureComponent<SerieSymbol>();
-
-        _Symbol.type = SymbolType.DownArrow;
-        _Symbol.size = 0.05f;
-    }
-
-    private void AddArrowUpSymbol(ref SerieData serieData)
-    {
-        SerieSymbol _Symbol = serieData.EnsureComponent<SerieSymbol>();
-
-        _Symbol.type = SymbolType.UpArrow;
-        _Symbol.size = 0.05f;
-    }
-
-    private void AddFlapSymbol(ref SerieData serieData, int flapIndex, ref Serie serie)
-    {
-        SerieSymbol _Symbol = serieData.EnsureComponent<SerieSymbol>();
-
-        _Symbol.type = SymbolType.Circle;
-        _Symbol.size = 15f;
-
-        //if label used take last node label
-        if (serieData.labelStyle != null)
-        {
-            serieData.labelStyle.offset = new Vector3(0, 0, 0);
-            serieData.labelStyle.rotate = 0;
-        }
-
-        LabelStyle _Label = serieData.EnsureComponent<LabelStyle>();
-
-        switch (flapIndex)
-        {
-            case 0:
-                _Label.formatter = "UP";
-                break;
-            case 1:
-                _Label.formatter = "2";
-                break;
-            case 2:
-                _Label.formatter = "5";
-                break;
-            case 3:
-                _Label.formatter = "10";
-                break;
-            case 4:
-                _Label.formatter = "15";
-                break;
-            case 5:
-                _Label.formatter = "25";
-                break;
-            case 6:
-                _Label.formatter = "30";
-                break;
-            case 7:
-                _Label.formatter = "40";
-                break;
-        }
-
-        _Label.textStyle.show = true;
-        _Label.textStyle = new TextStyle()
-        {
-            color = new Color(0.09803922f, 0.09803922f, 0.2941177f, 1),
-            fontSize = 15,
-        };
-    }
-
-    private void AddFlapSymbol(SerieData serieData, int flapIndex, ref Serie serie)
-    {
-        SerieSymbol _Symbol = serieData.EnsureComponent<SerieSymbol>();
-
-        _Symbol.type = SymbolType.Circle;
-        _Symbol.size = 15f;
-
-        //if label used take last node label
-        if (serieData.labelStyle != null)
-        {
-            serieData.labelStyle.offset = new Vector3(0, 0, 0);
-            serieData.labelStyle.rotate = 0;
-        }
-
-        LabelStyle _Label = serieData.EnsureComponent<LabelStyle>();
-
-        switch (flapIndex)
-        {
-            case 0:
-                _Label.formatter = "UP";
-                break;
-            case 1:
-                _Label.formatter = "2";
-                break;
-            case 2:
-                _Label.formatter = "5";
-                break;
-            case 3:
-                _Label.formatter = "10";
-                break;
-            case 4:
-                _Label.formatter = "15";
-                break;
-            case 5:
-                _Label.formatter = "25";
-                break;
-            case 6:
-                _Label.formatter = "30";
-                break;
-            case 7:
-                _Label.formatter = "40";
-                break;
-        }
-
-        _Label.textStyle.show = true;
-        _Label.textStyle = new TextStyle()
-        {
-            color = new Color(0.09803922f, 0.09803922f, 0.2941177f, 1),
-            fontSize = 15,
-        };
-    }
-
-    private void AddVmodSymbol(ref SingleAxis sAxis, int vModIndex)
-    {
-
-        switch (vModIndex)
-        {
-            case 0:
-                sAxis.AddData("");
-                break;
-            case 1:
-                sAxis.AddData("LC");
-                break;
-            case 2:
-                sAxis.AddData("AH");
-                break;
-            case 3:
-                sAxis.AddData("VS");
-                break;
-            case 4:
-                sAxis.AddData("VNAV");
-                break;
-            case 5:
-                sAxis.AddData("GS");
-                break;
-        }
-        //_Label.textStyle.show = true;
-        //_Label.textStyle = new TextStyle()
-        //{
-        //    color = Color.white,
-        //    fontSize = 15,
-        //};
-        Debug.Log("vModIndex  " + vModIndex);
-    }
-
-    private void AddLabelSymbol(ref SerieData serieData, int knots, ref Serie serie)
-    {
-        LabelStyle _Label = serieData.EnsureComponent<LabelStyle>();
-
-        _Label.formatter = $"{knots}";
-        _Label.offset = new Vector3(0, 15, 0);
-        _Label.rotate = 45;
-        _Label.textStyle.show = true;
-        _Label.textStyle = new TextStyle()
-        {
-            color = serie.lineStyle.color,
-            fontSize = 15,
-        };
-        //_Label.size = 0.05f;
-    }
-    #endregion
 }

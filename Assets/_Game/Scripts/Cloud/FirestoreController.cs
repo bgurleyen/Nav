@@ -8,7 +8,6 @@ using System.Collections;
 using System.Linq;
 using JetBrains.Annotations;
 using System.Xml.Linq;
-using XCharts.Runtime;
 
 public class FirestoreController : MonoBehaviour
 {
@@ -121,20 +120,18 @@ public class FirestoreController : MonoBehaviour
                 {
                     myUserData = snapshot.ConvertTo<UserData>();
 
-                    _ = docRef_game_stats.GetSnapshotAsync().ContinueWithOnMainThread(task =>
-              {
-                  var snapshot = task.Result;
+                    Action loadGameStats = () =>
+                    {
+                        _ = docRef_game_stats.GetSnapshotAsync().ContinueWithOnMainThread(gameStatsTask =>
+                        {
+                            var gameStatsSnapshot = gameStatsTask.Result;
 
-                  if (snapshot.Exists)
-                  {
-                      myUserData.game_stats = snapshot.ConvertTo<Game_Stats>();
-                  }
+                            if (gameStatsSnapshot.Exists)
+                                myUserData.game_stats = gameStatsSnapshot.ConvertTo<Game_Stats>();
+                        });
+                    };
 
-                  //Get Course Data from firestore
-                  //GetCourseData();
-
-                  //RetrieveBlockList();
-              });
+                    loadGameStats();
                 }
                 else
                 {
@@ -168,6 +165,13 @@ public class FirestoreController : MonoBehaviour
     public List<S_data> averagePlayer = new List<S_data>();
     public List<double> bestPlayerProgress = new List<double>();
     public List<double> averagePlayerProgress = new List<double>();
+    private L_data bestLevelProfile;
+
+    public L_data GetBestLevelProfile()
+    {
+        DataManage.TryNormalizeProfile(bestLevelProfile);
+        return bestLevelProfile;
+    }
 
     public void GetCourseData()
     {
@@ -253,7 +257,10 @@ public class FirestoreController : MonoBehaviour
                 try
                 {
                     if (best_Player?.stats == null)
+                    {
+                        callback?.Invoke("[GetBestPlayerData] - ServerData (Fail)");
                         return;
+                    }
 
                     foreach (var levelEntry in best_Player.stats)
                     {
@@ -272,7 +279,16 @@ public class FirestoreController : MonoBehaviour
                             l_Data.verticalMode = ((List<object>)levels_Data["verticalMode"]).Select(x => Convert.ToDouble(x)).ToList();
                             l_Data.fuelFlow = ((List<object>)levels_Data["fuelFlow"]).Select(x => Convert.ToDouble(x)).ToList();
                             l_Data.remainingFuel = Convert.ToDouble(levels_Data["remainingFuel"]);
-                            l_Data.time = ((List<object>)levels_Data["time"]).Select(x => Convert.ToString(x)).ToList();
+                            l_Data.time = levels_Data.ContainsKey("time")
+                                ? ((List<object>)levels_Data["time"]).Select(x => Convert.ToString(x)).ToList()
+                                : new List<string>();
+                            if (levels_Data.ContainsKey("distance"))
+                                l_Data.distance = ((List<object>)levels_Data["distance"]).Select(x => Convert.ToDouble(x)).ToList();
+
+                            DataManage.TryNormalizeProfile(l_Data);
+
+                            if (!DataManage.HasValidDistanceData(l_Data))
+                                continue;
 
                             bestPlayerLevels[levelEntry.Key] = l_Data;
                         }
@@ -299,7 +315,8 @@ public class FirestoreController : MonoBehaviour
         }
         catch (Exception e)
         {
-            Debug.Log("FirestoreController:UpdateStats::" + e.ToString());
+            Debug.Log("FirestoreController:GetBestPlayerData::" + e.ToString());
+            callback?.Invoke("[GetBestPlayerData] - ServerData (Fail)");
         }
     }
 
@@ -484,6 +501,9 @@ public class FirestoreController : MonoBehaviour
                         flap = Convert.ToDouble(m_stats["flap"]) * _count,
                         speedBrake = Convert.ToDouble(m_stats["speedBrake"]) * _count,
                         landingGear = Convert.ToDouble(m_stats["landingGear"]) * _count,
+                        distance = m_stats.ContainsKey("distance")
+                            ? Convert.ToDouble(m_stats["distance"])
+                            : Math.Round(i * 0.1, 1),
                     };
                     sStats.Add(s_Data);
                     //Debug.Log($"{i} --> {sStats[i].altitude} --> {sStats[i].speed} --> {sStats[i].flap} --> {sStats[i].speedBrake} --> {sStats[i].landingGear} --> {sStats[i].count}");
@@ -511,6 +531,9 @@ public class FirestoreController : MonoBehaviour
                         s_Data.flap = newStats.flap[i];
                         s_Data.speedBrake = newStats.speedBrake[i];
                         s_Data.landingGear = newStats.landingGear[i];
+                        s_Data.distance = i < newStats.distance.Count
+                            ? newStats.distance[i]
+                            : Math.Round(i * 0.1, 1);
 
 
 
@@ -543,6 +566,8 @@ public class FirestoreController : MonoBehaviour
                         s_Data.flap = (s_Data.flap + sStats[i].flap) / s_Data.count;
                         s_Data.speedBrake = (s_Data.speedBrake + sStats[i].speedBrake) / s_Data.count;
                         s_Data.landingGear = (s_Data.landingGear + sStats[i].landingGear) / s_Data.count;
+                        if (s_Data.distance <= 0)
+                            s_Data.distance = sStats[i].distance > 0 ? sStats[i].distance : Math.Round(i * 0.1, 1);
 
                         myUserData.average_stats.stats[$"{i}"] = s_Data;
                     }
@@ -585,42 +610,51 @@ public class FirestoreController : MonoBehaviour
         }
     }
 
-    public void UpdateBestStats(double remainingFuel, Action<string> callback1, Action<string> callback2)
+    public void UpdateBestStats(DDL_data newStats, Action<string> callback)
     {
         try
         {
-            var docRef_game_stats = database.Collection("best_stats").Document($"LEVEL {PlayerPrefsHolder.Level}");
+            double remainingFuel = newStats.remainingFuel;
+            int level = PlayerPrefsHolder.Level;
+            var docRef = database.Collection("best_stats").Document($"LEVEL {level}");
 
-            _ = docRef_game_stats.GetSnapshotAsync().ContinueWithOnMainThread(task =>
+            _ = docRef.GetSnapshotAsync().ContinueWithOnMainThread(task =>
             {
                 var snapshot = task.Result;
 
                 if (snapshot.Exists)
-                {
                     myUserData.best_stats = snapshot.ConvertTo<Best_Stats>();
-                }
 
                 if (myUserData.best_stats == null)
-                {
                     myUserData.best_stats = new Best_Stats();
-                }
 
-                if (myUserData.best_stats.remainingFuel < remainingFuel)
+                bool hasValidProfile = DataManage.HasValidDistanceData(ToLData(myUserData.best_stats));
+                bool isNewRecord = myUserData.best_stats.remainingFuel < remainingFuel;
+                bool shouldBackfillProfile = !hasValidProfile && remainingFuel >= myUserData.best_stats.remainingFuel;
+
+                if (isNewRecord || shouldBackfillProfile)
                 {
-                    myUserData.best_stats.uid = myUserData.uid;
-                    myUserData.best_stats.remainingFuel = remainingFuel;
+                    if (isNewRecord)
+                    {
+                        myUserData.best_stats.uid = myUserData.uid;
+                        myUserData.best_stats.remainingFuel = remainingFuel;
+                    }
+                    else if (string.IsNullOrEmpty(myUserData.best_stats.uid))
+                    {
+                        myUserData.best_stats.uid = myUserData.uid;
+                    }
+
+                    CopyProfile(newStats, myUserData.best_stats);
+                    bestLevelProfile = NormalizeBestStats(myUserData.best_stats);
 
                     AddBestStatsField(myUserData.best_stats, (res) =>
                     {
-                        callback1($"{res} | [UpdateBestStats] - LocalData (sucess)");
+                        FinishBestStatsCallback(newStats, $"{res} | [UpdateBestStats] - LocalData (sucess)", callback);
                     });
                 }
                 else
                 {
-                    GetBestPlayerData(myUserData.best_stats.uid, (res) =>
-                    {
-                        callback2($"{res} | [UpdateBestStats] - ServerData (sucess)");
-                    });
+                    ResolveBestLevelProfile(newStats, level, hasValidProfile, callback);
                 }
             });
         }
@@ -628,6 +662,92 @@ public class FirestoreController : MonoBehaviour
         {
             Debug.Log("FirestoreController:UpdateStats::" + e.ToString());
         }
+    }
+
+    void ResolveBestLevelProfile(DDL_data currentFlight, int level, bool hasValidProfile, Action<string> callback)
+    {
+        if (hasValidProfile)
+        {
+            bestLevelProfile = NormalizeBestStats(myUserData.best_stats);
+            FinishBestStatsCallback(currentFlight, "[UpdateBestStats] - ServerData (sucess)", callback);
+            return;
+        }
+
+        string uid = myUserData.best_stats?.uid;
+        if (string.IsNullOrEmpty(uid))
+            uid = myUserData.uid;
+
+        GetBestPlayerData(uid, _ =>
+        {
+            L_data fromServer = GetBestPlayerLevelData(level);
+            if (DataManage.HasValidDistanceData(fromServer))
+                bestLevelProfile = fromServer;
+            else
+                bestLevelProfile = NormalizeBestStats(myUserData.best_stats);
+
+            FinishBestStatsCallback(currentFlight, "[UpdateBestStats] - ServerData (sucess)", callback);
+        });
+    }
+
+    void FinishBestStatsCallback(DDL_data currentFlight, string message, Action<string> callback)
+    {
+        int level = PlayerPrefsHolder.Level;
+
+        bestLevelProfile = NormalizeBestStats(myUserData.best_stats) ?? bestLevelProfile;
+
+        if (!DataManage.HasValidDistanceData(bestLevelProfile))
+        {
+            L_data fromServer = GetBestPlayerLevelData(level);
+            if (DataManage.HasValidDistanceData(fromServer))
+                bestLevelProfile = fromServer;
+        }
+
+        if (!DataManage.HasValidDistanceData(bestLevelProfile) && currentFlight != null)
+        {
+            double bestFuel = myUserData.best_stats?.remainingFuel ?? 0;
+            if (bestFuel > 0 && currentFlight.remainingFuel >= bestFuel - 0.01)
+                bestLevelProfile = DataManage.ToLData(currentFlight);
+        }
+
+        DataManage.TryNormalizeProfile(bestLevelProfile);
+        callback?.Invoke(message);
+    }
+
+    static L_data NormalizeBestStats(Best_Stats best)
+    {
+        L_data profile = ToLData(best);
+        return DataManage.NormalizeProfile(profile);
+    }
+
+    static void CopyProfile(DDL_data from, Best_Stats to)
+    {
+        to.altitude = from.altitude?.ToList();
+        to.speed = from.speed?.ToList();
+        to.flap = from.flap?.ToList();
+        to.speedBrake = from.speedBrake?.ToList();
+        to.landingGear = from.landingGear?.ToList();
+        to.verticalMode = from.verticalMode?.ToList();
+        to.fuelFlow = from.fuelFlow?.ToList();
+        to.distance = from.distance?.ToList();
+    }
+
+    static L_data ToLData(Best_Stats best)
+    {
+        if (best?.altitude == null)
+            return null;
+
+        return new L_data
+        {
+            altitude = best.altitude,
+            speed = best.speed,
+            flap = best.flap,
+            speedBrake = best.speedBrake,
+            landingGear = best.landingGear,
+            verticalMode = best.verticalMode,
+            fuelFlow = best.fuelFlow,
+            distance = best.distance,
+            remainingFuel = best.remainingFuel,
+        };
     }
 
     public void UpdateLevelProgressStats(double remainingFuel, Action<string> callback)
@@ -673,106 +793,6 @@ public class FirestoreController : MonoBehaviour
                         else
                         {
                             callback("[UpdateLevelProgressStats] - ServerData (Fail)");
-                        }
-                    });
-                }
-                catch (Exception e)
-                {
-                    Debug.Log("FirestoreController:AddStatsField::" + e.ToString());
-                }
-            });
-        }
-        catch (Exception e)
-        {
-            Debug.Log("FirestoreController:UpdateStats::" + e.ToString());
-        }
-    }
-
-    public void UpdateAverageProgressStats(double remainingFuel, Action<string> callback)
-    {
-        averagePlayerProgress = new List<double>();
-        try
-        {
-            var docRef = database.Collection("average_progress_stats").Document("average_progress");
-
-            _ = docRef.GetSnapshotAsync().ContinueWithOnMainThread(task =>
-            {
-                var snapshot = task.Result;
-                if (snapshot.Exists)
-                {
-                    myUserData.average_progress_stats = snapshot.ConvertTo<Dictionary<string, object>>();
-                }
-
-                if (myUserData.average_progress_stats == null)
-                {
-                    myUserData.average_progress_stats = new Dictionary<string, object>();
-                }
-
-                int progressLevelCount = Math.Max(40, PlayerPrefsHolder.Level + 1);
-                for (int i = 0; i < progressLevelCount; i++)
-                {
-                    A_data a_Data = new A_data { remainingFuel = 0, count = 0 };
-
-                    if (myUserData.average_progress_stats.ContainsKey($"LEVEL {i}"))
-                    {
-                        Dictionary<string, object> s_stats = myUserData.average_progress_stats[$"LEVEL {i}"] as Dictionary<string, object>;
-                        int _count = Convert.ToInt32(s_stats["count"]);
-                        double _remainingFuel = Convert.ToDouble(s_stats["remainingFuel"]);
-
-                        if (i == PlayerPrefsHolder.Level)
-                        {
-                            a_Data.count = 1;
-                            a_Data.remainingFuel = remainingFuel;
-
-                            a_Data.count += _count;
-
-                            if (a_Data.count > 0)
-                            {
-                                a_Data.remainingFuel = (a_Data.remainingFuel + (_remainingFuel * (a_Data.count - 1))) / a_Data.count;
-                            }
-                            else
-                            {
-                                a_Data.remainingFuel = 0;
-                            }
-                        }
-                        else
-                        {
-                            a_Data.count = _count; // Important if count is 0
-                            if (a_Data.count > 0)
-                            {
-                                a_Data.remainingFuel = (a_Data.remainingFuel + (_remainingFuel * a_Data.count)) / a_Data.count;
-                            }
-                            else
-                            {
-                                a_Data.remainingFuel = 0;
-                            }
-
-                        }
-                        myUserData.average_progress_stats[$"LEVEL {i}"] = a_Data;
-                    }
-                    else
-                    {
-                        if (i == PlayerPrefsHolder.Level)
-                        {
-                            a_Data.count = 1;
-                            a_Data.remainingFuel = remainingFuel;
-                        }
-                        myUserData.average_progress_stats.Add($"LEVEL {i}", a_Data);
-                    }
-                    averagePlayerProgress.Add(a_Data.remainingFuel);
-                }
-
-                try
-                {
-                    _ = docRef.SetAsync(myUserData.average_progress_stats).ContinueWithOnMainThread(task =>
-                    {
-                        if (task.IsCompleted)
-                        {
-                            callback("[UpdateAverageProgressStats] - ServerData (sucess)");
-                        }
-                        else
-                        {
-                            callback("[UpdateAverageProgressStats] - ServerData (Fail)" + task.Exception);
                         }
                     });
                 }
@@ -863,6 +883,156 @@ public class FirestoreController : MonoBehaviour
             Debug.Log("FirestoreController:AddStatsField::" + e.ToString());
         }
     }
+    public void FetchAllLevelRanks(int currentLevelIndex, double currentLevelFuel, Action<int[]> callback)
+    {
+        int levelCount = LevelsLayoutSpec.LevelCount;
+        int[] ranks = new int[levelCount];
+
+        if (database == null || string.IsNullOrEmpty(myUserData?.uid))
+        {
+            callback?.Invoke(ranks);
+            return;
+        }
+
+        try
+        {
+            _ = database.Collection("progress_stats").GetSnapshotAsync().ContinueWithOnMainThread(task =>
+            {
+                if (!task.IsCompleted || task.IsFaulted || task.IsCanceled)
+                {
+                    callback?.Invoke(ranks);
+                    return;
+                }
+
+                QuerySnapshot snapshot = task.Result;
+                var fuelsByLevel = new List<double>[levelCount];
+                for (int i = 0; i < levelCount; i++)
+                    fuelsByLevel[i] = new List<double>();
+
+                string myUid = myUserData.uid;
+                double[] myFuels = new double[levelCount];
+                ApplyLocalProgressFuels(myFuels, currentLevelIndex, currentLevelFuel);
+
+                foreach (DocumentSnapshot doc in snapshot.Documents)
+                {
+                    if (!doc.Exists)
+                        continue;
+
+                    Dictionary<string, object> data;
+                    try
+                    {
+                        data = doc.ConvertTo<Dictionary<string, object>>();
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogWarning($"[Levels] progress_stats parse failed for {doc.Id}: {e.Message}");
+                        continue;
+                    }
+
+                    if (data == null)
+                        continue;
+
+                    bool isMe = doc.Id == myUid;
+
+                    for (int level = 0; level < levelCount; level++)
+                    {
+                        string key = $"LEVEL {level}";
+                        if (!data.TryGetValue(key, out object raw))
+                            continue;
+
+                        double fuel = ToFuel(raw);
+                        if (fuel <= 0)
+                            continue;
+
+                        fuelsByLevel[level].Add(fuel);
+                        if (isMe)
+                            myFuels[level] = Math.Max(myFuels[level], fuel);
+                    }
+                }
+
+                ApplyLocalProgressFuels(myFuels, currentLevelIndex, currentLevelFuel);
+
+                for (int level = 0; level < levelCount; level++)
+                {
+                    double myFuel = myFuels[level];
+                    if (myFuel <= 0)
+                    {
+                        ranks[level] = 0;
+                        continue;
+                    }
+
+                    EnsureFuelListed(fuelsByLevel[level], myFuel);
+
+                    int better = 0;
+                    for (int i = 0; i < fuelsByLevel[level].Count; i++)
+                    {
+                        if (fuelsByLevel[level][i] > myFuel + 0.001)
+                            better++;
+                    }
+
+                    ranks[level] = better + 1;
+                }
+
+                callback?.Invoke(ranks);
+            });
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[Levels] FetchAllLevelRanks failed: {e.Message}");
+            callback?.Invoke(ranks);
+        }
+    }
+
+    void ApplyLocalProgressFuels(double[] myFuels, int currentLevelIndex, double currentLevelFuel)
+    {
+        if (myUserData?.progress_stats != null)
+        {
+            for (int level = 0; level < myFuels.Length; level++)
+            {
+                string key = $"LEVEL {level}";
+                if (!myUserData.progress_stats.TryGetValue(key, out object raw))
+                    continue;
+
+                double fuel = ToFuel(raw);
+                if (fuel > 0)
+                    myFuels[level] = Math.Max(myFuels[level], fuel);
+            }
+        }
+
+        if (currentLevelIndex >= 0
+            && currentLevelIndex < myFuels.Length
+            && currentLevelFuel > 0)
+        {
+            myFuels[currentLevelIndex] = Math.Max(myFuels[currentLevelIndex], currentLevelFuel);
+        }
+    }
+
+    static void EnsureFuelListed(List<double> fuels, double fuel)
+    {
+        for (int i = 0; i < fuels.Count; i++)
+        {
+            if (Math.Abs(fuels[i] - fuel) < 0.001)
+                return;
+        }
+
+        fuels.Add(fuel);
+    }
+
+    static double ToFuel(object raw)
+    {
+        if (raw == null)
+            return 0;
+
+        try
+        {
+            return Convert.ToDouble(raw);
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
     #endregion
 
     #region GET OTHER USER
@@ -889,8 +1059,6 @@ public class FirestoreController : MonoBehaviour
 
 
     #endregion
-
-    #region DELETE DOCUMENTS
 
     public void DeleteDocuments(Action<bool> success)
     {
@@ -951,8 +1119,6 @@ public class FirestoreController : MonoBehaviour
             Debug.Log("FirestoreController:DeleteDocument::" + e.ToString());
         }
     }
-
-    #endregion
 }
 
 public class CourseData
@@ -978,6 +1144,14 @@ public class Best_Stats
 {
     [FirestoreProperty] public string uid { get; set; }
     [FirestoreProperty] public double remainingFuel { get; set; }
+    [FirestoreProperty] public List<double> altitude { get; set; }
+    [FirestoreProperty] public List<double> speed { get; set; }
+    [FirestoreProperty] public List<double> flap { get; set; }
+    [FirestoreProperty] public List<double> speedBrake { get; set; }
+    [FirestoreProperty] public List<double> landingGear { get; set; }
+    [FirestoreProperty] public List<double> verticalMode { get; set; }
+    [FirestoreProperty] public List<double> fuelFlow { get; set; }
+    [FirestoreProperty] public List<double> distance { get; set; }
 }
 
 [FirestoreData]
@@ -1013,6 +1187,7 @@ public class S_data
     [FirestoreProperty] public double flap { get; set; }
     [FirestoreProperty] public double speedBrake { get; set; }
     [FirestoreProperty] public double landingGear { get; set; }
+    [FirestoreProperty] public double distance { get; set; }
     //[FirestoreProperty] public double verticalMode { get; set; }
     //[FirestoreProperty] public double fuelFlow { get; set; }
     [FirestoreProperty] public double remainingFuel { get; set; }
@@ -1029,6 +1204,7 @@ public class L_data
     [FirestoreProperty] public List<double> landingGear { get; set; }
     [FirestoreProperty] public List<double> verticalMode { get; set; }
     [FirestoreProperty] public List<double> fuelFlow { get; set; }
+    [FirestoreProperty] public List<double> distance { get; set; }
     [FirestoreProperty] public double remainingFuel { get; set; }
     [FirestoreProperty] public List<string> time { get; set; }
 }
