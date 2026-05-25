@@ -9,6 +9,26 @@ using XCharts.Runtime;
 
 public class DataManage : MonoBehaviour
 {
+    public const int DefaultProgressLevelCount = 40;
+
+    public static void EnsureProgressCapacity(Progress_Data data, int levelIndex)
+    {
+        if (data == null)
+            return;
+
+        int requiredCount = Math.Max(DefaultProgressLevelCount, levelIndex + 1);
+        while (data.progress.Count < requiredCount)
+            data.progress.Add(0);
+    }
+
+    public static double GetProgressValue(Progress_Data data, int levelIndex)
+    {
+        if (data?.progress == null || levelIndex < 0 || levelIndex >= data.progress.Count)
+            return 0;
+
+        return data.progress[levelIndex];
+    }
+
     public FirestoreController firestoreController;
     private SaveLoadManager saveLoadManager;
     public string savePath => $"Saves/LEVEL {PlayerPrefsHolder.Level}.json";
@@ -172,24 +192,10 @@ public class DataManage : MonoBehaviour
         progress_data = await saveLoadManager.LoadAsync<Progress_Data>(saveProgressPath);
 
         if (progress_data == null)
-        {
             progress_data = new Progress_Data();
-            //progress_data.progress = new List<double>();
 
-            for (int i = 0; i < 40; i++)
-            {
-                progress_data.progress.Add(0);
-
-                if (i == PlayerPrefsHolder.Level)
-                {
-                    progress_data.progress[PlayerPrefsHolder.Level] = _remainingFuel;
-                }
-            }
-        }
-        else
-        {
-            progress_data.progress[PlayerPrefsHolder.Level] = m_data.remainingFuel;
-        }
+        EnsureProgressCapacity(progress_data, PlayerPrefsHolder.Level);
+        progress_data.progress[PlayerPrefsHolder.Level] = _remainingFuel;
         await saveLoadManager.SaveAsync(progress_data, saveProgressPath);
     }
 

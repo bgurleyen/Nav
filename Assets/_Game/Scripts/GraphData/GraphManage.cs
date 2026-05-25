@@ -70,40 +70,51 @@ public class GraphManage : MonoBehaviour
         //}
     }
 
+    void ClearResultsCharts()
+    {
+        c_flap = 0;
+        c_lg = false;
+
+        if (chart != null)
+            chart.ClearData();
+
+        if (FFChart != null)
+            FFChart.ClearSerieData();
+    }
+
     void DataViewInGraph()
     {
         dataManage.LoadGame((data) =>
         {
+            ClearResultsCharts();
+
             //FUEL FLOW
             ChartSetRuntimeData(ref FFChart, 0, data.fuelFlow);
             Debug.Log("[GetMineFuelFlowData] - LocalData (sucess)");
+            FFChart.RefreshChart();
 
-            //FLIGHT PROFILE
-
-            //Mine-Series
-            //ChartSetRuntimeData(ref chart, 0, data);
+            //FLIGHT PROFILE — Mine
             ChartSetRuntimeData(ref chart, "ME", "MEx", data);
             Debug.Log("[GetMineProfileData] - LocalData (sucess)");
-            chart.RefreshChart(0);
-            chart.RefreshChart(1);
+            chart.RefreshChart();
 
             //Best-Series
             dataManage.firestoreController.UpdateBestStats(data.remainingFuel,
             (callback1) =>
             {
                 Debug.Log(callback1);
-                //ChartSetRuntimeData(ref chart, 1, data);
                 ChartSetRuntimeData(ref chart, "BEST", "BESTx", data);
-                chart.RefreshChart(2);
-                chart.RefreshChart(3);
+                chart.RefreshChart();
             },
             (callback2) =>
             {
                 Debug.Log(callback2);
-                //ChartSetRuntimeData(ref chart, 1, dataManage.firestoreController.bestPlayerLevels[PlayerPrefsHolder.Level]);
-                ChartSetRuntimeData(ref chart, "BEST", "BESTx", dataManage.firestoreController.bestPlayerLevels[PlayerPrefsHolder.Level]);
-                chart.RefreshChart(2);
-                chart.RefreshChart(3);
+                L_data bestData = dataManage.firestoreController.GetBestPlayerLevelData(PlayerPrefsHolder.Level);
+                if (bestData != null)
+                    ChartSetRuntimeData(ref chart, "BEST", "BESTx", bestData);
+                else
+                    Debug.LogWarning($"[GetBestProfileData] No best data for LEVEL {PlayerPrefsHolder.Level}");
+                chart.RefreshChart();
             });
 
             //Average-Series
@@ -113,11 +124,11 @@ public class GraphManage : MonoBehaviour
                 List<S_data> averageRawData = dataManage.firestoreController.averagePlayer;
                 L_data averageData = new L_data();
 
-                averageData.altitude = new List<double>() { };
-                averageData.speed = new List<double>() { };
-                averageData.flap = new List<double>() { };
-                averageData.speedBrake = new List<double>() { };
-                averageData.landingGear = new List<double>() { };
+                averageData.altitude = new List<double>();
+                averageData.speed = new List<double>();
+                averageData.flap = new List<double>();
+                averageData.speedBrake = new List<double>();
+                averageData.landingGear = new List<double>();
 
                 for (int i = 0; i < averageRawData.Count; i++)
                 {
@@ -129,15 +140,14 @@ public class GraphManage : MonoBehaviour
                 }
 
                 Debug.Log(averageData.altitude.Count);
-                //ChartSetRuntimeData(ref chart, 2, averageData);
-                //ChartSetRuntimeData(ref chart, "AVERAGE", "AVERAGEx", averageData);
-                ChartSetRuntimeData(ref chart, "AVERAGE", "AVERAGEx", averageData, dataManage.firestoreController.myUserData.average_stats.another);
 
-                //var lastVal = chart.EnsureChartComponent<YAxis>().GetLastLabelValue();
-                //chart.EnsureChartComponent<YAxis>().interval = lastVal - 1000;
+                if (averageData.altitude.Count > 0)
+                {
+                    var another = dataManage.firestoreController.myUserData?.average_stats?.another;
+                    ChartSetRuntimeData(ref chart, "AVERAGE", "AVERAGEx", averageData, another);
+                }
 
-                chart.RefreshChart(4);
-                chart.RefreshChart(5);
+                chart.RefreshChart();
             });
         });
     }
@@ -160,6 +170,8 @@ public class GraphManage : MonoBehaviour
 
         dataManage.LoadProgress((data) =>
         {
+            ChartInitRuntimeProgressSetting(ref LevelChart);
+
             //Mine-ProgressSeries
             ChartSetRuntimeProgressData(ref LevelChart, 0, data.progress);
             LevelChart.RefreshChart(0);
@@ -181,7 +193,8 @@ public class GraphManage : MonoBehaviour
             });
 
             //Average-ProgressSeries
-            dataManage.firestoreController.UpdateAverageProgressStats(data.progress[PlayerPrefsHolder.Level], (x) =>
+            dataManage.firestoreController.UpdateAverageProgressStats(
+                DataManage.GetProgressValue(data, PlayerPrefsHolder.Level), (x) =>
             {
                 Debug.Log(x);
                 ChartSetRuntimeProgressData(ref LevelChart, 2, dataManage.firestoreController.averagePlayerProgress);
@@ -198,7 +211,8 @@ public class GraphManage : MonoBehaviour
     {
         if (Click == 1)
         {
-            PlayerPrefsHolder.Level += 1;
+            if (PlayerPrefsHolder.Level < DataManage.DefaultProgressLevelCount - 1)
+                PlayerPrefsHolder.Level += 1;
             SceneManager.LoadScene("EMPTY");
         }
 
@@ -518,11 +532,17 @@ public class GraphManage : MonoBehaviour
             }
         }
 
+        if (another == null)
+            return;
+
         if ((int)another.landingGear != 0 && c_lg == false)
         {
             AddArrowDownSymbol(serie1.data[(int)another.landingGear], ref serie1);
             c_lg = true;
         }
+
+        if (another.flap == null)
+            return;
 
         for (int i = 0; i < another.flap.Count; i++)
         {
@@ -625,7 +645,7 @@ public class GraphManage : MonoBehaviour
 
         for (int i = 0; i < 40; i++)
         {
-            if (lineData[i] == 0)
+            if (i >= lineData.Count || lineData[i] == 0)
                 break;
             else
                 serie.AddData(lineData[i]);

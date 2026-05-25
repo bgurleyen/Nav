@@ -231,7 +231,10 @@ public class Calculator : MonoBehaviour
         Session.Settings.SpeedMultiplier = 1;
 
         var levelInfo = FindFirstObjectByType<LevelStartInformation>();
-        levelInfo.ShowInfo();
+        if (levelInfo != null)
+            levelInfo.ShowInfo();
+        else
+            Debug.LogWarning("Calculator.Start: LevelStartInformation not found in scene.");
     }
 
     private IEnumerator ExecuteEachFrameSecond()

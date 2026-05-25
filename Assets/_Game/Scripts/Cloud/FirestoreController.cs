@@ -156,7 +156,15 @@ public class FirestoreController : MonoBehaviour
     public List<CourseData> watchTvandWalk = new List<CourseData>();
     public List<CourseData> hiitWorkouts = new List<CourseData>();
     //public List<CourseData> obstaclesCourses = new List<CourseData>();
-    public List<L_data> bestPlayerLevels = new List<L_data>();
+    public Dictionary<string, L_data> bestPlayerLevels = new Dictionary<string, L_data>();
+
+    public L_data GetBestPlayerLevelData(int level)
+    {
+        if (bestPlayerLevels == null)
+            return null;
+
+        return bestPlayerLevels.TryGetValue($"LEVEL {level}", out L_data data) ? data : null;
+    }
     public List<S_data> averagePlayer = new List<S_data>();
     public List<double> bestPlayerProgress = new List<double>();
     public List<double> averagePlayerProgress = new List<double>();
@@ -228,7 +236,7 @@ public class FirestoreController : MonoBehaviour
 
     public void GetBestPlayerData(string uid, Action<string> callback)
     {
-        bestPlayerLevels = new List<L_data>();
+        bestPlayerLevels = new Dictionary<string, L_data>();
         try
         {
             var docRef = database.Collection("game_stats").Document(uid);
@@ -244,8 +252,15 @@ public class FirestoreController : MonoBehaviour
                 }
                 try
                 {
-                    foreach (var levels_Data in best_Player.stats.Values.Cast<Dictionary<string, object>>())
+                    if (best_Player?.stats == null)
+                        return;
+
+                    foreach (var levelEntry in best_Player.stats)
                     {
+                        var levels_Data = levelEntry.Value as Dictionary<string, object>;
+                        if (levels_Data == null)
+                            continue;
+
                         try
                         {
                             L_data l_Data = new L_data();
@@ -259,14 +274,7 @@ public class FirestoreController : MonoBehaviour
                             l_Data.remainingFuel = Convert.ToDouble(levels_Data["remainingFuel"]);
                             l_Data.time = ((List<object>)levels_Data["time"]).Select(x => Convert.ToString(x)).ToList();
 
-                            try
-                            {
-                                bestPlayerLevels.Add(l_Data);
-                            }
-                            catch (Exception e)
-                            {
-                                Debug.Log(e.ToString());
-                            }
+                            bestPlayerLevels[levelEntry.Key] = l_Data;
                         }
                         catch (Exception e)
                         {
@@ -641,7 +649,8 @@ public class FirestoreController : MonoBehaviour
                     myUserData.progress_stats = new Dictionary<string, object>();
                 }
 
-                for (int i = 0; i < 40; i++)
+                int progressLevelCount = Math.Max(40, PlayerPrefsHolder.Level + 1);
+                for (int i = 0; i < progressLevelCount; i++)
                 {
                     if (!myUserData.progress_stats.ContainsKey($"LEVEL {i}"))
                     {
@@ -699,7 +708,8 @@ public class FirestoreController : MonoBehaviour
                     myUserData.average_progress_stats = new Dictionary<string, object>();
                 }
 
-                for (int i = 0; i < 40; i++)
+                int progressLevelCount = Math.Max(40, PlayerPrefsHolder.Level + 1);
+                for (int i = 0; i < progressLevelCount; i++)
                 {
                     A_data a_Data = new A_data { remainingFuel = 0, count = 0 };
 

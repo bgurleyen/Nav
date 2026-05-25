@@ -86,6 +86,20 @@ public class OtherAC
 
             hyp = Mathf.Sqrt(dx * dx + dy * dy);
 
+            if (hyp < 0.001f)
+            {
+                finalPosition = PtPos;
+                _ac.transform.localPosition = finalPosition;
+                acPositions[_aircraftKey] = finalPosition;
+
+                if (_currentPointIndex < _acItems.Length - 1)
+                {
+                    _currentPointIndex += 1;
+                    AltitudeC = AltitudeR;
+                }
+
+                return;
+            }
 
             AltitudeC -= ((AltitudeC - AltitudeR)) / hyp * SpeedCo;
             finalPosition = new Vector2(x + dx / hyp * SpeedCo, y + dy / hyp * SpeedCo); //Advance
