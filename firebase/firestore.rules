@@ -1,0 +1,28 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // NavigationShare uses device uid as document id (no Firebase Auth yet).
+    // Tighten these rules before production release.
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+    match /game_stats/{userId} {
+      allow read, write: if true;
+    }
+    match /progress_stats/{userId} {
+      allow read, write: if true;
+    }
+    match /average_stats/{levelId} {
+      allow read, write: if true;
+    }
+    match /best_stats/{levelId} {
+      allow read, write: if true;
+    }
+    match /block_list/{userId} {
+      allow read, write: if true;
+    }
+    match /courses/{courseId} {
+      allow read, write: if true;
+    }
+  }
+}

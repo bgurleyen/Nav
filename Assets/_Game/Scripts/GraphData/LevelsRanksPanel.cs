@@ -6,6 +6,7 @@ using UnityEngine.UI;
 public class LevelsRanksPanel : MonoBehaviour
 {
     const string LayoutRootName = "Layout Root";
+    const string ContinueButtonName = "Continue Button";
 
     static readonly int[] DefaultRanks =
     {
@@ -43,18 +44,145 @@ public class LevelsRanksPanel : MonoBehaviour
     public void PrepareForDisplay()
     {
         gameObject.SetActive(true);
-        ClearGeneratedLayout(immediate: true);
-        BuildFixedLayout();
-        AutoBindFromHierarchy();
 
         Transform layoutRoot = transform.Find(LayoutRootName);
+        if (layoutRoot == null || !HasMinimumBindings())
+        {
+            CleanupOrphanChildren(immediate: true);
+            ClearGeneratedLayout(immediate: true);
+            BuildFixedLayout();
+        }
+
+        EnsureCellBindings();
+        BringLayoutRootBehindOverlayChildren();
+
+        layoutRoot = transform.Find(LayoutRootName);
         DebriefLayoutScaler scaler = GetComponent<DebriefLayoutScaler>();
         if (scaler == null)
             scaler = gameObject.AddComponent<DebriefLayoutScaler>();
         if (layoutRoot != null)
+        {
             scaler.SetLayoutRoot(layoutRoot as RectTransform);
+            scaler.SetBottomReserved(
+                DebriefLayoutSpec.ContinueButtonBottom
+                + DebriefLayoutSpec.ContinueButtonHeight
+                + 8f);
+        }
 
+        HideContinueButton();
         Canvas.ForceUpdateCanvases();
+    }
+
+    public void HideContinueButton()
+    {
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            Button button = transform.GetChild(i).GetComponent<Button>();
+            if (button != null)
+                button.gameObject.SetActive(false);
+        }
+    }
+
+    public Button EnsureContinueButton()
+    {
+        Button button = FindContinueButton();
+        if (button == null)
+            button = CreateContinueButton();
+
+        LayoutContinueButton(button);
+        button.gameObject.SetActive(true);
+        button.transform.SetAsLastSibling();
+        return button;
+    }
+
+    Button FindContinueButton()
+    {
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            Button button = transform.GetChild(i).GetComponent<Button>();
+            if (button != null)
+                return button;
+        }
+
+        return null;
+    }
+
+    Button CreateContinueButton()
+    {
+        GameObject buttonGo = new GameObject(
+            ContinueButtonName,
+            typeof(RectTransform),
+            typeof(CanvasRenderer),
+            typeof(Image),
+            typeof(Button));
+
+        buttonGo.layer = gameObject.layer;
+        buttonGo.transform.SetParent(transform, false);
+
+        Image image = buttonGo.GetComponent<Image>();
+        image.color = new Color32(58, 87, 70, 255);
+        image.raycastTarget = true;
+
+        GameObject labelGo = new GameObject(
+            "Text",
+            typeof(RectTransform),
+            typeof(TextMeshProUGUI));
+        labelGo.layer = gameObject.layer;
+        labelGo.transform.SetParent(buttonGo.transform, false);
+
+        TMP_Text label = labelGo.GetComponent<TextMeshProUGUI>();
+        label.text = "Continue";
+        label.font = ResolveDefaultFont();
+        label.fontSize = 36f;
+        label.color = Color.white;
+        label.alignment = TextAlignmentOptions.Center;
+        label.raycastTarget = false;
+        StretchFill(label.rectTransform, 0f, 0f, 0f, 0f);
+
+        Button button = buttonGo.GetComponent<Button>();
+        button.targetGraphic = image;
+        return button;
+    }
+
+    static void LayoutContinueButton(Button button)
+    {
+        if (button == null)
+            return;
+
+        RectTransform rect = button.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.5f, 0f);
+        rect.anchorMax = new Vector2(0.5f, 0f);
+        rect.pivot = new Vector2(0.5f, 0f);
+        rect.anchoredPosition = new Vector2(0f, DebriefLayoutSpec.ContinueButtonBottom);
+        rect.sizeDelta = new Vector2(
+            DebriefLayoutSpec.ContinueButtonWidth,
+            DebriefLayoutSpec.ContinueButtonHeight);
+        rect.localScale = Vector3.one;
+    }
+
+    void CleanupOrphanChildren(bool immediate)
+    {
+        for (int i = transform.childCount - 1; i >= 0; i--)
+        {
+            Transform child = transform.GetChild(i);
+            if (child.name == LayoutRootName)
+                continue;
+
+            if (child.GetComponent<Button>() != null)
+                continue;
+
+            if (immediate || !Application.isPlaying)
+                DestroyImmediate(child.gameObject);
+            else
+                Destroy(child.gameObject);
+        }
+    }
+
+    void BringLayoutRootBehindOverlayChildren()
+    {
+        Transform layoutRoot = transform.Find(LayoutRootName);
+        if (layoutRoot != null)
+            layoutRoot.SetAsFirstSibling();
     }
 
     public void EnsureLayoutBuilt()
@@ -117,6 +245,11 @@ public class LevelsRanksPanel : MonoBehaviour
     [ContextMenu("Auto Bind From Hierarchy")]
     public void AutoBindFromHierarchy()
     {
+        EnsureCellBindings();
+    }
+
+    public void EnsureCellBindings()
+    {
         Transform root = transform.Find(LayoutRootName) ?? transform;
 
         if (_cells == null || _cells.Length != LevelsLayoutSpec.LevelCount)
@@ -128,22 +261,30 @@ public class LevelsRanksPanel : MonoBehaviour
             if (cell == null)
                 continue;
 
-            _cells[i].text = FindTextIn(cell, "Value") ?? _cells[i].text;
+            TMP_Text text = FindTextIn(cell, "Value");
+            if (text != null)
+                _cells[i].text = text;
         }
     }
 
     public void BindRanks(int[] ranks)
     {
+        EnsureCellBindings();
+
         if (_cells == null || _cells.Length != LevelsLayoutSpec.LevelCount)
             return;
 
         for (int i = 0; i < LevelsLayoutSpec.LevelCount; i++)
         {
-            if (_cells[i].text == null)
+            TMP_Text text = _cells[i].text;
+            if (text == null)
                 continue;
 
             int rank = ranks != null && i < ranks.Length ? ranks[i] : 0;
-            _cells[i].text.text = FormatCellRichText(i + 1, rank);
+            text.text = FormatCellRichText(i + 1, rank);
+            text.richText = true;
+            text.enabled = true;
+            text.ForceMeshUpdate();
         }
     }
 

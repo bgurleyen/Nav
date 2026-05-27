@@ -5,6 +5,7 @@ using UnityEngine;
 public class DebriefLayoutScaler : MonoBehaviour
 {
     [SerializeField] RectTransform _layoutRoot;
+    [SerializeField] float _bottomReserved;
 
     RectTransform _parentRect;
 
@@ -29,6 +30,12 @@ public class DebriefLayoutScaler : MonoBehaviour
     {
         _layoutRoot = layoutRoot;
         StartCoroutine(ApplyScaleWhenReady());
+    }
+
+    public void SetBottomReserved(float pixels)
+    {
+        _bottomReserved = Mathf.Max(0f, pixels);
+        ApplyScale();
     }
 
     IEnumerator ApplyScaleWhenReady()
@@ -68,15 +75,16 @@ public class DebriefLayoutScaler : MonoBehaviour
         if (parentW <= 1f || parentH <= 1f)
             return;
 
+        float availableH = Mathf.Max(1f, parentH - _bottomReserved);
         float scale = Mathf.Min(
             parentW / DebriefLayoutSpec.RefWidth,
-            parentH / DebriefLayoutSpec.RefHeight);
+            availableH / DebriefLayoutSpec.RefHeight);
 
         _layoutRoot.localScale = new Vector3(scale, scale, 1f);
         _layoutRoot.anchorMin = new Vector2(0.5f, 0.5f);
         _layoutRoot.anchorMax = new Vector2(0.5f, 0.5f);
         _layoutRoot.pivot = new Vector2(0.5f, 0.5f);
-        _layoutRoot.anchoredPosition = Vector2.zero;
+        _layoutRoot.anchoredPosition = new Vector2(0f, _bottomReserved * 0.5f);
         _layoutRoot.sizeDelta = new Vector2(DebriefLayoutSpec.RefWidth, DebriefLayoutSpec.RefHeight);
     }
 }

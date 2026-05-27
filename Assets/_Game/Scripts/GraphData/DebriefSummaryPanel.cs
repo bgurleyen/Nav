@@ -560,10 +560,12 @@ public class DebriefSummaryPanel : MonoBehaviour
         rect.localScale = Vector3.one;
     }
 
-    public void BindSubtitle(int levelIndex)
+    public void BindSubtitle(int level)
     {
         if (_subtitle != null)
-            _subtitle.text = $"LEVEL {levelIndex + 1}";
+            _subtitle.text = level <= PlayerPrefsHolder.TestLevel
+                ? "TEST LEVEL"
+                : $"LEVEL {level}";
     }
 
     public void BindAll(DDL_data me, L_data average, L_data best, int? rank, int totalPlayers)

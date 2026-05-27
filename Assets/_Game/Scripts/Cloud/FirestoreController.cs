@@ -5,6 +5,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using System;
 using System.Collections;
+using System.IO;
 using System.Linq;
 using JetBrains.Annotations;
 using System.Xml.Linq;
@@ -157,10 +158,12 @@ public class FirestoreController : MonoBehaviour
 
     public L_data GetBestPlayerLevelData(int level)
     {
-        if (bestPlayerLevels == null)
+        if (level <= PlayerPrefsHolder.TestLevel || bestPlayerLevels == null)
             return null;
 
-        return bestPlayerLevels.TryGetValue($"LEVEL {level}", out L_data data) ? data : null;
+        return bestPlayerLevels.TryGetValue($"LEVEL {PlayerPrefsHolder.ClampLevel(level)}", out L_data data)
+            ? data
+            : null;
     }
     public List<S_data> averagePlayer = new List<S_data>();
     public List<double> bestPlayerProgress = new List<double>();
@@ -394,6 +397,12 @@ public class FirestoreController : MonoBehaviour
 
     public void UpdateStats(object newStats, Action<string> callback)
     {
+        if (!PlayerPrefsHolder.TryGetFirestoreLevelKey(out string levelKey))
+        {
+            callback?.Invoke("[UpdateStats] - Skipped (test level)");
+            return;
+        }
+
         try
         {
             var docRef_game_stats = database.Collection("game_stats").Document(myUserData.uid);
@@ -414,12 +423,13 @@ public class FirestoreController : MonoBehaviour
                     myUserData.game_stats.stats = new Dictionary<string, object>();
                 }
 
-                if (!myUserData.game_stats.stats.ContainsKey($"LEVEL {PlayerPrefsHolder.Level}"))
+                string levelKey = PlayerPrefsHolder.FirestoreLevelKey;
+                if (!myUserData.game_stats.stats.ContainsKey(levelKey))
                 {
-                    cStats.Add($"LEVEL {PlayerPrefsHolder.Level}", newStats);
+                    cStats.Add(levelKey, newStats);
                 }
 
-                myUserData.game_stats.stats[$"LEVEL {PlayerPrefsHolder.Level}"] = newStats;
+                myUserData.game_stats.stats[levelKey] = newStats;
 
                 AddStatsField(myUserData.game_stats.stats, (res) =>
                 {
@@ -437,12 +447,18 @@ public class FirestoreController : MonoBehaviour
     int n_flap = 0;
     public void UpdateAverageStats(DDL_data newStats, Action<string> callback)
     {
+        if (!PlayerPrefsHolder.TryGetFirestoreLevelKey(out _))
+        {
+            callback?.Invoke("[UpdateAverageStats] - Skipped (test level)");
+            return;
+        }
+
         Another local_another = new Another();
         averagePlayer = new List<S_data>();
 
         try
         {
-            var docRef_game_stats = database.Collection("average_stats").Document($"LEVEL {PlayerPrefsHolder.Level}");
+            var docRef_game_stats = database.Collection("average_stats").Document(PlayerPrefsHolder.FirestoreLevelKey);
 
             _ = docRef_game_stats.GetSnapshotAsync().ContinueWithOnMainThread(task =>
             {
@@ -612,10 +628,16 @@ public class FirestoreController : MonoBehaviour
 
     public void UpdateBestStats(DDL_data newStats, Action<string> callback)
     {
+        if (!PlayerPrefsHolder.TryGetFirestoreLevelKey(out _))
+        {
+            FinishBestStatsCallback(newStats, "[UpdateBestStats] - Skipped (test level)", callback);
+            return;
+        }
+
         try
         {
             double remainingFuel = newStats.remainingFuel;
-            int level = PlayerPrefsHolder.Level;
+            int level = PlayerPrefsHolder.DisplayLevel;
             var docRef = database.Collection("best_stats").Document($"LEVEL {level}");
 
             _ = docRef.GetSnapshotAsync().ContinueWithOnMainThread(task =>
@@ -691,7 +713,7 @@ public class FirestoreController : MonoBehaviour
 
     void FinishBestStatsCallback(DDL_data currentFlight, string message, Action<string> callback)
     {
-        int level = PlayerPrefsHolder.Level;
+        int level = PlayerPrefsHolder.ActiveLevel;
 
         bestLevelProfile = NormalizeBestStats(myUserData.best_stats) ?? bestLevelProfile;
 
@@ -752,59 +774,80 @@ public class FirestoreController : MonoBehaviour
 
     public void UpdateLevelProgressStats(double remainingFuel, Action<string> callback)
     {
+        if (!PlayerPrefsHolder.TryGetFirestoreLevelKey(out string levelKey))
+        {
+            callback?.Invoke("[UpdateLevelProgressStats] - Skipped (test level)");
+            return;
+        }
+
         try
         {
-            var docRef = database.Collection("progress_stats").Document(myUserData.uid);
+            string uid = ResolveUserId();
+            if (string.IsNullOrEmpty(uid))
+            {
+                callback?.Invoke("[UpdateLevelProgressStats] - LocalData (missing uid)");
+                return;
+            }
+
+            if (myUserData.progress_stats == null)
+                myUserData.progress_stats = new Dictionary<string, object>();
+
+            for (int displayLevel = 1; displayLevel <= LevelsLayoutSpec.LevelCount; displayLevel++)
+            {
+                string key = $"LEVEL {displayLevel}";
+                if (!myUserData.progress_stats.ContainsKey(key))
+                    myUserData.progress_stats.Add(key, 0);
+            }
+
+            myUserData.progress_stats[levelKey] = remainingFuel;
+
+            if (database == null)
+            {
+                callback?.Invoke("[UpdateLevelProgressStats] - LocalData (offline)");
+                return;
+            }
+
+            var docRef = database.Collection("progress_stats").Document(uid);
 
             _ = docRef.GetSnapshotAsync().ContinueWithOnMainThread(task =>
             {
-                var snapshot = task.Result;
-                if (snapshot.Exists)
+                if (task.IsCompleted && !task.IsFaulted && !task.IsCanceled)
                 {
-                    myUserData.progress_stats = snapshot.ConvertTo<Dictionary<string, object>>();
-                }
-
-                if (myUserData.progress_stats == null)
-                {
-                    myUserData.progress_stats = new Dictionary<string, object>();
-                }
-
-                int progressLevelCount = Math.Max(40, PlayerPrefsHolder.Level + 1);
-                for (int i = 0; i < progressLevelCount; i++)
-                {
-                    if (!myUserData.progress_stats.ContainsKey($"LEVEL {i}"))
+                    var snapshot = task.Result;
+                    if (snapshot.Exists)
                     {
-                        myUserData.progress_stats.Add($"LEVEL {i}", 0);
-                    }
-
-                    if (i == PlayerPrefsHolder.Level)
-                    {
-                        myUserData.progress_stats[$"LEVEL {PlayerPrefsHolder.Level}"] = remainingFuel;
+                        Dictionary<string, object> remote = ParseProgressStatsDocument(snapshot);
+                        if (remote != null)
+                        {
+                            foreach (var entry in remote)
+                                myUserData.progress_stats[entry.Key] = entry.Value;
+                        }
                     }
                 }
+
+                myUserData.progress_stats[levelKey] = remainingFuel;
+
                 try
                 {
-                    _ = docRef.SetAsync(myUserData.progress_stats).ContinueWithOnMainThread(task =>
+                    _ = docRef.SetAsync(myUserData.progress_stats).ContinueWithOnMainThread(writeTask =>
                     {
-                        if (task.IsCompleted)
-                        {
-                            callback("[UpdateLevelProgressStats] - ServerData (sucess)");
-                        }
+                        if (writeTask.IsCompleted && !writeTask.IsFaulted && !writeTask.IsCanceled)
+                            callback?.Invoke("[UpdateLevelProgressStats] - ServerData (sucess)");
                         else
-                        {
-                            callback("[UpdateLevelProgressStats] - ServerData (Fail)");
-                        }
+                            callback?.Invoke("[UpdateLevelProgressStats] - ServerData (Fail)");
                     });
                 }
                 catch (Exception e)
                 {
                     Debug.Log("FirestoreController:AddStatsField::" + e.ToString());
+                    callback?.Invoke("[UpdateLevelProgressStats] - ServerData (Fail)");
                 }
             });
         }
         catch (Exception e)
         {
             Debug.Log("FirestoreController:UpdateStats::" + e.ToString());
+            callback?.Invoke("[UpdateLevelProgressStats] - ServerData (Fail)");
         }
     }
 
@@ -839,7 +882,7 @@ public class FirestoreController : MonoBehaviour
     {
         try
         {
-            var docRef = database.Collection("average_stats").Document($"LEVEL {PlayerPrefsHolder.Level}");
+            var docRef = database.Collection("average_stats").Document(PlayerPrefsHolder.FirestoreLevelKey);
 
             _ = docRef.SetAsync(stats).ContinueWithOnMainThread(task =>
             {
@@ -863,7 +906,7 @@ public class FirestoreController : MonoBehaviour
     {
         try
         {
-            var docRef = database.Collection("best_stats").Document($"LEVEL {PlayerPrefsHolder.Level}");
+            var docRef = database.Collection("best_stats").Document(PlayerPrefsHolder.FirestoreLevelKey);
 
             // Update the document
             _ = docRef.SetAsync(stats).ContinueWithOnMainThread(task =>
@@ -885,101 +928,217 @@ public class FirestoreController : MonoBehaviour
     }
     public void FetchAllLevelRanks(int currentLevelIndex, double currentLevelFuel, Action<int[]> callback)
     {
-        int levelCount = LevelsLayoutSpec.LevelCount;
-        int[] ranks = new int[levelCount];
+        int[] localRanks = BuildLevelRanks(currentLevelIndex, currentLevelFuel, null);
+        callback?.Invoke(localRanks);
 
-        if (database == null || string.IsNullOrEmpty(myUserData?.uid))
-        {
-            callback?.Invoke(ranks);
+        string myUid = ResolveUserId();
+        if (database == null || string.IsNullOrEmpty(myUid))
             return;
-        }
 
         try
         {
             _ = database.Collection("progress_stats").GetSnapshotAsync().ContinueWithOnMainThread(task =>
             {
                 if (!task.IsCompleted || task.IsFaulted || task.IsCanceled)
-                {
-                    callback?.Invoke(ranks);
                     return;
-                }
 
-                QuerySnapshot snapshot = task.Result;
-                var fuelsByLevel = new List<double>[levelCount];
-                for (int i = 0; i < levelCount; i++)
-                    fuelsByLevel[i] = new List<double>();
-
-                string myUid = myUserData.uid;
-                double[] myFuels = new double[levelCount];
-                ApplyLocalProgressFuels(myFuels, currentLevelIndex, currentLevelFuel);
-
-                foreach (DocumentSnapshot doc in snapshot.Documents)
-                {
-                    if (!doc.Exists)
-                        continue;
-
-                    Dictionary<string, object> data;
-                    try
-                    {
-                        data = doc.ConvertTo<Dictionary<string, object>>();
-                    }
-                    catch (Exception e)
-                    {
-                        Debug.LogWarning($"[Levels] progress_stats parse failed for {doc.Id}: {e.Message}");
-                        continue;
-                    }
-
-                    if (data == null)
-                        continue;
-
-                    bool isMe = doc.Id == myUid;
-
-                    for (int level = 0; level < levelCount; level++)
-                    {
-                        string key = $"LEVEL {level}";
-                        if (!data.TryGetValue(key, out object raw))
-                            continue;
-
-                        double fuel = ToFuel(raw);
-                        if (fuel <= 0)
-                            continue;
-
-                        fuelsByLevel[level].Add(fuel);
-                        if (isMe)
-                            myFuels[level] = Math.Max(myFuels[level], fuel);
-                    }
-                }
-
-                ApplyLocalProgressFuels(myFuels, currentLevelIndex, currentLevelFuel);
-
-                for (int level = 0; level < levelCount; level++)
-                {
-                    double myFuel = myFuels[level];
-                    if (myFuel <= 0)
-                    {
-                        ranks[level] = 0;
-                        continue;
-                    }
-
-                    EnsureFuelListed(fuelsByLevel[level], myFuel);
-
-                    int better = 0;
-                    for (int i = 0; i < fuelsByLevel[level].Count; i++)
-                    {
-                        if (fuelsByLevel[level][i] > myFuel + 0.001)
-                            better++;
-                    }
-
-                    ranks[level] = better + 1;
-                }
-
-                callback?.Invoke(ranks);
+                int[] cloudRanks = BuildLevelRanks(currentLevelIndex, currentLevelFuel, task.Result);
+                callback?.Invoke(cloudRanks);
             });
         }
         catch (Exception e)
         {
             Debug.LogWarning($"[Levels] FetchAllLevelRanks failed: {e.Message}");
-            callback?.Invoke(ranks);
+        }
+    }
+
+    int[] BuildLevelRanks(int currentLevelIndex, double currentLevelFuel, QuerySnapshot snapshot)
+    {
+        int levelCount = LevelsLayoutSpec.LevelCount;
+        int[] ranks = new int[levelCount];
+        var fuelsByLevel = new List<double>[levelCount];
+        for (int i = 0; i < levelCount; i++)
+            fuelsByLevel[i] = new List<double>();
+
+        double[] myFuels = new double[levelCount];
+        ApplyLocalProgressFuels(myFuels, currentLevelIndex, currentLevelFuel);
+
+        if (snapshot != null)
+        {
+            string myUid = ResolveUserId();
+            foreach (DocumentSnapshot doc in snapshot.Documents)
+            {
+                if (!doc.Exists)
+                    continue;
+
+                Dictionary<string, object> data = ParseProgressStatsDocument(doc);
+                if (data == null)
+                    continue;
+
+                MergeProgressStatsIntoRankData(
+                    data,
+                    fuelsByLevel,
+                    myFuels,
+                    doc.Id == myUid,
+                    levelCount);
+            }
+        }
+
+        ApplyLocalProgressFuels(myFuels, currentLevelIndex, currentLevelFuel);
+        ComputeLevelRanks(ranks, myFuels, fuelsByLevel);
+        return ranks;
+    }
+
+    string ResolveUserId()
+    {
+        if (!string.IsNullOrEmpty(myUserData?.uid))
+            return myUserData.uid;
+
+        return SystemInfo.deviceUniqueIdentifier;
+    }
+
+    static string ResolveFirebaseProjectId()
+    {
+        try
+        {
+            string desktopPath = Path.Combine(Application.streamingAssetsPath, "google-services-desktop.json");
+            string androidPath = Path.Combine(Application.streamingAssetsPath, "google-services.json");
+            string path = Application.isEditor && File.Exists(desktopPath)
+                ? desktopPath
+                : androidPath;
+
+            if (!File.Exists(path))
+                return "(unknown)";
+
+            string json = File.ReadAllText(path);
+            const string marker = "\"project_id\"";
+            int index = json.IndexOf(marker, StringComparison.Ordinal);
+            if (index < 0)
+                return "(unknown)";
+
+            int colon = json.IndexOf(':', index);
+            int q1 = json.IndexOf('"', colon + 1);
+            int q2 = json.IndexOf('"', q1 + 1);
+            if (q1 < 0 || q2 < 0)
+                return "(unknown)";
+
+            return json.Substring(q1 + 1, q2 - q1 - 1);
+        }
+        catch
+        {
+            return "(unknown)";
+        }
+    }
+
+    static Dictionary<string, object> ParseProgressStatsDocument(DocumentSnapshot doc)
+    {
+        if (doc == null || !doc.Exists)
+            return null;
+
+        try
+        {
+            Dictionary<string, object> parsed = doc.ToDictionary();
+            if (parsed != null && parsed.Count > 0)
+                return parsed;
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[Levels] progress_stats ToDictionary failed for {doc.Id}: {e.Message}");
+        }
+
+        var fallback = new Dictionary<string, object>();
+        for (int i = 0; i <= 40; i++)
+        {
+            string key = $"LEVEL {i}";
+            if (!doc.ContainsField(key))
+                continue;
+
+            try
+            {
+                fallback[key] = doc.GetValue<object>(key);
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[Levels] progress_stats field read failed for {doc.Id}/{key}: {e.Message}");
+            }
+        }
+
+        return fallback.Count > 0 ? fallback : null;
+    }
+
+    static void MergeProgressStatsIntoRankData(
+        Dictionary<string, object> data,
+        List<double>[] fuelsByLevel,
+        double[] myFuels,
+        bool isMe,
+        int levelCount)
+    {
+        if (data == null)
+            return;
+
+        foreach (var entry in data)
+        {
+            if (!TryParseLevelKey(entry.Key, out int parsedLevel))
+                continue;
+
+            int level = ResolveUiLevelIndex(parsedLevel);
+            if (level < 0 || level >= levelCount)
+                continue;
+
+            double fuel = ToFuel(entry.Value);
+            if (fuel <= 0)
+                continue;
+
+            fuelsByLevel[level].Add(fuel);
+            if (isMe)
+                myFuels[level] = Math.Max(myFuels[level], fuel);
+        }
+    }
+
+    static int ResolveUiLevelIndex(int parsedLevel)
+    {
+        // LEVEL 1..39 match UI cells 1..39. LEVEL 0 is test — no panel cell.
+        if (parsedLevel >= PlayerPrefsHolder.FirstRankedLevel
+            && parsedLevel <= LevelsLayoutSpec.LevelCount)
+            return parsedLevel - 1;
+
+        return -1;
+    }
+
+    static bool TryParseLevelKey(string key, out int levelIndex)
+    {
+        levelIndex = -1;
+        if (string.IsNullOrEmpty(key))
+            return false;
+
+        const string prefix = "LEVEL ";
+        if (!key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        return int.TryParse(key.Substring(prefix.Length), out levelIndex);
+    }
+
+    static void ComputeLevelRanks(int[] ranks, double[] myFuels, List<double>[] fuelsByLevel)
+    {
+        for (int level = 0; level < ranks.Length; level++)
+        {
+            double myFuel = myFuels[level];
+            if (myFuel <= 0)
+            {
+                ranks[level] = 0;
+                continue;
+            }
+
+            EnsureFuelListed(fuelsByLevel[level], myFuel);
+
+            int better = 0;
+            for (int i = 0; i < fuelsByLevel[level].Count; i++)
+            {
+                if (fuelsByLevel[level][i] > myFuel + 0.001)
+                    better++;
+            }
+
+            ranks[level] = better + 1;
         }
     }
 
@@ -989,11 +1148,7 @@ public class FirestoreController : MonoBehaviour
         {
             for (int level = 0; level < myFuels.Length; level++)
             {
-                string key = $"LEVEL {level}";
-                if (!myUserData.progress_stats.TryGetValue(key, out object raw))
-                    continue;
-
-                double fuel = ToFuel(raw);
+                double fuel = ReadStoredLevelFuel(myUserData.progress_stats, level);
                 if (fuel > 0)
                     myFuels[level] = Math.Max(myFuels[level], fuel);
             }
@@ -1005,6 +1160,21 @@ public class FirestoreController : MonoBehaviour
         {
             myFuels[currentLevelIndex] = Math.Max(myFuels[currentLevelIndex], currentLevelFuel);
         }
+    }
+
+    static double ReadStoredLevelFuel(Dictionary<string, object> stats, int uiLevelIndex)
+    {
+        if (stats == null || uiLevelIndex < 0)
+            return 0;
+
+        if (stats.TryGetValue($"LEVEL {uiLevelIndex + 1}", out object oneBased))
+        {
+            double fuel = ToFuel(oneBased);
+            if (fuel > 0)
+                return fuel;
+        }
+
+        return 0;
     }
 
     static void EnsureFuelListed(List<double> fuels, double fuel)
@@ -1022,6 +1192,22 @@ public class FirestoreController : MonoBehaviour
     {
         if (raw == null)
             return 0;
+
+        switch (raw)
+        {
+            case double d:
+                return d;
+            case float f:
+                return f;
+            case int i:
+                return i;
+            case long l:
+                return l;
+            case decimal m:
+                return (double)m;
+            case string s when double.TryParse(s, out double parsed):
+                return parsed;
+        }
 
         try
         {
@@ -1118,6 +1304,148 @@ public class FirestoreController : MonoBehaviour
             success(false);
             Debug.Log("FirestoreController:DeleteDocument::" + e.ToString());
         }
+    }
+
+    public void DebugListAllRecords()
+    {
+        if (database == null)
+        {
+            Debug.LogWarning("[FirestoreDump] Database not initialized. Enter Play mode and wait for Firebase init.");
+            return;
+        }
+
+        Debug.Log($"[FirestoreDump] === START === project: {ResolveFirebaseProjectId()}");
+        DumpCollection("users", FormatUserDocument);
+        DumpCollection("progress_stats", FormatProgressStatsDocument);
+        DumpCollection("game_stats", FormatGenericDocument);
+        DumpCollection("average_stats", FormatGenericDocument);
+        DumpCollection("best_stats", FormatGenericDocument);
+        DumpCollection("block_list", FormatGenericDocument);
+        DumpCollection("courses", FormatGenericDocument);
+    }
+
+    void DumpCollection(string collectionName, System.Func<DocumentSnapshot, string> formatter)
+    {
+        try
+        {
+            _ = database.Collection(collectionName).GetSnapshotAsync().ContinueWithOnMainThread(task =>
+            {
+                if (!task.IsCompleted || task.IsFaulted || task.IsCanceled)
+                {
+                    Debug.LogWarning($"[FirestoreDump] {collectionName}: query failed - {task.Exception?.GetBaseException().Message}");
+                    return;
+                }
+
+                QuerySnapshot snapshot = task.Result;
+                Debug.Log($"[FirestoreDump] --- {collectionName} ({snapshot.Count} docs) ---");
+
+                if (snapshot.Count == 0)
+                {
+                    Debug.Log($"[FirestoreDump] {collectionName}: (empty)");
+                    return;
+                }
+
+                foreach (DocumentSnapshot doc in snapshot.Documents)
+                {
+                    if (!doc.Exists)
+                        continue;
+
+                    string body = formatter != null ? formatter(doc) : doc.Id;
+                    Debug.Log($"[FirestoreDump] {collectionName}/{doc.Id}\n{body}");
+                }
+            });
+        }
+        catch (Exception e)
+        {
+            Debug.LogWarning($"[FirestoreDump] {collectionName}: {e.Message}");
+        }
+    }
+
+    static string FormatUserDocument(DocumentSnapshot doc)
+    {
+        var lines = new System.Text.StringBuilder();
+        AppendField(lines, doc, "name");
+        AppendField(lines, doc, "uid");
+        AppendField(lines, doc, "provider");
+        return lines.Length > 0 ? lines.ToString() : "(no fields)";
+    }
+
+    static string FormatProgressStatsDocument(DocumentSnapshot doc)
+    {
+        Dictionary<string, object> data = ParseProgressStatsDocument(doc);
+        if (data == null || data.Count == 0)
+            return "(empty)";
+
+        var levelFuels = new System.Collections.Generic.List<string>();
+        foreach (var entry in data)
+        {
+            if (!TryParseLevelKey(entry.Key, out int level))
+                continue;
+
+            double fuel = ToFuel(entry.Value);
+            if (fuel <= 0)
+                continue;
+
+            levelFuels.Add($"LEVEL {level} = {fuel:0.##} T");
+        }
+
+        levelFuels.Sort(StringComparer.Ordinal);
+        if (levelFuels.Count == 0)
+            return "(no level fuels > 0)";
+
+        return string.Join("\n", levelFuels);
+    }
+
+    static string FormatGenericDocument(DocumentSnapshot doc)
+    {
+        try
+        {
+            Dictionary<string, object> data = doc.ToDictionary();
+            if (data == null || data.Count == 0)
+                return "(empty)";
+
+            var lines = new System.Text.StringBuilder();
+            foreach (var entry in data)
+                lines.AppendLine($"{entry.Key}: {SummarizeValue(entry.Value)}");
+
+            return lines.ToString().TrimEnd();
+        }
+        catch (Exception e)
+        {
+            return $"(parse error: {e.Message})";
+        }
+    }
+
+    static void AppendField(System.Text.StringBuilder lines, DocumentSnapshot doc, string field)
+    {
+        if (!doc.ContainsField(field))
+            return;
+
+        try
+        {
+            lines.AppendLine($"{field}: {doc.GetValue<object>(field)}");
+        }
+        catch
+        {
+            lines.AppendLine($"{field}: (unreadable)");
+        }
+    }
+
+    static string SummarizeValue(object value)
+    {
+        if (value == null)
+            return "null";
+
+        if (value is string s)
+            return s;
+
+        if (value is System.Collections.IDictionary dict)
+            return $"{{object, {dict.Count} keys}}";
+
+        if (value is System.Collections.IList list)
+            return $"[list, {list.Count} items]";
+
+        return value.ToString();
     }
 }
 

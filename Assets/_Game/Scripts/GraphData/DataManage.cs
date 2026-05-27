@@ -37,14 +37,22 @@ public class DataManage : MonoBehaviour
         return JsonUtility.FromJson<DDL_data>(JsonUtility.ToJson(source));
     }
 
-    public void PushFlightToCloud(DDL_data flightData)
+    public void PushFlightToCloud(DDL_data flightData, Action onProgressSaved = null)
     {
         if (flightData == null || firestoreController == null)
             return;
 
+        if (PlayerPrefsHolder.IsTestLevel)
+        {
+            Debug.Log("[DataManage] Skipping Firestore save (test level)");
+            onProgressSaved?.Invoke();
+            return;
+        }
+
         L_data cloudData = ToLData(flightData);
+        Debug.Log($"[DataManage] Saving to Firestore: {PlayerPrefsHolder.FirestoreLevelKey} (active level {PlayerPrefsHolder.ActiveLevel})");
         firestoreController.UpdateStats(cloudData, _ => { });
-        firestoreController.UpdateLevelProgressStats(flightData.remainingFuel, _ => { });
+        firestoreController.UpdateLevelProgressStats(flightData.remainingFuel, _ => onProgressSaved?.Invoke());
     }
 
     void EnsureFlightFinalized()

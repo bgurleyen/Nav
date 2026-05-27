@@ -1,4 +1,6 @@
+using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
@@ -16,6 +18,8 @@ public class GraphManage : MonoBehaviour
 
     public CanvasGroup mainGroup;
     public CanvasGroup graphGroup;
+
+    const string LevelsContinueButtonName = "Levels Continue Button";
 
     static readonly string[] LegacyGraphNames =
     {
@@ -160,6 +164,7 @@ public class GraphManage : MonoBehaviour
         _showingLevelsPanel = false;
         HideLegacyGraphUi();
         HideLevelsPanel();
+        HideLevelsContinueOverlay();
         EnsureGraphCanvasVisible();
         EnsureDebriefPanelExists();
 
@@ -181,7 +186,6 @@ public class GraphManage : MonoBehaviour
         _showingLevelsPanel = true;
         EnsureGraphCanvasVisible();
         EnsureLevelsPanelExists();
-        ResolveLevelsContinueButton();
 
         Transform host = FindDebriefHost();
         if (host != null)
@@ -204,18 +208,179 @@ public class GraphManage : MonoBehaviour
 
         StretchRect(levelsPanel.GetComponent<RectTransform>());
         levelsPanel.PrepareForDisplay();
-        levelsPanel.BindPlaceholder();
         levelsPanel.gameObject.SetActive(true);
         levelsPanel.transform.SetAsLastSibling();
 
-        if (levelsContinueButton != null)
+        if (host != null)
         {
-            levelsContinueButton.gameObject.SetActive(true);
-            levelsContinueButton.transform.SetAsLastSibling();
+            levelsContinueButton = EnsureLevelsContinueOverlay();
             WireLevelsContinueButton();
+            StartCoroutine(BringLevelsContinueToFront());
         }
 
         RefreshLevelsPanelRanks();
+    }
+
+    IEnumerator BringLevelsContinueToFront()
+    {
+        Transform overlayParent = ResolveLevelsContinueParent();
+        for (int i = 0; i < 4; i++)
+        {
+            yield return null;
+            Canvas.ForceUpdateCanvases();
+            if (levelsContinueButton == null)
+                yield break;
+
+            levelsContinueButton.gameObject.SetActive(true);
+            levelsContinueButton.transform.SetParent(overlayParent, false);
+            LayoutLevelsContinueButton(levelsContinueButton);
+            levelsContinueButton.transform.SetAsLastSibling();
+        }
+    }
+
+    Transform ResolveLevelsContinueParent()
+    {
+        if (graphGroup != null)
+            return graphGroup.transform;
+
+        return FindDebriefHost();
+    }
+
+    Button EnsureLevelsContinueOverlay()
+    {
+        Transform overlayParent = ResolveLevelsContinueParent();
+
+        Button button = ResolveLevelsContinueButton();
+        if (button != null)
+        {
+            ReparentLevelsContinueButton(button, overlayParent);
+            return button;
+        }
+
+        Transform existing = overlayParent.Find(LevelsContinueButtonName);
+        if (existing != null)
+        {
+            button = existing.GetComponent<Button>();
+            if (button != null)
+            {
+                ReparentLevelsContinueButton(button, overlayParent);
+                return button;
+            }
+        }
+
+        return CreateLevelsContinueOverlay(overlayParent);
+    }
+
+    Button ResolveLevelsContinueButton()
+    {
+        if (levelsContinueButton != null)
+            return levelsContinueButton;
+
+        if (levelsPanel == null)
+            return null;
+
+        for (int i = 0; i < levelsPanel.transform.childCount; i++)
+        {
+            Button button = levelsPanel.transform.GetChild(i).GetComponent<Button>();
+            if (button != null)
+                return button;
+        }
+
+        return levelsPanel.GetComponentInChildren<Button>(true);
+    }
+
+    void ReparentLevelsContinueButton(Button button, Transform overlayParent)
+    {
+        if (button == null)
+            return;
+
+        button.transform.SetParent(overlayParent, false);
+        LayoutLevelsContinueButton(button);
+        button.gameObject.SetActive(true);
+        button.transform.SetAsLastSibling();
+    }
+
+    static void LayoutLevelsContinueButton(Button button)
+    {
+        if (button == null)
+            return;
+
+        RectTransform rect = button.GetComponent<RectTransform>();
+        rect.anchorMin = new Vector2(0.5f, 0f);
+        rect.anchorMax = new Vector2(0.5f, 0f);
+        rect.pivot = new Vector2(0.5f, 0f);
+        rect.anchoredPosition = new Vector2(0f, DebriefLayoutSpec.ContinueButtonBottom);
+        rect.sizeDelta = new Vector2(
+            DebriefLayoutSpec.ContinueButtonWidth,
+            DebriefLayoutSpec.ContinueButtonHeight);
+        rect.localScale = Vector3.one;
+    }
+
+    Button CreateLevelsContinueOverlay(Transform overlayParent)
+    {
+        GameObject buttonGo = new GameObject(
+            LevelsContinueButtonName,
+            typeof(RectTransform),
+            typeof(CanvasRenderer),
+            typeof(Image),
+            typeof(Button));
+        buttonGo.layer = overlayParent.gameObject.layer;
+        buttonGo.transform.SetParent(overlayParent, false);
+
+        Image image = buttonGo.GetComponent<Image>();
+        image.color = new Color32(58, 87, 70, 255);
+        image.raycastTarget = true;
+
+        GameObject labelGo = new GameObject(
+            "Text",
+            typeof(RectTransform),
+            typeof(TextMeshProUGUI));
+        labelGo.layer = overlayParent.gameObject.layer;
+        labelGo.transform.SetParent(buttonGo.transform, false);
+
+        TMP_Text label = labelGo.GetComponent<TextMeshProUGUI>();
+        label.text = "Continue";
+        label.font = ResolveOverlayFont();
+        label.fontSize = 36f;
+        label.color = Color.white;
+        label.alignment = TextAlignmentOptions.Center;
+        label.raycastTarget = false;
+        StretchRect(label.GetComponent<RectTransform>());
+
+        Button button = buttonGo.GetComponent<Button>();
+        button.targetGraphic = image;
+        LayoutLevelsContinueButton(button);
+        buttonGo.SetActive(true);
+        buttonGo.transform.SetAsLastSibling();
+        return button;
+    }
+
+    static TMP_FontAsset _overlayFont;
+
+    static TMP_FontAsset ResolveOverlayFont()
+    {
+        if (_overlayFont != null)
+            return _overlayFont;
+
+        _overlayFont = Resources.Load<TMP_FontAsset>("Fonts & Materials/LiberationSans SDF");
+        if (_overlayFont == null && TMP_Settings.instance != null)
+            _overlayFont = TMP_Settings.defaultFontAsset;
+
+        return _overlayFont;
+    }
+
+    void HideLevelsContinueOverlay()
+    {
+        Transform overlayParent = ResolveLevelsContinueParent();
+        if (overlayParent != null)
+        {
+            Transform overlay = overlayParent.Find(LevelsContinueButtonName);
+            if (overlay != null)
+                overlay.gameObject.SetActive(false);
+        }
+
+        if (levelsContinueButton != null)
+            levelsContinueButton.gameObject.SetActive(false);
     }
 
     static void ReplaceButtonListener(Button button, UnityAction listener)
@@ -237,20 +402,6 @@ public class GraphManage : MonoBehaviour
         ReplaceButtonListener(levelsContinueButton, OnContinueButtonClick);
     }
 
-    void ResolveLevelsContinueButton()
-    {
-        if (levelsContinueButton != null)
-            return;
-
-        EnsureLevelsPanelExists();
-        if (levelsPanel == null)
-            return;
-
-        Button[] buttons = levelsPanel.GetComponentsInChildren<Button>(true);
-        if (buttons.Length > 0)
-            levelsContinueButton = buttons[0];
-    }
-
     void RefreshLevelsPanelRanks()
     {
         if (levelsPanel == null || dataManage?.firestoreController == null)
@@ -258,9 +409,27 @@ public class GraphManage : MonoBehaviour
 
         double currentFuel = _meData?.remainingFuel ?? 0;
         dataManage.firestoreController.FetchAllLevelRanks(
-            PlayerPrefsHolder.Level,
+            PlayerPrefsHolder.UiLevelIndex,
             currentFuel,
-            ranks => levelsPanel.BindRanks(ranks));
+            ApplyLevelsPanelRanks);
+    }
+
+    void OnProgressStatsSaved()
+    {
+        if (_showingLevelsPanel)
+            RefreshLevelsPanelRanks();
+    }
+
+    void ApplyLevelsPanelRanks(int[] ranks)
+    {
+        if (levelsPanel == null || ranks == null)
+            return;
+
+        if (!levelsPanel.gameObject.activeInHierarchy)
+            return;
+
+        levelsPanel.EnsureCellBindings();
+        levelsPanel.BindRanks(ranks);
     }
 
     public void OnDebriefContinueClick()
@@ -273,8 +442,7 @@ public class GraphManage : MonoBehaviour
         if (levelsPanel != null)
             levelsPanel.gameObject.SetActive(false);
 
-        if (levelsContinueButton != null)
-            levelsContinueButton.gameObject.SetActive(false);
+        HideLevelsContinueOverlay();
     }
 
     void HideLegacyGraphUi()
@@ -306,7 +474,7 @@ public class GraphManage : MonoBehaviour
         }
 
         DDL_data flightData = dataManage.CaptureFlightSnapshot();
-        dataManage.PushFlightToCloud(flightData);
+        dataManage.PushFlightToCloud(flightData, OnProgressStatsSaved);
 
         mainGroup.alpha = 0;
         graphGroup.alpha = 1;
@@ -327,7 +495,7 @@ public class GraphManage : MonoBehaviour
 
         if (!DataManage.HasValidDistanceData(flightData))
         {
-            Debug.LogWarning($"[Debrief] LEVEL {PlayerPrefsHolder.Level + 1}: invalid flight data.");
+            Debug.LogWarning($"[Debrief] {PlayerPrefsHolder.LevelLabel}: invalid flight data.");
             return;
         }
 
@@ -356,7 +524,7 @@ public class GraphManage : MonoBehaviour
         if (!debriefPanel.HasValidBindings())
             debriefPanel.PrepareForDebrief();
 
-        debriefPanel.BindSubtitle(PlayerPrefsHolder.Level);
+        debriefPanel.BindSubtitle(PlayerPrefsHolder.ActiveLevel);
 
         int? rank = TryEstimateRank(_meData.remainingFuel, _bestData, _totalPlayers);
         debriefPanel.BindAll(_meData, _averageData, _bestData, rank, _totalPlayers);
@@ -391,7 +559,7 @@ public class GraphManage : MonoBehaviour
         if (DataManage.HasValidDistanceData(best))
             return best;
 
-        L_data fromBestPlayer = dataManage.firestoreController.GetBestPlayerLevelData(PlayerPrefsHolder.Level);
+        L_data fromBestPlayer = dataManage.firestoreController.GetBestPlayerLevelData(PlayerPrefsHolder.ActiveLevel);
         DataManage.TryNormalizeProfile(fromBestPlayer);
         if (DataManage.HasValidDistanceData(fromBestPlayer))
             return fromBestPlayer;
@@ -405,7 +573,7 @@ public class GraphManage : MonoBehaviour
 
     public void OnContinueButtonClick()
     {
-        if (PlayerPrefsHolder.Level < DataManage.DefaultProgressLevelCount - 1)
+        if (PlayerPrefsHolder.Level < PlayerPrefsHolder.MaxLevel)
             PlayerPrefsHolder.Level += 1;
 
         SceneManager.LoadScene("EMPTY");
