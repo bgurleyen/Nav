@@ -23,9 +23,13 @@ public class LevelsRanksPanel : MonoBehaviour
     struct CellBinding
     {
         public TMP_Text text;
+        public Transform cell;
     }
 
     [SerializeField] CellBinding[] _cells = new CellBinding[LevelsLayoutSpec.LevelCount];
+
+    public Action<int> CellClicked;
+    bool _selectable;
 
     void Awake()
     {
@@ -54,6 +58,7 @@ public class LevelsRanksPanel : MonoBehaviour
         }
 
         EnsureCellBindings();
+        ApplyCellInteractivity();
         BringLayoutRootBehindOverlayChildren();
 
         layoutRoot = transform.Find(LayoutRootName);
@@ -261,9 +266,62 @@ public class LevelsRanksPanel : MonoBehaviour
             if (cell == null)
                 continue;
 
+            _cells[i].cell = cell;
+
             TMP_Text text = FindTextIn(cell, "Value");
             if (text != null)
                 _cells[i].text = text;
+        }
+    }
+
+    public void SetSelectable(bool on)
+    {
+        _selectable = on;
+        ApplyCellInteractivity();
+    }
+
+    void ApplyCellInteractivity()
+    {
+        if (_cells == null || _cells.Length != LevelsLayoutSpec.LevelCount)
+            return;
+
+        for (int i = 0; i < LevelsLayoutSpec.LevelCount; i++)
+        {
+            Transform cell = _cells[i].cell;
+            if (cell == null)
+                continue;
+
+            Image image = cell.GetComponent<Image>();
+            Button button = cell.GetComponent<Button>();
+
+            if (_selectable)
+            {
+                if (image != null)
+                    image.raycastTarget = true;
+
+                if (button == null)
+                    button = cell.gameObject.AddComponent<Button>();
+
+                button.targetGraphic = image;
+                button.transition = Selectable.Transition.ColorTint;
+
+                int level = i + 1;
+                button.onClick.RemoveAllListeners();
+                button.onClick.AddListener(() => CellClicked?.Invoke(level));
+                button.interactable = true;
+                button.enabled = true;
+            }
+            else
+            {
+                if (button != null)
+                {
+                    button.onClick.RemoveAllListeners();
+                    button.enabled = false;
+                }
+
+                if (image != null)
+                    image.raycastTarget = false;
+            }
         }
     }
 
@@ -387,6 +445,7 @@ public class LevelsRanksPanel : MonoBehaviour
         if (_cells == null || _cells.Length != LevelsLayoutSpec.LevelCount)
             _cells = new CellBinding[LevelsLayoutSpec.LevelCount];
         _cells[level - 1].text = value;
+        _cells[level - 1].cell = cell;
     }
 
     void StretchFullScreenBackground()

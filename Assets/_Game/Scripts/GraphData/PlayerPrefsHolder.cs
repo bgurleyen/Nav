@@ -10,6 +10,9 @@ public static class PlayerPrefsHolder
 
     const string LevelIndexMigrationKey = "LevelIndex_v2";
 
+    /// <summary>Session flag: when true, Main should show the levels selector instead of playing immediately.</summary>
+    public static bool ShowLevelSelectOnLoad;
+
     public static int Level
     {
         get
@@ -23,7 +26,6 @@ public static class PlayerPrefsHolder
         }
     }
 
-    /// <summary>Level actually loaded in the current session (from level data).</summary>
     public static int ActiveLevel
     {
         get
@@ -37,10 +39,8 @@ public static class PlayerPrefsHolder
 
     public static bool IsTestLevel => ActiveLevel == TestLevel;
 
-    /// <summary>Ranked level number for UI / Firestore (1–39).</summary>
     public static int DisplayLevel => ActiveLevel;
 
-    /// <summary>Levels panel cell index (0–38). Test level has no cell.</summary>
     public static int UiLevelIndex => IsTestLevel ? -1 : ActiveLevel - 1;
 
     public static string FirestoreLevelKey => IsTestLevel ? null : $"LEVEL {ActiveLevel}";
@@ -72,25 +72,13 @@ public static class PlayerPrefsHolder
 
     public static int Agree
     {
-        get
-        {
-            return PlayerPrefs.GetInt("Agree", 0);
-        }
-        set
-        {
-            PlayerPrefs.SetInt("Agree", value);
-        }
+        get => PlayerPrefs.GetInt("Agree", 0);
+        set => PlayerPrefs.SetInt("Agree", value);
     }
 
     public static string UserName
     {
-        get
-        {
-            return PlayerPrefs.GetString("UserName", null);
-        }
-        set
-        {
-            PlayerPrefs.SetString("UserName", value);
-        }
+        get => PlayerPrefs.GetString("UserName", null);
+        set => PlayerPrefs.SetString("UserName", value);
     }
 }

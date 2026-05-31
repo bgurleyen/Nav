@@ -61,6 +61,12 @@ public class MainMenu : MonoBehaviour
         SceneManager.LoadScene(sceneName);
     }
 
+    public void OnStartButtonClick()
+    {
+        PlayerPrefsHolder.ShowLevelSelectOnLoad = true;
+        SceneManager.LoadScene(sceneName);
+    }
+
     public void OnAgreeButtonClick()
     {
         PlayerPrefsHolder.Agree = 1;

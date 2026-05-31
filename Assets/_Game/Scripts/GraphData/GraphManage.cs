@@ -47,6 +47,36 @@ public class GraphManage : MonoBehaviour
 
     void OnDisable() => OnGameFinish -= OnGameFinished;
 
+    IEnumerator Start()
+    {
+        if (!PlayerPrefsHolder.ShowLevelSelectOnLoad)
+            yield break;
+
+        Time.timeScale = 0f;
+        yield return null;
+        EnterLevelSelectMode();
+    }
+
+    void EnterLevelSelectMode()
+    {
+        if (mainGroup != null)
+        {
+            mainGroup.alpha = 0f;
+            mainGroup.blocksRaycasts = false;
+            mainGroup.interactable = false;
+        }
+
+        if (graphGroup != null)
+        {
+            graphGroup.alpha = 1f;
+            graphGroup.blocksRaycasts = true;
+            graphGroup.interactable = true;
+        }
+
+        Time.timeScale = 0f;
+        ShowLevelSelect();
+    }
+
     void EnsureGraphCanvasVisible()
     {
         if (graphGroup == null)
@@ -181,7 +211,12 @@ public class GraphManage : MonoBehaviour
         }
     }
 
-    void ShowLevelsPanel()
+    public void ShowLevelSelect()
+    {
+        ShowLevelsPanel(asSelector: true);
+    }
+
+    void ShowLevelsPanel(bool asSelector = false)
     {
         _showingLevelsPanel = true;
         EnsureGraphCanvasVisible();
@@ -211,14 +246,29 @@ public class GraphManage : MonoBehaviour
         levelsPanel.gameObject.SetActive(true);
         levelsPanel.transform.SetAsLastSibling();
 
-        if (host != null)
+        if (asSelector)
         {
+            HideLevelsContinueOverlay();
+            levelsPanel.CellClicked = OnLevelChosen;
+            levelsPanel.SetSelectable(true);
+        }
+        else if (host != null)
+        {
+            levelsPanel.SetSelectable(false);
             levelsContinueButton = EnsureLevelsContinueOverlay();
             WireLevelsContinueButton();
             StartCoroutine(BringLevelsContinueToFront());
         }
 
         RefreshLevelsPanelRanks();
+    }
+
+    void OnLevelChosen(int level)
+    {
+        PlayerPrefsHolder.Level = level;
+        PlayerPrefsHolder.ShowLevelSelectOnLoad = false;
+        Time.timeScale = 1f;
+        SceneManager.LoadScene("Main");
     }
 
     IEnumerator BringLevelsContinueToFront()
@@ -434,7 +484,7 @@ public class GraphManage : MonoBehaviour
 
     public void OnDebriefContinueClick()
     {
-        ShowLevelsPanel();
+        ShowLevelSelect();
     }
 
     void HideLevelsPanel()
