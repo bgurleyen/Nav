@@ -45,6 +45,7 @@ public class Calculator : MonoBehaviour
     public Button FUP_Button, FDown_Button;
     private int increasedSpeed, excessSpeedCo = 0;
     public static int Flap_Idx = 0;
+    private const int MaxFlapIdx = 8; // Mf[8]=f40, Fps[8]=86°
     private float SpeedTime;
     public Text windTxt;
     public static string CWind;
@@ -779,11 +780,10 @@ public class Calculator : MonoBehaviour
     }
     public void FUP_Click()
     {
-        if (CAltitude < 20000)
+        if (CAltitude < 20000 && Flap_Idx < MaxFlapIdx)
         {
             Flap_Idx += 1;
             SetFlaps();
-            if (Flap_Idx > 7) Flap_Idx = 7;
 
             MMVibrationManager.Haptic(HapticTypes.MediumImpact);
         }

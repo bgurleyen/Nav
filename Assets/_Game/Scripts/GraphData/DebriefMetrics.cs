@@ -1,11 +1,7 @@
-using System;
-using System.Collections.Generic;
 using UnityEngine;
 
 public static class DebriefMetrics
 {
-    public const double DistanceSampleNm = 0.1;
-
     public struct ColumnValues
     {
         public string Me;
@@ -13,12 +9,7 @@ public static class DebriefMetrics
         public string Best;
     }
 
-    public static void LogPanel(
-        DDL_data me,
-        L_data average,
-        L_data best,
-        int? rank,
-        int totalPlayers)
+    public static void LogPanel(LevelStat me, LevelStat average, LevelStat best, int? rank, int totalPlayers)
     {
         if (me == null)
             return;
@@ -36,173 +27,71 @@ public static class DebriefMetrics
             $"[Debrief] Remaining Fuel={FormatFuel(me.remainingFuel)} Rank={FormatRank(rank, totalPlayers)}");
     }
 
-    public static ColumnValues BuildAverageAltitude(DDL_data me, L_data best, L_data average)
+    public static ColumnValues BuildAverageAltitude(LevelStat me, LevelStat best, LevelStat average)
     {
         return new ColumnValues
         {
-            Me = FormatAltitude(Average(me?.altitude)),
-            Average = FormatAltitude(Average(average?.altitude)),
-            Best = FormatAltitude(Average(best?.altitude)),
+            Me = FormatAltitude(me?.averageAltitude),
+            Average = FormatAltitude(average?.averageAltitude),
+            Best = FormatAltitude(best?.averageAltitude),
         };
     }
 
-    public static ColumnValues BuildLgAltitude(DDL_data me, L_data best, L_data average)
+    public static ColumnValues BuildLgAltitude(LevelStat me, LevelStat best, LevelStat average)
     {
         return new ColumnValues
         {
-            Me = FormatAltitude(TransitionAltitude(me?.altitude, me?.landingGear)),
-            Average = FormatAltitude(TransitionAltitude(average?.altitude, average?.landingGear)),
-            Best = FormatAltitude(TransitionAltitude(best?.altitude, best?.landingGear)),
+            Me = FormatAltitude(me?.lgAltitude),
+            Average = FormatAltitude(average?.lgAltitude),
+            Best = FormatAltitude(best?.lgAltitude),
         };
     }
 
-    public static ColumnValues BuildAverageFlapsAltitude(DDL_data me, L_data best, L_data average)
+    public static ColumnValues BuildAverageFlapsAltitude(LevelStat me, LevelStat best, LevelStat average)
     {
         return new ColumnValues
         {
-            Me = FormatAltitude(AverageFlapTransitionAltitude(me?.altitude, me?.flap)),
-            Average = FormatAltitude(AverageFlapTransitionAltitude(average?.altitude, average?.flap)),
-            Best = FormatAltitude(AverageFlapTransitionAltitude(best?.altitude, best?.flap)),
+            Me = FormatAltitude(me?.averageFlapAltitude),
+            Average = FormatAltitude(average?.averageFlapAltitude),
+            Best = FormatAltitude(best?.averageFlapAltitude),
         };
     }
 
-    public static ColumnValues BuildSpeedBrakeUsage(DDL_data me, L_data best, L_data average)
+    public static ColumnValues BuildSpeedBrakeUsage(LevelStat me, LevelStat best, LevelStat average)
     {
         return new ColumnValues
         {
-            Me = FormatDuration(TotalSpeedBrakeSeconds(me?.speedBrake, me?.speed)),
-            Average = FormatDuration(TotalSpeedBrakeSeconds(average?.speedBrake, average?.speed)),
-            Best = FormatDuration(TotalSpeedBrakeSeconds(best?.speedBrake, best?.speed)),
+            Me = FormatDuration(me?.speedBrakeSeconds),
+            Average = FormatDuration(average?.speedBrakeSeconds),
+            Best = FormatDuration(best?.speedBrakeSeconds),
         };
-    }
-
-    public static L_data BuildAverageProfile(DDL_data me, List<S_data> averageRawData)
-    {
-        var averageData = new L_data
-        {
-            altitude = new List<double>(),
-            speed = new List<double>(),
-            flap = new List<double>(),
-            speedBrake = new List<double>(),
-            landingGear = new List<double>(),
-            distance = new List<double>(),
-        };
-
-        if (averageRawData == null)
-            return averageData;
-
-        for (int i = 0; i < averageRawData.Count; i++)
-        {
-            S_data point = averageRawData[i];
-            averageData.altitude.Add(point.altitude);
-            averageData.speed.Add(Math.Floor(point.speed / 10.0) * 10.0);
-            averageData.landingGear.Add(point.landingGear);
-            averageData.flap.Add(point.flap);
-            averageData.speedBrake.Add(point.speedBrake);
-            averageData.distance.Add(
-                point.distance > 0 || i == 0
-                    ? point.distance
-                    : me?.distance != null && i < me.distance.Count
-                        ? me.distance[i]
-                        : Math.Round(i * DistanceSampleNm, 1));
-        }
-
-        return averageData;
     }
 
     public static string FormatFuel(double tons) => $"{tons:F2} T";
 
     public static string FormatRank(int? rank, int totalPlayers)
     {
-        if (rank.HasValue)
+        if (rank.HasValue && rank.Value > 0)
             return $"#{rank.Value}";
 
         return "—";
     }
 
-    static double? Average(IList<double> values)
-    {
-        if (values == null || values.Count == 0)
-            return null;
-
-        double sum = 0;
-        for (int i = 0; i < values.Count; i++)
-            sum += values[i];
-
-        return sum / values.Count;
-    }
-
-    static double? TransitionAltitude(IList<double> altitude, IList<double> signal)
-    {
-        if (altitude == null || signal == null || altitude.Count == 0 || signal.Count != altitude.Count)
-            return null;
-
-        for (int i = 1; i < signal.Count; i++)
-        {
-            if (signal[i] > 0.5 && signal[i - 1] <= 0.5)
-                return altitude[i];
-        }
-
-        return null;
-    }
-
-    static double? AverageFlapTransitionAltitude(IList<double> altitude, IList<double> flap)
-    {
-        if (altitude == null || flap == null || altitude.Count == 0 || flap.Count != altitude.Count)
-            return null;
-
-        double sum = 0;
-        int count = 0;
-
-        for (int i = 1; i < flap.Count; i++)
-        {
-            if (Math.Abs(flap[i] - flap[i - 1]) < 0.5 || flap[i] <= 0.5)
-                continue;
-
-            sum += altitude[i];
-            count++;
-        }
-
-        if (count == 0)
-            return null;
-
-        return sum / count;
-    }
-
-    static double TotalSpeedBrakeSeconds(IList<double> speedBrake, IList<double> speed)
-    {
-        if (speedBrake == null || speed == null || speedBrake.Count == 0 || speed.Count != speedBrake.Count)
-            return 0;
-
-        double totalSeconds = 0;
-        for (int i = 0; i < speedBrake.Count; i++)
-        {
-            if (speedBrake[i] <= 0.5)
-                continue;
-
-            double speedKnots = Math.Max(1, speed[i]);
-            totalSeconds += DistanceSampleNm / speedKnots * 3600.0;
-        }
-
-        return totalSeconds;
-    }
-
     static string FormatAltitude(double? feet)
     {
-        if (!feet.HasValue)
+        if (!feet.HasValue || feet.Value <= 0)
             return "—";
 
         return $"{feet.Value:N0} FT";
     }
 
-    static string FormatDuration(double totalSeconds)
+    static string FormatDuration(int? totalSeconds)
     {
-        if (totalSeconds <= 0)
+        if (!totalSeconds.HasValue || totalSeconds.Value <= 0)
             return "0:00";
 
-        int total = (int)Math.Round(totalSeconds);
-        int minutes = total / 60;
-        int seconds = total % 60;
+        int minutes = totalSeconds.Value / 60;
+        int seconds = totalSeconds.Value % 60;
         return $"{minutes}:{seconds:D2}";
     }
 }

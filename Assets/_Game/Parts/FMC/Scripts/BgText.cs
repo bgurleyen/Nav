@@ -82,6 +82,15 @@ public class BgText : MonoBehaviour
 
     public string GetText() => m_text;
 
+    // Currently displayed text with rich-text tags stripped (empty when cleared).
+    public string GetCurrentText()
+    {
+        if (label == null || string.IsNullOrEmpty(label.text))
+            return string.Empty;
+
+        return label.GetParsedText();
+    }
+
     public struct TextBuilder
     {
         public TextState State;

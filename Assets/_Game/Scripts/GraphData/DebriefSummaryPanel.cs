@@ -568,7 +568,7 @@ public class DebriefSummaryPanel : MonoBehaviour
                 : $"LEVEL {level}";
     }
 
-    public void BindAll(DDL_data me, L_data average, L_data best, int? rank, int totalPlayers)
+    public void BindAll(LevelStat me, LevelStat average, LevelStat best, int? rank, int totalPlayers)
     {
         BindColumn(me, average, best);
         BindScore(me?.remainingFuel ?? 0, rank, totalPlayers);
@@ -588,7 +588,7 @@ public class DebriefSummaryPanel : MonoBehaviour
         }
     }
 
-    void BindColumn(DDL_data me, L_data average, L_data best)
+    void BindColumn(LevelStat me, LevelStat average, LevelStat best)
     {
         DebriefMetrics.ColumnValues[] values =
         {

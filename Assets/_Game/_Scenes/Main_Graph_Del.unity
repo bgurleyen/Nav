@@ -6833,8 +6833,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 44918a2a180609b49b2450df5e7051d7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bestPlayerProgress: []
-  averagePlayerProgress: []
+  userId: 
 --- !u!4 &946240764
 Transform:
   m_ObjectHideFlags: 0
@@ -6863,17 +6862,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   firestoreController: {fileID: 946240763}
-  m_data:
-    altitude: []
-    speed: []
-    flap: []
-    speedBrake: []
-    landingGear: []
-    verticalMode: []
-    fuelFlow: []
-    distance: []
-    remainingFuel: 0
-    time: []
 --- !u!114 &946240766
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -9984,7 +9972,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &1368830649
 RectTransform:
   m_ObjectHideFlags: 0
@@ -11245,7 +11233,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!224 &1477700002
 RectTransform:
   m_ObjectHideFlags: 0
@@ -11319,44 +11307,83 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _cells:
   - text: {fileID: 1742454862}
+    cell: {fileID: 0}
   - text: {fileID: 1377968021}
+    cell: {fileID: 0}
   - text: {fileID: 1412885472}
+    cell: {fileID: 0}
   - text: {fileID: 1802557131}
+    cell: {fileID: 0}
   - text: {fileID: 665228842}
+    cell: {fileID: 0}
   - text: {fileID: 1700008759}
+    cell: {fileID: 0}
   - text: {fileID: 99676326}
+    cell: {fileID: 0}
   - text: {fileID: 259924165}
+    cell: {fileID: 0}
   - text: {fileID: 532812449}
+    cell: {fileID: 0}
   - text: {fileID: 330914020}
+    cell: {fileID: 0}
   - text: {fileID: 1795964123}
+    cell: {fileID: 0}
   - text: {fileID: 223669554}
+    cell: {fileID: 0}
   - text: {fileID: 940388579}
+    cell: {fileID: 0}
   - text: {fileID: 294314873}
+    cell: {fileID: 0}
   - text: {fileID: 1338003218}
+    cell: {fileID: 0}
   - text: {fileID: 526455890}
+    cell: {fileID: 0}
   - text: {fileID: 1366177274}
+    cell: {fileID: 0}
   - text: {fileID: 201448211}
+    cell: {fileID: 0}
   - text: {fileID: 1984301659}
+    cell: {fileID: 0}
   - text: {fileID: 1107962458}
+    cell: {fileID: 0}
   - text: {fileID: 1220208039}
+    cell: {fileID: 0}
   - text: {fileID: 443130224}
+    cell: {fileID: 0}
   - text: {fileID: 717405598}
+    cell: {fileID: 0}
   - text: {fileID: 1383391696}
+    cell: {fileID: 0}
   - text: {fileID: 465124720}
+    cell: {fileID: 0}
   - text: {fileID: 557053336}
+    cell: {fileID: 0}
   - text: {fileID: 2045129483}
+    cell: {fileID: 0}
   - text: {fileID: 103642767}
+    cell: {fileID: 0}
   - text: {fileID: 1032215030}
+    cell: {fileID: 0}
   - text: {fileID: 1774242104}
+    cell: {fileID: 0}
   - text: {fileID: 432502232}
+    cell: {fileID: 0}
   - text: {fileID: 1819568316}
+    cell: {fileID: 0}
   - text: {fileID: 1910654705}
+    cell: {fileID: 0}
   - text: {fileID: 1405200736}
+    cell: {fileID: 0}
   - text: {fileID: 1282037569}
+    cell: {fileID: 0}
   - text: {fileID: 516374678}
+    cell: {fileID: 0}
   - text: {fileID: 1597274219}
+    cell: {fileID: 0}
   - text: {fileID: 1039806729}
+    cell: {fileID: 0}
   - text: {fileID: 1704270201}
+    cell: {fileID: 0}
 --- !u!114 &1477700006
 MonoBehaviour:
   m_ObjectHideFlags: 0

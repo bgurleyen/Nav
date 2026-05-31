@@ -29,9 +29,10 @@ public class GraphManage : MonoBehaviour
         "LineChart_Smooth",
     };
 
-    DDL_data _meData;
-    L_data _averageData;
-    L_data _bestData;
+    LevelStat _meData;
+    LevelStat _averageData;
+    LevelStat _bestData;
+    int _rank;
     int _totalPlayers;
     bool _debriefLogged;
     bool _showingLevelsPanel;
@@ -523,27 +524,28 @@ public class GraphManage : MonoBehaviour
             return;
         }
 
-        DDL_data flightData = dataManage.CaptureFlightSnapshot();
-        dataManage.PushFlightToCloud(flightData, OnProgressStatsSaved);
+        LevelStat flightResult = dataManage.CaptureFlightResult();
+        dataManage.PushToCloud(flightResult, OnProgressStatsSaved);
 
         mainGroup.alpha = 0;
         graphGroup.alpha = 1;
         graphGroup.blocksRaycasts = true;
         graphGroup.interactable = true;
-        PresentDebrief(flightData);
+        PresentDebrief(flightResult);
     }
 
-    void PresentDebrief(DDL_data flightData)
+    void PresentDebrief(LevelStat flightResult)
     {
-        _meData = flightData;
+        _meData = flightResult;
         _averageData = null;
         _bestData = null;
+        _rank = 0;
         _totalPlayers = 0;
         _debriefLogged = false;
 
         ShowDebriefUi();
 
-        if (!DataManage.HasValidDistanceData(flightData))
+        if (flightResult == null)
         {
             Debug.LogWarning($"[Debrief] {PlayerPrefsHolder.LevelLabel}: invalid flight data.");
             return;
@@ -551,17 +553,18 @@ public class GraphManage : MonoBehaviour
 
         RefreshDebriefPanel();
 
-        dataManage.firestoreController.UpdateBestStats(flightData, _ =>
+        if (!PlayerPrefsHolder.TryGetFirestoreLevelKey(out string levelKey))
         {
-            _bestData = ResolveBestProfile(flightData);
-            RefreshDebriefPanel();
-        });
+            RefreshDebriefPanel(preferLog: true);
+            return;
+        }
 
-        dataManage.firestoreController.UpdateAverageStats(flightData, _ =>
+        dataManage.firestoreController.FetchLevelAggregate(levelKey, flightResult.remainingFuel, aggregate =>
         {
-            List<S_data> averageRawData = dataManage.firestoreController.averagePlayer;
-            _averageData = DebriefMetrics.BuildAverageProfile(flightData, averageRawData);
-            _totalPlayers = dataManage.firestoreController.myUserData?.average_stats?.another?.count ?? 0;
+            _bestData = aggregate.best;
+            _averageData = aggregate.average;
+            _rank = aggregate.rank;
+            _totalPlayers = aggregate.totalPlayers;
             RefreshDebriefPanel(preferLog: true);
         });
     }
@@ -576,7 +579,7 @@ public class GraphManage : MonoBehaviour
 
         debriefPanel.BindSubtitle(PlayerPrefsHolder.ActiveLevel);
 
-        int? rank = TryEstimateRank(_meData.remainingFuel, _bestData, _totalPlayers);
+        int? rank = _rank > 0 ? _rank : (int?)null;
         debriefPanel.BindAll(_meData, _averageData, _bestData, rank, _totalPlayers);
 
         continueButton = debriefPanel.EnsureContinueButton();
@@ -587,38 +590,6 @@ public class GraphManage : MonoBehaviour
             DebriefMetrics.LogPanel(_meData, _averageData, _bestData, rank, _totalPlayers);
             _debriefLogged = true;
         }
-    }
-
-    static int? TryEstimateRank(double remainingFuel, L_data best, int totalPlayers)
-    {
-        if (totalPlayers <= 0)
-            return null;
-
-        if (best == null)
-            return null;
-
-        if (remainingFuel >= best.remainingFuel - 0.01)
-            return 1;
-
-        return null;
-    }
-
-    L_data ResolveBestProfile(DDL_data flightData)
-    {
-        L_data best = dataManage.firestoreController.GetBestLevelProfile();
-        if (DataManage.HasValidDistanceData(best))
-            return best;
-
-        L_data fromBestPlayer = dataManage.firestoreController.GetBestPlayerLevelData(PlayerPrefsHolder.ActiveLevel);
-        DataManage.TryNormalizeProfile(fromBestPlayer);
-        if (DataManage.HasValidDistanceData(fromBestPlayer))
-            return fromBestPlayer;
-
-        double bestFuel = dataManage.firestoreController.myUserData?.best_stats?.remainingFuel ?? 0;
-        if (flightData != null && bestFuel > 0 && flightData.remainingFuel >= bestFuel - 0.01)
-            return DataManage.ToLData(flightData);
-
-        return best;
     }
 
     public void OnContinueButtonClick()
