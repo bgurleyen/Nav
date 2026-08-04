@@ -122,7 +122,7 @@ public class LegsScreen : ScreenBase {
         if (_scratchPadInterpreter.IsAltitudeRegulation(out var regulation)) {
             _simulation.ExecuteAddAltitudeRegulation(new AddAltitudeRegulationCommand {
                 NodeId = clickedInfo.LinkedId,
-                Regulation = regulation
+                Regulation = Calculator.NormalizeAltitudeRegulationToFeet(regulation)
             });
         }
 
@@ -490,7 +490,8 @@ public class LegsScreen : ScreenBase {
                 var value = _scratchPadBuffer.Substring(1, _scratchPadBuffer.Length - 1);
 
                 if (DataHandler.ParseAltRegulation(value, out _, out _, out _)) {
-                    _scratchPadInterpreter.AltRegulation = value;
+                    _scratchPadInterpreter.AltRegulation =
+                        Calculator.NormalizeAltitudeRegulationToFeet(value);
                     _scratchPadInterpreter.SpeedRegulation = null;
                 }
                 else {
@@ -513,16 +514,18 @@ public class LegsScreen : ScreenBase {
                     _scratchPadBuffer.Substring(slashIndex + 1, _scratchPadBuffer.Length - (slashIndex + 1));
                 if (int.TryParse(speed, out var speedRegulation) &&
                     DataHandler.ParseAltRegulation(altRegulation, out _, out _, out _)) {
-                    _scratchPadInterpreter.AltRegulation = altRegulation;
+                    _scratchPadInterpreter.AltRegulation =
+                        Calculator.NormalizeAltitudeRegulationToFeet(altRegulation);
                     _scratchPadInterpreter.SpeedRegulation = speedRegulation;
                 }
                 else {
                     _scratchPadInterpreter.IsValid = false;
                 }
             }
-            else if (int.TryParse(_scratchPadBuffer, out _)) {
-                // can be altitude regulation
-                _scratchPadInterpreter.AltRegulation = _scratchPadBuffer;
+            else if (DataHandler.ParseAltRegulation(_scratchPadBuffer, out _, out _, out _)) {
+                // altitude regulation (FL shorthand or feet, with optional A/B)
+                _scratchPadInterpreter.AltRegulation =
+                    Calculator.NormalizeAltitudeRegulationToFeet(_scratchPadBuffer);
             }
         }
     }

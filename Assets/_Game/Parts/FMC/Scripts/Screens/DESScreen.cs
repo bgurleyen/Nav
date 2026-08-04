@@ -26,8 +26,6 @@ public class DESScreen : ScreenBase
     {
         lastHRight.text = "";
         lastHLeft.text = "";
-
-        _econSpeed_Mach.SetAsDefault($"??/??");
     }
 
     public override void Show()
@@ -62,13 +60,16 @@ public class DESScreen : ScreenBase
            pageTitle: "DES",
            currentPage: 0, totalPages: 1);
 
-        var fmc = infoFMC.Instance.Fmc;
         var des = infoFMC.Instance.Fmc.Des;
 
         _rwAltitude.text = des.RWAltitude;
+        if (!Session.IsMod)
+        {
+            _econSpeed_Mach.SetAsDefault(string.IsNullOrEmpty(des.EconSpeed) ? "??/??" : des.EconSpeed);
+        }
         _wptAltFix.text = des.WptAltFix;
 
-        _arrTansition.text = "FL100";
+        _arrTansition.text = Calculator.FormatFmcAltitude(Calculator.TransitionAltitudeFeet);
         _fpa.text = des.FPA;
         _vb.text = des.VB;
         _vs.text = des.VS;
@@ -85,7 +86,8 @@ public class DESScreen : ScreenBase
                     if (ScratchPadInterpreter.IsDeletePending(_scratchPadBuffer))
                     {
                         _scratchPadBuffer = string.Empty;
-                        _econSpeed_Mach.SetAsDefault($"??/??");
+                        var econ = infoFMC.Instance.Fmc.Des.EconSpeed;
+                        _econSpeed_Mach.SetAsDefault(string.IsNullOrEmpty(econ) ? "??/??" : econ);
                         ClearScratchPad();
                         break;
                     }
@@ -275,7 +277,8 @@ public class DESScreen : ScreenBase
 
             if (DataHandler.ParseAltRegulation(value, out _, out _, out _))
             {
-                _scratchPadInterpreter.AltRegulation = value;
+                _scratchPadInterpreter.AltRegulation =
+                    Calculator.NormalizeAltitudeRegulationToFeet(value);
                 _scratchPadInterpreter.SpeedRegulation = null;
             }
             else
@@ -303,7 +306,8 @@ public class DESScreen : ScreenBase
             if (int.TryParse(speed, out var speedRegulation) &&
                 DataHandler.ParseAltRegulation(altRegulation, out _, out _, out _))
             {
-                _scratchPadInterpreter.AltRegulation = altRegulation;
+                _scratchPadInterpreter.AltRegulation =
+                    Calculator.NormalizeAltitudeRegulationToFeet(altRegulation);
                 _scratchPadInterpreter.SpeedRegulation = speedRegulation;
             }
             else
@@ -311,10 +315,10 @@ public class DESScreen : ScreenBase
                 _scratchPadInterpreter.IsValid = false;
             }
         }
-        else if (int.TryParse(_scratchPadBuffer, out _))
+        else if (DataHandler.ParseAltRegulation(_scratchPadBuffer, out _, out _, out _))
         {
-            // can be altitude regulation
-            _scratchPadInterpreter.AltRegulation = _scratchPadBuffer;
+            _scratchPadInterpreter.AltRegulation =
+                Calculator.NormalizeAltitudeRegulationToFeet(_scratchPadBuffer);
         }
         else
         {

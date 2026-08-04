@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using Lean.Pool;
@@ -50,7 +50,6 @@ public class Drawer : MonoBehaviour
 
     [SerializeField] private float _debugStarDistance = 1.3f;
 
-    [SerializeField] private float _topOfDescentOffsetNm = 10f;
     [SerializeField] private float _topOfDescentRightOffsetNm = 1f;
 
     private void Awake()
@@ -378,17 +377,13 @@ public class Drawer : MonoBehaviour
             return;
         }
 
-        var startPoint = route.Points[0].CartesianPosition;
-        var firstLegDegrees = route.Points[1].Degrees;
-        var topOfDescentPosition = Geometry.GetNextPosition(startPoint, _topOfDescentOffsetNm, firstLegDegrees);
-
-        var firstLegDirection = (route.Points[1].CartesianPosition - startPoint).normalized;
-        if (firstLegDirection == Vector2.zero)
+        var cruiseAltitude = ResolveCruiseAltitude(route);
+        if (!Calculator.TryFindVdiCenterCrossing(route, cruiseAltitude, out var topOfDescentPosition, out var legDirection))
         {
-            firstLegDirection = Geometry.GetDirectionFromHeading(firstLegDegrees);
+            return;
         }
 
-        var rightOffset = new Vector2(firstLegDirection.y, -firstLegDirection.x) * _topOfDescentRightOffsetNm;
+        var rightOffset = new Vector2(legDirection.y, -legDirection.x) * _topOfDescentRightOffsetNm;
         var shiftedTopOfDescentPosition = topOfDescentPosition + rightOffset;
 
         var todMarker = otherAircraftsPool.Spawn(Vector3.zero, Quaternion.identity, dynamicHolderOtheriarcrafts)
@@ -396,6 +391,15 @@ public class Drawer : MonoBehaviour
         todMarker.name = "Top Of Descent";
         todMarker.Init("●TOD", Color.green, 0f);
         todMarker.transform.localPosition = shiftedTopOfDescentPosition.ToDisplay();
+    }
+
+    private static double ResolveCruiseAltitude(RouteScriptableObject route)
+    {
+        // FMC CRZ page altitude drives TOD. Cleared to 0 when VNAV descent starts.
+        if (Session.CurrentLevel?.levelInfo != null && Session.CurrentLevel.levelInfo.CrzAltitude > 0)
+            return Session.CurrentLevel.levelInfo.CrzAltitude;
+
+        return 0;
     }
 
     private void DisplayFixCircles()

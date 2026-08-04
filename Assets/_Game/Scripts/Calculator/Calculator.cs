@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections;
+using System.Text;
+using System.Text.RegularExpressions;
 using JetBrains.Annotations;
 using MoreMountains.NiceVibrations;
 using Navigation;
+using Navigation.Data;
 using TMPro;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 using Unyawn.Utils;
@@ -38,6 +40,7 @@ public class Calculator : MonoBehaviour
 
     public static int CTrack, Track, RTrack;
     private double CMach, RMach, VNAV_VS;
+    private bool _fmcCruiseClearedOnVnavDescent;
     public static float TAS, GS;
     public Toggle co;//Landing Gear ,Speed Brake;
     public static bool LGDown = false;
@@ -157,9 +160,6 @@ public class Calculator : MonoBehaviour
     private static float[] Pressure = new float[9]
     { 0.1852f, 0.2352f, 0.2968f, 0.3709f, 0.4594f, 0.5642f, 0.6856f, 0.8320f, 1f }; //40000 to 0
 
-    private static float[] SoundSpeed = new float[9]
-        { 575.34f, 576.22f, 589.2f, 601.77f, 614.1f, 626.27f, 638.17f, 649.13f, 663f }; //40000 to 0
-
     public static Calculator Instance;
 
     public float GetBananaPosition//Edit
@@ -208,16 +208,16 @@ public class Calculator : MonoBehaviour
         RAltitude = (int)CAltitude;
         RSpeed = (int)CSpeed;
         RVS = CVS;
+        _approachEndTriggered = false;
         txtRAltitude.text = "" + RAltitude;
         txtRAltitude_overTape.text = txtRAltitude.text;
         txtCAltitude.text = "" + (int)CAltitude;
         txtMeter.text = "" + (int)(CAltitude / 3.28084) + "M";
-        txtCSpeed.text = "" + CSpeed;
-        txtRSpeed.text = "" + RSpeed;
-        txtRSpeed_overTape.text = txtRSpeed.text;
-
+        txtCSpeed.text = "" + (int)CSpeed;
         txtCVS.text = "";
         FMAarmed.text = "";
+
+        ApplyInitialSpeedDisplayForAltitude();
 
         Invoke(nameof(VS_Equalize), 1f);
         Invoke(nameof(Speed_Equalize), 0.1f);
@@ -236,6 +236,48 @@ public class Calculator : MonoBehaviour
             levelInfo.ShowInfo();
         else
             Debug.LogWarning("Calculator.Start: LevelStartInformation not found in scene.");
+    }
+
+    /// <summary>
+    /// MCP selected speed + PFD Mach window match start altitude (Mach at/above schedule CO).
+    /// IAS values (CSpeed/RSpeed) stay knots for physics; only display / CO toggle change.
+    /// </summary>
+    private void ApplyInitialSpeedDisplayForAltitude()
+    {
+        CMach = Speed2Mach(CSpeed, CAltitude);
+        if (txtMach != null)
+            txtMach.text = CMach > 0.4 ? FormatMach(CMach) : "GS " + GS;
+
+        double coAlt = GetCoAltitudeFeet();
+        bool aboveCo = CAltitude >= coAlt;
+        co.enabled = aboveCo;
+
+        if (aboveCo)
+        {
+            RMach = Speed2Mach(RSpeed, CAltitude);
+            if (!co.isOn)
+            {
+                // Fires co_Change → Mach window text + VS matrix
+                co.isOn = true;
+            }
+            else
+            {
+                txtRSpeed.text = FormatMach(RMach);
+                txtRSpeed_overTape.text = txtRSpeed.text;
+            }
+        }
+        else
+        {
+            if (co.isOn)
+            {
+                co.isOn = false;
+            }
+            else
+            {
+                txtRSpeed.text = "" + RSpeed;
+                txtRSpeed_overTape.text = txtRSpeed.text;
+            }
+        }
     }
 
     private IEnumerator ExecuteEachFrameSecond()
@@ -257,12 +299,12 @@ public class Calculator : MonoBehaviour
     {
         while (true)
         {
+            FlyVerticalPath();
             InterpolateVS();
             InterpolateLvlChg();
             SetFMA();
             FuelandMach();
             DrawVDI();
-            FlyVerticalPath();
             DisplayWindElements();
             CheckStabilization();
   
@@ -283,25 +325,29 @@ public class Calculator : MonoBehaviour
         {
             int F = 8 - Mathf.FloorToInt((float)Altitude / 5000);
 
+            // VNAV: pitch/energy follow commanded path VS (RVS), not lagged CVS — path first.
+            double vsRef = (Session.State.VNAV && !Session.State.GSCaptured) ? RVS : CVS;
+
             int i = 0;//Calculate limit VS
             double s1 = (M[F, 1, i] - M[F, 3, i]) / (M[F, 0, 0] - M[F, 2, 0]) * (RSpeed - M[F, 2, 0]) + M[F, 3, i];
             double s2 = (M[F - 1, 1, i] - M[F - 1, 3, i]) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (RSpeed - M[F - 1, 2, 0]) + M[F - 1, 3, i];
             double limitVS = (s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2;
-            if (CVS > limitVS)
+            bool pathWithinIdle = vsRef > limitVS;
+            if (pathWithinIdle)
             {    // Normal VS mode
                 for (i = 1; i < 4; i++)
                 {
-                    vv1 = (M[F, 0, i] - M[F, 1, i]) / -M[F, 1, 0] * (CVS - M[F, 1, 0]) + M[F, 1, i];
-                    vv2 = (M[F, 2, i] - M[F, 3, i]) / -M[F, 3, 0] * (CVS - M[F, 3, 0]) + M[F, 3, i];
-                    vv3 = (M[F - 1, 0, i] - M[F - 1, 1, i]) / -M[F - 1, 1, 0] * (CVS - M[F - 1, 1, 0]) + M[F - 1, 1, i];
-                    vv4 = (M[F - 1, 2, i] - M[F - 1, 3, i]) / -M[F - 1, 3, 0] * (CVS - M[F - 1, 3, 0]) + M[F - 1, 3, i];
+                    vv1 = (M[F, 0, i] - M[F, 1, i]) / -M[F, 1, 0] * (vsRef - M[F, 1, 0]) + M[F, 1, i];
+                    vv2 = (M[F, 2, i] - M[F, 3, i]) / -M[F, 3, 0] * (vsRef - M[F, 3, 0]) + M[F, 3, i];
+                    vv3 = (M[F - 1, 0, i] - M[F - 1, 1, i]) / -M[F - 1, 1, 0] * (vsRef - M[F - 1, 1, 0]) + M[F - 1, 1, i];
+                    vv4 = (M[F - 1, 2, i] - M[F - 1, 3, i]) / -M[F - 1, 3, 0] * (vsRef - M[F - 1, 3, 0]) + M[F - 1, 3, i];
                     s1 = (vv1 - vv2) / (M[F, 0, 0] - M[F, 2, 0]) * (CSpeed - M[F, 2, 0]) + vv2;
                     s2 = (vv3 - vv4) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (CSpeed - M[F - 1, 2, 0]) + vv4;
                     a[i - 1] = (s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2;
                 }
             }
             else
-            {  // Increased Speed due to excess vertical speed VS mode 
+            {  // Path/VS steeper than idle: raise speed target — path over deceleration
                 for (i = 1; i < 4; i++)
                 {
                     s1 = (M[F, 1, i] - M[F, 3, i]) / (M[F, 0, 0] - M[F, 2, 0]) * (RSpeed - M[F, 2, 0]) + M[F, 3, i];
@@ -309,11 +355,12 @@ public class Calculator : MonoBehaviour
                     a[i - 1] = (s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2;
                 }
                 i = 0; // Find speed for Current VS on idle
-                vv1 = (M[F, 0, i] - M[F, 2, i]) / (M[F, 1, 0] - M[F, 3, 0]) * (CVS - M[F, 3, 0]) + M[F, 2, i];
-                vv2 = (M[F - 1, 0, i] - M[F - 1, 2, i]) / (M[F - 1, 1, 0] - M[F - 1, 3, 0]) * (CVS - M[F - 1, 3, 0]) + M[F - 1, 2, i];
+                vv1 = (M[F, 0, i] - M[F, 2, i]) / (M[F, 1, 0] - M[F, 3, 0]) * (vsRef - M[F, 3, 0]) + M[F, 2, i];
+                vv2 = (M[F - 1, 0, i] - M[F - 1, 2, i]) / (M[F - 1, 1, 0] - M[F - 1, 3, 0]) * (vsRef - M[F - 1, 3, 0]) + M[F - 1, 2, i];
                 increasedSpeed = (int)((vv1 - vv2) / -5000f * (Altitude - (8 - F + 1) * 5000) + vv2);
             }
-            if (RSpeed < CSpeed - 5)
+            // Idle only when decelerating AND path still within idle capability (path first).
+            if (RSpeed < CSpeed - 5 && pathWithinIdle)
             {
                 a[1] = M[8 - (int)(Altitude / 5000), 1, 2];
                 a[2] = M[8 - (int)(Altitude / 5000), 1, 3];
@@ -375,9 +422,14 @@ public class Calculator : MonoBehaviour
 
             if ((RAltitude != CAltitude) || (Session.State.GSCaptured))
             {
-                if (RVS < CVS) CVS -= 10 * Session.Settings.SpeedMultiplier;
-                if (CVS < RVS) CVS += 10 * Session.Settings.SpeedMultiplier;
-                if (Mathf.Abs(RVS - CVS) < 10 * Session.Settings.SpeedMultiplier) CVS = RVS;
+                int step = 10 * Session.Settings.SpeedMultiplier;
+                // VNAV path capture: close large VS errors faster so deviation correction bites sooner.
+                if (Session.State.VNAV && Mathf.Abs(RVS - CVS) > 400)
+                    step = 40 * Session.Settings.SpeedMultiplier;
+
+                if (RVS < CVS) CVS -= step;
+                if (CVS < RVS) CVS += step;
+                if (Mathf.Abs(RVS - CVS) < step) CVS = RVS;
                 if ((Mathf.Abs(RVS) > 1000) && (Mathf.Abs(RAltitude - (int)CAltitude) < Mathf.Abs(CVS / 2f) - 600))
                 {
                     RVS = RVS / Mathf.Abs(RVS) * 1000;
@@ -416,7 +468,9 @@ public class Calculator : MonoBehaviour
                         txtRAltitude_overTape.text = txtRAltitude.text;
                         CVS = 0;
                         RVS = 0;
-                        Session.State.AutoSetAH(true);
+                        // VNAV: hold MCP as VNAV ALT (keep VNAV). Other modes → ALT HOLD.
+                        if (!Session.State.VNAV)
+                            Session.State.AutoSetAH(true);
                     }
                 }
                 txtCAltitude.text = "" + (int)(CAltitude / 10) * 10;
@@ -469,6 +523,328 @@ public class Calculator : MonoBehaviour
     }
 
 
+    /// <summary>Geometric vertical path slope used by VDI / TOD (~3° ⇒ 318 ft/NM).</summary>
+    public const double VdiPathFtPerNm = 318.0;
+
+    /// <summary>Altitude a VDI geometric path aims at for a regulated waypoint.</summary>
+    public static double GetVdiConstraintAltitude(RoutePoint point)
+    {
+        if (point == null)
+        {
+            return -1;
+        }
+
+        var alt = point.Altitude;
+        switch (point.AltitudeRegulation)
+        {
+            case RoutePoint.AltitudeFlags.Exact:
+                return alt.RestrictionExact;
+            case RoutePoint.AltitudeFlags.Below:
+                return alt.RestrictionBelow;
+            case RoutePoint.AltitudeFlags.Above:
+                return alt.RestrictionAbove > 0 ? alt.RestrictionAbove : alt.ComputedValue;
+            case RoutePoint.AltitudeFlags.AboveBelow:
+                if (alt.RestrictionBelow > 0)
+                {
+                    return alt.RestrictionBelow;
+                }
+
+                if (alt.RestrictionAbove > 0)
+                {
+                    return alt.RestrictionAbove;
+                }
+
+                return alt.ComputedValue;
+            default:
+                return alt.ComputedValue;
+        }
+    }
+
+    /// <summary>
+    /// Next altitude anchor ahead of the aircraft and along-track distance to it (NM).
+    /// Prefers real altitude restrictions; falls back to first ComputedValue &gt;= 0.
+    /// </summary>
+    public static bool TryGetNextVdiAnchor(RouteScriptableObject route, int passedNodeIndex,
+        double distanceLeftOnSegment, out double constraintAltitude, out double distanceToConstraintNm)
+    {
+        constraintAltitude = -1;
+        distanceToConstraintNm = 0;
+        if (route?.Points == null || passedNodeIndex < 0 || passedNodeIndex >= route.Points.Length - 1)
+        {
+            return false;
+        }
+
+        if (TryFindAnchor(route, passedNodeIndex, distanceLeftOnSegment, requireRegulation: true,
+                out constraintAltitude, out distanceToConstraintNm))
+        {
+            return true;
+        }
+
+        return TryFindAnchor(route, passedNodeIndex, distanceLeftOnSegment, requireRegulation: false,
+            out constraintAltitude, out distanceToConstraintNm);
+    }
+
+    private static bool TryFindAnchor(RouteScriptableObject route, int passedNodeIndex,
+        double distanceLeftOnSegment, bool requireRegulation,
+        out double constraintAltitude, out double distanceToConstraintNm)
+    {
+        constraintAltitude = -1;
+        distanceToConstraintNm = 0;
+        var dist = distanceLeftOnSegment;
+
+        for (var i = passedNodeIndex + 1; i < route.Points.Length; i++)
+        {
+            if (i > passedNodeIndex + 1)
+            {
+                dist += route.Points[i].Distance;
+            }
+
+            var point = route.Points[i];
+            if (requireRegulation && point.AltitudeRegulation == RoutePoint.AltitudeFlags.NotSet)
+            {
+                continue;
+            }
+
+            var cAlt = requireRegulation
+                ? GetVdiConstraintAltitude(point)
+                : point.Altitude.ComputedValue;
+            if (cAlt < 0)
+            {
+                continue;
+            }
+
+            constraintAltitude = cAlt;
+            distanceToConstraintNm = dist;
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Previous altitude regulation at or before passedNodeIndex, and along-track distance
+    /// from that waypoint to the aircraft (NM).
+    /// </summary>
+    public static bool TryGetPreviousVdiAnchor(RouteScriptableObject route, int passedNodeIndex,
+        double distanceLeftOnSegment, double segmentLength,
+        out double prevAltitude, out double distFromPrevToAircraftNm)
+    {
+        prevAltitude = -1;
+        distFromPrevToAircraftNm = 0;
+        if (route?.Points == null || passedNodeIndex < 0 || passedNodeIndex >= route.Points.Length)
+        {
+            return false;
+        }
+
+        var walked = Math.Max(0.0, segmentLength - distanceLeftOnSegment);
+        distFromPrevToAircraftNm = walked;
+
+        for (var i = passedNodeIndex; i >= 0; i--)
+        {
+            if (i < passedNodeIndex)
+            {
+                distFromPrevToAircraftNm += route.Points[i + 1].Distance;
+            }
+
+            if (route.Points[i].AltitudeRegulation == RoutePoint.AltitudeFlags.NotSet)
+            {
+                continue;
+            }
+
+            var alt = GetVdiConstraintAltitude(route.Points[i]);
+            if (alt < 0)
+            {
+                continue;
+            }
+
+            prevAltitude = alt;
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// VNAV/VDI path at aircraft: geometric 3° into the next constraint from cruise (TOD),
+    /// or a continuous connecting slope after a lower constraint was passed
+    /// (avoids pathTarget jumping above the aircraft and killing descent).
+    /// </summary>
+    public static bool TryComputeVnavPath(RouteScriptableObject route, int passedNodeIndex,
+        double distanceLeftOnSegment, double segmentLength, double startAltitude,
+        out double pathTarget, out double slopeFtPerNm, out double nextConstraintAlt)
+    {
+        pathTarget = -1;
+        slopeFtPerNm = VdiPathFtPerNm;
+        nextConstraintAlt = -1;
+
+        if (!TryGetNextVdiAnchor(route, passedNodeIndex, distanceLeftOnSegment,
+                out nextConstraintAlt, out var distToNext))
+        {
+            return false;
+        }
+
+        var useConnecting = TryGetPreviousVdiAnchor(route, passedNodeIndex, distanceLeftOnSegment, segmentLength,
+                                  out var prevAlt, out var distFromPrev)
+                              && prevAlt < startAltitude - 100.0
+                              && prevAlt > nextConstraintAlt;
+
+        if (useConnecting)
+        {
+            var totalPrevToNext = distFromPrev + distToNext;
+            if (totalPrevToNext < 1e-4)
+            {
+                pathTarget = nextConstraintAlt;
+                slopeFtPerNm = 0;
+                return true;
+            }
+
+            slopeFtPerNm = Math.Min(VdiPathFtPerNm, (prevAlt - nextConstraintAlt) / totalPrevToNext);
+            pathTarget = nextConstraintAlt + slopeFtPerNm * distToNext;
+            return true;
+        }
+
+        // Cruise → first descent constraint: fixed ~3° geometric path (TOD / early hold).
+        slopeFtPerNm = VdiPathFtPerNm;
+        pathTarget = nextConstraintAlt + VdiPathFtPerNm * distToNext;
+        return true;
+    }
+
+    /// <summary>
+    /// VDI path target: geometric 3° into next constraint from cruise, or continuous
+    /// constraint-to-constraint slope after a descent constraint was passed.
+    /// Falls back to segment linear.
+    /// </summary>
+    public static double ComputeVdiTarget(RouteScriptableObject route, int passedNodeIndex,
+        double distanceLeftOnSegment, double alt0, double alt1, double segmentLength, double startAltitude)
+    {
+        if (TryComputeVnavPath(route, passedNodeIndex, distanceLeftOnSegment, segmentLength, startAltitude,
+                out var pathTarget, out _, out _))
+        {
+            return pathTarget;
+        }
+
+        if (alt0 == -1)
+        {
+            alt0 = startAltitude;
+        }
+
+        if (alt1 == -1)
+        {
+            alt1 = alt0;
+        }
+
+        if (segmentLength <= 0)
+        {
+            return alt1;
+        }
+
+        return alt1 + (distanceLeftOnSegment * (alt0 - alt1)) / segmentLength;
+    }
+
+    /// <summary>
+    /// First along-route point where VDI is centered at cruise on the geometric path:
+    /// before = below path, after = above path when staying level.
+    /// d_to_constraint = (cruise - constraintAlt) / 318.
+    /// </summary>
+    public static bool TryFindVdiCenterCrossing(RouteScriptableObject route, double cruiseAltitude,
+        out Vector2 onTrackPosition, out Vector2 legDirection)
+    {
+        onTrackPosition = default;
+        legDirection = default;
+        if (route?.Points == null || route.Points.Length < 2 || cruiseAltitude <= 0)
+        {
+            return false;
+        }
+
+        double distFromStart = 0;
+        var anchorIndex = -1;
+        double constraintAlt = -1;
+
+        for (var i = 1; i < route.Points.Length; i++)
+        {
+            distFromStart += route.Points[i].Distance;
+            if (route.Points[i].AltitudeRegulation == RoutePoint.AltitudeFlags.NotSet)
+            {
+                continue;
+            }
+
+            constraintAlt = GetVdiConstraintAltitude(route.Points[i]);
+            if (constraintAlt < 0)
+            {
+                continue;
+            }
+
+            anchorIndex = i;
+            break;
+        }
+
+        if (anchorIndex < 0)
+        {
+            distFromStart = 0;
+            for (var i = 1; i < route.Points.Length; i++)
+            {
+                distFromStart += route.Points[i].Distance;
+                if (route.Points[i].Altitude.ComputedValue < 0)
+                {
+                    continue;
+                }
+
+                constraintAlt = route.Points[i].Altitude.ComputedValue;
+                anchorIndex = i;
+                break;
+            }
+        }
+
+        if (anchorIndex < 0 || constraintAlt < 0 || distFromStart <= 0.0001)
+        {
+            return false;
+        }
+
+        var dToConstraintAtTod = (cruiseAltitude - constraintAlt) / VdiPathFtPerNm;
+        if (dToConstraintAtTod < -0.05 || dToConstraintAtTod > distFromStart + 0.05)
+        {
+            return false;
+        }
+
+        dToConstraintAtTod = Math.Clamp(dToConstraintAtTod, 0, distFromStart);
+        var distAlongFromStart = distFromStart - dToConstraintAtTod;
+
+        double walked = 0;
+        for (var i = 0; i < route.Points.Length - 1; i++)
+        {
+            var node0 = route.Points[i];
+            var node1 = route.Points[i + 1];
+            var segmentLength = node1.Distance;
+            if (segmentLength <= 0.0001)
+            {
+                continue;
+            }
+
+            if (walked + segmentLength < distAlongFromStart - 0.0001)
+            {
+                walked += segmentLength;
+                continue;
+            }
+
+            var distFromNode0 = (float)(distAlongFromStart - walked);
+            var heading = node1.Degrees;
+            onTrackPosition = Geometry.GetNextPosition(node0.CartesianPosition, distFromNode0, heading);
+            legDirection = node1.CartesianPosition - node0.CartesianPosition;
+            if (legDirection.sqrMagnitude < 1e-8f)
+            {
+                legDirection = Geometry.GetDirectionFromHeading(heading);
+            }
+            else
+            {
+                legDirection.Normalize();
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
     public void DrawVDI()
     {
         double DeltaAlt, Alt1, Alt0, d, D;
@@ -488,10 +864,8 @@ public class Calculator : MonoBehaviour
         d = Session.PlayerAircraft.ComputedDistanceLeftOnSegment;
         D = node1.Distance;
 
-        double Target;
         Alt0 = (double)(node0.Altitude.ComputedValue);
-        if (Alt0 != -1) Target = (double)(Alt1 + (d * (Alt0 - Alt1)) / D);
-        else Target = (double)(Alt1 + 318 * d);
+        double Target = ComputeVdiTarget(_route, PositionVirtualNode.PassedNodeIndex, d, Alt0, Alt1, D, StartAltitude);
 
         if (D == 0) DeltaAlt = 0;
         else DeltaAlt = CAltitude - Target;
@@ -532,96 +906,245 @@ public class Calculator : MonoBehaviour
 
          
     }
-    public void FlyVerticalPath()  // Recode more modular
+    public void FlyVerticalPath()
     {
-        double DeltaAlt, Alt1, Alt0, d, D;
+        RouteScriptableObject route = Session.ActiveRoute;
+        if (route?.Points == null || PositionVirtualNode.PassedNodeIndex < 0)
+            return;
+        if (PositionVirtualNode.PassedNodeIndex >= route.Points.Length - 1)
+            return;
 
-        RouteScriptableObject activePoints = Session.ActiveRoute;
+        var node0 = route.Points[PositionVirtualNode.PassedNodeIndex];
+        var node1 = route.Points[PositionVirtualNode.PassedNodeIndex + 1];
 
-        RouteScriptableObject _route = activePoints;
-        if ( PositionVirtualNode.PassedNodeIndex<0) return;
-        var node0 = _route.Points[PositionVirtualNode.PassedNodeIndex];
-        var node1 = _route.Points[PositionVirtualNode.PassedNodeIndex + 1];
-        var node2 = (activePoints.Points.Length> PositionVirtualNode.PassedNodeIndex + 2) 
-                   ?_route.Points[PositionVirtualNode.PassedNodeIndex + 2]: _route.Points[0];
+        double alt0 = node0.Altitude.ComputedValue;
+        if (alt0 < 0) alt0 = StartAltitude;
+        double alt1 = node1.Altitude.ComputedValue;
+        if (alt1 < 0) alt1 = alt0;
 
-        Alt0 = (double)(node0.Altitude.ComputedValue);
-        if (Alt0 == -1) Alt0 = StartAltitude; // first and last nodes missing altitude info
-        Alt1 = (double)(node1.Altitude.ComputedValue);
-        double Alt2 = (double)(node2.Altitude.ComputedValue);
-        //Debug.Log("Alt0    :" + Alt0 +
-        //           "Alt1    :" + Alt1 +
-        //           "Alt2    :" + Alt2);
-        d = Session.PlayerAircraft.ComputedDistanceLeftOnSegment;
-        D = node1.Distance;
+        double d = Session.PlayerAircraft.ComputedDistanceLeftOnSegment;
+        double D = node1.Distance;
+        if (d < 0.1) d = 0.1;
 
-        double Target = (int)(Alt1 + (d * (Alt0 - Alt1)) / D);
-        if (D == 0) DeltaAlt = 0;
-        else DeltaAlt = CAltitude - Target;
-
-        if (Session.State.GSCaptured)  // GlideSlope Logic
+        if (Session.State.GSCaptured)
         {
-            float DegreeToVS = -6076 * Mathf.Tan(Session.CurrentLevel.levelInfo.GlideSlope * Mathf.Deg2Rad) * (GS / 60);
-            VNAV_VS = DegreeToVS; //- Move.Instance.GsDeviation(GlideSlope)*200 ;
-                                  // VNAV_VS = - Move.Instance.GsDeviation(GlideSlope)*200 ;
+            float degreeToVs = -6076 * Mathf.Tan(Session.CurrentLevel.levelInfo.GlideSlope * Mathf.Deg2Rad) * (GS / 60);
+            VNAV_VS = degreeToVs;
             RVS = (int)VNAV_VS;
-        }
-        else if (Session.State.VNAV)
-        {
-            if (D < 0.01) return;
-            if (d < 0.1) d = 0.1;
-
-            if (Alt0 == -1) Alt0 = StartAltitude;
-            if (Alt1 == -1) Alt1 = Alt0;
-
-            double fpaRad = Math.Atan((Alt1 - Alt0) / (D * 6076.0));
-            double baseVS = GS * 101.27 * Math.Tan(fpaRad);
-
-            double ratio = (D - d) / D;
-            double targetAlt = Alt0 + ratio * (Alt1 - Alt0);
-
-            double deviation = CAltitude - targetAlt;
-
-            double Kp = 0.5;
-            double correction = Kp * deviation;
-
-            VNAV_VS = baseVS - correction;
-
-            // -------- LEVEL OFF LOGIC --------
-            bool willLevelOff = Alt2 >= Alt1;
-
-            if (willLevelOff)
-            {
-                // 1) Early compensation
-                double anticipationStart = 8.0;
-                double extraBias = 0;
-
-                if (d < anticipationStart)
-                {
-                    double factor = (anticipationStart - d) / anticipationStart;
-                    extraBias = factor * 800;
-                }
-
-                VNAV_VS -= extraBias;
-
-                // 2) Flare (smooth capture)
-                double altError = CAltitude - Alt1;
-                double flareBand = 300;
-
-                if (Math.Abs(altError) < flareBand)
-                {
-                    double t = Math.Clamp(Math.Abs(altError) / flareBand, 0, 1);
-                    t = t * t;
-
-                    VNAV_VS = VNAV_VS * t;
-                }
-            }
-
-            VNAV_VS = Mathf.Clamp((float)VNAV_VS, -4000, 2000);
-
-            RVS = (int)VNAV_VS;
+            return;
         }
 
+        if (!Session.State.VNAV)
+            return;
+
+        double pathTarget;
+        double slopeFtPerNm = VdiPathFtPerNm;
+        double nextConstraintAlt = -1;
+        if (!TryComputeVnavPath(route, PositionVirtualNode.PassedNodeIndex, d, D, StartAltitude,
+                out pathTarget, out slopeFtPerNm, out nextConstraintAlt))
+        {
+            pathTarget = ComputeVdiTarget(route, PositionVirtualNode.PassedNodeIndex, d, alt0, alt1, D, StartAltitude);
+        }
+
+        bool mcpDescentWindow = RAltitude < (int)CAltitude;
+        double deviation = CAltitude - pathTarget; // + above path, - below
+
+        // Early TOD hold only when well below path. Near-path undershoot uses VS correction instead.
+        const double belowPathHoldBand = 300;
+        if (mcpDescentWindow && deviation < -belowPathHoldBand)
+        {
+            VNAV_VS = 0;
+            RVS = 0;
+            return;
+        }
+
+        // No open descent window → do not command vertical speed (MCP is altitude floor/target).
+        if (!mcpDescentWindow)
+        {
+            VNAV_VS = 0;
+            RVS = 0;
+            return;
+        }
+
+        // Path slope + strong vertical capture (close ~1000 ft error in ~20 s).
+        double baseVS = -slopeFtPerNm * GS / 60.0;
+        const double captureTauSec = 20.0;
+        double correction = deviation * (60.0 / captureTauSec);
+        correction = Math.Clamp(correction, -1500.0, 3500.0);
+        VNAV_VS = baseVS - correction;
+
+        // Soft capture into the higher of MCP and the next FMC constraint.
+        const double flareBand = 400;
+        double floorAlt = RAltitude;
+        if (nextConstraintAlt > 0)
+            floorAlt = Math.Max(floorAlt, nextConstraintAlt);
+        double altAboveFloor = CAltitude - floorAlt;
+        if (altAboveFloor < flareBand && VNAV_VS < 0)
+        {
+            double t = Math.Clamp(Math.Max(altAboveFloor, 0) / flareBand, 0, 1);
+            VNAV_VS *= t * t;
+        }
+
+        // Path first; while decelerating keep at least 300 fpm down — but not through the floor.
+        bool decelerating = CSpeed > RSpeed + 5;
+        if (decelerating && altAboveFloor > 100)
+            VNAV_VS = Math.Min(VNAV_VS, -300.0);
+
+        // Hold at next AT/below constraint until that waypoint is passed (then path retargets).
+        if (nextConstraintAlt > 0 && CAltitude <= nextConstraintAlt + 10 && RAltitude < (int)nextConstraintAlt)
+        {
+            VNAV_VS = 0;
+            RVS = 0;
+            return;
+        }
+
+        // Allow brief positive VS only to recapture from a shallow undershoot; otherwise descent-only.
+        double maxVs = deviation < 0 ? 500.0 : 0.0;
+        VNAV_VS = Mathf.Clamp((float)VNAV_VS, -4000, (float)maxVs);
+        RVS = (int)VNAV_VS;
+
+        if (RVS < 0)
+            ClearFmcCruiseAltitudeOnVnavDescentStart();
+    }
+
+    /// <summary>
+    /// FMC CRZ altitude only — cleared when VNAV descent begins (page shows 00000).
+    /// Does not clear <see cref="StartAltitude"/> used by VNAV path math.
+    /// </summary>
+    public void ClearFmcCruiseAltitudeOnVnavDescentStart()
+    {
+        if (_fmcCruiseClearedOnVnavDescent)
+            return;
+
+        _fmcCruiseClearedOnVnavDescent = true;
+        if (Session.CurrentLevel?.levelInfo != null)
+            Session.CurrentLevel.levelInfo.CrzAltitude = 0;
+
+        if (infoFMC.Instance?.Fmc?.Crz != null)
+            infoFMC.Instance.Fmc.Crz.Altitude = FormatFmcCruiseAltitude(0);
+
+        FindFirstObjectByType<Drawer>()?.Display();
+    }
+
+    /// <summary>
+    /// New FMC cruise altitude (feet). Updates TOD source and VNAV cruise reference, redraws route.
+    /// </summary>
+    public void ApplyFmcCruiseAltitude(int altitudeFeet)
+    {
+        altitudeFeet = Mathf.Clamp(altitudeFeet, 0, 41000);
+        StartAltitude = altitudeFeet;
+        _fmcCruiseClearedOnVnavDescent = altitudeFeet <= 0;
+
+        if (Session.CurrentLevel?.levelInfo != null)
+            Session.CurrentLevel.levelInfo.CrzAltitude = altitudeFeet;
+
+        if (infoFMC.Instance?.Fmc?.Crz != null)
+            infoFMC.Instance.Fmc.Crz.Altitude = FormatFmcCruiseAltitude(altitudeFeet);
+
+        FindFirstObjectByType<Drawer>()?.Display();
+    }
+
+    /// <summary>
+    /// QNH is fixed at 1013 (STD above this), so FL and altitude feet are interchangeable:
+    /// FL = feet / 100. At/above transition show FLxxx; below show feet.
+    /// </summary>
+    public const int TransitionAltitudeFeet = 10000;
+
+    /// <summary>
+    /// Cruise-style entry: FL shorthand 10–410 → feet, or feet 1000–41000. Invalid → 0.
+    /// </summary>
+    public static int NormalizeAltitudeEntryToFeet(int entered)
+    {
+        if (entered >= 10 && entered <= 410)
+            return entered * 100;
+        if (entered >= 1000 && entered <= 41000)
+            return entered;
+        return 0;
+    }
+
+    /// <summary>
+    /// Legs regulation number: FL shorthand 10–410 → feet; otherwise keep as feet (allows 700, etc.).
+    /// </summary>
+    public static int NormalizeAltitudeRegulationNumberToFeet(int entered)
+    {
+        if (entered >= 10 && entered <= 410)
+            return entered * 100;
+        if (entered >= 1 && entered <= 41000)
+            return entered;
+        return 0;
+    }
+
+    /// <summary>
+    /// Normalize a Legs/DES altitude regulation string to feet storage
+    /// (e.g. "350"→"35000", "350A"→"35000A", "7000B" unchanged).
+    /// </summary>
+    public static string NormalizeAltitudeRegulationToFeet(string regulation)
+    {
+        if (string.IsNullOrEmpty(regulation))
+            return regulation;
+
+        return Regex.Replace(regulation, @"(\d+)([AaBb]?)", match =>
+        {
+            var number = int.Parse(match.Groups[1].Value);
+            var suffix = match.Groups[2].Value.ToUpperInvariant();
+            var feet = NormalizeAltitudeRegulationNumberToFeet(number);
+            if (feet <= 0)
+                return match.Value;
+            return feet + suffix;
+        });
+    }
+
+    /// <summary>FMS altitude display. Cleared cruise stays "00000".</summary>
+    public static string FormatFmcCruiseAltitude(long altitudeFeet)
+    {
+        return altitudeFeet <= 0 ? "00000" : FormatFmcAltitude(altitudeFeet);
+    }
+
+    /// <summary>Format feet as FLxxx at/above transition, else plain feet. QNH 1013 → FL ≡ altitude/100.</summary>
+    public static string FormatFmcAltitude(long altitudeFeet)
+    {
+        if (altitudeFeet <= 0)
+            return "-----";
+        if (altitudeFeet >= TransitionAltitudeFeet)
+            return $"FL{altitudeFeet / 100}";
+        return altitudeFeet.ToString();
+    }
+
+    /// <summary>
+    /// Format entered cruise value for pending display, or null if invalid.
+    /// </summary>
+    public static string FormatFmcAltitudeFromEntry(int? entered)
+    {
+        if (entered == null)
+            return null;
+        var feet = NormalizeAltitudeEntryToFeet(entered.Value);
+        return feet > 0 ? FormatFmcAltitude(feet) : null;
+    }
+
+    /// <summary>
+    /// Format raw/computed altitude for FMS UI including A/B restrictions
+    /// (e.g. "20000"→"FL200", "15000B"→"FL150B", "7000A"→"7000A").
+    /// </summary>
+    public static string FormatFmcAltitudeDisplay(string rawOrFeet)
+    {
+        if (string.IsNullOrEmpty(rawOrFeet))
+            return rawOrFeet;
+
+        if (long.TryParse(rawOrFeet, out var plainFeet))
+            return FormatFmcAltitude(plainFeet);
+
+        var sb = new StringBuilder();
+        foreach (Match match in Regex.Matches(rawOrFeet, @"(\d+)([AaBb]?)"))
+        {
+            var number = long.Parse(match.Groups[1].Value);
+            var suffix = match.Groups[2].Value.ToUpperInvariant();
+            if (number >= TransitionAltitudeFeet)
+                sb.Append($"FL{number / 100}{suffix}");
+            else
+                sb.Append($"{number}{suffix}");
+        }
+
+        return sb.Length > 0 ? sb.ToString() : rawOrFeet;
     }
 
     public void SetFMA()
@@ -689,7 +1212,7 @@ public class Calculator : MonoBehaviour
         PFD_Animation PFDScript = FindObjectOfType<PFD_Animation>();
         PFDScript.AltUpdate((int)CAltitude);
         PFDScript.CheckAltitudeIndicator(RAltitude, (int)CAltitude);
-        if (CAltitude >= 10000) Qnh.text = "STD";
+        if (CAltitude >= TransitionAltitudeFeet) Qnh.text = "STD";
         else Qnh.text = "1013";
     }
     public static int FuelFlowFor(double Altitude, double VS, double Speed)
@@ -747,35 +1270,78 @@ public class Calculator : MonoBehaviour
 
         return Mathf.Sqrt(Mathf.Pow(1 / p * (Mathf.Pow((float)Speed * (float)Speed / 2187771 + 1, 3.5f) - 1) + 1, 0.2857f) - 1) * Mathf.Sqrt(5);
     }
+
+    /// <summary>CAS (kt) from Mach — inverse of Speed2Mach (pressure ratio only; no TAS path).</summary>
     public static double Mach2Speed(double Mach, double Altitude)
     {
         Altitude = Altitude > 39900 ? 39900 : Altitude;
         int F = 8 - Mathf.FloorToInt((float)Altitude / 5000);
         float p = Mathf.Lerp(Pressure[F], Pressure[F - 1], (float)(Altitude % 5000) / 5000);
-        float SS = Mathf.Lerp(SoundSpeed[F], SoundSpeed[F - 1], (float)(Altitude % 5000) / 5000);
-        float TAS_ = (float)Mach * SS;
-        return Mathf.Sqrt(Mathf.Pow(p * (Mathf.Pow(TAS_ * TAS_ / 1653125 + 1, 3.5f) - 1) + 1, 0.2857f) - 1) * Mathf.Sqrt(5) * 661.4787;
-
+        return Mathf.Sqrt(Mathf.Pow(p * (Mathf.Pow(1f + 0.2f * (float)(Mach * Mach), 3.5f) - 1) + 1, 0.2857f) - 1) * Mathf.Sqrt(5) * 661.4787f;
     }
+
+    /// <summary>
+    /// Pressure altitude (ft) where CAS and Mach share the same TAS (ISA troposphere).
+    /// </summary>
     public static double CrossOverAltitude(double Speed, double Mach)
     {
         float ro = (Mathf.Pow(1 + 0.2f * Mathf.Pow((float)Speed / 661.48f, 2), 3.5f) - 1) / (Mathf.Pow((float)(1 + 0.2 * Mach * Mach), 3.5f) - 1);
         return Mathf.Floor(145442.16f * (1 - Mathf.Pow(ro, 0.1902631f)));
     }
+
+    /// <summary>
+    /// Schedule CO altitude from level DesEcon IAS/Mach (fallback 280/.78 ≈ FL325).
+    /// </summary>
+    public static double GetCoAltitudeFeet()
+    {
+        var levelInfo = Session.CurrentLevel != null ? Session.CurrentLevel.levelInfo : null;
+        if (levelInfo == null || levelInfo.DesEconSpeed <= 0 || levelInfo.DesEconMach <= 0)
+            return CrossOverAltitude(280, 0.78);
+
+        return CrossOverAltitude(levelInfo.DesEconSpeed, levelInfo.DesEconMach / 100.0);
+    }
+
+    /// <summary>Formats Mach as .78 (digits=2) or .780 (digits=3).</summary>
+    public static string FormatMach(double mach, int digits = 2)
+    {
+        int scale = digits == 3 ? 1000 : 100;
+        int value = (int)System.Math.Round(mach * scale);
+        return "." + value.ToString(digits == 3 ? "D3" : "D2");
+    }
+
+    /// <summary>Formats FMC Mach/IAS pair from level data (e.g. machHundredths=79, ias=270 → .79/270).</summary>
+    public static string FormatMachIas(int machHundredths, int ias)
+    {
+        return "." + machHundredths.ToString("D2") + "/" + ias;
+    }
+
+    /// <summary>
+    /// FMS display only: IAS stays in data; at/above schedule CO altitude show Mach.
+    /// </summary>
+    public static string FormatFmcSpeedDisplay(int ias, double altitudeFeet, int machDigits = 2)
+    {
+        if (ias <= 0)
+            return ias.ToString();
+        if (altitudeFeet >= GetCoAltitudeFeet())
+            return FormatMach(Speed2Mach(ias, altitudeFeet), machDigits);
+        return ias.ToString();
+    }
+
     private void FuelandMach()
     {
         totalFuel -= (double)FF * 2 / 3600 * Session.Settings.SpeedMultiplier;                                                     //Fuel
         txtTotalFuel.text = "" + System.Math.Round(totalFuel / 100, 2);
 
         CMach = Speed2Mach(CSpeed, CAltitude);
-        txtMach.text = CMach > 0.4 ? "." + System.Math.Round(CMach, 2) * 100 : "GS " + GS;
+        txtMach.text = CMach > 0.4 ? FormatMach(CMach) : "GS " + GS;
 
+        double coAlt = GetCoAltitudeFeet();
         if (co.isOn)
         {
             RSpeed = (int)Mach2Speed(RMach, CAltitude);
-            if (CAltitude < 26400) co.isOn = false;
+            if (CAltitude < coAlt) co.isOn = false;
         }
-        if (CAltitude < 26400) co.enabled = false; else co.enabled = true;
+        if (CAltitude < coAlt) co.enabled = false; else co.enabled = true;
 
     }
     public void FUP_Click()
@@ -948,7 +1514,16 @@ public class Calculator : MonoBehaviour
     public void XFR3_Click()
     {
         RSpeed = Move.XFRSpeed;
-        txtRSpeed.text = RSpeed.ToString();
+        if (co.isOn)
+        {
+            RMach = Speed2Mach(RSpeed, CAltitude);
+            txtRSpeed.text = FormatMach(RMach);
+        }
+        else
+        {
+            txtRSpeed.text = RSpeed.ToString();
+        }
+        txtRSpeed_overTape.text = txtRSpeed.text;
     }
 
     public static void Check_LimitSpeed()
@@ -958,7 +1533,7 @@ public class Calculator : MonoBehaviour
             if (Calculator.Instance.RMach < 0.6) Calculator.Instance.RMach = 0.6;
             if (Calculator.Instance.RMach > Speed2Mach(PFD_Animation.LimitSpeed, CAltitude)) Calculator.Instance.RMach = Speed2Mach(PFD_Animation.LimitSpeed, CAltitude);
             RSpeed = (int)Mach2Speed(Calculator.Instance.RMach, CAltitude);
-            Calculator.Instance.txtRSpeed.text = "" + System.Math.Round(Calculator.Instance.RMach, 2);
+            Calculator.Instance.txtRSpeed.text = FormatMach(Calculator.Instance.RMach);
         }
         else
         {                                               //IAS 
@@ -1093,7 +1668,7 @@ public class Calculator : MonoBehaviour
         if (co.isOn) // on mach
         {
             RMach = Speed2Mach(RSpeed, CAltitude);
-            txtRSpeed.text = "" + System.Math.Round(RMach, 2);
+            txtRSpeed.text = FormatMach(RMach);
             txtRSpeed_overTape.text = txtRSpeed.text;
             for (int i = 0; i < 4; i++)
             {
@@ -1196,29 +1771,84 @@ public class Calculator : MonoBehaviour
 
         return WE;
     }
+    private bool _approachEndTriggered;
+
     public void CheckStabilization()
     {
-        string LF = System.Environment.NewLine;
-        if ((CAltitude <= 1000)||(Move.Instance.DME() < 1))
-        {
-#if UNITY_EDITOR
-            EditorUtility.DisplayDialog("NOT STABLE", "Localizer............ok" + LF +
-                                                      "Glide Slope..........ok" + LF +
-                                                      "Vertical Speed.......ok" + LF +
-                                                      "Speed................ok" + LF +
-                                                      "Landing Gear.......Down" + LF +
-                                                      "Flaps................30" + LF +
-                                                      "Speed Brake....Extended XXX" + LF, "Exit");
-#endif
+        if (_approachEndTriggered)
+            return;
 
-            Aircraft aircraft = UnityEngine.Object.FindAnyObjectByType<Aircraft>();
+        float dme = Move.Instance.DME();
+        if (dme >= 3f && CAltitude > 1000)
+            return;
+
+        _approachEndTriggered = true;
+
+        var report = BuildStabilizationReport(out bool allOk);
+        ApproachStatusDialog.Show(allOk ? "STABLE" : "NOT STABLE", report, "Exit", () =>
+        {
+            Aircraft aircraft = FindAnyObjectByType<Aircraft>();
             if (aircraft != null)
             {
-                aircraft.FinishGame();
+                aircraft.FinishGame(isStable: allOk);
                 CAltitude = 10000;
             }
-        }
+        });
     }
+
+    string BuildStabilizationReport(out bool allOk)
+    {
+        var levelInfo = Session.CurrentLevel?.levelInfo;
+        float course = levelInfo != null ? levelInfo.Course : 0f;
+        float glideSlope = levelInfo != null ? levelInfo.GlideSlope : 3f;
+
+        float locDev = Move.Instance != null ? Move.Instance.ComputeLocDeviationDegrees(course) : 99f;
+        float gsDev = Move.Instance != null ? Move.Instance.ComputeGsDeviationDegrees(glideSlope) : 99f;
+
+        bool localizerOk = Session.State.LOCCaptured || Mathf.Abs(locDev) <= 0.5f;
+        bool glideSlopeOk = Session.State.GSCaptured || Mathf.Abs(gsDev) <= 0.5f;
+        // Typical short-final ROD band
+        bool verticalSpeedOk = CVS <= -200 && CVS >= -1200;
+        bool speedOk = CSpeed >= minimumSpeed && CSpeed <= minimumSpeed + 20;
+        bool landingGearOk = LGDown;
+        int flapSetting = GetFlapSettingDegrees(Flap_Idx);
+        bool flapsOk = flapSetting >= 30;
+        // On approach before touchdown, speed brake should be retracted
+        bool speedBrakeOk = !SBUp;
+
+        allOk = localizerOk && glideSlopeOk && verticalSpeedOk && speedOk
+                && landingGearOk && flapsOk && speedBrakeOk;
+
+        string lf = Environment.NewLine;
+        return
+            FormatStatusLine("Localizer", OkNo(localizerOk), localizerOk) + lf +
+            FormatStatusLine("Glide Slope", OkNo(glideSlopeOk), glideSlopeOk) + lf +
+            FormatStatusLine("Vertical Speed", OkNo(verticalSpeedOk), verticalSpeedOk) + lf +
+            FormatStatusLine("Speed", OkNo(speedOk), speedOk) + lf +
+            FormatStatusLine("Landing Gear", landingGearOk ? "Down" : "Up", landingGearOk) + lf +
+            FormatStatusLine("Flaps", flapSetting + (flapsOk ? " ok" : " no"), flapsOk) + lf +
+            FormatStatusLine("Speed Brake", speedBrakeOk ? "Retracted" : "Extended", speedBrakeOk);
+    }
+
+    static string OkNo(bool ok) => ok ? "ok" : "no";
+
+    static string FormatStatusLine(string label, string value, bool ok)
+    {
+        const int width = 20;
+        string dots = label.Length >= width ? "" : new string('.', width - label.Length);
+        string color = ok ? "#5CDB7A" : "#E85D5D";
+        return $"<color={color}>{label}{dots}{value}</color>";
+    }
+
+    static int GetFlapSettingDegrees(int flapIdx)
+    {
+        // UP, 1, 5, 10, 15, 25, 30, 40, 40
+        int[] settings = { 0, 1, 5, 10, 15, 25, 30, 40, 40 };
+        if (flapIdx < 0 || flapIdx >= settings.Length)
+            return 0;
+        return settings[flapIdx];
+    }
+
     public void QuitGame()
     {
 #if UNITY_EDITOR

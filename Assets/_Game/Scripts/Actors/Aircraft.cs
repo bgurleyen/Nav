@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Navigation;
 using UnityEngine;
 
@@ -44,14 +44,12 @@ public class Aircraft : MovingActor
         debugHelper = GetComponent<AircraftDebugHelper>();
     }
 
-    public void FinishGame()
+    public void FinishGame(bool isStable = false)
     {
-        Debug.Log("Finish GAME");
-        GraphManage.OnGameFinish?.Invoke(true);
+        Debug.Log(isStable ? "Finish GAME (stable)" : "Finish GAME (unstable)");
+        GraphManage.OnGameFinish?.Invoke(isStable);
         Session.State.AutoSetHDG(true);
         isCatchRw = false;
-        return;
-        //Session.State.ILSCapture = false;
     }        
     public override void SimulateTick()
     {
@@ -106,6 +104,7 @@ public class Aircraft : MovingActor
                 if (!foundClosePathDestination)
                 {
                     Debug.LogError("No Intersection Point Found");
+           
                     Session.State.AutoSetHDG(true);
 
                     return;

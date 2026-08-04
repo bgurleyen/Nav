@@ -14,7 +14,7 @@ public class GraphManage : MonoBehaviour
     public Button continueButton;
     public Button levelsContinueButton;
 
-    public static System.Action<bool> OnGameFinish;
+    public static System.Action<bool /* isStable */> OnGameFinish;
 
     public CanvasGroup mainGroup;
     public CanvasGroup graphGroup;
@@ -516,21 +516,35 @@ public class GraphManage : MonoBehaviour
         }
     }
 
-    void OnGameFinished(bool isFinish)
+    void OnGameFinished(bool isStable)
     {
+        if (mainGroup != null)
+            mainGroup.alpha = 0;
+
+        if (graphGroup != null)
+        {
+            graphGroup.alpha = 1;
+            graphGroup.blocksRaycasts = true;
+            graphGroup.interactable = true;
+        }
+
+        // Unstable approach: no debrief, no cloud save — go straight to level select.
+        if (!isStable)
+        {
+            Time.timeScale = 0f;
+            ShowLevelSelect();
+            return;
+        }
+
         if (dataManage == null)
         {
             Debug.LogError("[GraphManage] dataManage is not assigned.");
+            ShowLevelSelect();
             return;
         }
 
         LevelStat flightResult = dataManage.CaptureFlightResult();
         dataManage.PushToCloud(flightResult, OnProgressStatsSaved);
-
-        mainGroup.alpha = 0;
-        graphGroup.alpha = 1;
-        graphGroup.blocksRaycasts = true;
-        graphGroup.interactable = true;
         PresentDebrief(flightResult);
     }
 

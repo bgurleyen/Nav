@@ -2,7 +2,6 @@ using Navigation;
 using Navigation.Data;
 using TMPro;
 using UnityEngine;
-using UnityEngine.Windows;
 
 public class CRZScreen : ScreenBase
 {
@@ -52,13 +51,20 @@ public class CRZScreen : ScreenBase
         //_crzAltitude.SetAsDefault(crz.Altitude);
         if (Session.IsMod)
         {
-            _crzAltitude.SetAsModified(crzAltitude == null ? crz.Altitude : FLConvertions(crzAltitude));
+            _crzAltitude.SetAsModified(crzAltitude == null
+                ? crz.Altitude
+                : Calculator.FormatFmcAltitudeFromEntry(crzAltitude) ?? crz.Altitude);
         }
         else
         {
-            _crzAltitude.SetAsDefault(crzAltitude == null ? crz.Altitude : FLConvertions(crzAltitude));
+            _crzAltitude.SetAsDefault(crzAltitude == null
+                ? crz.Altitude
+                : Calculator.FormatFmcAltitudeFromEntry(crzAltitude) ?? crz.Altitude);
         }
-        _crzSpeed.SetAsDefault(crz.Speed);
+        if (!Session.IsMod)
+        {
+            _crzSpeed.SetAsDefault(crz.Speed);
+        }
         _actualWind.text = crz.ActualWind;
         _destination.text = initRef.Destination;
         _fuelAtDestination.text = crz.FuelAtDestination;
@@ -88,9 +94,10 @@ public class CRZScreen : ScreenBase
 
                 if (!_scratchPadInterpreter.IsValid) break;
 
-                if (FLConvertions(_scratchPadInterpreter.AltRegulation) == null) break;
+                var pendingAlt = Calculator.FormatFmcAltitudeFromEntry(_scratchPadInterpreter.AltRegulation);
+                if (pendingAlt == null) break;
 
-                _crzAltitude.SetAsModified(FLConvertions(_scratchPadInterpreter.AltRegulation));
+                _crzAltitude.SetAsModified(pendingAlt);
                 crzAltitude = _scratchPadInterpreter.AltRegulation;
                 Session.IsMod = true;
                 ClearScratchPad();
@@ -99,14 +106,25 @@ public class CRZScreen : ScreenBase
                 if (ScratchPadInterpreter.IsDeletePending(_scratchPadBuffer))
                 {
                     _scratchPadBuffer = string.Empty;
-                    _crzSpeed = null;
+                    _crzSpeed.SetAsDefault(infoFMC.Instance.Fmc.Crz.Speed);
                     ClearScratchPad();
                     break;
                 }
 
                 if (!_scratchPadInterpreter.IsValid) break;
 
-                _crzSpeed.SetAsModified(_scratchPadInterpreter.SpeedRegulation.ToString());
+                if (_scratchPadInterpreter.SpeedRegulation != null)
+                {
+                    _crzSpeed.SetAsModified(
+                        Calculator.FormatFmcSpeedDisplay(
+                            _scratchPadInterpreter.SpeedRegulation.Value,
+                            Session.CurrentLevel.levelInfo.CrzAltitude,
+                            machDigits: 3));
+                }
+                else
+                {
+                    _crzSpeed.SetAsModified(_scratchPadBuffer);
+                }
                 Session.IsMod = true;
                 ClearScratchPad();
                 break;
@@ -119,14 +137,18 @@ public class CRZScreen : ScreenBase
 
     public override void OnExecPress()
     {
-        //OnExecButtonPress?.Invoke();
-        //ClearCurrentOperation();
-        //ClearSelectionHistory();
+        if (crzAltitude != null)
+        {
+            var feet = Calculator.NormalizeAltitudeEntryToFeet(crzAltitude.Value);
+            if (feet > 0)
+            {
+                Calculator.Instance?.ApplyFmcCruiseAltitude(feet);
+                crzAltitude = null;
+            }
+        }
 
         Session.IsMod = false;
-        //_econSpeed_Mach.text = _scratchPadInterpreter.AltRegulation;
     }
-
 
     public override void OnRightCornerPress()
     {
@@ -283,20 +305,20 @@ public class CRZScreen : ScreenBase
             SpeedRegulation = null,
         };
 
-        // look for regulations
+        // Legs-compatible: /alt, speed/, speed/alt
         if (_scratchPadBuffer.Length < 1)
         {
             _scratchPadInterpreter.IsValid = false;
         }
         else if (_scratchPadBuffer[0] == '/' && _scratchPadBuffer.Length > 1)
         {
-            // should be nm only regulation
             var value = _scratchPadBuffer.Substring(1, _scratchPadBuffer.Length - 1);
 
-            if (int.TryParse(value, out var regulation))
+            if (int.TryParse(value, out var regulation) &&
+                Calculator.NormalizeAltitudeEntryToFeet(regulation) > 0)
             {
-                _scratchPadInterpreter.AltRegulation = null;
-                _scratchPadInterpreter.SpeedRegulation = regulation;
+                _scratchPadInterpreter.AltRegulation = regulation;
+                _scratchPadInterpreter.SpeedRegulation = null;
             }
             else
             {
@@ -305,23 +327,22 @@ public class CRZScreen : ScreenBase
         }
         else if (_scratchPadBuffer[_scratchPadBuffer.Length - 1] == '/' && _scratchPadBuffer.Length > 1)
         {
-            // should be speed only regulation
             var value = _scratchPadBuffer.Substring(0, _scratchPadBuffer.Length - 1);
             if (int.TryParse(value, out var regulation))
             {
-                _scratchPadInterpreter.AltRegulation = regulation;
-                _scratchPadInterpreter.SpeedRegulation = null;
+                _scratchPadInterpreter.AltRegulation = null;
+                _scratchPadInterpreter.SpeedRegulation = regulation;
             }
         }
         else if (_scratchPadBuffer.Contains('/') && _scratchPadBuffer.Length > 3)
         {
-            // may be speed & alt regulation
             var slashIndex = _scratchPadBuffer.IndexOf('/');
-            var alt = _scratchPadBuffer.Substring(0, slashIndex);
-            var speed = _scratchPadBuffer.Substring(slashIndex + 1, _scratchPadBuffer.Length - (slashIndex + 1));
+            var speed = _scratchPadBuffer.Substring(0, slashIndex);
+            var alt = _scratchPadBuffer.Substring(slashIndex + 1, _scratchPadBuffer.Length - (slashIndex + 1));
 
             if (int.TryParse(speed, out var speedRegulation) &&
-                int.TryParse(alt, out var altRegulation))
+                int.TryParse(alt, out var altRegulation) &&
+                Calculator.NormalizeAltitudeEntryToFeet(altRegulation) > 0)
             {
                 _scratchPadInterpreter.AltRegulation = altRegulation;
                 _scratchPadInterpreter.SpeedRegulation = speedRegulation;
@@ -333,65 +354,16 @@ public class CRZScreen : ScreenBase
         }
         else if (int.TryParse(_scratchPadBuffer, out var altRegulation))
         {
-            // can be altitude regulation
-            _scratchPadInterpreter.AltRegulation = altRegulation;
-            /*if (altRegulation >= 10 && altRegulation <= 410)
-            {
-            }
+            if (Calculator.NormalizeAltitudeEntryToFeet(altRegulation) > 0)
+                _scratchPadInterpreter.AltRegulation = altRegulation;
             else
-            {
                 _scratchPadInterpreter.IsValid = false;
-            }*/
         }
         else
         {
             _scratchPadInterpreter.IsValid = false;
         }
     }
-
-
-
-
-
-
-    //private string FLConvertion(int? _altRegulation)
-    //{
-    //    if (_altRegulation < 100)
-    //        return $"{_altRegulation * 100}";
-    //    else if (99 < _altRegulation && _altRegulation < 1000)
-    //        return $"FL{_altRegulation}";
-    //    else if (999 < _altRegulation && _altRegulation < 10000)
-    //        return $"{_altRegulation}";
-    //    else
-    //        return $"FL{_altRegulation}".Substring(0, 5);
-    //}
-
-    public string FLConvertions(int? _altRegulation)
-    {
-        if ((_altRegulation >= 1000 && _altRegulation <= 41000) || (_altRegulation >= 10 && _altRegulation <= 410))
-        {
-            if (_altRegulation >= 10 && _altRegulation <= 410)
-            {
-                _altRegulation *= 100;
-            }
-
-            if (_altRegulation > 10000)
-            {
-                _altRegulation /= 100;
-                return $"FL{_altRegulation}";
-            }
-            else
-            {
-                return $"{_altRegulation}";
-            }
-        }
-        else
-        {
-            //Debug.LogError("Input_Error");
-            return null;
-        }
-    }
-
 
     public void UpdateScratchPad(string buffer, bool withStatus = true)
     {

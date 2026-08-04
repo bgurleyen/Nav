@@ -96,8 +96,17 @@ public class LegsNodeLine : MonoBehaviour {
             var isSpeedRestriction = node.GetSpeedIsRestricted(out var speedDisplayValue);
             var isAltRestriction = node.GetAltitudeIsRestricted(out var altDisplayValue);
 
-            //this below line is only for display flight level in ui section not need remove this line only
-            altDisplayValue = int.TryParse(altDisplayValue, out int value) && value > 10000 ? $"FL{value / 100}" : altDisplayValue;
+            // FMS display only: above CO altitude show Mach; stored/computed values stay IAS.
+            if (int.TryParse(speedDisplayValue, out var iasKnots) && iasKnots > 0)
+            {
+                var nodeAltitude = node.Altitude != null && node.Altitude.ComputedValue > 0
+                    ? node.Altitude.ComputedValue
+                    : node.GetAcceptedAltitude;
+                speedDisplayValue = Calculator.FormatFmcSpeedDisplay(iasKnots, nodeAltitude);
+            }
+
+            // FMS display: QNH 1013 → FL ≡ feet/100 at/above transition (incl. A/B restrictions)
+            altDisplayValue = Calculator.FormatFmcAltitudeDisplay(altDisplayValue);
 
             // var _speedColor = 
             //     ? "#FF00C7"

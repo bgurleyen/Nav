@@ -1,4 +1,4 @@
-﻿
+
 using Gamelogic.Extensions;
 using UnityEngine;
 using UnityEngine.UI;
@@ -88,8 +88,9 @@ namespace Navigation.Data
 
             Fmc.Rte.Destination = levelData.Destination;
             Fmc.Rte.RW = levelData.Runway;
-            Fmc.Des.RWAltitude = "" + RW_Alt; // Remove //
+            Fmc.Des.RWAltitude = Calculator.FormatFmcAltitude((long)RW_Alt);
             //Fmc.Des.WptAltFix = activePoints.Points[levelsInfoData[Level].GateIdx].Name+ "/" + (int)activePoints.Points[levelsInfoData[Level].GateIdx].Altitude.ComputedValue;
+            Fmc.Des.EconSpeed = Calculator.FormatMachIas(levelData.DesEconMach, levelData.DesEconSpeed);
 
             Fmc.Des.FPA = "" +
                           System.Math.Round(
@@ -102,8 +103,9 @@ namespace Navigation.Data
 
 
             Fmc.Crz.Destination = levelData.Destination;
-            Fmc.Crz.Altitude = ""+levelData.CrzAltitude;
-            Fmc.Crz.Speed = ""+levelData.CrzSpeed;
+            Fmc.Crz.Altitude = Calculator.FormatFmcCruiseAltitude(levelData.CrzAltitude);
+            Fmc.Crz.Speed = Calculator.FormatFmcSpeedDisplay(
+                levelData.CrzSpeed, levelData.CrzAltitude, machDigits: 3);
             Fmc.Crz.Destination = levelData.Destination;
             Fmc.Crz.FuelAtDestination = "" + System.Math.Round(fr_onpoint[WPTCount - 1], 2);
             Fmc.Crz.ActualWind = "" + Calculator.CWind;
@@ -123,7 +125,7 @@ namespace Navigation.Data
 
             if (prvWptIdx != previousPrvIndex) // Catch the actual info while passing the point
             {
-                Fmc.Prog.PrvCrossAltitude = "" + Calculator.CAltitude;
+                Fmc.Prog.PrvCrossAltitude = Calculator.FormatFmcAltitude((long)Calculator.CAltitude);
                 Fmc.Prog.PrvActualTime = "" + GameTime.timerFMC;
                 Fmc.Prog.PrvActualFuel = "" + System.Math.Round(Calculator.totalFuel / 100, 1);
 
@@ -180,6 +182,7 @@ namespace Navigation.Data
                          "DES      : --Descent Speed Mode-- " + "\n" +
                          " RW alt :" + Fmc.Des.RWAltitude + "\n" +
                          "--TGT SPEED--" + "\n" +
+                         Fmc.Des.EconSpeed + "\n" +
                          Fmc.Des.WptAltFix + "\n" +
                          " FPA   : " + Fmc.Des.FPA + "\n" +
                          "  VB   : " + Fmc.Des.VB + "\n" +
@@ -187,6 +190,7 @@ namespace Navigation.Data
                          "CRZ      : --CRZ ALT-- " + "\n" +
                          Fmc.Crz.Destination + "\n" +
                          " --CRZ SPD-- " + "\n" +
+                         Fmc.Crz.Speed + "\n" +
                          "FuelATDESt   : " + Fmc.Crz.FuelAtDestination + "\n" +
                          "Actual Wind  :" + Fmc.Crz.ActualWind + "\n \n" +
                          "ARR      :    " + Fmc.Arr.Destination + "\n" +
@@ -236,7 +240,7 @@ namespace Navigation.Data
 
     public class DES
     {
-        public string RWAltitude, Destination, WptAltFix, FPA, VB, VS;
+        public string RWAltitude, Destination, WptAltFix, FPA, VB, VS, EconSpeed;
     }
 
     public class CRZ

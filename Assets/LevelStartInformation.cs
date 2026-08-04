@@ -16,6 +16,7 @@ public class LevelStartInformation : MonoBehaviour
     public Action<MapMode> OnMapModeSet;
 
     const float VisibleLocalZ = -200f;
+    const float PanelShiftX = 100f;
 
     static readonly Color PanelColor = new Color(0.05f, 0.08f, 0.12f, 0.96f);
     static readonly Color AccentNormal = new Color(0.15f, 0.62f, 0.38f, 1f);
@@ -81,7 +82,8 @@ public class LevelStartInformation : MonoBehaviour
     void ApplyLayoutAndStyle()
     {
         var panel = LevelStartInfo.rectTransform;
-        panel.sizeDelta = new Vector2(920f, 330f);
+        panel.sizeDelta = new Vector2(1100f, 420f);
+        panel.anchoredPosition = new Vector2(panel.anchoredPosition.x + PanelShiftX, panel.anchoredPosition.y);
         LevelStartInfo.color = PanelColor;
 
         var outline = LevelStartInfo.GetComponent<Outline>() ?? LevelStartInfo.gameObject.AddComponent<Outline>();
@@ -96,8 +98,8 @@ public class LevelStartInformation : MonoBehaviour
             btnRect.anchorMin = new Vector2(0.06f, 1f);
             btnRect.anchorMax = new Vector2(0.94f, 1f);
             btnRect.pivot = new Vector2(0.5f, 1f);
-            btnRect.anchoredPosition = new Vector2(0f, -14f);
-            btnRect.sizeDelta = new Vector2(0f, 46f);
+            btnRect.anchoredPosition = new Vector2(0f, -18f);
+            btnRect.sizeDelta = new Vector2(0f, 64f);
 
             if (_buttonImage == null)
                 _buttonImage = okButton.targetGraphic as Image;
@@ -109,8 +111,21 @@ public class LevelStartInformation : MonoBehaviour
             {
                 buttonLabel.text = "REQUEST DESCENT";
                 buttonLabel.fontStyle = FontStyles.Bold;
+                buttonLabel.fontSize = 32f;
                 buttonLabel.color = Color.white;
                 buttonLabel.alignment = TextAlignmentOptions.Center;
+            }
+            else
+            {
+                var legacyLabel = okButton.GetComponentInChildren<Text>();
+                if (legacyLabel != null)
+                {
+                    legacyLabel.text = "REQUEST DESCENT";
+                    legacyLabel.fontStyle = FontStyle.Bold;
+                    legacyLabel.fontSize = 32;
+                    legacyLabel.color = Color.white;
+                    legacyLabel.alignment = TextAnchor.MiddleCenter;
+                }
             }
         }
 
@@ -128,13 +143,13 @@ public class LevelStartInformation : MonoBehaviour
         rect.anchorMin = new Vector2(minX, 0f);
         rect.anchorMax = new Vector2(maxX, 1f);
         rect.pivot = new Vector2(0.5f, 1f);
-        rect.offsetMin = new Vector2(8f, 12f);
-        rect.offsetMax = new Vector2(-8f, -68f);
+        rect.offsetMin = new Vector2(12f, 16f);
+        rect.offsetMax = new Vector2(-12f, -96f);
 
         text.alignment = TextAnchor.UpperLeft;
         text.color = TextPrimary;
-        text.fontSize = 14;
-        text.lineSpacing = 1.25f;
+        text.fontSize = 26;
+        text.lineSpacing = 1.35f;
         text.horizontalOverflow = HorizontalWrapMode.Wrap;
         text.verticalOverflow = VerticalWrapMode.Overflow;
         text.supportRichText = true;
@@ -156,7 +171,7 @@ public class LevelStartInformation : MonoBehaviour
     static string BuildMessage()
     {
         var builder = new StringBuilder();
-        builder.AppendLine("<b><size=16>FLIGHT BRIEFING</size></b>");
+        builder.AppendLine("<b><size=32>FLIGHT BRIEFING</size></b>");
         builder.AppendLine();
         builder.AppendLine($"Level {Session.CurrentLevel.levelInfo.LevelNumber}");
         AppendIfNotEmpty(builder, "Destination", Session.CurrentLevel.levelInfo.Destination);
@@ -169,11 +184,11 @@ public class LevelStartInformation : MonoBehaviour
     static string BuildMessage1()
     {
         var builder = new StringBuilder();
-        builder.AppendLine("<b><size=16>FLIGHT DATA</size></b>");
+        builder.AppendLine("<b><size=32>FLIGHT DATA</size></b>");
         builder.AppendLine();
         builder.AppendLine($"Course: {Session.CurrentLevel.levelInfo.Course}°");
         builder.AppendLine(
-            $"Cruise: FL{Session.CurrentLevel.levelInfo.CrzAltitude / 100} / {Session.CurrentLevel.levelInfo.CrzSpeed} KT");
+            $"Cruise: {Calculator.FormatFmcAltitude(Session.CurrentLevel.levelInfo.CrzAltitude)} / {Session.CurrentLevel.levelInfo.CrzSpeed} KT");
         builder.AppendLine(
             $"ZFW/Fuel: {Session.CurrentLevel.levelInfo.ZFW:0.#} / {Session.CurrentLevel.levelInfo.Fuel:0.#}");
         builder.AppendLine();
