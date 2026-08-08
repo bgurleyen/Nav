@@ -53,25 +53,22 @@ public class Move : Singleton<Move>
     int _currentInstructionIndex = 0;
     int RW;
     float NextInstructionDistance = 1.3f;
+
+    // BorderGuard: route A→B after each clearance (A = AC at issue, B = clearance point).
+    Vector2 _routeA;
+    Vector2 _routeB;
+    bool _routeValid;
     bool _borderBusy;
-    bool _borderLatched;
-    /// <summary>Hard border: keep ATC1 standby text until DistanceToPoint ≤ 1.3 NM.</summary>
-    bool _rerouteStandbyUntilGate;
-    /// <summary>Soft band: factored heading clearance + XFR armed once per XTE &gt; 1.3 entry.</summary>
+    bool _hardActive;
     bool _softClearanceIssued;
-    float _prevXte = -1f;
+    /// <summary>Hard reroute: ATC1 red standby until the next clearance (NewPoint).</summary>
+    bool _rerouteStandbyUntilNextClearance;
 
-    static readonly Color AtcOrange = new Color(1f, 0.55f, 0f);
-    bool _atc1AwaitingResponse;
     bool _atc1GrayDone;
-    float _atc1IssueHeadingErr;
-    bool _atc2AwaitingResponse;
     bool _atc2GrayDone;
-    bool _atc3AwaitingResponse;
     bool _atc3GrayDone;
-    float _atc3IssueSpeed;
 
-    /// <summary>1 for normal turns; 10 only for post-warning catch-up while outside the border.</summary>
+    /// <summary>1 normal; 20 during hard catch-up toward B.</summary>
     public static float TurnRateMul { get; private set; } = 1f;
     public static bool IsOutsideBorder { get; private set; }
     /// <summary>Heading change sign that reduces XTE: -1 left, +1 right, 0 unknown.</summary>
@@ -117,18 +114,12 @@ public class Move : Singleton<Move>
         Atc1.text = "";
         Atc2.text = "";
         Atc3.text = "";
-        CancelAtc1ResponseWatch();
-        CancelAtc2ResponseWatch();
-        CancelAtc3ResponseWatch();
+        _atc1GrayDone = false;
+        _atc2GrayDone = false;
+        _atc3GrayDone = false;
         _atc3IssuedSpeed = 0;
-        _borderBusy = false;
-        _borderLatched = false;
-        _rerouteStandbyUntilGate = false;
-        _softClearanceIssued = false;
-        _prevXte = -1f;
-        TurnRateMul = 1f;
-        IsOutsideBorder = false;
-        XteReduceHeadingSign = 0f;
+        ResetBorderState();
+        _routeValid = false;
 
         var otherACsCount = _currentLevelData.otherACs.Length;
         _otherACs = new OtherAC[otherACsCount];
@@ -172,95 +163,92 @@ public class Move : Singleton<Move>
 
     private float DistanceFromRoute()
     {
-        return Mathf.Abs(Mathf.Sin(Mathf.DeltaAngle(TrackToPoint(point), PrvTrackToPoint) * Mathf.Deg2Rad)) * hyp;
+        if (!TryGetRouteXte(out float signedXte, out _, out _))
+            return 0f;
+        return Mathf.Abs(signedXte);
     }
 
     /*
-     * BORDER RULES
-     * ------------
-     * Geometry: XTE vs clearance track (PrvTrackToPoint → Point). Sequence gate = DistanceToPoint < 1.3 NM.
-     *
-     * 1) DistanceToPoint ≤ 1.3 NM
-     *    Sequencing owns the aircraft. Border idle (no warn / no boost).
-     *
-     * 2) Soft band — XTE crosses above 1.3 NM
-     *    Once per entry: ATC factored heading clearance + XFR1 armed. No dialog.
-     *
-     * 3) Hard band — XTE > 2.6 NM
-     *    Outside border. Warnings / catch-up apply (unless skipped below).
-     *    Reroute always starts with PILOT RESPONSE dialog; ATC1 standby only after dialog.
-     *    Standby text stays until DistanceToPoint ≤ 1.3 NM.
-     *
-     * 4) After waypoint sync
-     *    No warnings until PrvPoint has been left (≥ max(NextInstructionDistance, 1.3) NM).
-     *
-     * 5) Skip warn if already turning toward the XTE-reducing side.
-     *
-     * 6) Hard + not turning to reduce XTE
-     *    Dialog "PILOT RESPONSE" / Fly Heading (factored). Latches warning.
-     *
-     * 7) After warning (latched) while still hard-outside
-     *    Force unfactored heading to point, turn rate 10x. Clear latch when XTE ≤ 1.3.
-     *
-     * 8) Normal turns (not latched catch-up): turn rate 1x.
-     *    Outside catch-up turns after warning: only XTE-reducing turn direction allowed (Pilot).
+     * BORDERGUARD
+     * -----------
+     * 1) Each new clearance defines route A→B (A = AC position at issue, B = clearance point).
+     * 2) Soft: cone from B abeam ±1.3 NM toward A at 7°.
+     * 3) Hard: same abeam anchors, 15° cone toward A.
+     * 4) Soft breach → one FactoredHeading clearance.
+     * 5) Hard breach (15° cone OR Dist(B) > |A-B|+5 NM) → dialog, one-shot TrackToPoint(B) at 20x.
+     *    Hard mode until Dist(B) ≤ 1.3 NM. No per-tick heading recompute.
+     *    ATC1 red "Rerouting , Standby!!" until next clearance. No turn-in-progress skip.
+     *    Turn direction always reduces XTE (Pilot).
      */
     void BorderGuard()
     {
-        const float softNm = 1.3f;
-        const float hardNm = 2.6f;
-        const float gateNm = 1.3f;
+        const float abeamNm = 1.3f;
+        const float softDeg = 7f;
+        const float hardDeg = 15f;
+        const float hardGateNm = 1.3f;
+        const float beyondAbExtraNm = 5f;
 
-        if (_borderBusy || Session.PlayerAircraft == null)
+        if (_borderBusy || Session.PlayerAircraft == null || !_routeValid)
             return;
 
-        if (DistanceToPoint <= gateNm)
+        if (!TryGetRouteXte(out float signedXte, out float alongFromBTowardA, out float routeBrg))
+            return;
+
+        float xte = Mathf.Abs(signedXte);
+        float softHalf = abeamNm + Mathf.Max(0f, alongFromBTowardA) * Mathf.Tan(softDeg * Mathf.Deg2Rad);
+        float hardHalf = abeamNm + Mathf.Max(0f, alongFromBTowardA) * Mathf.Tan(hardDeg * Mathf.Deg2Rad);
+        float abLen = Vector2.Distance(_routeA, _routeB);
+        bool beyondAb = DistanceToPoint > abLen + beyondAbExtraNm;
+
+        string modeName = _hardActive || xte > hardHalf || beyondAb
+            ? "Hard"
+            : (xte > softHalf ? "Soft" : "Normal");
+        Debug.Log($"Mode={modeName}, XTE={xte:F2}, DistB={DistanceToPoint:F2}");
+
+        // signedXte > 0 (right of A→B) → turn left to reduce.
+        XteReduceHeadingSign = signedXte > 0.05f ? -1f : signedXte < -0.05f ? 1f : 0f;
+        Perpend = signedXte > 0f ? routeBrg + 90f : routeBrg - 90f;
+        teta = Mathf.Atan2(xte - hardHalf, Mathf.Max(0.1f, alongFromBTowardA)) * Mathf.Rad2Deg;
+
+        if (_rerouteStandbyUntilNextClearance)
+            SetAtcReroutingStandby();
+
+        // Near B: hard mode ends; sequencing owns the aircraft.
+        if (DistanceToPoint <= hardGateNm)
         {
+            if (_hardActive)
+                EndHardMode();
             ClearOutsideBorderSteer();
-            _rerouteStandbyUntilGate = false;
             _softClearanceIssued = false;
             return;
         }
 
-        float signedXte = Mathf.Sin(Mathf.DeltaAngle(TrackToPoint(point), PrvTrackToPoint) * Mathf.Deg2Rad) * hyp;
-        float xte = Mathf.Abs(signedXte);
-        IsOutsideBorder = xte > hardNm;
-        // Normal turns stay 1x. Post-warning catch-up while outside hard band is 10x toward unfactored target heading.
-        TurnRateMul = (IsOutsideBorder && _borderLatched) ? 10f : 1f;
-        // signedXte > 0 → prefer heading decrease; < 0 → prefer heading increase.
-        XteReduceHeadingSign = signedXte > 0.05f ? -1f : signedXte < -0.05f ? 1f : 0f;
-
-        int directHdg = Calculator.NormalizeHeading360((int)Mathf.Round(TrackToPoint(point)));
-
-        // After warning: 10x turn onto unfactored heading to the point.
-        if (IsOutsideBorder && _borderLatched)
+        if (_hardActive)
         {
-            Calculator.RHeading = directHdg;
-            Calculator.Instance.AddWindEffectToRHeading();
-            XFRHdg = directHdg;
-            mode = 2;
+            // Hard: keep 20x turn toward the TrackToPoint captured at hard start (no recompute).
+            SlowDown();
+            IsOutsideBorder = true;
+            TurnRateMul = 20f;
+            return;
         }
 
-        float turnToTarget = Mathf.Abs(Mathf.DeltaAngle(Calculator.CTrack, directHdg));
-        Debug.Log("XTE: " + xte + "  turn: " + turnToTarget);
-
-        Perpend = signedXte > 0f
-            ? PrvTrackToPoint + 90f
-            : PrvTrackToPoint - 90f;
-        float along = hyp * Mathf.Cos(Mathf.DeltaAngle(TrackToPoint(point), PrvTrackToPoint) * Mathf.Deg2Rad);
-        teta = Mathf.Atan2(xte - hardNm, Mathf.Max(0.1f, along)) * Mathf.Rad2Deg;
-
-        // Soft band: one-shot factored clearance + XFR on XTE > 1.3 entry.
-        // Hard reroute standby only after dialog (IssueHeadingCorrection).
-        if (_rerouteStandbyUntilGate)
+        if (xte > hardHalf || beyondAb)
         {
-            SetAtcReroutingStandby();
+            int directHdg = Calculator.NormalizeHeading360((int)Mathf.Round(TrackToPoint(point)));
+            IssueHeadingCorrection(
+                directHdg,
+                title: "PILOT RESPONSE",
+                body: "Excessive Deviation\nStandby for next clearence\nAuto Rerouting!!");
+            return;
         }
-        else if (xte > softNm)
+
+        // Soft: one FactoredHeading clearance per soft-cone entry.
+        if (xte > softHalf)
         {
             if (!_softClearanceIssued)
             {
                 _softClearanceIssued = true;
+                SlowDown();
                 RefreshAtcFactoredClearance();
             }
         }
@@ -268,49 +256,68 @@ public class Move : Singleton<Move>
         {
             _softClearanceIssued = false;
         }
+    }
 
-        // After a correction, wait until back inside soft band before allowing another dialog.
-        if (_borderLatched)
+    /// <summary>
+    /// Signed XTE relative to A→B (positive = right of track), distance from B toward A along route, route bearing.
+    /// </summary>
+    bool TryGetRouteXte(out float signedXte, out float alongFromBTowardA, out float routeBrg)
+    {
+        signedXte = 0f;
+        alongFromBTowardA = 0f;
+        routeBrg = 0f;
+
+        Vector2 ab = _routeB - _routeA;
+        float abLen = ab.magnitude;
+        if (abLen < 0.01f)
+            return false;
+
+        Vector2 abDir = ab / abLen;
+        Vector2 ac = Session.PlayerAircraft.NMPosition - _routeA;
+        // Right-of-track: rotate abDir 90° clockwise in (x=East, y=North).
+        signedXte = ac.x * abDir.y - ac.y * abDir.x;
+        alongFromBTowardA = Vector2.Dot(Session.PlayerAircraft.NMPosition - _routeB, -abDir);
+        routeBrg = Mathf.Atan2(ab.x, ab.y) * Mathf.Rad2Deg;
+        if (routeBrg < 0f) routeBrg += 360f;
+        return true;
+    }
+
+    void CaptureRouteAB()
+    {
+        if (Session.PlayerAircraft == null)
         {
-            if (xte <= softNm)
-                _borderLatched = false;
+            _routeValid = false;
             return;
         }
 
-        // After sequencing: no warnings until the new PrvPoint has been left behind.
-        if (!HasPassedPrvPoint())
-            return;
+        _routeA = Session.PlayerAircraft.NMPosition;
+        _routeB = PointPos(point);
+        _routeValid = true;
+    }
 
-        // Already turning toward the side that reduces XTE → do not warn.
-        float turnDir = Mathf.DeltaAngle(Calculator.CHeading, Calculator.RHeading);
-        if (Mathf.Abs(turnDir) <= 5f)
-            turnDir = Mathf.DeltaAngle(PrvHdg, Calculator.CHeading);
-        PrvHdg = Calculator.CHeading;
+    void ResetBorderState()
+    {
+        _borderBusy = false;
+        _hardActive = false;
+        _softClearanceIssued = false;
+        _rerouteStandbyUntilNextClearance = false;
+        ClearOutsideBorderSteer();
+    }
 
-        if (XteReduceHeadingSign != 0f && Mathf.Abs(turnDir) > 0.5f
-            && Mathf.Sign(turnDir) == Mathf.Sign(XteReduceHeadingSign))
-            return;
-
-        _prevXte = xte;
-
-        if (xte <= hardNm)
-            return;
-
-        int hdg = TrackToPointFactored(point);
-        IssueHeadingCorrection(
-            hdg,
-            title: "PILOT RESPONSE",
-            body: "Excessive Deviation\nStandby for next clearence\nAuto Rerouting!!");
+    void EndHardMode()
+    {
+        _hardActive = false;
+        ClearOutsideBorderSteer();
     }
 
     void SetAtcReroutingStandby()
     {
-        CancelAtc1ResponseWatch();
         if (Atc1 == null)
             return;
 
-        Atc1.color = Color.red;
+        Atc1.color = Color.green;
         Atc1.text = "Rerouting , Standby!!";
+        _atc1GrayDone = false;
         SetXfrGlow(1, false);
     }
 
@@ -320,15 +327,14 @@ public class Move : Singleton<Move>
         XFRHdg = hdg;
         mode = 2;
         XFR1.interactable = true;
-        SetXfrGlow(1, true);
-        ArmAtc1ResponseWatch();
 
         if (Atc1 == null)
             return;
 
         Atc1.text = "Turn " + TurnDirection(TrackToPoint(point))
                     + "Heading " + hdg;
-        Atc1.color = AtcOrange;
+        Atc1.color = Color.green;
+        _atc1GrayDone = false;
     }
 
     void SetXfrGlow(int channel, bool glow)
@@ -338,68 +344,18 @@ public class Move : Singleton<Move>
             txt.fontMaterial.SetFloat(ShaderUtilities.ID_GlowPower, glow ? 1f : 0f);
     }
 
-    void ArmAtc1ResponseWatch()
-    {
-        CancelInvoke(nameof(Atc1ResponseTimeout));
-        _atc1AwaitingResponse = true;
-        _atc1GrayDone = false;
-        _atc1IssueHeadingErr = Mathf.Abs(Mathf.DeltaAngle(Calculator.CHeading, XFRHdg));
-        Invoke(nameof(Atc1ResponseTimeout), 10f);
-    }
-
-    void CancelAtc1ResponseWatch()
-    {
-        CancelInvoke(nameof(Atc1ResponseTimeout));
-        _atc1AwaitingResponse = false;
-    }
-
-    void Atc1ResponseTimeout()
-    {
-        _atc1AwaitingResponse = false;
-    }
-
+    /// <summary>ATC text gray + XFR matte — only from XFR click.</summary>
     public void AcknowledgeAtc1()
     {
-        CancelAtc1ResponseWatch();
-        if (_atc1GrayDone || Atc1 == null || Atc1.text == "Rerouting , Standby!!")
+        if (_atc1GrayDone || Atc1 == null || string.IsNullOrEmpty(Atc1.text))
             return;
         _atc1GrayDone = true;
         Atc1.color = Color.gray;
         SetXfrGlow(1, false);
     }
 
-    void CheckAtc1TurnResponse()
-    {
-        if (!_atc1AwaitingResponse || mode != 2)
-            return;
-
-        float err = Mathf.Abs(Mathf.DeltaAngle(Calculator.CHeading, XFRHdg));
-        if (_atc1IssueHeadingErr - err >= 5f)
-            AcknowledgeAtc1();
-    }
-
-    void ArmAtc2ResponseWatch()
-    {
-        CancelInvoke(nameof(Atc2ResponseTimeout));
-        _atc2AwaitingResponse = true;
-        _atc2GrayDone = false;
-        Invoke(nameof(Atc2ResponseTimeout), 10f);
-    }
-
-    void CancelAtc2ResponseWatch()
-    {
-        CancelInvoke(nameof(Atc2ResponseTimeout));
-        _atc2AwaitingResponse = false;
-    }
-
-    void Atc2ResponseTimeout()
-    {
-        _atc2AwaitingResponse = false;
-    }
-
     public void AcknowledgeAtc2()
     {
-        CancelAtc2ResponseWatch();
         if (_atc2GrayDone || Atc2 == null || string.IsNullOrEmpty(Atc2.text))
             return;
         _atc2GrayDone = true;
@@ -407,50 +363,13 @@ public class Move : Singleton<Move>
         SetXfrGlow(2, false);
     }
 
-    void CheckAtc2DescentResponse()
-    {
-        if (!_atc2AwaitingResponse)
-            return;
-        if (Calculator.CVS < -300)
-            AcknowledgeAtc2();
-    }
-
-    void ArmAtc3ResponseWatch()
-    {
-        CancelInvoke(nameof(Atc3ResponseTimeout));
-        _atc3AwaitingResponse = true;
-        _atc3GrayDone = false;
-        _atc3IssueSpeed = (float)Calculator.CSpeed;
-        Invoke(nameof(Atc3ResponseTimeout), 10f);
-    }
-
-    void CancelAtc3ResponseWatch()
-    {
-        CancelInvoke(nameof(Atc3ResponseTimeout));
-        _atc3AwaitingResponse = false;
-    }
-
-    void Atc3ResponseTimeout()
-    {
-        _atc3AwaitingResponse = false;
-    }
-
     public void AcknowledgeAtc3()
     {
-        CancelAtc3ResponseWatch();
         if (_atc3GrayDone || Atc3 == null || string.IsNullOrEmpty(Atc3.text))
             return;
         _atc3GrayDone = true;
         Atc3.color = Color.gray;
         SetXfrGlow(3, false);
-    }
-
-    void CheckAtc3SpeedResponse()
-    {
-        if (!_atc3AwaitingResponse)
-            return;
-        if (_atc3IssueSpeed - (float)Calculator.CSpeed >= 5f)
-            AcknowledgeAtc3();
     }
 
     static void ClearOutsideBorderSteer()
@@ -460,24 +379,13 @@ public class Move : Singleton<Move>
         XteReduceHeadingSign = 0f;
     }
 
-    /// <summary>
-    /// True once we have left the sequence bubble around PrvPoint (set when the previous point synced).
-    /// </summary>
-    bool HasPassedPrvPoint()
-    {
-        if (PrvPoint <= 0)
-            return true;
-
-        float distFromPrv = Vector2.Distance(Session.PlayerAircraft.NMPosition, PointPos(PrvPoint));
-        float gate = Mathf.Max(NextInstructionDistance, 1.3f);
-        return distFromPrv >= gate;
-    }
-
     void IssueHeadingCorrection(int hdg, string title, string body)
     {
         _borderBusy = true;
-        _borderLatched = true;
-        _rerouteStandbyUntilGate = true;
+        _hardActive = true;
+        _rerouteStandbyUntilNextClearance = true;
+        IsOutsideBorder = true;
+        TurnRateMul = 20f;
         SetAtcReroutingStandby();
         SlowDown();
 
@@ -572,11 +480,7 @@ public class Move : Singleton<Move>
 
              ((modS == 2) && (Calculator.CSpeed > ATCSpeed + 10)))
         {
-
-            Atc3.color = Color.red;
-            SetXfrGlow(3, false);
             FuelPenalty += 0.001;
-
         }
 
         isSpeedChecked = true;
@@ -661,8 +565,7 @@ public class Move : Singleton<Move>
             if (mode == 2) XFRHdg = TrackToPointFactored(point);
             if (Altitude > 0) XFRAltitude = Altitude;
 
-            // XFR3 only clickable when MCP speed differs from clearance
-            XFR3.interactable = Speed > 0 && XFRSpeed != Calculator.RSpeed;
+            XFR3.interactable = Speed > 0;
 
 
             PrvTrackToPoint = TrackToPoint(point);
@@ -671,25 +574,12 @@ public class Move : Singleton<Move>
                 Atc1.color = Color.green;
                 _atc1GrayDone = false;
                 if (mode == 2)
-                {
                     SetXfrGlow(1, true);
-                    ArmAtc1ResponseWatch();
-                }
                 else
-                {
                     SetXfrGlow(1, false);
-                    CancelAtc1ResponseWatch();
-                }
-
-                // ATC2: ATC1 clearance sonrası 10 sn içinde alçalış varsa gri
-                if (Altitude > 0)
-                    ArmAtc2ResponseWatch();
             }
             else
-            {
                 SetXfrGlow(1, false);
-                CancelAtc1ResponseWatch();
-            }
 
             if (mode > 0) Cmode = mode;
             if (Cmode == 1) FuelPenaltyAtFMCAltConstain(); // Check  Alt constrains on point for penalty
@@ -700,44 +590,14 @@ public class Move : Singleton<Move>
 
             NewPoint = false;
 
-            _borderBusy = false;
-            _borderLatched = false;
-            _rerouteStandbyUntilGate = false;
-            _softClearanceIssued = false;
-            _prevXte = -1f;
-            TurnRateMul = 1f;
-            IsOutsideBorder = false;
-            XteReduceHeadingSign = 0f;
+            CaptureRouteAB();
+            ResetBorderState();
 
             if (mode > 0 || XFR2.interactable || XFR3.interactable) SlowDown();
 
         }
         else // Not New
         {
-            CheckAtc1TurnResponse();
-            CheckAtc2DescentResponse();
-            CheckAtc3SpeedResponse();
-
-            if (XFRHdg == Calculator.RHeading)
-            {
-                XFR1.interactable = false;
-                if (mode == 2)
-                    AcknowledgeAtc1();
-            }
-            if (XFRAltitude == Calculator.RAltitude)
-            {
-                XFR2.interactable = false;
-                if (Altitude > 0 || _atc2AwaitingResponse)
-                    AcknowledgeAtc2();
-            }
-            if (XFRSpeed == Calculator.RSpeed)
-            {
-                XFR3.interactable = false;
-                SetXfrGlow(3, false);
-                if (Speed > 0 || _atc3AwaitingResponse)
-                    AcknowledgeAtc3();
-            }
-
             // Debug.Log(XFRHdg +"H"+ Calculator.RHeading+  "     "+ XFRAltitude +"A"+ Calculator.RAltitude + "   " + Speed +"S"+ Calculator.RSpeed);
 
             float dev = LocDeviation(Session.CurrentLevel.levelInfo.Course);
@@ -751,12 +611,12 @@ public class Move : Singleton<Move>
         {
             Atc2.color = Color.green;
             SetXfrGlow(2, true);
+            _atc2GrayDone = false;
             isDescentChecked = false;
             ATCAltitude = Altitude;
             ATCVS = VS;
             modD = VS == 0 ? -1 : VS_nx;
             CancelInvoke(nameof(DescentCheck));
-            ArmAtc2ResponseWatch();
             InvokeRepeating(nameof(DescentCheck), 10f, 1f);
         }
 
@@ -765,6 +625,7 @@ public class Move : Singleton<Move>
             _atc3IssuedSpeed = Speed;
             XFRSpeed = Speed;
             Atc3.color = Color.green;
+            _atc3GrayDone = false;
             isSpeedChecked = false;
             ATCSpeed = Speed;
             if ((RawSpeed > 0) && (RawSpeed < ATCSpeed) && (Speed_nx != 1) && (Cmode == 1))
@@ -772,16 +633,8 @@ public class Move : Singleton<Move>
             modS = ((RawSpeed > 0) && (RawSpeed < Speed) && (Speed_nx != 1) && (Cmode == 1)) ? 2 : Speed_nx;
             CancelInvoke(nameof(SpeedCheck));
 
-            bool needsTransfer = XFRSpeed != Calculator.RSpeed;
-            XFR3.interactable = needsTransfer;
-            SetXfrGlow(3, needsTransfer);
-            if (needsTransfer)
-                ArmAtc3ResponseWatch();
-            else
-            {
-                CancelAtc3ResponseWatch();
-                _atc3GrayDone = true;
-            }
+            XFR3.interactable = true;
+            SetXfrGlow(3, true);
 
             InvokeRepeating(nameof(SpeedCheck), Mathf.Abs((float)Calculator.CSpeed - ATCSpeed) * 2.5f,
                 1f); //  secs before warning
@@ -975,25 +828,10 @@ public class Move : Singleton<Move>
 
         AltRef = AltBelow > AltExact ? AltBelow : AltExact;
 
-        if ((Mathf.Abs((int)Calculator.CAltitude - ATCAltitude) > 300) &&
-            (Mathf.Abs((int)Calculator.CAltitude - AltRef) > 300))
-        {
-            if ((Calculator.CVS > -300) ||
-
-                ((modD == 0) && ((Calculator.CVS > ATCVS + 300) || (Calculator.CVS < ATCVS - 300))) ||
-
-                ((modD == 1) && (Calculator.CVS > ATCVS + 300)) ||
-
-                ((modD == 2) && (Calculator.CVS < ATCVS - 300)))
-            {
-                Atc2.color = Color.red;
-                SetXfrGlow(2, false);
-            }
-        }
-        else
+        if (Mathf.Abs((int)Calculator.CAltitude - ATCAltitude) <= 300 ||
+            Mathf.Abs((int)Calculator.CAltitude - AltRef) <= 300)
         {
             CancelInvoke(nameof(DescentCheck));
-            CancelAtc2ResponseWatch();
             Atc2.text = "";
         }
 
