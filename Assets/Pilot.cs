@@ -55,13 +55,19 @@ namespace Navigation
 
         private void UpdateHeadingTowardsAngleDiff(float difDegrees)
         {
+            // Outside corridor: turn only in the XTE-reducing direction.
+            if (!_isTracer && Move.IsOutsideBorder && Move.XteReduceHeadingSign != 0f
+                && Mathf.Abs(difDegrees) > 0.5f)
+            {
+                difDegrees = Move.XteReduceHeadingSign * Mathf.Abs(difDegrees);
+            }
+
             var lerpDirection = difDegrees < 0 ? -1 : 1;
             var currentTurningDegrees = lerpDirection *
-                                        Mathf.Min(Session.Settings.TickMaxRotation(_isTracer), Mathf.Abs(difDegrees));
+                                        Mathf.Min(Session.Settings.TickMaxRotation(_isTracer) * Move.TurnRateMul,
+                                            Mathf.Abs(difDegrees));
 
-            
             HeadingDegrees += currentTurningDegrees;
-
             HeadingDegrees %= 360;
         }
     }

@@ -12,9 +12,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 48b17ce8bcdb4cb98567e15496e10fd8, type: 3}
   m_Name: _ _ Level Data 1
   m_EditorClassIdentifier: 
-  MainRoute: {fileID: 11400000, guid: 433ed717470243f4d9f30156522e2a39, type: 2}
-  virtualPoints: {fileID: 11400000, guid: 206017a71f38c9c4d96dfba02be27ebd, type: 2}
-  aTCs: {fileID: 11400000, guid: b9b2dfc86c26cee4ba5eef3bd2a02cd8, type: 2}
+  MainRoute: {fileID: 11400000, guid: 9e99b02a575510948ba6c9ca7ff3ee92, type: 2}
+  virtualPoints: {fileID: 11400000, guid: 53d7fcc5cea286a478a4f159b71defec, type: 2}
+  aTCs: {fileID: 11400000, guid: 78b094a902dd84046bbc2c0825b01df3, type: 2}
   levelInfo: {fileID: 11400000, guid: 8bcadc473985b844f9bff865594d1b48, type: 2}
   otherACs:
   - {fileID: 11400000, guid: ede64e1bbad9e9e4e8adbbc7dfa1efd0, type: 2}

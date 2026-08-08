@@ -56,7 +56,7 @@ public class Aircraft : MovingActor
         DrawHeadingLine();
         CheckAdvancePointOnHDGProximity(out DistanceToNextPoint);
 
-        if (Session.State.ILSCapture)
+        if (Session.State.AppArmed && Session.State.ILSCapture)
         {
             if (!isCatchRw)
             {
@@ -264,6 +264,13 @@ public class Aircraft : MovingActor
 
     public float HeadingDegrees => Calculator.CTrack;
     public float DisplayHeadingDegrees => _pilot.DisplayHeadingDegrees;
+
+    /// <summary>Instantly set aircraft track (no turn lerp).</summary>
+    public void SnapToTrack(float trackDegrees)
+    {
+        _pilot.HeadingDegrees = trackDegrees;
+        _pilot.DisplayHeadingDegrees = trackDegrees;
+    }
 
 
     public void ResetOnActiveSet(float aircraftSpeed, float altitude)

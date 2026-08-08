@@ -1504,12 +1504,16 @@ public class Calculator : MonoBehaviour
         RHeading = NormalizeHeading360(Move.XFRHdg);
         AddWindEffectToRHeading();
         UYServiceLocator.Get<McpUI>().RefreshHS();
+        if (Move.Instance != null)
+            Move.Instance.AcknowledgeAtc1();
     }
     public void XFR2_Click()
     {
         RAltitude = (int)Move.XFRAltitude;
         txtRAltitude.text = RAltitude.ToString();
         txtRAltitude_overTape.text = txtRAltitude.text;
+        if (Move.Instance != null)
+            Move.Instance.AcknowledgeAtc2();
     }
     public void XFR3_Click()
     {
@@ -1524,6 +1528,8 @@ public class Calculator : MonoBehaviour
             txtRSpeed.text = RSpeed.ToString();
         }
         txtRSpeed_overTape.text = txtRSpeed.text;
+        if (Move.Instance != null)
+            Move.Instance.AcknowledgeAtc3();
     }
 
     public static void Check_LimitSpeed()

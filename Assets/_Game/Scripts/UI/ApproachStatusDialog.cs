@@ -79,10 +79,10 @@ public class ApproachStatusDialog : MonoBehaviour
             TextAlignmentOptions.Center, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
             new Vector2(0f, -32f), new Vector2(660f, 56f), new Color32(245, 232, 214, 255));
 
-        CreateTmp(panelGo.transform, "Body", "", 30f, FontStyles.Normal,
-            TextAlignmentOptions.TopLeft, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
+        CreateTmp(panelGo.transform, "Body", "", 42f, FontStyles.Normal,
+            TextAlignmentOptions.Center, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
             new Vector2(0f, -100f), new Vector2(640f, 320f), new Color32(210, 218, 228, 255),
-            wordWrap: false);
+            wordWrap: true);
 
         var buttonGo = new GameObject("Exit Button", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button));
         buttonGo.transform.SetParent(panelGo.transform, false);
@@ -114,20 +114,23 @@ public class ApproachStatusDialog : MonoBehaviour
         if (titleTmp != null)
         {
             titleTmp.richText = true;
-            bool stable = string.Equals(title, "STABLE", StringComparison.OrdinalIgnoreCase);
-            titleTmp.text = stable
-                ? "<color=#5CDB7A>STABLE</color>"
-                : "<color=#E85D5D>NOT STABLE</color>";
+            if (string.Equals(title, "STABLE", StringComparison.OrdinalIgnoreCase))
+                titleTmp.text = "<color=#5CDB7A>STABLE</color>";
+            else if (string.Equals(title, "NOT STABLE", StringComparison.OrdinalIgnoreCase))
+                titleTmp.text = "<color=#E85D5D>NOT STABLE</color>";
+            else
+                titleTmp.text = $"<color=#E85D5D>{title}</color>";
         }
 
         if (bodyTmp != null)
         {
             bodyTmp.richText = true;
             bodyTmp.text = body;
-            bodyTmp.fontSize = 30f;
+            bodyTmp.fontSize = 42f;
             bodyTmp.fontStyle = FontStyles.Normal;
-            bodyTmp.enableWordWrapping = false;
-            bodyTmp.lineSpacing = 10f;
+            bodyTmp.alignment = TextAlignmentOptions.Center;
+            bodyTmp.enableWordWrapping = true;
+            bodyTmp.lineSpacing = 16f;
         }
 
         if (buttonLabelTmp != null)

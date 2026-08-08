@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Gamelogic.Extensions;
 using Navigation;
 using UnityEngine;
@@ -31,6 +31,8 @@ public class Move : Singleton<Move>
     private Vector2[] TempPtsPos = new Vector2[100];
     private long ATCAltitude, OncekiAlt;
     private int ATCVS, ATCSpeed;
+    /// <summary>Last ATC Speed value that armed Atc3 / XFR3 UI (avoids RawSpeed↔ATCSpeed retrigger).</summary>
+    private int _atc3IssuedSpeed;
     private bool isDescentChecked, isSpeedChecked, isRouteChecked;
     private int modD = 0, modS = 0;
     private int RawSpeed = 0;
@@ -51,6 +53,29 @@ public class Move : Singleton<Move>
     int _currentInstructionIndex = 0;
     int RW;
     float NextInstructionDistance = 1.3f;
+    bool _borderBusy;
+    bool _borderLatched;
+    /// <summary>Hard border: keep ATC1 standby text until DistanceToPoint ≤ 1.3 NM.</summary>
+    bool _rerouteStandbyUntilGate;
+    /// <summary>Soft band: factored heading clearance + XFR armed once per XTE &gt; 1.3 entry.</summary>
+    bool _softClearanceIssued;
+    float _prevXte = -1f;
+
+    static readonly Color AtcOrange = new Color(1f, 0.55f, 0f);
+    bool _atc1AwaitingResponse;
+    bool _atc1GrayDone;
+    float _atc1IssueHeadingErr;
+    bool _atc2AwaitingResponse;
+    bool _atc2GrayDone;
+    bool _atc3AwaitingResponse;
+    bool _atc3GrayDone;
+    float _atc3IssueSpeed;
+
+    /// <summary>1 for normal turns; 10 only for post-warning catch-up while outside the border.</summary>
+    public static float TurnRateMul { get; private set; } = 1f;
+    public static bool IsOutsideBorder { get; private set; }
+    /// <summary>Heading change sign that reduces XTE: -1 left, +1 right, 0 unknown.</summary>
+    public static float XteReduceHeadingSign { get; private set; }
 
     public Button XFR1, XFR2, XFR3;
     public TextMeshProUGUI XFR1Txt, XFR2Txt, XFR3Txt;
@@ -92,7 +117,18 @@ public class Move : Singleton<Move>
         Atc1.text = "";
         Atc2.text = "";
         Atc3.text = "";
-
+        CancelAtc1ResponseWatch();
+        CancelAtc2ResponseWatch();
+        CancelAtc3ResponseWatch();
+        _atc3IssuedSpeed = 0;
+        _borderBusy = false;
+        _borderLatched = false;
+        _rerouteStandbyUntilGate = false;
+        _softClearanceIssued = false;
+        _prevXte = -1f;
+        TurnRateMul = 1f;
+        IsOutsideBorder = false;
+        XteReduceHeadingSign = 0f;
 
         var otherACsCount = _currentLevelData.otherACs.Length;
         _otherACs = new OtherAC[otherACsCount];
@@ -136,7 +172,331 @@ public class Move : Singleton<Move>
 
     private float DistanceFromRoute()
     {
-        return (Mathf.Abs(Mathf.Sin(Mathf.Abs(TrackToPoint(point) - PrvTrackToPoint) * Mathf.Deg2Rad)) * hyp);
+        return Mathf.Abs(Mathf.Sin(Mathf.DeltaAngle(TrackToPoint(point), PrvTrackToPoint) * Mathf.Deg2Rad)) * hyp;
+    }
+
+    /*
+     * BORDER RULES
+     * ------------
+     * Geometry: XTE vs clearance track (PrvTrackToPoint → Point). Sequence gate = DistanceToPoint < 1.3 NM.
+     *
+     * 1) DistanceToPoint ≤ 1.3 NM
+     *    Sequencing owns the aircraft. Border idle (no warn / no boost).
+     *
+     * 2) Soft band — XTE crosses above 1.3 NM
+     *    Once per entry: ATC factored heading clearance + XFR1 armed. No dialog.
+     *
+     * 3) Hard band — XTE > 2.6 NM
+     *    Outside border. Warnings / catch-up apply (unless skipped below).
+     *    Reroute always starts with PILOT RESPONSE dialog; ATC1 standby only after dialog.
+     *    Standby text stays until DistanceToPoint ≤ 1.3 NM.
+     *
+     * 4) After waypoint sync
+     *    No warnings until PrvPoint has been left (≥ max(NextInstructionDistance, 1.3) NM).
+     *
+     * 5) Skip warn if already turning toward the XTE-reducing side.
+     *
+     * 6) Hard + not turning to reduce XTE
+     *    Dialog "PILOT RESPONSE" / Fly Heading (factored). Latches warning.
+     *
+     * 7) After warning (latched) while still hard-outside
+     *    Force unfactored heading to point, turn rate 10x. Clear latch when XTE ≤ 1.3.
+     *
+     * 8) Normal turns (not latched catch-up): turn rate 1x.
+     *    Outside catch-up turns after warning: only XTE-reducing turn direction allowed (Pilot).
+     */
+    void BorderGuard()
+    {
+        const float softNm = 1.3f;
+        const float hardNm = 2.6f;
+        const float gateNm = 1.3f;
+
+        if (_borderBusy || Session.PlayerAircraft == null)
+            return;
+
+        if (DistanceToPoint <= gateNm)
+        {
+            ClearOutsideBorderSteer();
+            _rerouteStandbyUntilGate = false;
+            _softClearanceIssued = false;
+            return;
+        }
+
+        float signedXte = Mathf.Sin(Mathf.DeltaAngle(TrackToPoint(point), PrvTrackToPoint) * Mathf.Deg2Rad) * hyp;
+        float xte = Mathf.Abs(signedXte);
+        IsOutsideBorder = xte > hardNm;
+        // Normal turns stay 1x. Post-warning catch-up while outside hard band is 10x toward unfactored target heading.
+        TurnRateMul = (IsOutsideBorder && _borderLatched) ? 10f : 1f;
+        // signedXte > 0 → prefer heading decrease; < 0 → prefer heading increase.
+        XteReduceHeadingSign = signedXte > 0.05f ? -1f : signedXte < -0.05f ? 1f : 0f;
+
+        int directHdg = Calculator.NormalizeHeading360((int)Mathf.Round(TrackToPoint(point)));
+
+        // After warning: 10x turn onto unfactored heading to the point.
+        if (IsOutsideBorder && _borderLatched)
+        {
+            Calculator.RHeading = directHdg;
+            Calculator.Instance.AddWindEffectToRHeading();
+            XFRHdg = directHdg;
+            mode = 2;
+        }
+
+        float turnToTarget = Mathf.Abs(Mathf.DeltaAngle(Calculator.CTrack, directHdg));
+        Debug.Log("XTE: " + xte + "  turn: " + turnToTarget);
+
+        Perpend = signedXte > 0f
+            ? PrvTrackToPoint + 90f
+            : PrvTrackToPoint - 90f;
+        float along = hyp * Mathf.Cos(Mathf.DeltaAngle(TrackToPoint(point), PrvTrackToPoint) * Mathf.Deg2Rad);
+        teta = Mathf.Atan2(xte - hardNm, Mathf.Max(0.1f, along)) * Mathf.Rad2Deg;
+
+        // Soft band: one-shot factored clearance + XFR on XTE > 1.3 entry.
+        // Hard reroute standby only after dialog (IssueHeadingCorrection).
+        if (_rerouteStandbyUntilGate)
+        {
+            SetAtcReroutingStandby();
+        }
+        else if (xte > softNm)
+        {
+            if (!_softClearanceIssued)
+            {
+                _softClearanceIssued = true;
+                RefreshAtcFactoredClearance();
+            }
+        }
+        else
+        {
+            _softClearanceIssued = false;
+        }
+
+        // After a correction, wait until back inside soft band before allowing another dialog.
+        if (_borderLatched)
+        {
+            if (xte <= softNm)
+                _borderLatched = false;
+            return;
+        }
+
+        // After sequencing: no warnings until the new PrvPoint has been left behind.
+        if (!HasPassedPrvPoint())
+            return;
+
+        // Already turning toward the side that reduces XTE → do not warn.
+        float turnDir = Mathf.DeltaAngle(Calculator.CHeading, Calculator.RHeading);
+        if (Mathf.Abs(turnDir) <= 5f)
+            turnDir = Mathf.DeltaAngle(PrvHdg, Calculator.CHeading);
+        PrvHdg = Calculator.CHeading;
+
+        if (XteReduceHeadingSign != 0f && Mathf.Abs(turnDir) > 0.5f
+            && Mathf.Sign(turnDir) == Mathf.Sign(XteReduceHeadingSign))
+            return;
+
+        _prevXte = xte;
+
+        if (xte <= hardNm)
+            return;
+
+        int hdg = TrackToPointFactored(point);
+        IssueHeadingCorrection(
+            hdg,
+            title: "PILOT RESPONSE",
+            body: "Excessive Deviation\nStandby for next clearence\nAuto Rerouting!!");
+    }
+
+    void SetAtcReroutingStandby()
+    {
+        CancelAtc1ResponseWatch();
+        if (Atc1 == null)
+            return;
+
+        Atc1.color = Color.red;
+        Atc1.text = "Rerouting , Standby!!";
+        SetXfrGlow(1, false);
+    }
+
+    void RefreshAtcFactoredClearance()
+    {
+        int hdg = Calculator.NormalizeHeading360(TrackToPointFactored(point));
+        XFRHdg = hdg;
+        mode = 2;
+        XFR1.interactable = true;
+        SetXfrGlow(1, true);
+        ArmAtc1ResponseWatch();
+
+        if (Atc1 == null)
+            return;
+
+        Atc1.text = "Turn " + TurnDirection(TrackToPoint(point))
+                    + "Heading " + hdg;
+        Atc1.color = AtcOrange;
+    }
+
+    void SetXfrGlow(int channel, bool glow)
+    {
+        TextMeshProUGUI txt = channel == 1 ? XFR1Txt : channel == 2 ? XFR2Txt : XFR3Txt;
+        if (txt != null)
+            txt.fontMaterial.SetFloat(ShaderUtilities.ID_GlowPower, glow ? 1f : 0f);
+    }
+
+    void ArmAtc1ResponseWatch()
+    {
+        CancelInvoke(nameof(Atc1ResponseTimeout));
+        _atc1AwaitingResponse = true;
+        _atc1GrayDone = false;
+        _atc1IssueHeadingErr = Mathf.Abs(Mathf.DeltaAngle(Calculator.CHeading, XFRHdg));
+        Invoke(nameof(Atc1ResponseTimeout), 10f);
+    }
+
+    void CancelAtc1ResponseWatch()
+    {
+        CancelInvoke(nameof(Atc1ResponseTimeout));
+        _atc1AwaitingResponse = false;
+    }
+
+    void Atc1ResponseTimeout()
+    {
+        _atc1AwaitingResponse = false;
+    }
+
+    public void AcknowledgeAtc1()
+    {
+        CancelAtc1ResponseWatch();
+        if (_atc1GrayDone || Atc1 == null || Atc1.text == "Rerouting , Standby!!")
+            return;
+        _atc1GrayDone = true;
+        Atc1.color = Color.gray;
+        SetXfrGlow(1, false);
+    }
+
+    void CheckAtc1TurnResponse()
+    {
+        if (!_atc1AwaitingResponse || mode != 2)
+            return;
+
+        float err = Mathf.Abs(Mathf.DeltaAngle(Calculator.CHeading, XFRHdg));
+        if (_atc1IssueHeadingErr - err >= 5f)
+            AcknowledgeAtc1();
+    }
+
+    void ArmAtc2ResponseWatch()
+    {
+        CancelInvoke(nameof(Atc2ResponseTimeout));
+        _atc2AwaitingResponse = true;
+        _atc2GrayDone = false;
+        Invoke(nameof(Atc2ResponseTimeout), 10f);
+    }
+
+    void CancelAtc2ResponseWatch()
+    {
+        CancelInvoke(nameof(Atc2ResponseTimeout));
+        _atc2AwaitingResponse = false;
+    }
+
+    void Atc2ResponseTimeout()
+    {
+        _atc2AwaitingResponse = false;
+    }
+
+    public void AcknowledgeAtc2()
+    {
+        CancelAtc2ResponseWatch();
+        if (_atc2GrayDone || Atc2 == null || string.IsNullOrEmpty(Atc2.text))
+            return;
+        _atc2GrayDone = true;
+        Atc2.color = Color.gray;
+        SetXfrGlow(2, false);
+    }
+
+    void CheckAtc2DescentResponse()
+    {
+        if (!_atc2AwaitingResponse)
+            return;
+        if (Calculator.CVS < -300)
+            AcknowledgeAtc2();
+    }
+
+    void ArmAtc3ResponseWatch()
+    {
+        CancelInvoke(nameof(Atc3ResponseTimeout));
+        _atc3AwaitingResponse = true;
+        _atc3GrayDone = false;
+        _atc3IssueSpeed = (float)Calculator.CSpeed;
+        Invoke(nameof(Atc3ResponseTimeout), 10f);
+    }
+
+    void CancelAtc3ResponseWatch()
+    {
+        CancelInvoke(nameof(Atc3ResponseTimeout));
+        _atc3AwaitingResponse = false;
+    }
+
+    void Atc3ResponseTimeout()
+    {
+        _atc3AwaitingResponse = false;
+    }
+
+    public void AcknowledgeAtc3()
+    {
+        CancelAtc3ResponseWatch();
+        if (_atc3GrayDone || Atc3 == null || string.IsNullOrEmpty(Atc3.text))
+            return;
+        _atc3GrayDone = true;
+        Atc3.color = Color.gray;
+        SetXfrGlow(3, false);
+    }
+
+    void CheckAtc3SpeedResponse()
+    {
+        if (!_atc3AwaitingResponse)
+            return;
+        if (_atc3IssueSpeed - (float)Calculator.CSpeed >= 5f)
+            AcknowledgeAtc3();
+    }
+
+    static void ClearOutsideBorderSteer()
+    {
+        TurnRateMul = 1f;
+        IsOutsideBorder = false;
+        XteReduceHeadingSign = 0f;
+    }
+
+    /// <summary>
+    /// True once we have left the sequence bubble around PrvPoint (set when the previous point synced).
+    /// </summary>
+    bool HasPassedPrvPoint()
+    {
+        if (PrvPoint <= 0)
+            return true;
+
+        float distFromPrv = Vector2.Distance(Session.PlayerAircraft.NMPosition, PointPos(PrvPoint));
+        float gate = Mathf.Max(NextInstructionDistance, 1.3f);
+        return distFromPrv >= gate;
+    }
+
+    void IssueHeadingCorrection(int hdg, string title, string body)
+    {
+        _borderBusy = true;
+        _borderLatched = true;
+        _rerouteStandbyUntilGate = true;
+        SetAtcReroutingStandby();
+        SlowDown();
+
+        ApproachStatusDialog.Show(title, body, "OK", () =>
+        {
+            _borderBusy = false;
+
+            Calculator.RHeading = Calculator.NormalizeHeading360(hdg);
+            Calculator.Instance.AddWindEffectToRHeading();
+
+            if (Session.State != null)
+                Session.State.AutoSetHDG(true);
+
+            Calculator.Instance.UpdatePFD();
+            mode = 2;
+            XFRHdg = hdg;
+            XFR1.interactable = false;
+            SetAtcReroutingStandby();
+        });
     }
 
 
@@ -214,6 +574,7 @@ public class Move : Singleton<Move>
         {
 
             Atc3.color = Color.red;
+            SetXfrGlow(3, false);
             FuelPenalty += 0.001;
 
         }
@@ -294,128 +655,143 @@ public class Move : Singleton<Move>
             NextInstructionDistance = Speed_nx > 2 ? Speed_nx : 1.3f;
 
             XFR1.interactable = mode == 2 ? true : false;
-            XFR1Txt.fontMaterial.SetFloat(ShaderUtilities.ID_GlowPower, Convert.ToInt32(XFR1.interactable));
             XFR2.interactable = Altitude > 0 ? true : false;
-            XFR2Txt.fontMaterial.SetFloat(ShaderUtilities.ID_GlowPower, Convert.ToInt32(XFR2.interactable));
-            XFR3.interactable = (Speed > 0) ? true : false;
-            XFR3Txt.fontMaterial.SetFloat(ShaderUtilities.ID_GlowPower, Convert.ToInt32(XFR3.interactable));
 
             if (Speed > 0) XFRSpeed = Speed;
             if (mode == 2) XFRHdg = TrackToPointFactored(point);
             if (Altitude > 0) XFRAltitude = Altitude;
 
+            // XFR3 only clickable when MCP speed differs from clearance
+            XFR3.interactable = Speed > 0 && XFRSpeed != Calculator.RSpeed;
+
 
             PrvTrackToPoint = TrackToPoint(point);
-            Atc1.color = Color.green;
+            if (mode > 0)
+            {
+                Atc1.color = Color.green;
+                _atc1GrayDone = false;
+                if (mode == 2)
+                {
+                    SetXfrGlow(1, true);
+                    ArmAtc1ResponseWatch();
+                }
+                else
+                {
+                    SetXfrGlow(1, false);
+                    CancelAtc1ResponseWatch();
+                }
+
+                // ATC2: ATC1 clearance sonrası 10 sn içinde alçalış varsa gri
+                if (Altitude > 0)
+                    ArmAtc2ResponseWatch();
+            }
+            else
+            {
+                SetXfrGlow(1, false);
+                CancelAtc1ResponseWatch();
+            }
+
             if (mode > 0) Cmode = mode;
             if (Cmode == 1) FuelPenaltyAtFMCAltConstain(); // Check  Alt constrains on point for penalty
 
+            // Re-arm Atc3/XFR3 UI when this instruction includes a speed (even if value repeats)
+            if (Speed > 0)
+                _atc3IssuedSpeed = 0;
+
             NewPoint = false;
 
-            //if (mode > 0 || XFR2.interactable || XFR3.interactable) SlowDown();
+            _borderBusy = false;
+            _borderLatched = false;
+            _rerouteStandbyUntilGate = false;
+            _softClearanceIssued = false;
+            _prevXte = -1f;
+            TurnRateMul = 1f;
+            IsOutsideBorder = false;
+            XteReduceHeadingSign = 0f;
+
+            if (mode > 0 || XFR2.interactable || XFR3.interactable) SlowDown();
 
         }
         else // Not New
         {
-            if (XFRHdg == Calculator.RHeading) XFR1.interactable = false;
-            if (XFRHdg == Calculator.RHeading) XFR1Txt.fontMaterial.SetFloat(ShaderUtilities.ID_GlowPower, Convert.ToInt32(false));
-            if (XFRAltitude == Calculator.RAltitude) XFR2.interactable = false;
-            if (XFRAltitude == Calculator.RAltitude) XFR2Txt.fontMaterial.SetFloat(ShaderUtilities.ID_GlowPower, Convert.ToInt32(false));
-            if (XFRSpeed == Calculator.RSpeed) XFR3.interactable = false;
-            if (XFRSpeed == Calculator.RSpeed) XFR3Txt.fontMaterial.SetFloat(ShaderUtilities.ID_GlowPower, Convert.ToInt32(false));
+            CheckAtc1TurnResponse();
+            CheckAtc2DescentResponse();
+            CheckAtc3SpeedResponse();
+
+            if (XFRHdg == Calculator.RHeading)
+            {
+                XFR1.interactable = false;
+                if (mode == 2)
+                    AcknowledgeAtc1();
+            }
+            if (XFRAltitude == Calculator.RAltitude)
+            {
+                XFR2.interactable = false;
+                if (Altitude > 0 || _atc2AwaitingResponse)
+                    AcknowledgeAtc2();
+            }
+            if (XFRSpeed == Calculator.RSpeed)
+            {
+                XFR3.interactable = false;
+                SetXfrGlow(3, false);
+                if (Speed > 0 || _atc3AwaitingResponse)
+                    AcknowledgeAtc3();
+            }
 
             // Debug.Log(XFRHdg +"H"+ Calculator.RHeading+  "     "+ XFRAltitude +"A"+ Calculator.RAltitude + "   " + Speed +"S"+ Calculator.RSpeed);
-
-            Perpend = Mathf.Sin((TrackToPoint(point) - PrvTrackToPoint) * Mathf.Deg2Rad) > 0
-                ? PrvTrackToPoint + 90
-                : PrvTrackToPoint - 90;
-
 
             float dev = LocDeviation(Session.CurrentLevel.levelInfo.Course);
             float gsD = GsDeviation(Session.CurrentLevel.levelInfo.GlideSlope);
             float ils = Session.ILSRoute != null ? ILSDeviation(Session.CurrentLevel.levelInfo.Course) : 0;
 
-            float x = hyp * Mathf.Cos(Mathf.DeltaAngle(TrackToPoint(point), PrvTrackToPoint) * Mathf.Deg2Rad);
-
-            teta = Mathf.Atan2(DistanceFromRoute() - 1.3f, x) * Mathf.Rad2Deg;//noktanin 1.3 nm uzerine aci
-            bool NoTurn = (Calculator.CHeading == PrvHdg);
-
-            // Debug.Log("D: " + DistanceFromRoute()
-            //        + " Pt: " + point
-            //        + " prvPtDis: " + PrvDistanceToPoint
-            //        + " PtDis: " + DistanceToPoint
-            //        + "NoTurn  :" + NoTurn
-            //        + "CH  :" + Calculator.CHeading
-            //        + "PH  :" + PrvHdg  );
-
-
-            float warningDistance = (Atc1.text == "ATC Rerouting") ? 7 : 1.3f;
-
-            if ((NoTurn) & (DistanceFromRoute() > warningDistance) & (PrvDistanceToPoint > 4))
-            {
-
-                //SlowDown();
-                //  Time.timeScale = 0; 
-
-
-                int FactoredAngleToPoint = TrackToPointFactored(point);
-                int FactoredAngleDifference = Mathf.Abs((int)Mathf.DeltaAngle(Calculator.CTrack, TrackToPointFactored(point)));
-                if (Atc1.text == "ATC Rerouting")
-                {
-                    //   EditorUtility.DisplayDialog("DEVIATION FROM ATC!!", "FLIGHT REJECTED","Exit");
-                    //   Calculator.Instance.QuitGame();
-
-                }
-                else if (Calculator.RHeading != FactoredAngleToPoint)
-                {
-
-                    //        EditorUtility.DisplayDialog("PILOT RESPONSE", "Please comply with instructions"
-                    //           + "Fly Heading " + FactoredAngleToPoint, "OK");
-                    //     Calculator.RHeading = FactoredAngleToPoint;
-
-                    Atc1.color = Color.red;
-                    Atc1.text = "ATC Rerouting";
-                    XFR1.interactable = false;
-                    mode = 2;
-                    Calculator.Instance.OnClick_HDG(false); //harekete devam icin -1 hdg
-                    Calculator.Instance.OnClick_HDG(true); //harekete devam icin  +1
-
-                }
-
-
-            }
-
-
-            else Atc1.color = Color.white;
+            BorderGuard();
         }
 
         if ((Altitude > 0) && (Altitude != ATCAltitude)) //Descent clr changed
         {
             Atc2.color = Color.green;
+            SetXfrGlow(2, true);
             isDescentChecked = false;
             ATCAltitude = Altitude;
             ATCVS = VS;
             modD = VS == 0 ? -1 : VS_nx;
             CancelInvoke(nameof(DescentCheck));
+            ArmAtc2ResponseWatch();
             InvokeRepeating(nameof(DescentCheck), 10f, 1f);
         }
 
-        if (isDescentChecked) Atc2.color = Color.white;
-
-        if (((Speed > 0) && (Speed != ATCSpeed))
-            || ((RawSpeed > 0) && (RawSpeed < ATCSpeed) && Cmode == 1)) //Speed clr changed
+        if ((Speed > 0) && (Speed != _atc3IssuedSpeed)) // New ATC speed clearance (once)
         {
+            _atc3IssuedSpeed = Speed;
+            XFRSpeed = Speed;
             Atc3.color = Color.green;
             isSpeedChecked = false;
-            if ((Speed > 0) && (Speed != ATCSpeed)) ATCSpeed = Speed;
-            if ((RawSpeed > 0) && (RawSpeed < ATCSpeed) && (Speed_nx != 1) && (Cmode == 1)) ATCSpeed = RawSpeed;
+            ATCSpeed = Speed;
+            if ((RawSpeed > 0) && (RawSpeed < ATCSpeed) && (Speed_nx != 1) && (Cmode == 1))
+                ATCSpeed = RawSpeed;
             modS = ((RawSpeed > 0) && (RawSpeed < Speed) && (Speed_nx != 1) && (Cmode == 1)) ? 2 : Speed_nx;
             CancelInvoke(nameof(SpeedCheck));
+
+            bool needsTransfer = XFRSpeed != Calculator.RSpeed;
+            XFR3.interactable = needsTransfer;
+            SetXfrGlow(3, needsTransfer);
+            if (needsTransfer)
+                ArmAtc3ResponseWatch();
+            else
+            {
+                CancelAtc3ResponseWatch();
+                _atc3GrayDone = true;
+            }
+
             InvokeRepeating(nameof(SpeedCheck), Mathf.Abs((float)Calculator.CSpeed - ATCSpeed) * 2.5f,
                 1f); //  secs before warning
         }
-
-        if (isSpeedChecked) Atc3.color = Color.white;
+        else if ((RawSpeed > 0) && (RawSpeed < ATCSpeed) && (Speed_nx != 1) && (Cmode == 1))
+        {
+            // FMC max below clearance: monitoring only (do not re-glow XFR3)
+            ATCSpeed = RawSpeed;
+            modS = 2;
+        }
 
         if (Speed == -1) CancelInvoke(nameof(SpeedCheck));
 
@@ -433,8 +809,6 @@ public class Move : Singleton<Move>
 
             ElapsedTime += Session.Settings.FlyingTickDuration;
             TimerText.text = "" + ElapsedTime;
-
-            ATCCall();
 
             OncekiPos = Session.PlayerAircraft.NMPosition;
             OncekiAlt = (int)Calculator.CAltitude;
@@ -610,11 +984,16 @@ public class Move : Singleton<Move>
 
                 ((modD == 1) && (Calculator.CVS > ATCVS + 300)) ||
 
-                ((modD == 2) && (Calculator.CVS < ATCVS - 300))) Atc2.color = Color.red;
+                ((modD == 2) && (Calculator.CVS < ATCVS - 300)))
+            {
+                Atc2.color = Color.red;
+                SetXfrGlow(2, false);
+            }
         }
         else
         {
             CancelInvoke(nameof(DescentCheck));
+            CancelAtc2ResponseWatch();
             Atc2.text = "";
         }
 

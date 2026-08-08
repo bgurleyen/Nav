@@ -21,111 +21,97 @@ MonoBehaviour:
     RawAltitude: 20000
     Details: 
   - ID: 1
-    Name: DLE1
-    RawDegrees: 3
-    Distance: 15
+    Name: ELNAT
+    RawDegrees: 20
+    Distance: 6
     RawSpeed: 0
     RawAltitude: 
     Details: 
   - ID: 2
-    Name: DV581
-    RawDegrees: 2
-    Distance: 3
-    RawSpeed: 0
-    RawAltitude: 
-    Details: 
-  - ID: 3
-    Name: ELNAT
-    RawDegrees: 20
-    Distance: 3
-    RawSpeed: 0
-    RawAltitude: 
-    Details: 
-  - ID: 4
     Name: NORTA
     RawDegrees: 5
-    Distance: 3
+    Distance: 6
     RawSpeed: 240
     RawAltitude: 
     Details: 
-  - ID: 5
+  - ID: 3
     Name: DLE-5
     RawDegrees: 6
     Distance: 3
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 6
+  - ID: 4
     Name: DV582
     RawDegrees: 91
     Distance: 3
     RawSpeed: 220
     RawAltitude: 
     Details: 
-  - ID: 7
+  - ID: 5
     Name: DV583
     RawDegrees: 91
     Distance: 3
     RawSpeed: 0
     RawAltitude: 
     Details: C
-  - ID: 8
+  - ID: 6
     Name: DV584
     RawDegrees: 91
     Distance: 3
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 9
+  - ID: 7
     Name: DV585
     RawDegrees: 91
     Distance: 3
     RawSpeed: 200
     RawAltitude: 
     Details: 
-  - ID: 10
+  - ID: 8
     Name: DV575
     RawDegrees: 1
     Distance: 3
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 11
+  - ID: 9
     Name: DV574
     RawDegrees: 271
     Distance: 3
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 12
+  - ID: 10
     Name: DV573
     RawDegrees: 271
     Distance: 3
     RawSpeed: 190
     RawAltitude: 
     Details: 
-  - ID: 13
+  - ID: 11
     Name: DV572
     RawDegrees: 271
     Distance: 3
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 14
+  - ID: 12
     Name: XAVER
     RawDegrees: 276
     Distance: 3
     RawSpeed: 179
     RawAltitude: 3000
     Details: 
-  - ID: 15
+  - ID: 13
     Name: HANB
     RawDegrees: 271
     Distance: 3
     RawSpeed: 173
     RawAltitude: 1440
     Details: 
-  - ID: 16
+  - ID: 14
     Name: RW27R
     RawDegrees: 271
     Distance: 3
