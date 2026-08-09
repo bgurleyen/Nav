@@ -261,11 +261,16 @@ public class Aircraft : MovingActor
     public bool TryRejoinRoute()
     {
         Debug.Log("Try-Re-Join-Route");
+        var startSegment = Session.ActiveRoute.FindForwardPositionNodeIndex();
+        if (startSegment < 1)
+            startSegment = 1;
+
         if (Session.ActiveRoute.TracedRoute.FindCloseToRouteSegmentDestination(
                 Session.Settings.HDGCloseRejoinDistance,
                 out var routeIntersection,
                 out _,
                 out _,
+                startFromSegmentIndex: startSegment,
                 segmentBeginningIsAlwaysValid: false) ||
             Session.ActiveRoute.FindFreeFlightDirectExitScenario(out routeIntersection))
         {

@@ -231,19 +231,21 @@ public class Calculator : MonoBehaviour
 
         Session.Settings.SpeedMultiplier = 1;
 
-        // TEMPORARY score-test shortcut — flip to false / delete ScoreTestDialog when done.
-        bool scoreTestMode = true;
-        if (scoreTestMode)
+        // Score Test scene drives Main with its own dialog (pauses). Skip normal briefing.
+        if (ScoreTestSceneBootstrap.ConsumePending())
+            return;
+
+        var levelInfo = FindFirstObjectByType<LevelStartInformation>();
+        if (levelInfo != null)
         {
-            ScoreTestDialog.ShowIfEnabled();
+            // Paused until REQUEST DESCENT (LevelStartInformation sets timeScale).
+            levelInfo.ShowInfo();
         }
         else
         {
-            var levelInfo = FindFirstObjectByType<LevelStartInformation>();
-            if (levelInfo != null)
-                levelInfo.ShowInfo();
-            else
-                Debug.LogWarning("Calculator.Start: LevelStartInformation not found in scene.");
+            if (!PlayerPrefsHolder.ShowLevelSelectOnLoad)
+                Time.timeScale = 1f;
+            Debug.LogWarning("Calculator.Start: LevelStartInformation not found in scene.");
         }
     }
 
@@ -1064,7 +1066,12 @@ public class Calculator : MonoBehaviour
         if (infoFMC.Instance?.Fmc?.Crz != null)
             infoFMC.Instance.Fmc.Crz.Altitude = FormatFmcCruiseAltitude(0);
 
-        FindFirstObjectByType<Drawer>()?.Display();
+        var drawer = FindFirstObjectByType<Drawer>();
+        if (drawer != null)
+        {
+            drawer.Clear();
+            drawer.Display();
+        }
     }
 
     /// <summary>
@@ -1082,7 +1089,12 @@ public class Calculator : MonoBehaviour
         if (infoFMC.Instance?.Fmc?.Crz != null)
             infoFMC.Instance.Fmc.Crz.Altitude = FormatFmcCruiseAltitude(altitudeFeet);
 
-        FindFirstObjectByType<Drawer>()?.Display();
+        var drawer = FindFirstObjectByType<Drawer>();
+        if (drawer != null)
+        {
+            drawer.Clear();
+            drawer.Display();
+        }
     }
 
     /// <summary>

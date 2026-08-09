@@ -120,6 +120,18 @@ public class Move : Singleton<Move>
         ResetBorderState();
         _routeValid = false;
 
+        // Clear leftover TMP glow / button state from previous play (shared materials).
+        if (XFR1 != null) XFR1.interactable = false;
+        if (XFR2 != null) XFR2.interactable = false;
+        if (XFR3 != null) XFR3.interactable = false;
+        SetXfrGlow(1, false);
+        SetXfrGlow(2, false);
+        SetXfrGlow(3, false);
+        XFRAltitude = 0;
+        XFRSpeed = 0;
+        XFRHdg = 0;
+        ATCAltitude = 0;
+
         var otherACsCount = _currentLevelData.otherACs.Length;
         _otherACs = new OtherAC[otherACsCount];
         for (var i = 0; i < otherACsCount; i++)
@@ -314,7 +326,7 @@ public class Move : Singleton<Move>
         if (Atc1 == null)
             return;
 
-        Atc1.color = Color.green;
+        Atc1.color = Color.red;
         Atc1.text = "Rerouting , Standby!!";
         _atc1GrayDone = false;
         SetXfrGlow(1, false);
@@ -348,8 +360,12 @@ public class Move : Singleton<Move>
     {
         if (_atc1GrayDone || Atc1 == null || string.IsNullOrEmpty(Atc1.text))
             return;
+        // Keep "Rerouting , Standby!!" red until the next clearance.
+        if (_rerouteStandbyUntilNextClearance)
+            return;
         _atc1GrayDone = true;
         Atc1.color = Color.gray;
+        if (XFR1 != null) XFR1.interactable = false;
         SetXfrGlow(1, false);
     }
 
@@ -359,6 +375,7 @@ public class Move : Singleton<Move>
             return;
         _atc2GrayDone = true;
         Atc2.color = Color.gray;
+        if (XFR2 != null) XFR2.interactable = false;
         SetXfrGlow(2, false);
     }
 
@@ -368,6 +385,7 @@ public class Move : Singleton<Move>
             return;
         _atc3GrayDone = true;
         Atc3.color = Color.gray;
+        if (XFR3 != null) XFR3.interactable = false;
         SetXfrGlow(3, false);
     }
 
@@ -610,23 +628,24 @@ public class Move : Singleton<Move>
             NextInstructionDistance = Speed_nx > 2 ? Speed_nx : 1.3f;
 
             XFR1.interactable = mode == 2 ? true : false;
-            XFR2.interactable = Altitude > 0 ? true : false;
+            XFR2.interactable = Altitude > 0;
+            XFR3.interactable = Speed > 0;
 
             if (Speed > 0) XFRSpeed = Speed;
             if (mode == 2) XFRHdg = TrackToPointFactored(point);
             if (Altitude > 0) XFRAltitude = Altitude;
 
-            XFR3.interactable = Speed > 0;
-
+            // Keep glow in sync with arming (do not leave glow on a disabled button).
+            SetXfrGlow(1, XFR1.interactable);
+            SetXfrGlow(2, XFR2.interactable);
+            SetXfrGlow(3, XFR3.interactable);
 
             PrvTrackToPoint = TrackToPoint(point);
             if (mode > 0)
             {
                 Atc1.color = Color.green;
                 _atc1GrayDone = false;
-                if (mode == 2)
-                    SetXfrGlow(1, true);
-                else
+                if (mode != 2)
                     SetXfrGlow(1, false);
             }
             else
@@ -660,6 +679,8 @@ public class Move : Singleton<Move>
         if ((Altitude > 0) && (Altitude != ATCAltitude)) //Descent clr changed
         {
             Atc2.color = Color.green;
+            XFRAltitude = Altitude;
+            XFR2.interactable = true;
             SetXfrGlow(2, true);
             _atc2GrayDone = false;
             ATCAltitude = Altitude;
@@ -729,7 +750,8 @@ public class Move : Singleton<Move>
     {
         _currentInstructionIndex += 1;
         NewPoint = true;
-        ATCAltitude = VS;
+        // Force altitude arming to re-evaluate on next ATCCall (do not store VS here).
+        ATCAltitude = 0;
         myAC.GetComponent<UnityEngine.UI.Text>().text = "#";
         prvWptIdx = point;
     }

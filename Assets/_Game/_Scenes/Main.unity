@@ -285,7 +285,6 @@ MonoBehaviour:
   _gameConfig: {fileID: 11400000, guid: 60965bfde451d46d184d23158024db97, type: 2}
   _routes:
     ActiveRoute: {fileID: 0}
-    ILSRoute: {fileID: 0}
     ModRoute: {fileID: 0}
     ModeSetWithPosition: {fileID: 0}
     FixedPoints: {fileID: 0}
@@ -1401,6 +1400,7 @@ MonoBehaviour:
   Atc2: {fileID: 345340441}
   Atc3: {fileID: 54676240}
   TimerText: {fileID: 1677549714}
+  ATtc1: 
   FuelPenalty: 0
   XFR1: {fileID: 644411166}
   XFR2: {fileID: 1205340635}
@@ -1915,35 +1915,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 345340439}
   m_CullTransparentMesh: 0
---- !u!128 &345804385
-Font:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  serializedVersion: 5
-  m_LineSpacing: 0.1
-  m_DefaultMaterial: {fileID: 0}
-  m_FontSize: 0
-  m_Texture: {fileID: 0}
-  m_AsciiStartOffset: 0
-  m_Tracking: 1
-  m_CharacterSpacing: 0
-  m_CharacterPadding: 1
-  m_ConvertCase: 0
-  m_CharacterRects: []
-  m_KerningValues: []
-  m_PixelScale: 0.1
-  m_FontData: 
-  m_Ascent: 0
-  m_Descent: 0
-  m_DefaultStyle: 0
-  m_FontNames: []
-  m_FallbackFonts: []
-  m_FontRenderingMode: 0
-  m_UseLegacyBoundsCalculation: 0
-  m_ShouldRoundAdvanceValue: 1
 --- !u!1 &352222574
 GameObject:
   m_ObjectHideFlags: 0
@@ -4035,7 +4006,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
-  m_Color: {r: 0.15, g: 0.62, b: 0.38, a: 1}
+  m_Color: {r: 0.14150941, g: 0.020914901, b: 0.12416812, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -4654,8 +4625,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: -240.1, y: 28.723}
-  m_SizeDelta: {x: 342.28, y: 186.09}
+  m_AnchoredPosition: {x: -232.74, y: -21.46}
+  m_SizeDelta: {x: 325.86, y: 195.15}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &805065254
 MonoBehaviour:
@@ -4678,8 +4649,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 15
+    m_Font: {fileID: 12800000, guid: a1bc3be25cbcd914ab881b9f55281c1f, type: 3}
+    m_FontSize: 20
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 0
@@ -5411,8 +5382,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 44918a2a180609b49b2450df5e7051d7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  bestPlayerProgress: []
-  averagePlayerProgress: []
+  userId: 
 --- !u!4 &946240764
 Transform:
   m_ObjectHideFlags: 0
@@ -5441,17 +5411,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   firestoreController: {fileID: 946240763}
-  m_data:
-    altitude: []
-    speed: []
-    flap: []
-    speedBrake: []
-    landingGear: []
-    verticalMode: []
-    fuelFlow: []
-    distance: []
-    remainingFuel: 0
-    time: []
 --- !u!114 &947186259 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 3218961351728451047, guid: 03da15f628cb84b15987a9b0981febc4,
@@ -7454,7 +7413,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   dataManage: {fileID: 946240765}
   debriefPanel: {fileID: 0}
+  levelsPanel: {fileID: 0}
   continueButton: {fileID: 0}
+  levelsContinueButton: {fileID: 0}
   mainGroup: {fileID: 395594699}
   graphGroup: {fileID: 8778016}
 --- !u!224 &1436319229
@@ -7914,35 +7875,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1585350094}
   m_CullTransparentMesh: 0
---- !u!128 &1591649449
-Font:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  serializedVersion: 5
-  m_LineSpacing: 0.1
-  m_DefaultMaterial: {fileID: 0}
-  m_FontSize: 0
-  m_Texture: {fileID: 0}
-  m_AsciiStartOffset: 0
-  m_Tracking: 1
-  m_CharacterSpacing: 0
-  m_CharacterPadding: 1
-  m_ConvertCase: 0
-  m_CharacterRects: []
-  m_KerningValues: []
-  m_PixelScale: 0.1
-  m_FontData: 
-  m_Ascent: 0
-  m_Descent: 0
-  m_DefaultStyle: 0
-  m_FontNames: []
-  m_FallbackFonts: []
-  m_FontRenderingMode: 0
-  m_UseLegacyBoundsCalculation: 0
-  m_ShouldRoundAdvanceValue: 1
 --- !u!1 &1596058885
 GameObject:
   m_ObjectHideFlags: 0
@@ -8391,8 +8323,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4281479730
-  m_fontColor: {r: 0.19607843, g: 0.19607843, b: 0.19607843, a: 1}
+    rgba: 4294639360
+  m_fontColor: {r: 0, g: 1, b: 0.9806452, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -8536,35 +8468,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1637014060}
   m_CullTransparentMesh: 0
---- !u!128 &1640554888
-Font:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_Name: 
-  serializedVersion: 5
-  m_LineSpacing: 0.1
-  m_DefaultMaterial: {fileID: 0}
-  m_FontSize: 0
-  m_Texture: {fileID: 0}
-  m_AsciiStartOffset: 0
-  m_Tracking: 1
-  m_CharacterSpacing: 0
-  m_CharacterPadding: 1
-  m_ConvertCase: 0
-  m_CharacterRects: []
-  m_KerningValues: []
-  m_PixelScale: 0.1
-  m_FontData: 
-  m_Ascent: 0
-  m_Descent: 0
-  m_DefaultStyle: 0
-  m_FontNames: []
-  m_FallbackFonts: []
-  m_FontRenderingMode: 0
-  m_UseLegacyBoundsCalculation: 0
-  m_ShouldRoundAdvanceValue: 1
 --- !u!114 &1653351436 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 4135483744059690824, guid: 1c4e986e32e3e456e96918401ec04e98,
@@ -10110,8 +10013,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 246, y: 28.723}
-  m_SizeDelta: {x: 342.28, y: 186.09}
+  m_AnchoredPosition: {x: 230.04, y: -21.46}
+  m_SizeDelta: {x: 325.86, y: 195.15}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &2025651482
 MonoBehaviour:
@@ -10134,8 +10037,8 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_FontData:
-    m_Font: {fileID: 10102, guid: 0000000000000000e000000000000000, type: 0}
-    m_FontSize: 15
+    m_Font: {fileID: 12800000, guid: a1bc3be25cbcd914ab881b9f55281c1f, type: 3}
+    m_FontSize: 20
     m_FontStyle: 0
     m_BestFit: 0
     m_MinSize: 0

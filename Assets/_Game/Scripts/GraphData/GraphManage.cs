@@ -544,7 +544,7 @@ public class GraphManage : MonoBehaviour
     }
 
     /// <summary>
-    /// TEMPORARY: score-test shortcut — show debrief with injected stats (saves like a real flight).
+    /// Score-test entry: show debrief with injected stats (used by Score Test scene).
     /// </summary>
     public void PresentTestDebrief(LevelStat flightResult)
     {

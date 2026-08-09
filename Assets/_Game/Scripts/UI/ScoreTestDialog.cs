@@ -4,8 +4,8 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// TEMPORARY: level-start score test overlay. Remove when debrief UI is finalized.
-/// Picks random LevelStat values, treats approach as stable, jumps to debrief on OK.
+/// Score-test overlay used only from the dedicated "Score Test" scene.
+/// Keeps random LevelStat injection + debrief jump without affecting normal Main play.
 /// </summary>
 public class ScoreTestDialog : MonoBehaviour
 {
@@ -18,11 +18,9 @@ public class ScoreTestDialog : MonoBehaviour
     string _pendingUser;
     CanvasGroup _canvasGroup;
 
-    public static void ShowIfEnabled()
+    /// <summary>Called by ScoreTestSceneBootstrap after Main loads.</summary>
+    public static void ShowForTestScene()
     {
-        if (PlayerPrefsHolder.ShowLevelSelectOnLoad)
-            return;
-
         var result = RollRandomResult();
         string user = TestUsers[UnityEngine.Random.Range(0, TestUsers.Length)];
         if (_instance == null)

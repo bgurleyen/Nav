@@ -116,7 +116,10 @@ public class GameManager : MonoBehaviour
 
         _pendingDeltaTime += Time.deltaTime;
         var tickDuration = Session.Settings.TickDuration(false) / Session.Settings.SpeedMultiplier;
-        var ticksInDeltaTime = (int)(_pendingDeltaTime / tickDuration);
+        // timeScale==0 → deltaTime 0 → avoid 0/0 NaN ticks that freeze movement while UI still works
+        var ticksInDeltaTime = tickDuration > 0f
+            ? (int)(_pendingDeltaTime / tickDuration)
+            : 0;
 
         _simulation.SplittedTickModHandling();
         _simulation.SplittedTickComputeTrace();
@@ -125,7 +128,8 @@ public class GameManager : MonoBehaviour
             _simulation.SplittedTickSimulation();
         }
         _simulation.SplittedTickDraw();
-        _pendingDeltaTime -= ticksInDeltaTime * tickDuration;
+        if (tickDuration > 0f)
+            _pendingDeltaTime -= ticksInDeltaTime * tickDuration;
     }
 
     private void LEGS_OnLeftCornerPressErase()
@@ -147,40 +151,18 @@ public class GameManager : MonoBehaviour
 
     private void ApplyMod()
     {
+        // Refresh dashed snapshot with current aircraft position before commit
+        _simulation.RebuildModeSetWithPosition();
 
-
-        //Current Rounte Scriptable Object 
         Session.ModRoute.ClearModifiedFlags();
         Session.ModeSetWithPosition.ClearModifiedFlags();
         Session.ActiveRoute = Session.ModeSetWithPosition.CloneAndInit();
-        //var routeScriptableObject = Session.ModeSetWithPosition.CloneAndInit();
-
-        /* for (int i = 0; i < routeScriptableObject.Points.Length; i++) {
-             Debug.Log("Session.ModeSetWithPosition[" + i + "]: " + routeScriptableObject.Points[i].ID + "||" + routeScriptableObject.Points[i].Name);
-             var ele = routeScriptableObject.Points[i];
-             int count = 0;
-             for (int j = 0; j < routeScriptableObject.Points.Length; j++) {
-                 if (ele.Name == routeScriptableObject.Points[j].Name) {
-                     count++;
-                 }
-                 if (count > 1) {
-                     routeScriptableObject.RemovePoint(j);
-                     count = 1;
-                 }
-             }
-         }*/
-        //Session.ModeSetWithPosition = routeScriptableObject;
-        //Session.ActiveRoute = Session.ModeSetWithPosition;
-
-        //Debug.Log("Session.ActiveRoute: "+ Session.ActiveRoute);
-        // for (int i = 0; i < Session.ActiveRoute.Points.Length; i++) {
-        //Debug.Log("Session.ActiveRoute[" + i + "]: " + Session.ActiveRoute.Points[i].ID + "||" + Session.ActiveRoute.Points[i].Name);
-        // }
-
-        //Session.State.AutoSetLNAV(true, false);
+        // Clone does not copy TracedRoute — rebuild before rejoin/seek.
+        Session.ActiveRoute.ComputeTrace();
 
         Session.ModRoute = null;
         Session.IsMod = false;
+        _simulation.ClearModPreview();
         _legsScreen.DisplayOperation("0k");
         if (Session.ActiveRoute.HasActiveDirectApproach(out var linearApproachIndex) && Session.State.LNAV)
         {
@@ -191,7 +173,17 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            Session.PlayerAircraft.ResetSeekProgress(PositionVirtualNode.PassedNodeIndex + 2, 0);
+            // Seek the forward position stub inserted by AddModPositionNodes.
+            var seekIndex = Session.ActiveRoute.FindForwardPositionNodeIndex();
+            if (seekIndex < 0)
+            {
+                seekIndex = Mathf.Clamp(
+                    PositionVirtualNode.PassedNodeIndex + 2,
+                    1,
+                    Session.ActiveRoute.Points.Length - 1);
+            }
+
+            Session.PlayerAircraft.ResetSeekProgress(seekIndex, 0);
         }
     }
 

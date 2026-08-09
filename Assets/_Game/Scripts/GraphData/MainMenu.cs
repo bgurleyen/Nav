@@ -57,7 +57,8 @@ public class MainMenu : MonoBehaviour
     {
         if (isNewGame) PlayerPrefsHolder.Level = 0;
 
-
+        PlayerPrefsHolder.ShowLevelSelectOnLoad = false;
+        Time.timeScale = 1f;
         SceneManager.LoadScene(sceneName);
     }
 

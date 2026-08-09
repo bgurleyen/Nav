@@ -202,10 +202,13 @@ namespace Navigation
 
             var aircraftPosition = Session.PlayerAircraft.NMPosition; // would be free since we are in free flight
             var aircraftDirection = Geometry.GetDirectionFromHeading(Session.PlayerAircraft.HeadingDegrees);
-            var segmentEnd = Vector2.zero;
 
+            var startI = FindForwardPositionNodeIndex();
+            if (startI < 1)
+                startI = 1;
+            var segmentEnd = Points[Mathf.Max(0, startI - 1)].CartesianPosition;
 
-            for (var i = 1; i < Points.Length; i++)
+            for (var i = startI; i < Points.Length; i++)
             {
                 var segmentStart = segmentEnd;
 
@@ -619,10 +622,10 @@ namespace Navigation
             var nodeBeforePosition = Points[nodeBeforePlaneIndex];
             int nodeAfterPlaneIndex = nodeBeforePlaneIndex + 1;
 
-            Debug.Log("------------------------ nodeAfterPlaneIndex :" + nodeAfterPlaneIndex);
-            Debug.Log("nodeBeforePosition :" + nodeBeforePosition.Name + "|| Points[nodeAfterPlaneIndex] :" + Points[nodeAfterPlaneIndex].Name);
+            // Preview starts 0.5 NM ahead of the aircraft, not at the exact current position.
             ConstructPositionNodes(nodeBeforePosition, Points[nodeAfterPlaneIndex],
-                out var airplanePositionNodeToAdd, out var frontOfAirplanePositionNodeToAdd);
+                out var airplanePositionNodeToAdd, out var frontOfAirplanePositionNodeToAdd,
+                startAheadNm: 0.5f);
 
             InsertNodes(nodeAfterPlaneIndex,
                 airplanePositionNodeToAdd,
@@ -631,22 +634,59 @@ namespace Navigation
             ComputeCartesianPositions();
         }
 
-        private void ConstructPositionNodes(RoutePoint nodeBeforePosition, RoutePoint routeNextNode,
-            out RoutePoint airplanePositionNodeToAdd, out RoutePoint frontOfAirplanePositionNodeToAdd)
+        public int FindForwardPositionNodeIndex()
         {
+            for (var i = 0; i < Points.Length; i++)
+            {
+                if (Points[i].Name == "_Position_" || Points[i].IsPositionNode)
+                    return i;
+            }
+
+            return -1;
+        }
+
+        private void ConstructPositionNodes(RoutePoint nodeBeforePosition, RoutePoint routeNextNode,
+            out RoutePoint airplanePositionNodeToAdd, out RoutePoint frontOfAirplanePositionNodeToAdd,
+            float startAheadNm = 0f)
+        {
+            // Stub ahead of the aircraft so the first turn can use turn radius.
+            // Prefer current heading, but if that points opposite the new route leg,
+            // align the stub with route-forward so EXEC does not U-turn the wrong way.
+            var aircraftPos = Session.PlayerAircraft.NMPosition;
+            var headingFuture = Geometry.GetNextPosition(
+                aircraftPos,
+                Session.Settings.ForwardThreshold,
+                -Session.PlayerAircraft.HeadingDegrees);
+
+            var futurePosition = headingFuture;
+            if (routeNextNode != null)
+            {
+                var routeDelta = routeNextNode.CartesianPosition - aircraftPos;
+                if (routeDelta.sqrMagnitude > 0.0001f)
+                {
+                    var headingDir = headingFuture - aircraftPos;
+                    if (Vector2.Dot(headingDir, routeDelta) < 0f)
+                    {
+                        futurePosition = aircraftPos +
+                                         routeDelta.normalized * Session.Settings.ForwardThreshold;
+                    }
+                }
+            }
+
+            var startPosition = aircraftPos;
+            var forwardDelta = futurePosition - aircraftPos;
+            if (startAheadNm > 0f && forwardDelta.sqrMagnitude > 0.0001f)
+            {
+                startPosition = aircraftPos + forwardDelta.normalized * startAheadNm;
+            }
+
             airplanePositionNodeToAdd = RoutePoint.ConstructFromPosition(
-                Session.PlayerAircraft.NMPosition,
+                startPosition,
                 nodeBeforePosition,
                 null,
                 GetNewId(true),
                 "P",
                 "_Position_0");
-
-            // ! another Position node is added in front of the actual position so that the aircraft can safely turn 
-            var futurePosition = Geometry.GetNextPosition(
-                Session.PlayerAircraft.NMPosition,
-                Session.Settings.ForwardThreshold,
-                -Session.PlayerAircraft.HeadingDegrees);
 
             frontOfAirplanePositionNodeToAdd = RoutePoint.ConstructFromPosition(
                 futurePosition,

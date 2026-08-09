@@ -20,6 +20,10 @@ namespace Navigation {
 
         // if we detect that during MOD the current node has passed we reExecute all the commands until that point
         private int _modReExecutedForIndex = -1;
+        private bool _modeSetDirty;
+        private float _modPreviewDistanceAccum;
+        private Vector2 _modPreviewLastNmPosition;
+        private const float ModPreviewRebuildDistanceNm = 0.5f;
 
         private void Awake() {
             UYServiceLocator.Register(this);
@@ -38,7 +42,8 @@ namespace Navigation {
             Session.Routes.FixedPoints = FixedPointsScriptableObject.CloneAndInit();
             //Debug.Log(Session.Routes.FixedPoints.Entries.Length);
 
-            Session.ActiveRoute.ComputeTrace(transform);
+            // Unity Object→bool: original ComputeTrace(transform) meant hasOtherMarkers=true (fix circles/rays).
+            Session.ActiveRoute.ComputeTrace(true);
             //Debug.Log(Session.ActiveRoute.TracedRoute.ComputedLines.Length);
 
             _playerAircraft.Init(Session.Settings.AirplaneDesignSpeed, 21600);
@@ -48,12 +53,21 @@ namespace Navigation {
             _drawer.ResetMode();
 
             Session.IsRunning = true;
+            // Briefing pauses until REQUEST DESCENT; don't unpause over LevelStartInformation.
+            // Score-test / level-select / pause can leave timeScale at 0; only force-run when no briefing UI.
+            if (!PlayerPrefsHolder.ShowLevelSelectOnLoad
+                && FindFirstObjectByType<LevelStartInformation>() == null)
+                Time.timeScale = 1f;
 
         }
 
         public void EraseMod() {
             Session.ModRoute = null;
             Session.IsMod = false;
+            ClearModeSetWithPosition();
+            _modeSetDirty = false;
+            _modReExecutedForIndex = -1;
+            ResetModPreviewDistanceTracking();
             _legsScreen.DisplayOperation("0k");
         }
 
@@ -116,7 +130,10 @@ namespace Navigation {
 
         private void ComputeMod() {
             if (Session.ModRoute == null) {
+                ClearModeSetWithPosition();
                 _modReExecutedForIndex = -1;
+                _modeSetDirty = false;
+                ResetModPreviewDistanceTracking();
                 return;
             }
 
@@ -134,20 +151,54 @@ namespace Navigation {
                 }
             }
 
-            if (Session.ModeSetWithPosition != null) {
-                Destroy(Session.ModeSetWithPosition);
-            }
-            //Debug.Log("ComputeMod 4444444444");
-            if (Session.ModeSetWithPosition == null) {
-                //Debug.Log("IF ComputeMod 4444444444");
-                Session.ModeSetWithPosition = Session.ModRoute.CloneAndInit();
-            }
-            //Session.ModeSetWithPosition = Session.ModRoute.CloneAndInit(); // refactor use the existing modwithposition to avoid reinstantiating
-            //Debug.Log("Session.ModeSetWithPosition: "+ Session.ModeSetWithPosition);
+            var currentNm = Session.PlayerAircraft.NMPosition;
+            _modPreviewDistanceAccum += Vector2.Distance(currentNm, _modPreviewLastNmPosition);
+            _modPreviewLastNmPosition = currentNm;
 
+            // Rebuild on content change, missing preview, or every 0.5 NM — not every frame.
+            if (Session.ModeSetWithPosition == null || _modeSetDirty
+                || _modPreviewDistanceAccum >= ModPreviewRebuildDistanceNm) {
+                RebuildModeSetWithPosition();
+            }
+        }
+
+        public void RebuildModeSetWithPosition() {
+            if (Session.ModRoute == null) {
+                ClearModeSetWithPosition();
+                _modeSetDirty = false;
+                ResetModPreviewDistanceTracking();
+                return;
+            }
+
+            ClearModeSetWithPosition();
+            Session.ModeSetWithPosition = Session.ModRoute.CloneAndInit();
             Session.ModeSetWithPosition.AddModPositionNodes();
-
             Session.ModeSetWithPosition.ComputeTrace();
+            _modeSetDirty = false;
+            ResetModPreviewDistanceTracking();
+        }
+
+        private void InvalidateModeSet() {
+            _modeSetDirty = true;
+        }
+
+        private void ResetModPreviewDistanceTracking() {
+            _modPreviewDistanceAccum = 0f;
+            if (Session.PlayerAircraft != null)
+                _modPreviewLastNmPosition = Session.PlayerAircraft.NMPosition;
+        }
+
+        private void ClearModeSetWithPosition() {
+            if (Session.ModeSetWithPosition == null)
+                return;
+            Destroy(Session.ModeSetWithPosition);
+            Session.ModeSetWithPosition = null;
+        }
+
+        public void ClearModPreview() {
+            ClearModeSetWithPosition();
+            _modeSetDirty = false;
+            ResetModPreviewDistanceTracking();
         }
 
         public void ReExecuteCachedCommands() {
@@ -183,6 +234,7 @@ namespace Navigation {
             node.RawSpeed = 0;
 
             DataHandler.BuildSetDetails(Session.ModRoute);
+            InvalidateModeSet();
         }
 
         public void ExecuteAddSpeedRegulation(AddSpeedRegulationCommand command) {
@@ -194,6 +246,7 @@ namespace Navigation {
             node.RawSpeed = command.Regulation;
             node.IsSpeedModified = true;
             DataHandler.BuildSetDetails(Session.ModRoute);
+            InvalidateModeSet();
 
             OnOperationMade?.Invoke();
         }
@@ -208,6 +261,7 @@ namespace Navigation {
             node.RawAltitude = command.Regulation;
             node.IsAltitudeModified = true;
             DataHandler.BuildSetDetails(Session.ModRoute);
+            InvalidateModeSet();
 
             OnOperationMade?.Invoke();
         }
@@ -220,6 +274,7 @@ namespace Navigation {
             Session.ModRoute.RemoveNode(command.NodeId, out _);
             DataHandler.BuildSetDetails(Session.ModRoute);
             _legsScreen.DisplayOperation(MainScreen.Keywords.ERASE);
+            InvalidateModeSet();
 
             OnOperationMade?.Invoke();
         }
@@ -232,6 +287,7 @@ namespace Navigation {
             _legsScreen.DisplayOperation("ERASE", ToDegreesDisplay(node.RawDegrees));
             Session.ModRoute.ShortcutNodes(command.FromNodeId, command.ToNodeId, out var _);
             DataHandler.BuildSetDetails(Session.ModRoute);
+            InvalidateModeSet();
 
             OnOperationMade?.Invoke();
         }
@@ -249,6 +305,7 @@ namespace Navigation {
                 out _, out _);
             DataHandler.BuildSetDetails(Session.ModRoute);
             _legsScreen.DisplayOperation("ERASE");
+            InvalidateModeSet();
 
             OnOperationMade?.Invoke();
         }
@@ -262,6 +319,7 @@ namespace Navigation {
 
             DataHandler.BuildSetDetails(Session.ModRoute);
             _legsScreen.DisplayOperation(MainScreen.Keywords.ERASE);
+            InvalidateModeSet();
 
             OnOperationMade?.Invoke();
         }
@@ -275,6 +333,7 @@ namespace Navigation {
                 command.RelativeNodeId, out _, true);
             DataHandler.BuildSetDetails(Session.ModRoute);
             _legsScreen.DisplayOperation(MainScreen.Keywords.ERASE);
+            InvalidateModeSet();
 
             OnOperationMade?.Invoke();
         }
@@ -287,6 +346,7 @@ namespace Navigation {
             Session.ModRoute.CreateLinearApproach(command.ToNodeId, command.Angle);
             DataHandler.BuildSetDetails(Session.ModRoute);
             _legsScreen.DisplayOperation(MainScreen.Keywords.ERASE, ToDegreesDisplay(command.Angle), true);
+            InvalidateModeSet();
 
             OnOperationMade?.Invoke();
         }
@@ -309,6 +369,8 @@ namespace Navigation {
 
             _cachedCommands = new List<ICommand>();
             Session.IsMod = true;
+            ResetModPreviewDistanceTracking();
+            InvalidateModeSet();
 
             // in case the aircraft was in free flight with intersection valid, shortcut mod until the node after intersection
             if (Session.PlayerAircraft.IsJoining) {
