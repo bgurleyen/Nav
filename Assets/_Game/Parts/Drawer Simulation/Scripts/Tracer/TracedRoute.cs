@@ -215,6 +215,37 @@ public class TracedRoute
         return lastFoundRoutePosition.SegmentIndex > -1;
 
     }
+
+    /// <summary>
+    /// Position at fraction t (0..1) along the drawn vertices of one computed line.
+    /// </summary>
+    public bool TryGetPositionOnLine(int lineIndex, float t, out Vector2 position)
+    {
+        position = Vector2.zero;
+        if (ComputedLines == null || lineIndex < 1 || lineIndex >= ComputedLines.Length)
+        {
+            return false;
+        }
+
+        var line = ComputedLines[lineIndex];
+        if (line?.Vertexes == null || line.Vertexes.Length == 0)
+        {
+            return false;
+        }
+
+        if (line.Vertexes.Length == 1)
+        {
+            position = line.Vertexes[0];
+            return true;
+        }
+
+        t = Mathf.Clamp01(t);
+        var target = t * (line.Vertexes.Length - 1);
+        var i0 = Mathf.FloorToInt(target);
+        var i1 = Mathf.Min(i0 + 1, line.Vertexes.Length - 1);
+        position = Vector2.Lerp(line.Vertexes[i0], line.Vertexes[i1], target - i0);
+        return true;
+    }
 }
 
 [Serializable]

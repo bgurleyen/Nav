@@ -85,15 +85,16 @@ public class DataManage : MonoBehaviour
 
     public LevelStat CaptureFlightResult()
     {
+        // Calculator.totalFuel is centi-tons (tons * 100) → kg = totalFuel * 10.
         return new LevelStat
         {
-            averageAltitude = Math.Round(_averageAltitude),
-            lgAltitude = Math.Round(_lgAltitude),
+            averageAltitude = (int)Math.Round(_averageAltitude),
+            lgAltitude = (int)Math.Round(_lgAltitude),
             averageFlapAltitude = _firstFlapCaptured
-                ? Math.Round((_firstFlapAltitude + _lastFlapAltitude) / 2.0)
+                ? (int)Math.Round((_firstFlapAltitude + _lastFlapAltitude) / 2.0)
                 : 0,
             speedBrakeSeconds = _speedBrakeSeconds,
-            remainingFuel = Math.Round(Calculator.totalFuel / 100.0, 2),
+            remainingFuel = (int)Math.Round(Calculator.totalFuel * 10.0),
         };
     }
 
@@ -114,8 +115,8 @@ public class DataManage : MonoBehaviour
 
         Debug.Log(
             $"[DataManage] Saving {PlayerPrefsHolder.FirestoreLevelKey}: " +
-            $"fuel={result.remainingFuel:0.##} avgAlt={result.averageAltitude:0} " +
-            $"lgAlt={result.lgAltitude:0} flapAlt={result.averageFlapAltitude:0} sb={result.speedBrakeSeconds}s");
+            $"fuel={result.remainingFuel} kg avgAlt={result.averageAltitude} " +
+            $"lgAlt={result.lgAltitude} flapAlt={result.averageFlapAltitude} sb={result.speedBrakeSeconds}s");
 
         firestoreController.SaveLevelStat(result, _ => onSaved?.Invoke());
     }

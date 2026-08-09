@@ -16,6 +16,9 @@ public class ToggleButtonToggleLinker : ToggleButtonLinker, IPointerUpHandler, I
 
     public void OnPointerUp(PointerEventData eventData)
     {
+        if (!Interactable)
+            return;
+
         OnUserSwitch();
     }
 

@@ -5,13 +5,42 @@ public class State
 {
     public ToggleLinkedBool LNAV { get; }
     public ToggleLinkedBool HDG { get; }
-    public bool LOCCaptured { get; set; }
+
+    private bool _locCaptured;
+    public bool LOCCaptured
+    {
+        get => _locCaptured;
+        set
+        {
+            if (_locCaptured == value)
+                return;
+
+            _locCaptured = value;
+            if (value)
+                LockLateralModes();
+        }
+    }
 
     public ToggleLinkedBool LC { get; }
     public ToggleLinkedBool VNAV { get; private set; }
     public ToggleLinkedBool AH { get; }
     public ToggleLinkedBool VS { get; }
-    public bool GSCaptured { get; set; }
+
+    private bool _gsCaptured;
+    public bool GSCaptured
+    {
+        get => _gsCaptured;
+        set
+        {
+            if (_gsCaptured == value)
+                return;
+
+            _gsCaptured = value;
+            if (value)
+                LockVerticalModes();
+        }
+    }
+
     public bool AppArmed { get; set; }
     public bool LNAVArmed { get; }
 
@@ -50,6 +79,28 @@ public class State
         Speed10X = new ToggleLinkedBool(mcpUI._speed10XToggle, UIOnSpeed10XToggle);
     }
 
+    private void LockLateralModes()
+    {
+        // Leave HDG/LNAV visual state alone so AutoSetHDG during LOC capture still works.
+        HDG.SetInteractable(false);
+        LNAV.SetInteractable(false);
+    }
+
+    private void LockVerticalModes()
+    {
+        VS.Set(false);
+        VNAV.Set(false);
+        AH.Set(false);
+        LC.Set(false);
+
+        VS.SetInteractable(false);
+        VNAV.SetInteractable(false);
+        AH.SetInteractable(false);
+        LC.SetInteractable(false);
+
+        NotifyVerticalModeChanged();
+    }
+
     private void UIOnSpeed10XToggle()
     {
         Speed10X.Switch();
@@ -69,6 +120,9 @@ public class State
 
     private void UIOnLNAVAttemptToggle()
     {
+        if (LOCCaptured)
+            return;
+
         LNAV.Switch_Oneway();
         if (LNAV)
         {
@@ -80,6 +134,9 @@ public class State
 
     private void UIOnAHAttemptToggle()
     {
+        if (GSCaptured)
+            return;
+
         AH.Switch_Oneway();
         NotifyVerticalModeChanged();
 
@@ -93,6 +150,9 @@ public class State
 
     private void UIOnLCAttemptToggle()
     {
+        if (GSCaptured)
+            return;
+
         if (Calculator.RAltitude == Calculator.CAltitude)
         {
             return;
@@ -110,6 +170,9 @@ public class State
 
     private void UIOnVNAVAttemptToggle()
     {
+        if (GSCaptured)
+            return;
+
         VNAV.Switch_Oneway();
 
         if (VNAV)
@@ -122,6 +185,9 @@ public class State
 
     private void UIOnVSAttemptToggle()
     {
+        if (GSCaptured)
+            return;
+
         if (Calculator.RAltitude == Calculator.CAltitude)
         {
             return;
@@ -157,6 +223,9 @@ private static void NotifyVerticalModeChanged()
 
 private void UIOnHDGAttemptToggle()
     {
+        if (LOCCaptured)
+            return;
+
         HDG.Switch_Oneway();
 
         if (HDG)

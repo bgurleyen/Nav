@@ -34,12 +34,18 @@ public class ToggleButton3DLinker : ToggleButtonLinker, IPointerUpHandler, IPoin
 
     public void OnPointerDown(PointerEventData eventData)
     {
+        if (!Interactable)
+            return;
+
         _meshAnimator.SetTrigger("Pressed");
         OnPressed?.Invoke();
     }
 
     public void OnPointerUp(PointerEventData eventData)
     {
+        if (!Interactable)
+            return;
+
         _meshAnimator.SetTrigger("Normal");
         
         OnUserSwitch();
@@ -69,6 +75,11 @@ public class ToggleLinkedBool
     public void Set(bool state)
     {
         _linkedToggle.SetState(state);
+    }
+
+    public void SetInteractable(bool interactable)
+    {
+        _linkedToggle.SetInteractable(interactable);
     }
 
     public void Switch()

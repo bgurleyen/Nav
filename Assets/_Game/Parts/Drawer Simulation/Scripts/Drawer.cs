@@ -48,8 +48,6 @@ public class Drawer : MonoBehaviour
 
     [SerializeField] private float _debugStarDistance = 1.3f;
 
-    [SerializeField] private float _topOfDescentRightOffsetNm = 1f;
-
     private void Awake()
     {
         Session.ZoomMultiplier = _gameConfig.Settings.StartingZoom;
@@ -360,19 +358,24 @@ public class Drawer : MonoBehaviour
         }
 
         var cruiseAltitude = ResolveCruiseAltitude(route);
-        if (!Calculator.TryFindVdiCenterCrossing(route, cruiseAltitude, out var topOfDescentPosition, out var legDirection))
+        if (!Calculator.TryFindVdiCenterCrossing(route, cruiseAltitude, out var topOfDescentPosition,
+                out var segmentIndex, out var segmentT))
         {
             return;
         }
 
-        var rightOffset = new Vector2(legDirection.y, -legDirection.x) * _topOfDescentRightOffsetNm;
-        var shiftedTopOfDescentPosition = topOfDescentPosition + rightOffset;
+        // Snap to the drawn leg (includes turn curves) so TOD stays on the magenta path.
+        if (route.TracedRoute != null &&
+            route.TracedRoute.TryGetPositionOnLine(segmentIndex, segmentT, out var onDrawnRoute))
+        {
+            topOfDescentPosition = onDrawnRoute;
+        }
 
         var todMarker = otherAircraftsPool.Spawn(Vector3.zero, Quaternion.identity, dynamicHolderOtheriarcrafts)
             .GetComponent<OtherAircrafIndicator>();
         todMarker.name = "Top Of Descent";
         todMarker.Init("●TOD", Color.green, 0f);
-        todMarker.transform.localPosition = shiftedTopOfDescentPosition.ToDisplay();
+        todMarker.transform.localPosition = topOfDescentPosition.ToDisplay();
     }
 
     private static double ResolveCruiseAltitude(RouteScriptableObject route)

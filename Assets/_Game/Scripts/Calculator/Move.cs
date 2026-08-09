@@ -33,7 +33,6 @@ public class Move : Singleton<Move>
     private int ATCVS, ATCSpeed;
     /// <summary>Last ATC Speed value that armed Atc3 / XFR3 UI (avoids RawSpeed↔ATCSpeed retrigger).</summary>
     private int _atc3IssuedSpeed;
-    private bool isDescentChecked, isSpeedChecked, isRouteChecked;
     private int modD = 0, modS = 0;
     private int RawSpeed = 0;
     private int AltAbove, AltBelow, AltExact;
@@ -536,7 +535,6 @@ public class Move : Singleton<Move>
             FuelPenalty += 0.001;
         }
 
-        isSpeedChecked = true;
     }
 
     private void FuelPenaltyAtFMCAltConstain()
@@ -664,7 +662,6 @@ public class Move : Singleton<Move>
             Atc2.color = Color.green;
             SetXfrGlow(2, true);
             _atc2GrayDone = false;
-            isDescentChecked = false;
             ATCAltitude = Altitude;
             ATCVS = VS;
             modD = VS == 0 ? -1 : VS_nx;
@@ -678,7 +675,6 @@ public class Move : Singleton<Move>
             XFRSpeed = Speed;
             Atc3.color = Color.green;
             _atc3GrayDone = false;
-            isSpeedChecked = false;
             ATCSpeed = Speed;
             if ((RawSpeed > 0) && (RawSpeed < ATCSpeed) && (Speed_nx != 1) && (Cmode == 1))
                 ATCSpeed = RawSpeed;
@@ -851,7 +847,6 @@ public class Move : Singleton<Move>
             Atc2.text = "";
         }
 
-        isDescentChecked = true;
     }
 }
 

@@ -27,7 +27,12 @@ public class KnobButtonLinker : MonoBehaviour
         var degrees = isPositive ? stepDegrees : -stepDegrees;
         seq?.Kill();
         seq = DOTween.Sequence()
-            .Append(rotatingMesh.DOLocalRotate(_rotatingAxis * degrees, 0.15f, RotateMode.LocalAxisAdd));
+            .Append(rotatingMesh.DOLocalRotate(_rotatingAxis * degrees, 0.15f, RotateMode.LocalAxisAdd))
+            .SetLink(rotatingMesh.gameObject);
     }
-    
+
+    private void OnDestroy()
+    {
+        seq?.Kill();
+    }
 }

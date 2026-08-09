@@ -7,6 +7,7 @@ public class LevelsRanksPanel : MonoBehaviour
 {
     const string LayoutRootName = "Layout Root";
     const string ContinueButtonName = "Continue Button";
+    const string TitleText = "L  E  V  E  L  S";
 
     static readonly int[] DefaultRanks =
     {
@@ -50,7 +51,12 @@ public class LevelsRanksPanel : MonoBehaviour
         gameObject.SetActive(true);
 
         Transform layoutRoot = transform.Find(LayoutRootName);
-        if (layoutRoot == null || !HasMinimumBindings())
+        bool needsRebuild = layoutRoot == null
+            || !HasMinimumBindings()
+            || layoutRoot.Find("SideLabel") != null
+            || layoutRoot.Find("TitleLabel") == null;
+
+        if (needsRebuild)
         {
             CleanupOrphanChildren(immediate: true);
             ClearGeneratedLayout(immediate: true);
@@ -59,6 +65,7 @@ public class LevelsRanksPanel : MonoBehaviour
 
         EnsureCellBindings();
         ApplyCellInteractivity();
+        RefreshTitleLabel();
         BringLayoutRootBehindOverlayChildren();
 
         layoutRoot = transform.Find(LayoutRootName);
@@ -340,6 +347,8 @@ public class LevelsRanksPanel : MonoBehaviour
 
             int rank = ranks != null && i < ranks.Length ? ranks[i] : 0;
             text.text = FormatCellRichText(i + 1, rank);
+            text.fontSize = LevelsLayoutSpec.CellFont;
+            text.alignment = TextAlignmentOptions.Center;
             text.richText = true;
             text.enabled = true;
             text.ForceMeshUpdate();
@@ -349,11 +358,12 @@ public class LevelsRanksPanel : MonoBehaviour
     static string FormatCellRichText(int level, int rank)
     {
         string levelHex = ColorUtility.ToHtmlStringRGB(LevelsLayoutSpec.TextMuted);
+        string emptyHex = ColorUtility.ToHtmlStringRGB(LevelsLayoutSpec.RankEmpty);
         string rankHex = ColorUtility.ToHtmlStringRGB(LevelsLayoutSpec.RankBlue);
 
         if (rank <= 0)
         {
-            return $"<color=#{levelHex}>{level}</color> <color=#{levelHex}>–</color> <color=#{rankHex}>#...</color>";
+            return $"<color=#{levelHex}>{level}</color> <color=#{levelHex}>–</color> <color=#{emptyHex}>#...</color>";
         }
 
         return $"<color=#{levelHex}>{level}</color> <color=#{levelHex}>–</color> <color=#{rankHex}><b>#{rank}</b></color>";
@@ -373,7 +383,7 @@ public class LevelsRanksPanel : MonoBehaviour
         float contentLeft = LevelsLayoutSpec.ContentLeft;
         float topRowLeft = LevelsLayoutSpec.TopRowLeft;
 
-        CreateSideLabel(layoutRoot, bodyTop);
+        CreateTitleLabel(layoutRoot, bodyTop);
 
         for (int i = 0; i < LevelsLayoutSpec.TopRowCount; i++)
         {
@@ -395,35 +405,54 @@ public class LevelsRanksPanel : MonoBehaviour
         }
     }
 
-    void CreateSideLabel(Transform layoutRoot, float bodyTop)
+    void CreateTitleLabel(Transform layoutRoot, float bodyTop)
     {
-        Transform labelFrame = CreatePanel(
-            layoutRoot,
-            "SideLabel",
-            LevelsLayoutSpec.PageBg,
-            LevelsLayoutSpec.Padding,
-            bodyTop,
-            LevelsLayoutSpec.SideLabelWidth,
-            LevelsLayoutSpec.BodyHeight,
-            false);
+        float titleWidth = LevelsLayoutSpec.ContentWidth * (1f - LevelsLayoutSpec.TopRowWidthRatio)
+            - LevelsLayoutSpec.CellGap;
+        float titleLeft = LevelsLayoutSpec.ContentLeft;
 
         TMP_Text label = CreateText(
-            labelFrame,
-            "LabelText",
-            "LEVELS",
-            LevelsLayoutSpec.SideLabelFont,
-            LevelsLayoutSpec.RankBlue,
+            layoutRoot,
+            "TitleLabel",
+            TitleText,
+            LevelsLayoutSpec.TitleFont,
+            LevelsLayoutSpec.TextPrimary,
             FontStyles.Bold,
-            TextAlignmentOptions.Center);
-        label.characterSpacing = LevelsLayoutSpec.SideLabelSpacing;
+            TextAlignmentOptions.MidlineLeft);
+        ApplyTitleStyle(label);
+        SetTopLeft(
+            label.rectTransform,
+            titleLeft,
+            bodyTop,
+            titleWidth,
+            LevelsLayoutSpec.CellHeight);
+    }
 
-        RectTransform labelRect = label.rectTransform;
-        labelRect.anchorMin = new Vector2(0.5f, 0.5f);
-        labelRect.anchorMax = new Vector2(0.5f, 0.5f);
-        labelRect.pivot = new Vector2(0.5f, 0.5f);
-        labelRect.sizeDelta = new Vector2(LevelsLayoutSpec.BodyHeight, LevelsLayoutSpec.SideLabelWidth);
-        labelRect.anchoredPosition = Vector2.zero;
-        labelRect.localEulerAngles = new Vector3(0f, 0f, 90f);
+    void RefreshTitleLabel()
+    {
+        Transform root = transform.Find(LayoutRootName);
+        if (root == null)
+            return;
+
+        Transform title = root.Find("TitleLabel");
+        if (title == null)
+            return;
+
+        TMP_Text label = title.GetComponent<TMP_Text>();
+        if (label == null)
+            return;
+
+        label.text = TitleText;
+        label.fontSize = LevelsLayoutSpec.TitleFont;
+        ApplyTitleStyle(label);
+    }
+
+    static void ApplyTitleStyle(TMP_Text label)
+    {
+        label.color = LevelsLayoutSpec.TextPrimary;
+        label.fontStyle = FontStyles.Bold;
+        label.alignment = TextAlignmentOptions.MidlineLeft;
+        label.characterSpacing = LevelsLayoutSpec.TitleLetterSpacing;
     }
 
     void BuildCell(Transform layoutRoot, int level, float left, float top, float width, float height, bool alt)
@@ -438,8 +467,8 @@ public class LevelsRanksPanel : MonoBehaviour
             LevelsLayoutSpec.CellFont,
             LevelsLayoutSpec.TextMuted,
             FontStyles.Normal,
-            TextAlignmentOptions.MidlineRight);
-        StretchFill(value.rectTransform, 10f, 8f, 10f, 8f);
+            TextAlignmentOptions.Center);
+        StretchFill(value.rectTransform, 6f, 4f, 6f, 4f);
         value.richText = true;
 
         if (_cells == null || _cells.Length != LevelsLayoutSpec.LevelCount)

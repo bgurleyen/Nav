@@ -16,7 +16,9 @@ public class ScreenBase : MonoBehaviour
     [SerializeField] protected TMP_Text lastFLeft;
     [SerializeField] protected BgText lastFRight;
 
+#pragma warning disable CS0414 // Inspector-only design label.
     [SerializeField, ReadOnly] private string _design = "----";
+#pragma warning restore CS0414
 
     public string LastLineLeft => lastFLeft.text;
 

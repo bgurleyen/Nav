@@ -23,6 +23,7 @@ public class GraphManage : MonoBehaviour
 
     static readonly string[] LegacyGraphNames =
     {
+        "HeatmapChart",
         "FLIGHT PROFILE",
         "FUEL FLOW",
         "LEVEL PROFILE",
@@ -39,6 +40,7 @@ public class GraphManage : MonoBehaviour
 
     void Awake()
     {
+        HideLegacyGraphUi();
         EnsureGraphCanvasVisible();
         EnsureDebriefPanelExists();
         EnsureLevelsPanelExists();
@@ -220,6 +222,7 @@ public class GraphManage : MonoBehaviour
     void ShowLevelsPanel(bool asSelector = false)
     {
         _showingLevelsPanel = true;
+        HideLegacyGraphUi();
         EnsureGraphCanvasVisible();
         EnsureLevelsPanelExists();
 
@@ -458,7 +461,7 @@ public class GraphManage : MonoBehaviour
         if (levelsPanel == null || dataManage?.firestoreController == null)
             return;
 
-        double currentFuel = _meData?.remainingFuel ?? 0;
+        int currentFuel = _meData?.remainingFuel ?? 0;
         dataManage.firestoreController.FetchAllLevelRanks(
             PlayerPrefsHolder.UiLevelIndex,
             currentFuel,
@@ -518,15 +521,7 @@ public class GraphManage : MonoBehaviour
 
     void OnGameFinished(bool isStable)
     {
-        if (mainGroup != null)
-            mainGroup.alpha = 0;
-
-        if (graphGroup != null)
-        {
-            graphGroup.alpha = 1;
-            graphGroup.blocksRaycasts = true;
-            graphGroup.interactable = true;
-        }
+        SwitchToGraphUi();
 
         // Unstable approach: no debrief, no cloud save — go straight to level select.
         if (!isStable)
@@ -546,6 +541,35 @@ public class GraphManage : MonoBehaviour
         LevelStat flightResult = dataManage.CaptureFlightResult();
         dataManage.PushToCloud(flightResult, OnProgressStatsSaved);
         PresentDebrief(flightResult);
+    }
+
+    /// <summary>
+    /// TEMPORARY: score-test shortcut — show debrief with injected stats (saves like a real flight).
+    /// </summary>
+    public void PresentTestDebrief(LevelStat flightResult)
+    {
+        SwitchToGraphUi();
+        Time.timeScale = 0f;
+
+        if (dataManage != null)
+            dataManage.PushToCloud(flightResult, OnProgressStatsSaved);
+        else
+            Debug.LogError("[GraphManage] dataManage is not assigned (score test).");
+
+        PresentDebrief(flightResult);
+    }
+
+    void SwitchToGraphUi()
+    {
+        if (mainGroup != null)
+            mainGroup.alpha = 0;
+
+        if (graphGroup != null)
+        {
+            graphGroup.alpha = 1;
+            graphGroup.blocksRaycasts = true;
+            graphGroup.interactable = true;
+        }
     }
 
     void PresentDebrief(LevelStat flightResult)

@@ -48,7 +48,8 @@ public class SliderLever3DLinker : MonoBehaviour
         _leverSeq?.Kill();
         _leverSeq = DOTween.Sequence()
             .Append(_lever3D.DOLocalRotateQuaternion(_initialRotation * Quaternion.Euler( _rotateDirection * (_minAngle + _angleStep * newValue)), 
-                _stepDuration * Mathf.Abs(_cachedOldSliderValue - newValue)).SetEase(Ease.Linear));
+                _stepDuration * Mathf.Abs(_cachedOldSliderValue - newValue)).SetEase(Ease.Linear))
+            .SetLink(_lever3D.gameObject);
         _cachedOldSliderValue = newValue;
         
         _sliderCallback?.Invoke(_slider.value);
@@ -57,5 +58,10 @@ public class SliderLever3DLinker : MonoBehaviour
     private void SliderChangedVibration(float newValue)
     {
         MMVibrationManager.Haptic(HapticTypes.HeavyImpact);
+    }
+
+    private void OnDestroy()
+    {
+        _leverSeq?.Kill();
     }
 }

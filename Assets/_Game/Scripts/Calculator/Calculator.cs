@@ -231,11 +231,20 @@ public class Calculator : MonoBehaviour
 
         Session.Settings.SpeedMultiplier = 1;
 
-        var levelInfo = FindFirstObjectByType<LevelStartInformation>();
-        if (levelInfo != null)
-            levelInfo.ShowInfo();
+        // TEMPORARY score-test shortcut — flip to false / delete ScoreTestDialog when done.
+        bool scoreTestMode = true;
+        if (scoreTestMode)
+        {
+            ScoreTestDialog.ShowIfEnabled();
+        }
         else
-            Debug.LogWarning("Calculator.Start: LevelStartInformation not found in scene.");
+        {
+            var levelInfo = FindFirstObjectByType<LevelStartInformation>();
+            if (levelInfo != null)
+                levelInfo.ShowInfo();
+            else
+                Debug.LogWarning("Calculator.Start: LevelStartInformation not found in scene.");
+        }
     }
 
     /// <summary>
@@ -747,15 +756,17 @@ public class Calculator : MonoBehaviour
     }
 
     /// <summary>
-    /// First along-route point where VDI is centered at cruise on the geometric path:
+    /// First along-route distance/position where VDI is centered at cruise on the geometric path:
     /// before = below path, after = above path when staying level.
     /// d_to_constraint = (cruise - constraintAlt) / 318.
+    /// segmentIndex is the destination node index (Points[i+1] / ComputedLines[i+1]).
     /// </summary>
     public static bool TryFindVdiCenterCrossing(RouteScriptableObject route, double cruiseAltitude,
-        out Vector2 onTrackPosition, out Vector2 legDirection)
+        out Vector2 onTrackPosition, out int segmentIndex, out float segmentT)
     {
         onTrackPosition = default;
-        legDirection = default;
+        segmentIndex = -1;
+        segmentT = 0f;
         if (route?.Points == null || route.Points.Length < 2 || cruiseAltitude <= 0)
         {
             return false;
@@ -831,19 +842,9 @@ public class Calculator : MonoBehaviour
                 continue;
             }
 
-            var distFromNode0 = (float)(distAlongFromStart - walked);
-            var heading = node1.Degrees;
-            onTrackPosition = Geometry.GetNextPosition(node0.CartesianPosition, distFromNode0, heading);
-            legDirection = node1.CartesianPosition - node0.CartesianPosition;
-            if (legDirection.sqrMagnitude < 1e-8f)
-            {
-                legDirection = Geometry.GetDirectionFromHeading(heading);
-            }
-            else
-            {
-                legDirection.Normalize();
-            }
-
+            segmentT = Mathf.Clamp01((float)((distAlongFromStart - walked) / segmentLength));
+            segmentIndex = i + 1;
+            onTrackPosition = Vector2.Lerp(node0.CartesianPosition, node1.CartesianPosition, segmentT);
             return true;
         }
 
@@ -1863,7 +1864,8 @@ public class Calculator : MonoBehaviour
         bool landingGearOk = LGDown;
         int flapSetting = GetFlapSettingDegrees(Flap_Idx);
         bool flapsOk = flapSetting >= 30;
-        // On approach before touchdown, speed brake should be retracted
+        // On approach before touchdown, speed brake should be
+        // 
         bool speedBrakeOk = !SBUp;
 
         allOk = localizerOk && glideSlopeOk && verticalSpeedOk && speedOk
@@ -1871,13 +1873,13 @@ public class Calculator : MonoBehaviour
 
         string lf = Environment.NewLine;
         return
-            FormatStatusLine("Localizer", OkNo(localizerOk), localizerOk) + lf +
+            FormatStatusLine(lf + "Localizer", OkNo(localizerOk), localizerOk) + lf +
             FormatStatusLine("Glide Slope", OkNo(glideSlopeOk), glideSlopeOk) + lf +
             FormatStatusLine("Vertical Speed", OkNo(verticalSpeedOk), verticalSpeedOk) + lf +
             FormatStatusLine("Speed", OkNo(speedOk), speedOk) + lf +
-            FormatStatusLine("Landing Gear", landingGearOk ? "Down" : "Up", landingGearOk) + lf +
-            FormatStatusLine("Flaps", flapSetting + (flapsOk ? " ok" : " no"), flapsOk) + lf +
-            FormatStatusLine("Speed Brake", speedBrakeOk ? "Retracted" : "Extended", speedBrakeOk);
+            FormatStatusLine("Landing Gear", landingGearOk ? "/Down" : "Up", landingGearOk) + lf +
+            FormatStatusLine("Flaps", flapSetting + "°", flapsOk) + lf +
+            FormatStatusLine("Speed Brake", speedBrakeOk ? "Armed" : "Extended", speedBrakeOk);
     }
 
     static string OkNo(bool ok) => ok ? "ok" : "no";

@@ -847,14 +847,20 @@ namespace Navigation
     }
 }
 
-public struct RoutePosition
+public struct RoutePosition : System.IEquatable<RoutePosition>
 {
     public Vector2 SegmentVertex;
     public int SegmentVertexIndex;
     public int SegmentIndex;
 
-    public static bool operator ==(RoutePosition a, RoutePosition b) => a.SegmentIndex == b.SegmentIndex &&
-                                                                        a.SegmentVertexIndex == b.SegmentVertexIndex;
+    public static bool operator ==(RoutePosition a, RoutePosition b) => a.Equals(b);
 
-    public static bool operator !=(RoutePosition a, RoutePosition b) => !(a == b);
+    public static bool operator !=(RoutePosition a, RoutePosition b) => !a.Equals(b);
+
+    public bool Equals(RoutePosition other) =>
+        SegmentIndex == other.SegmentIndex && SegmentVertexIndex == other.SegmentVertexIndex;
+
+    public override bool Equals(object obj) => obj is RoutePosition other && Equals(other);
+
+    public override int GetHashCode() => System.HashCode.Combine(SegmentIndex, SegmentVertexIndex);
 }

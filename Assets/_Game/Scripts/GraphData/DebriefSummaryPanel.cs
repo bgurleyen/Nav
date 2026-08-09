@@ -17,9 +17,11 @@ public class DebriefSummaryPanel : MonoBehaviour
         public TMP_Text best;
     }
 
+    const int RowCount = 5;
+
     [SerializeField] private TMP_Text _title;
     [SerializeField] private TMP_Text _subtitle;
-    [SerializeField] private RowBinding[] _rows = new RowBinding[4];
+    [SerializeField] private RowBinding[] _rows = new RowBinding[RowCount];
     [SerializeField] private TMP_Text _remainingFuel;
     [SerializeField] private TMP_Text _fuelRank;
     [SerializeField] private TMP_Text _rankHint;
@@ -30,6 +32,7 @@ public class DebriefSummaryPanel : MonoBehaviour
         "LG Altitude",
         "Average Flaps Altitude",
         "Total S/B Usage",
+        "Fuel Remaining",
     };
 
     void Awake()
@@ -203,7 +206,7 @@ public class DebriefSummaryPanel : MonoBehaviour
         _remainingFuel = null;
         _fuelRank = null;
         _rankHint = null;
-        _rows = new RowBinding[4];
+        _rows = new RowBinding[RowCount];
     }
 
     public bool HasValidBindings() => HasMinimumBindings();
@@ -227,10 +230,10 @@ public class DebriefSummaryPanel : MonoBehaviour
         _fuelRank = FindTextUnder(root, "RankValue") ?? _fuelRank;
         _rankHint = FindTextUnder(root, "RankHint") ?? _rankHint;
 
-        if (_rows == null || _rows.Length != 4)
-            _rows = new RowBinding[4];
+        if (_rows == null || _rows.Length != RowCount)
+            _rows = new RowBinding[RowCount];
 
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < RowCount; i++)
         {
             Transform row = FindChildDeep(root, $"Row{i}");
             if (row == null)
@@ -278,10 +281,8 @@ public class DebriefSummaryPanel : MonoBehaviour
         SetTopLeft(_subtitle.rectTransform, DebriefLayoutSpec.Padding, y, 1200f, DebriefLayoutSpec.SubtitleBlockHeight);
         y += DebriefLayoutSpec.SubtitleBlockHeight + DebriefLayoutSpec.StackGap;
 
-        CreateBadge(layoutRoot, y - DebriefLayoutSpec.StackGap - DebriefLayoutSpec.SubtitleBlockHeight);
-
         float tableTop = y;
-        float tableHeight = DebriefLayoutSpec.HeaderRowHeight + DebriefLayoutSpec.DataRowHeight * 4f;
+        float tableHeight = DebriefLayoutSpec.HeaderRowHeight + DebriefLayoutSpec.DataRowHeight * RowCount;
         Transform tableFrame = CreatePanel(layoutRoot, "Table Frame", DebriefLayoutSpec.TableBg,
             DebriefLayoutSpec.Padding, tableTop, DebriefLayoutSpec.ContentWidth, tableHeight);
 
@@ -340,15 +341,6 @@ public class DebriefSummaryPanel : MonoBehaviour
         scaler.SetLayoutRoot(layoutRoot);
     }
 
-    void CreateBadge(Transform parent, float top)
-    {
-        Transform badge = CreatePanel(parent, "Badge", DebriefLayoutSpec.HeaderBg,
-            DebriefLayoutSpec.RefWidth - DebriefLayoutSpec.Padding - 160f, top, 144f, DebriefLayoutSpec.BadgeHeight);
-        TMP_Text text = CreateText(badge, "BadgeText", "NUMERIC SUMMARY", DebriefLayoutSpec.SubtitleFont,
-            DebriefLayoutSpec.HeaderBlue, FontStyles.Bold, TextAlignmentOptions.Center);
-        StretchFill(text.rectTransform, 0f, 0f, 0f, 0f);
-    }
-
     void BuildTableHeader(Transform tableFrame)
     {
         Transform header = CreatePanel(tableFrame, "Table Header", DebriefLayoutSpec.HeaderBg,
@@ -366,10 +358,10 @@ public class DebriefSummaryPanel : MonoBehaviour
 
     void BuildTableRows(Transform tableFrame)
     {
-        if (_rows == null || _rows.Length != 4)
-            _rows = new RowBinding[4];
+        if (_rows == null || _rows.Length != RowCount)
+            _rows = new RowBinding[RowCount];
 
-        for (int i = 0; i < 4; i++)
+        for (int i = 0; i < RowCount; i++)
         {
             Color32 bg = i % 2 == 1 ? DebriefLayoutSpec.TableBgAlt : DebriefLayoutSpec.TableBg;
             float rowTop = DebriefLayoutSpec.HeaderRowHeight + i * DebriefLayoutSpec.DataRowHeight;
@@ -397,7 +389,7 @@ public class DebriefSummaryPanel : MonoBehaviour
             DebriefLayoutSpec.TextScoreMuted, FontStyles.Normal, TextAlignmentOptions.TopLeft);
         SetTopLeft(FindTextUnder(scoreBlock, "ScoreLabel").rectTransform, padL, padT, halfW, DebriefLayoutSpec.ScoreLabelHeight);
 
-        _remainingFuel = CreateText(scoreBlock, "ScoreValue", "2.47 T", DebriefLayoutSpec.ScoreValueFont,
+        _remainingFuel = CreateText(scoreBlock, "ScoreValue", "12,470 KG", DebriefLayoutSpec.ScoreValueFont,
             DebriefLayoutSpec.TextPrimary, FontStyles.Bold, TextAlignmentOptions.MidlineLeft);
         SetTopLeft(_remainingFuel.rectTransform, padL, padT + DebriefLayoutSpec.ScoreValueOffset, halfW, DebriefLayoutSpec.ScoreValueHeight);
 
@@ -574,10 +566,10 @@ public class DebriefSummaryPanel : MonoBehaviour
         BindScore(me?.remainingFuel ?? 0, rank, totalPlayers);
     }
 
-    public void BindScore(double remainingFuel, int? rank, int totalPlayers)
+    public void BindScore(int remainingFuelKg, int? rank, int totalPlayers)
     {
         if (_remainingFuel != null)
-            _remainingFuel.text = DebriefMetrics.FormatFuel(remainingFuel);
+            _remainingFuel.text = DebriefMetrics.FormatFuel(remainingFuelKg);
         if (_fuelRank != null)
             _fuelRank.text = DebriefMetrics.FormatRank(rank, totalPlayers);
         if (_rankHint != null)
@@ -596,6 +588,7 @@ public class DebriefSummaryPanel : MonoBehaviour
             DebriefMetrics.BuildLgAltitude(me, best, average),
             DebriefMetrics.BuildAverageFlapsAltitude(me, best, average),
             DebriefMetrics.BuildSpeedBrakeUsage(me, best, average),
+            DebriefMetrics.BuildFuelRemaining(me, best, average),
         };
 
         for (int i = 0; i < _rows.Length && i < values.Length; i++)

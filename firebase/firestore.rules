@@ -9,6 +9,9 @@ service cloud.firestore {
     match /game_stats/{userId} {
       allow read, write: if true;
     }
+    match /level/{userId} {
+      allow read, write: if true;
+    }
     match /progress_stats/{userId} {
       allow read, write: if true;
     }

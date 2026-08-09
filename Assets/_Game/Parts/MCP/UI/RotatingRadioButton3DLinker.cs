@@ -31,7 +31,13 @@ public class RotatingRadioButton3DLinker : MonoBehaviour
 
         _rotationSeq?.Kill();
         _rotationSeq = DOTween.Sequence()
-            .Append(_mesh3D.DOLocalRotateQuaternion(GetRotation, _stepDuration).SetEase(Ease.Linear));
+            .Append(_mesh3D.DOLocalRotateQuaternion(GetRotation, _stepDuration).SetEase(Ease.Linear))
+            .SetLink(_mesh3D.gameObject);
+    }
+
+    private void OnDestroy()
+    {
+        _rotationSeq?.Kill();
     }
 
     private Quaternion GetRotation =>

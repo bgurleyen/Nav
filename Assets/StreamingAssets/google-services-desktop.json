@@ -7,22 +7,20 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:356407454813:ios:c83f2f7604570a7a12b1b4",
+        "mobilesdk_app_id": "1:356407454813:android:23c99fec588ad08d12b1b4",
         "android_client_info": {
           "package_name": "com.DefaultCompany.Navigation"
         }
       },
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyDuzGmbgniMrnOCk7XauByB3cU7vQ26_nE"
+          "current_key": "AIzaSyDhwHPabRS709JL2NcSBERIUamHikuuZRI"
         }
       ],
       "services": {
-        "analytics_service": {
-          "status": 0
-        },
         "appinvite_service": {
-          "status": 1
+          "other_platform_oauth_client": []
         }
       }
     }

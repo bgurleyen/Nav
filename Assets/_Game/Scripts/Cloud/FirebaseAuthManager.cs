@@ -22,7 +22,9 @@ public class FirebaseAuthManager : MonoBehaviour
 
     [Space]
     [Header("Google")]
+#pragma warning disable CS0414 // Kept for Google Sign-In wiring (see commented GoogleSignInConfiguration).
     [SerializeField] private string googleWebApi = "";
+#pragma warning restore CS0414
 
     public FirebaseUser user;
     private FirebaseAuth firebaseAuth;
@@ -233,18 +235,6 @@ public class FirebaseAuthManager : MonoBehaviour
         else if (task.IsFaulted)
         {
             Debug.Log("User Data Not Found");
-            foreach (Exception exception in task.Exception.Flatten().InnerExceptions)
-            {
-                string authErrorCode = "";
-                Firebase.FirebaseException firebaseEx = exception as Firebase.FirebaseException;
-                if (firebaseEx != null)
-                {
-                    //authErrorCode = String.Format("AuthError.{0}: ",
-                    //  ((Firebase.Auth.AuthError)firebaseEx.ErrorCode).ToString());
-                }
-                string[] error = exception.ToString().Split(":");
-                //userInputs.popup.PopupMessage("Error", error[1]);
-            }
         }
         else if (task.IsCompleted)
         {
