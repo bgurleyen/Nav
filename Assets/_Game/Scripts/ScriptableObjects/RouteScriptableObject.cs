@@ -58,23 +58,6 @@ namespace Navigation
             }
         }
 
-        public void ComputeCartesianPositions(bool isILS = true)
-        {
-            //var currentPosition = Geometry.GetPreviousPosition(Session.CurrentLevel.MainRoute.Points[Session.CurrentLevel.MainRoute.Points.Length - 1].CartesianPosition, 1.5f, Session.CurrentLevel.levelInfo.Course);
-            var currentPosition = Geometry.GetPreviousPosition(Session.CurrentLevel.MainRoute.Points[Session.CurrentLevel.MainRoute.Points.Length - 1].CartesianPosition, 0.1f, Session.CurrentLevel.levelInfo.Course);
-            var rIndx = Points.Length - 1;
-
-            for (var i = 0; i < Points.Length; i++)
-            {
-                if (i > 0)
-                {
-                    currentPosition = Geometry.GetPreviousPosition(currentPosition, Points[i].Distance, Points[i].Degrees);
-                }
-
-                Points[rIndx--].CartesianPosition = currentPosition;
-            }
-        }
-
         public void ComputeTrace(bool isMod = false)
         {
             TracedRoute.Compute(Points, isMod);
@@ -729,8 +712,6 @@ namespace Navigation
             newSet[Points.Length] = insertionNode;
 
             Points = newSet;
-
-            //ComputeCartesianPositions(true);
         }
 
         //code for remove a point from the array at specific index

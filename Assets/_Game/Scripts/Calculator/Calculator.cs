@@ -325,8 +325,8 @@ public class Calculator : MonoBehaviour
         {
             int F = 8 - Mathf.FloorToInt((float)Altitude / 5000);
 
-            // VNAV: pitch/energy follow commanded path VS (RVS), not lagged CVS — path first.
-            double vsRef = (Session.State.VNAV && !Session.State.GSCaptured) ? RVS : CVS;
+            // Path modes command pitch from RVS; other modes follow lagged CVS.
+            double vsRef = (Session.State.GSCaptured || Session.State.VNAV) ? RVS : CVS;
 
             int i = 0;//Calculate limit VS
             double s1 = (M[F, 1, i] - M[F, 3, i]) / (M[F, 0, 0] - M[F, 2, 0]) * (RSpeed - M[F, 2, 0]) + M[F, 3, i];
@@ -424,13 +424,18 @@ public class Calculator : MonoBehaviour
             {
                 int step = 10 * Session.Settings.SpeedMultiplier;
                 // VNAV path capture: close large VS errors faster so deviation correction bites sooner.
-                if (Session.State.VNAV && Mathf.Abs(RVS - CVS) > 400)
+                // Not during GS — aggressive step hunts with the path loop.
+                if (Session.State.VNAV && !Session.State.GSCaptured && Mathf.Abs(RVS - CVS) > 400)
                     step = 40 * Session.Settings.SpeedMultiplier;
 
                 if (RVS < CVS) CVS -= step;
                 if (CVS < RVS) CVS += step;
                 if (Mathf.Abs(RVS - CVS) < step) CVS = RVS;
-                if ((Mathf.Abs(RVS) > 1000) && (Mathf.Abs(RAltitude - (int)CAltitude) < Mathf.Abs(CVS / 2f) - 600))
+
+                // MCP altitude capture flare — must not fight GS commanded VS.
+                if (!Session.State.GSCaptured
+                    && (Mathf.Abs(RVS) > 1000)
+                    && (Mathf.Abs(RAltitude - (int)CAltitude) < Mathf.Abs(CVS / 2f) - 600))
                 {
                     RVS = RVS / Mathf.Abs(RVS) * 1000;
                 }
@@ -850,13 +855,27 @@ public class Calculator : MonoBehaviour
         double DeltaAlt, Alt1, Alt0, d, D;
         float posY;
 
+        if (Session.State.LOCCaptured && Move.Instance != null)
+        {
+            DeltaAlt = Move.Instance.GsAltitudeDeviation(Session.CurrentLevel.levelInfo.GlideSlope);
+            VDI_Text.text = (Mathf.Abs((float)DeltaAlt) >= 50) ? "" + (int)DeltaAlt : "";
+            posY = -((float)DeltaAlt / 5);
+            if (posY > 100) posY = 100;
+            if (posY < -100) posY = -100;
+            VDI_Index.transform.localPosition = new Vector2(0.3f, posY / 125);
+            if (DeltaAlt < 0) VDI_Text.transform.localPosition = new Vector2(0.1f, -1);
+            else VDI_Text.transform.localPosition = new Vector2(0.1f, 1);
+            return;
+        }
+
         RouteScriptableObject activePoints = Session.ActiveRoute;
         RouteScriptableObject modPoints = Session.ModRoute;
 
         bool isMod = Session.IsMod;
         RouteScriptableObject _route = isMod ? modPoints : activePoints;
         if (_route == null) _route = activePoints;
-        if (PositionVirtualNode.PassedNodeIndex<0) return;
+        if (PositionVirtualNode.PassedNodeIndex < 0) return;
+        if (PositionVirtualNode.PassedNodeIndex >= _route.Points.Length - 1) return;
         var node0 = _route.Points[PositionVirtualNode.PassedNodeIndex];
         var node1 = _route.Points[PositionVirtualNode.PassedNodeIndex + 1];
 
@@ -870,15 +889,7 @@ public class Calculator : MonoBehaviour
         if (D == 0) DeltaAlt = 0;
         else DeltaAlt = CAltitude - Target;
 
-        if (Session.State.LOCCaptured)
-         {
-           
-            DeltaAlt = Move.Instance.GsAltitudeDeviation(Session.CurrentLevel.levelInfo.GlideSlope);
-         }
         VDI_Text.text = (Mathf.Abs((float)DeltaAlt) >= 50) ? "" + (int)DeltaAlt : "";
-
-        //Debug.Log("Alt0: "  + (int)Alt0 + " Alt1: " + (int)Alt1 + "  d: "+ (int)d + "  D: " + D +  "  DeltaAlt: " +   (int)DeltaAlt + " T: " + Target);
-
 
         posY = -((float)DeltaAlt / 5);
         if (posY > 100) posY = 100;
@@ -908,6 +919,12 @@ public class Calculator : MonoBehaviour
     }
     public void FlyVerticalPath()
     {
+        if (Session.State.GSCaptured)
+        {
+            FlyGlideSlope();
+            return;
+        }
+
         RouteScriptableObject route = Session.ActiveRoute;
         if (route?.Points == null || PositionVirtualNode.PassedNodeIndex < 0)
             return;
@@ -925,14 +942,6 @@ public class Calculator : MonoBehaviour
         double d = Session.PlayerAircraft.ComputedDistanceLeftOnSegment;
         double D = node1.Distance;
         if (d < 0.1) d = 0.1;
-
-        if (Session.State.GSCaptured)
-        {
-            float degreeToVs = -6076 * Mathf.Tan(Session.CurrentLevel.levelInfo.GlideSlope * Mathf.Deg2Rad) * (GS / 60);
-            VNAV_VS = degreeToVs;
-            RVS = (int)VNAV_VS;
-            return;
-        }
 
         if (!Session.State.VNAV)
             return;
@@ -1005,6 +1014,37 @@ public class Calculator : MonoBehaviour
 
         if (RVS < 0)
             ClearFmcCruiseAltitudeOnVnavDescentStart();
+    }
+
+    /// <summary>
+    /// Soft GS track after capture: geometric slope + mild altitude correction,
+    /// deadband and RVS rate-limit to avoid hunting.
+    /// </summary>
+    private void FlyGlideSlope()
+    {
+        float glide = Session.CurrentLevel.levelInfo.GlideSlope;
+        float geometricVs = -6076f * Mathf.Tan(glide * Mathf.Deg2Rad) * (GS / 60f);
+
+        float altErr = Move.Instance != null
+            ? Move.Instance.GsAltitudeDeviation(glide)
+            : 0f; // + above path
+
+        // Ignore small errors; correct the rest slowly (~45 s) with a tight fpm cap.
+        const float deadbandFt = 60f;
+        const float tauSec = 45f;
+        const float maxCorrectionFpm = 180f;
+        float err = 0f;
+        if (Mathf.Abs(altErr) > deadbandFt)
+            err = altErr - Mathf.Sign(altErr) * deadbandFt;
+
+        float correction = Mathf.Clamp(err * (60f / tauSec), -maxCorrectionFpm, maxCorrectionFpm);
+        float desired = geometricVs - correction;
+
+        // 1 Hz path loop: limit how fast commanded VS can change.
+        const float maxDeltaFpmPerSec = 60f;
+        float next = Mathf.MoveTowards(RVS, desired, maxDeltaFpmPerSec);
+        VNAV_VS = next;
+        RVS = Mathf.RoundToInt(next);
     }
 
     /// <summary>
@@ -1180,30 +1220,33 @@ public class Calculator : MonoBehaviour
                 FMA1.text = "FMC SPD";
                 FMA3.text = "VNAV";
             }
+        }
 
-
-
-            if ((Session.State.AppArmed))
+        // Approach modes own lateral/vertical FMA once armed or captured.
+        if (Session.State.AppArmed || Session.State.LOCCaptured)
+        {
+            if (Session.State.LOCCaptured)
             {
-                if (Session.State.LOCCaptured)
+                FMA2.text = "LOC";
+
+                if (Session.State.GSCaptured
+                    || (Move.Instance != null
+                        && Move.Instance.CanCaptureGs(Session.CurrentLevel.levelInfo.GlideSlope)))
                 {
-                    FMA2.text = "LOC";
-
-                    //Debug.Log("   G" + Move.Instance.GsDeviation(GlideSlope) + "  ");
-
-                    if (Mathf.Abs(Move.Instance.GsDeviation(Session.CurrentLevel.levelInfo.GlideSlope)) < 0.1)
-                    {
-                        Session.State.GSCaptured = true;
-
-                        FMA1.text = "MCP SPD";
-                        FMA3.text = "GS";
-                        FMAarmed.text = "";
-                    }
-                    else FMAarmed.text = "                         GS";
+                    Session.State.GSCaptured = true;
+                    FMA1.text = "MCP SPD";
+                    FMA3.text = "GS";
+                    FMAarmed.text = "";
                 }
-                else FMAarmed.text = "LOC                 GS";
+                else
+                {
+                    FMAarmed.text = "                         GS";
+                }
             }
-
+            else
+            {
+                FMAarmed.text = "LOC                 GS";
+            }
         }
 
     }
@@ -1809,10 +1852,11 @@ public class Calculator : MonoBehaviour
         float glideSlope = levelInfo != null ? levelInfo.GlideSlope : 3f;
 
         float locDev = Move.Instance != null ? Move.Instance.ComputeLocDeviationDegrees(course) : 99f;
-        float gsDev = Move.Instance != null ? Move.Instance.ComputeGsDeviationDegrees(glideSlope) : 99f;
+        float gsAltDev = Move.Instance != null ? Move.Instance.GsAltitudeDeviation(glideSlope) : 9999f;
 
         bool localizerOk = Session.State.LOCCaptured || Mathf.Abs(locDev) <= 0.5f;
-        bool glideSlopeOk = Session.State.GSCaptured || Mathf.Abs(gsDev) <= 0.5f;
+        // ~0.5° at typical short final ≈ 150 ft band already used for capture; use 150 ft here too.
+        bool glideSlopeOk = Session.State.GSCaptured || Mathf.Abs(gsAltDev) <= Move.GsCaptureAltBandFt;
         // Typical short-final ROD band
         bool verticalSpeedOk = CVS <= -200 && CVS >= -1200;
         bool speedOk = CSpeed >= minimumSpeed && CSpeed <= minimumSpeed + 20;

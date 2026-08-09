@@ -470,6 +470,59 @@ public class Move : Singleton<Move>
         return Vector2.Distance(Session.PlayerAircraft.NMPosition, PointPos(RW));
     } // Distance from RW
 
+    /// <summary>Runway threshold elevation (ft MSL) from the last route point.</summary>
+    public float RunwayAltitudeFeet()
+    {
+        var points = Session.OriginalReferenceRoute?.Points;
+        if (points == null || RW < 0 || RW >= points.Length)
+            return 0f;
+
+        float alt = (float)points[RW].Altitude.ComputedValue;
+        if (alt < 0f
+            && !string.IsNullOrEmpty(points[RW].RawAltitude)
+            && float.TryParse(points[RW].RawAltitude, out float raw))
+            alt = raw;
+
+        return alt < 0f ? 0f : alt;
+    }
+
+    // LOC/GS capture thresholds (simple, level-independent)
+    public const float LocCaptureDegrees = 2.5f;
+    public const float LocCaptureDmeMinNm = 3f;
+    public const float LocCaptureDmeMaxNm = 25f;
+    public const float GsCaptureAltBandFt = 150f;
+
+    /// <summary>True when APP armed and aircraft is within LOC capture window.</summary>
+    public bool CanCaptureLoc(float course)
+    {
+        if (!Session.State.AppArmed || Session.State.LOCCaptured)
+            return false;
+
+        float dme = DME();
+        if (dme < LocCaptureDmeMinNm || dme > LocCaptureDmeMaxNm)
+            return false;
+
+        // Must be flying generally toward the runway (not outbound).
+        float hdgToCourse = Mathf.Abs(Mathf.DeltaAngle(course, Session.PlayerAircraft.HeadingDegrees));
+        if (hdgToCourse > 90f)
+            return false;
+
+        return Mathf.Abs(ComputeLocDeviationDegrees(course)) <= LocCaptureDegrees;
+    }
+
+    /// <summary>True when LOC captured and within GS altitude capture band.</summary>
+    public bool CanCaptureGs(float glideSlopeDegrees)
+    {
+        if (!Session.State.LOCCaptured || Session.State.GSCaptured)
+            return false;
+
+        float dme = DME();
+        if (dme < 0.5f || dme > LocCaptureDmeMaxNm)
+            return false;
+
+        return Mathf.Abs(GsAltitudeDeviation(glideSlopeDegrees)) <= GsCaptureAltBandFt;
+    }
+
     private void SpeedCheck()
     {
 
@@ -600,9 +653,8 @@ public class Move : Singleton<Move>
         {
             // Debug.Log(XFRHdg +"H"+ Calculator.RHeading+  "     "+ XFRAltitude +"A"+ Calculator.RAltitude + "   " + Speed +"S"+ Calculator.RSpeed);
 
-            float dev = LocDeviation(Session.CurrentLevel.levelInfo.Course);
-            float gsD = GsDeviation(Session.CurrentLevel.levelInfo.GlideSlope);
-            float ils = Session.ILSRoute != null ? ILSDeviation(Session.CurrentLevel.levelInfo.Course) : 0;
+            LocDeviation(Session.CurrentLevel.levelInfo.Course);
+            GsDeviation(Session.CurrentLevel.levelInfo.GlideSlope);
 
             BorderGuard();
         }
@@ -685,30 +737,12 @@ public class Move : Singleton<Move>
         myAC.GetComponent<UnityEngine.UI.Text>().text = "#";
         prvWptIdx = point;
     }
-    public float ILSDeviation(float course)
-    {
-        float Deviation = Mathf.DeltaAngle(course, TrackToPoint(RW));
-
-
-
-        if (Mathf.Abs(Mathf.DeltaAngle(course, Session.PlayerAircraft.HeadingDegrees)) > 90) Deviation *= -1;
-
-        if (DME() > 3)
-        {
-            if ((Mathf.Abs(Deviation) < 3) && (DME() < 23))
-            {
-                Session.State.ILSCapture = true;
-            }
-        }
-        else
-        {
-            Session.State.ILSCapture = false;
-        }
-
-        return Deviation;
-    }
-    /// <summary>Signed localizer angular deviation in degrees. Positive = right of course.</summary>
-    public float ComputeLocDeviationDegrees(float course)
+    /// <summary>
+    /// Localizer geometry relative to runway threshold.
+    /// alongFromThresholdNm: NM before threshold along inbound course (positive on approach).
+    /// crossTrackNm: NM right of course (positive = right).
+    /// </summary>
+    public void ComputeLocTrackErrors(float course, out float alongFromThresholdNm, out float crossTrackNm)
     {
         Vector2 rwPos = PointPos(RW);
         Vector2 acPos = Session.PlayerAircraft.NMPosition;
@@ -716,8 +750,14 @@ public class Move : Singleton<Move>
         Vector2 rightDir = new Vector2(courseDir.y, -courseDir.x);
         Vector2 toAircraft = acPos - rwPos;
 
-        float alongFromThreshold = -Vector2.Dot(toAircraft, courseDir);
-        float crossTrackNm = Vector2.Dot(toAircraft, rightDir);
+        alongFromThresholdNm = -Vector2.Dot(toAircraft, courseDir);
+        crossTrackNm = Vector2.Dot(toAircraft, rightDir);
+    }
+
+    /// <summary>Signed localizer angular deviation in degrees. Positive = right of course.</summary>
+    public float ComputeLocDeviationDegrees(float course)
+    {
+        ComputeLocTrackErrors(course, out float alongFromThreshold, out float crossTrackNm);
 
         if (alongFromThreshold < 0.5f)
             return Mathf.DeltaAngle(course, TrackToPoint(RW));
@@ -727,34 +767,12 @@ public class Move : Singleton<Move>
 
     public float LocDeviation(float course)
     {
-        // float Deviation = Mathf.DeltaAngle(course, TrackToPoint(RW))  ;
-        Vector2 aircraftPosition = Session.PlayerAircraft.NMPosition;
-        Vector2 courseDirection = new Vector2(Mathf.Sin(course * Mathf.Deg2Rad), Mathf.Cos(course * Mathf.Deg2Rad));
-
-        // ILS hattına yakın bir referans noktası (varsa aktif ILS noktası, yoksa RW) alıyoruz.
-        int ilsReferencePoint = point >= 50 ? point : RW;
-        Vector2 ilsReferencePosition = PointPos(ilsReferencePoint);
-
-        float alongTrack = Vector2.Dot(aircraftPosition - ilsReferencePosition, courseDirection);
-        Vector2 closestPointOnCourse = ilsReferencePosition + (alongTrack * courseDirection);
-
-        // Sabit look-ahead ile (NM), paralel ofsette mesafeye bağlı yalancı drift'i azaltıyoruz.
-        const float lookAheadNm = 10f;
-        Vector2 aimPointOnCourse = closestPointOnCourse + (courseDirection * lookAheadNm);
-
-        float bearingToAimPoint = Mathf.Atan2(aimPointOnCourse.x - aircraftPosition.x, aimPointOnCourse.y - aircraftPosition.y) *
-                                  Mathf.Rad2Deg;
-        if (bearingToAimPoint < 0) bearingToAimPoint += 360;
-
-        float Deviation = Mathf.DeltaAngle(course, bearingToAimPoint);
-
-
-        // Debug.Log(Deviation);
+        float Deviation = ComputeLocDeviationDegrees(course);
 
         if (((Mathf.Abs(Deviation) < 35) && (DME() < 10)) || ((Mathf.Abs(Deviation) < 10) && (DME() < 25)))
         {
             LOCIndex.enabled = true;
-            float locFullScaleDegrees = 2.5f;
+            float locFullScaleDegrees = LocCaptureDegrees;
             float locNeedleX = Mathf.Clamp((Deviation / locFullScaleDegrees) * 1243f, -1243f, 1243f);
             LOCIndex.transform.localPosition = new Vector2(locNeedleX, -645);
         }
@@ -765,47 +783,45 @@ public class Move : Singleton<Move>
 
         return Deviation;
     }
+
+    /// <summary>Signed GS angular deviation in degrees (raw; not forced to 0 after capture).</summary>
     public float ComputeGsDeviationDegrees(float gs)
     {
-        if (Session.State.GSCaptured)
-            return 0f;
-
         float dme = DME();
         if (dme < 0.5f)
             return 0f;
 
-        float descentAngle = Mathf.Atan2((float)Calculator.CAltitude, dme * 6076.12f) * Mathf.Rad2Deg;
+        float heightAboveRw = (float)Calculator.CAltitude - RunwayAltitudeFeet();
+        float descentAngle = Mathf.Atan2(heightAboveRw, dme * 6076.12f) * Mathf.Rad2Deg;
         return Mathf.DeltaAngle(gs, descentAngle);
     }
 
+    /// <summary>Altitude above / below GS path (ft). Positive = above path.</summary>
     public float GsAltitudeDeviation(float GS)
     {
-        float GSAltitude = Mathf.Tan(GS * Mathf.Deg2Rad) * DME() * 6076.12f;
-        float Difference = (float)Calculator.CAltitude - GSAltitude;
-
-        return Difference;
-
+        float dme = DME();
+        float GSAltitude = RunwayAltitudeFeet() + Mathf.Tan(GS * Mathf.Deg2Rad) * dme * 6076.12f;
+        return (float)Calculator.CAltitude - GSAltitude;
     }
+
     public float GsDeviation(float GS)
     {
-        float DescentAngle = Mathf.Atan2((float)Calculator.CAltitude, DME() * 6076.12f) * Mathf.Rad2Deg;
-        float Deviation = Mathf.DeltaAngle(GS, DescentAngle);
+        float Deviation = ComputeGsDeviationDegrees(GS);
 
-        if (Session.State.GSCaptured) Deviation = 0;
+        // After capture, needle stays centered (display only — path still uses real deviation).
+        float needleDev = Session.State.GSCaptured ? 0f : Deviation;
 
-        if ((Mathf.Abs(LocDeviation(_currentLevelData.levelInfo.Course)) < 5) && (DME() < 20))
+        if ((Mathf.Abs(ComputeLocDeviationDegrees(_currentLevelData.levelInfo.Course)) < 5) && (DME() < 20))
         {
             GSIndex.enabled = true;
-            GSIndex.transform.localPosition = new Vector2(1373, Mathf.Clamp(-Deviation * 1500, -541, 541));
+            GSIndex.transform.localPosition = new Vector2(1373, Mathf.Clamp(-needleDev * 1500, -541, 541));
         }
         else
         {
             GSIndex.enabled = false;
         }
 
-        //Debug.Log(Deviation);
         return Deviation;
-
     }
 
 

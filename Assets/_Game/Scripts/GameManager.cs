@@ -62,10 +62,6 @@ public class GameManager : MonoBehaviour
         //_routes.FixedPoints = FixedPointsScriptableObject.CreateDemo();
         //Debug.Log(_routes.FixedPoints.Entries.Length);
 
-        _routes.ILSRoute = ComputeILS();
-        _routes.ILSRoute.ComputeTrace();
-        //_routes.ILSRoute.ComputeCartesianPositions(true);
-        //_routes.ILSRoute.ComputeTrace();
         //Debug.Log("_routes.ActiveRoute: "+_routes.ActiveRoute);
 
 
@@ -197,27 +193,6 @@ public class GameManager : MonoBehaviour
         {
             Session.PlayerAircraft.ResetSeekProgress(PositionVirtualNode.PassedNodeIndex + 2, 0);
         }
-    }
-
-    private RouteScriptableObject ComputeILS()
-    {
-        int nodeCount = Session.CurrentLevel.MainRoute.Points.Length-1;
-  
-        RouteScriptableObject _ILS = Session.CurrentLevel.MainRoute.CloneAndInit();
-
-        RoutePoint rwPoint = Session.CurrentLevel.MainRoute.Points[nodeCount];
-
-        int course = Session.CurrentLevel.levelInfo.Course;
-
-        _ILS.Points = new RoutePoint[] { rwPoint };
-
-        for (int i = 0; (i < nodeCount); i++)
-        {
-            float distanceBetween = Session.CurrentLevel.MainRoute.Points[nodeCount-i].Distance;
-            _ILS.AddNodeAtLast(1, $"NODE_{i}", course, distanceBetween);
-        }
-        _ILS.ComputeCartesianPositions(true);
-        return _ILS;
     }
 
     public static void RemoveAt<T>(ref T[] arr, int index)

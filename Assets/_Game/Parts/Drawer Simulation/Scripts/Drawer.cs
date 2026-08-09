@@ -16,14 +16,12 @@ public class Drawer : MonoBehaviour
     public Animator cameraAnimator;
     [Space][SerializeField] private Transform dynamicHolder;
     [SerializeField] private Transform dynamicHolderMod;
-    [SerializeField] private Transform dynamicHolderILS;
     [SerializeField] private Transform dynamicHolderCircles;
     [SerializeField] private Transform dynamicHolderRays;
     [SerializeField] private Transform dynamicHolderOtheriarcrafts;
 
     [Space][SerializeField] private LeanGameObjectPool linesPool;
     [SerializeField] private LeanGameObjectPool linesPoolMod;
-    [SerializeField] private LeanGameObjectPool linesPoolILS;
     [SerializeField] private LeanGameObjectPool circlePool;
     [SerializeField] private LeanGameObjectPool rayPool;
     [SerializeField] private LeanGameObjectPool otherAircraftsPool;
@@ -142,7 +140,6 @@ public class Drawer : MonoBehaviour
     {
         Extension.DespawnChildren<LineDrawer>(dynamicHolder, linesPool);
         Extension.DespawnChildren<LineDrawer>(dynamicHolderMod, linesPoolMod);
-        Extension.DespawnChildren<LineDrawer>(dynamicHolderILS, linesPoolILS);
         Extension.DespawnChildren<FixedCircleDrawer>(dynamicHolderCircles, circlePool);
         Extension.DespawnChildren<FixedRayDrawer>(dynamicHolderRays, rayPool);
         Extension.DespawnChildren<OtherAircrafIndicator>(dynamicHolderOtheriarcrafts, otherAircraftsPool);
@@ -198,11 +195,6 @@ public class Drawer : MonoBehaviour
         if (Session.ModRoute != null)
         {
             DisplaySet(Session.ModeSetWithPosition?.TracedRoute?.ComputedLines, LinesType.Mod);
-        }
-        //Debug.Log(Session.ILSRoute?.TracedRoute.ComputedLines);
-        if (Session.ILSRoute != null)
-        {
-            DisplaySet(Session.ILSRoute?.TracedRoute.ComputedLines, LinesType.ILS);
         }
 
         DisplayFixCircles();
@@ -313,10 +305,6 @@ public class Drawer : MonoBehaviour
                 pool = linesPool;
                 holder = dynamicHolder;
                 break;
-            case LinesType.ILS:
-                pool = linesPoolILS;
-                holder = dynamicHolderILS;
-                break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(linesType), linesType, null);
         }
@@ -357,12 +345,6 @@ public class Drawer : MonoBehaviour
             if (linesType == LinesType.Rejoin && line.StartNMPosition == Vector2.zero)
             {
                 hiddenLine = true;
-            }
-
-            if (linesType == LinesType.ILS)
-            {
-                //hiddenLine = true;  //hide ils line
-                hiddenLabel = true;
             }
 
             drawer.Display(line, point, hiddenLabel || linesType == LinesType.Rejoin, hiddenLine, fromPointIndex);
