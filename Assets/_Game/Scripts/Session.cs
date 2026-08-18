@@ -48,6 +48,25 @@ namespace Navigation {
             : ZoomMultiplier * Settings.MapReferenceLength80) / 80f;
 
         public static float ZoomMultiplier;
+
+        public static string RteOrigin;
+
+        private static readonly string[] OriginIcaos =
+        {
+            "WADD", // Bali
+            "VTSP", // Phuket
+            "EDDB", // Berlin
+            "EKCH", // Copenhagen
+            "LEBL", // Barcelona
+            "LIRF", // Rome
+            "LTFM", // Istanbul
+            "UUEE"  // Moscow
+        };
+
+        public static void RollRteOrigin()
+        {
+            RteOrigin = OriginIcaos[UnityEngine.Random.Range(0, OriginIcaos.Length)];
+        }
     }
 }
 

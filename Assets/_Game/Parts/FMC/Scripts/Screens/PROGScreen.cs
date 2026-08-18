@@ -4,6 +4,12 @@ using UnityEngine;
 
 public class PROGScreen : ScreenBase
 {
+    private const float LargeFontSize = 40f;
+    private const float LargeFontThreshold = 30f;
+    private const float HeaderLabelFontSize = 30f;
+    private const float CharacterWidth = 42f;
+    private const float SecondColumnShiftX = -1f * CharacterWidth;
+
     [SerializeField] private TMP_Text _fromNode;
     [SerializeField] private TMP_Text _nextNodeDegrees;
     [SerializeField] private TMP_Text _nextNode;
@@ -36,8 +42,8 @@ public class PROGScreen : ScreenBase
 
         Main.UpdatePageInfo(
            isMod: false,
-           //firstInfo: "-------",
-           secondInfo: "--------------------",
+           firstInfo: "",
+           secondInfo: "",
            pageTitle: "PROGRESS",
            currentPage: 0, totalPages: 1);
 
@@ -72,12 +78,126 @@ public class PROGScreen : ScreenBase
         _etaSecond.text = progRef.SecondETA;
         _etaDestination.text = progRef.DestETA;
 
-        _fuel.text = progRef.PrvActualFuel;
+        _fuelFrom.text = progRef.PrvActualFuel;
         _fuelNext.text = progRef.NxtFUEL;
         _fuelSecond.text = progRef.SecondFUEL;
         _fuelDestination.text = progRef.DestFUEL;
 
         _fuel.text = progRef.FuelQty;
         _wind.text = progRef.ActualWind;
+        HideTrackLabels();
+        ApplyColumnLayout();
+        ApplyLargeFontSize();
+        ApplyAltDtgLabelSize();
+    }
+
+    private void ApplyColumnLayout()
+    {
+        var texts = GetComponentsInChildren<TMP_Text>(true);
+        for (var i = 0; i < texts.Length; i++)
+        {
+            var tmp = texts[i];
+            if (tmp == null)
+            {
+                continue;
+            }
+
+            var name = tmp.gameObject.name;
+            if (name != "h left" && name != "left label")
+            {
+                continue;
+            }
+
+            tmp.horizontalAlignment = HorizontalAlignmentOptions.Left;
+        }
+
+        var rects = GetComponentsInChildren<RectTransform>(true);
+        for (var i = 0; i < rects.Length; i++)
+        {
+            var rt = rects[i];
+            if (rt == null)
+            {
+                continue;
+            }
+
+            var name = rt.name;
+            if (name == "h left" || name == "left label")
+            {
+                var min = rt.anchorMin;
+                min.x = 0f;
+                rt.anchorMin = min;
+                var pos = rt.anchoredPosition;
+                pos.x = 0f;
+                rt.anchoredPosition = pos;
+            }
+            else if (name == "h middle" || name == "mid label")
+            {
+                var pos = rt.anchoredPosition;
+                pos.x = -0.16435242f + SecondColumnShiftX;
+                rt.anchoredPosition = pos;
+            }
+        }
+    }
+
+    private void HideTrackLabels()
+    {
+        HideTrackLabel(_nextNodeDegrees);
+        HideTrackLabel(_secondNodeDegrees);
+    }
+
+    private static void HideTrackLabel(TMP_Text tmp)
+    {
+        if (tmp == null)
+        {
+            return;
+        }
+
+        tmp.text = "";
+        tmp.gameObject.SetActive(false);
+    }
+
+    private void ApplyLargeFontSize()
+    {
+        var texts = GetComponentsInChildren<TMP_Text>(true);
+        for (var i = 0; i < texts.Length; i++)
+        {
+            var tmp = texts[i];
+            if (tmp == null)
+            {
+                continue;
+            }
+
+            tmp.ForceMeshUpdate();
+            if (tmp.fontSize <= LargeFontThreshold)
+            {
+                continue;
+            }
+
+            tmp.enableAutoSizing = false;
+            tmp.fontSize = LargeFontSize;
+        }
+    }
+
+    private void ApplyAltDtgLabelSize()
+    {
+        var texts = GetComponentsInChildren<TMP_Text>(true);
+        for (var i = 0; i < texts.Length; i++)
+        {
+            var tmp = texts[i];
+            if (tmp == null || tmp.gameObject.name != "h middle")
+            {
+                continue;
+            }
+
+            var label = tmp.GetParsedText();
+            if (!string.Equals(label, "alt", System.StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(label, "dtg", System.StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            tmp.enableAutoSizing = false;
+            tmp.fontSize = HeaderLabelFontSize;
+        }
     }
 }

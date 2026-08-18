@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Navigation;
 using TMPro;
 using UnityEngine;
@@ -86,8 +86,7 @@ public class LegsNodeLine : MonoBehaviour {
                 //Debug.Log("SetAsMagenta");
             }
             else {
-                fLeft.SetAsDefault(node.Name);
-                //Debug.Log("SetAsDefault");
+                fLeft.SetAsTall(node.Name);
             }
 
             fMiddle.text = linkedInfo.IsPlanCenter && Session.State.MapMode == MapMode.Plan
@@ -232,7 +231,7 @@ public class LegsNodeLine : MonoBehaviour {
         hMiddle.text = "";
         hFull.text = "";
 
-        fLeft.SetAsDefault("□□□□□");
+        fLeft.SetAsTall("□□□□□");
         //Debug.Log("THEN  □□□□□");
 
         fRight.Clear();

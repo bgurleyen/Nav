@@ -32,6 +32,19 @@ public class RoutePoint
     public bool IsLinearApproach => Details.Contains("L");
     public bool IsHiddenLine => Details.Contains("H");
     public bool IsPositionNode => Details.Contains("P");
+    public bool IsGate
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(Details))
+            {
+                return false;
+            }
+
+            return Details.IndexOf("Gate", StringComparison.OrdinalIgnoreCase) >= 0
+                   || string.Equals(Details.Trim(), "G", StringComparison.OrdinalIgnoreCase);
+        }
+    }
 
     public AltitudeFlags AltitudeRegulation => Altitude.GetFlag(RawAltitude);
     public string DisplayAltitude => Altitude.GetDisplayValue(RawAltitude, out var _);

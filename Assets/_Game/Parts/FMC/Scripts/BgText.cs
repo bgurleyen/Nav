@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using Navigation;
@@ -17,7 +17,17 @@ public class BgText : MonoBehaviour
 
     public void Clear()
     {
+        m_text = "";
+        if (label == null)
+        {
+            return;
+        }
+
+        // Empty rich-text tags leave TMP vertices behind, which shows as a ghost of the previous word (e.g. ACT).
+        label.text = " ";
+        label.ForceMeshUpdate(true);
         label.text = "";
+        label.ForceMeshUpdate(true);
     }
 
     public void SetAsTall(string text)
@@ -27,11 +37,23 @@ public class BgText : MonoBehaviour
     
     public void SetAsModified(string text)
     {
+        if (string.IsNullOrEmpty(text))
+        {
+            Clear();
+            return;
+        }
+
         SetText(false, null, new TextBuilder{ State = TextState.ModSelection, Text = text});
     }
 
     public void SetAsDefault(string text)
     {
+        if (string.IsNullOrEmpty(text))
+        {
+            Clear();
+            return;
+        }
+
         SetText(false, null, new TextBuilder{ State = TextState.Default, Text = text});
     }
 
@@ -76,6 +98,11 @@ public class BgText : MonoBehaviour
                     break;
             }
             m_text = part.Text;
+        }
+
+        if (label != null)
+        {
+            label.ForceMeshUpdate(true);
         }
         //<size=46><font="HelveticaNeue-Bold SDF"><line-height=49> </line-height></font></size>
     }

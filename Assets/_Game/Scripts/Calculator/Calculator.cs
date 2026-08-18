@@ -263,7 +263,7 @@ public class Calculator : MonoBehaviour
         var levelInfo = FindFirstObjectByType<LevelStartInformation>();
         if (levelInfo != null)
         {
-            // Paused until REQUEST DESCENT (LevelStartInformation sets timeScale).
+            // Keep time running until FMC is populated, then pause on the briefing panel.
             levelInfo.ShowInfo();
         }
         else

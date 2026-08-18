@@ -176,7 +176,7 @@ PrefabInstance:
     - target: {fileID: 7682177843511194359, guid: 5a25145ebe07f45afb67366325134123,
         type: 3}
       propertyPath: m_fontSize
-      value: 63.3
+      value: 40
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -355,7 +355,7 @@ PrefabInstance:
     - target: {fileID: 7682177843511194359, guid: 5a25145ebe07f45afb67366325134123,
         type: 3}
       propertyPath: m_fontSize
-      value: 63.3
+      value: 40
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -559,7 +559,7 @@ PrefabInstance:
     - target: {fileID: 7682177843511194359, guid: 5a25145ebe07f45afb67366325134123,
         type: 3}
       propertyPath: m_fontSize
-      value: 63.3
+      value: 40
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -742,7 +742,7 @@ PrefabInstance:
     - target: {fileID: 728823451809004164, guid: 5a25145ebe07f45afb67366325134123,
         type: 3}
       propertyPath: m_fontSize
-      value: 63.3
+      value: 40
       objectReference: {fileID: 0}
     - target: {fileID: 3306154489994077983, guid: 5a25145ebe07f45afb67366325134123,
         type: 3}
@@ -802,7 +802,7 @@ PrefabInstance:
     - target: {fileID: 7682177843511194359, guid: 5a25145ebe07f45afb67366325134123,
         type: 3}
       propertyPath: m_fontSize
-      value: 63.3
+      value: 40
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Linq;
 using Navigation;
+using TMPro;
 using UnityEngine;
 using Unyawn.Utils;
 
@@ -23,6 +25,9 @@ public class LegsScreen : ScreenBase {
 
 
     private const string ERASE_TITLE = "<ERASE";
+    private const float NonTitleTextNudgeFraction = 0.10f;
+
+    private readonly List<(RectTransform rect, Vector2 anchoredPosition)> _nudgedTextRects = new();
 
     private DisplayNodesController _nodesController;
     private NodeSelection _selectionInfo;
@@ -42,6 +47,11 @@ public class LegsScreen : ScreenBase {
     private IEnumerator Start() {
         _nodesController = new DisplayNodesController(NodesPerPage);
 
+        if (!UYServiceLocator.Has<Simulation>())
+        {
+            yield break;
+        }
+
         _simulation = UYServiceLocator.Get<Simulation>();
 
         _simulation.OnOperationMade += _nodesController.ComputeCorrections;
@@ -54,18 +64,109 @@ public class LegsScreen : ScreenBase {
 
 
     private void OnDestroy() {
+        RevertNonTitleTextNudge();
+        if (UYServiceLocator.Has<LegsScreen>())
+        {
+            UYServiceLocator.Unregister<LegsScreen>();
+        }
 
-        UYServiceLocator.Unregister<LegsScreen>();
+        if (_simulation != null && _nodesController != null)
+        {
+            _simulation.OnOperationMade -= _nodesController.ComputeCorrections;
+        }
 
-        _simulation.OnOperationMade -= _nodesController.ComputeCorrections;
+        if (Session.State != null)
+        {
+            Session.State.OnMapModeChanged -= OnMapModeChanged;
+        }
+    }
+
+    private void ApplyNonTitleTextNudge() {
+        if (_nudgedTextRects.Count > 0) {
+            return;
+        }
+
+        var texts = CollectNonTitleTexts();
+        var maxHeight = 0f;
+        for (var i = 0; i < texts.Count; i++) {
+            maxHeight = Mathf.Max(maxHeight, MeasureTextHeight(texts[i]));
+        }
+
+        if (maxHeight <= 0f) {
+            return;
+        }
+
+        var dy = maxHeight * NonTitleTextNudgeFraction;
+        for (var i = 0; i < texts.Count; i++) {
+            var rect = texts[i].rectTransform;
+            _nudgedTextRects.Add((rect, rect.anchoredPosition));
+            rect.anchoredPosition += new Vector2(0f, dy);
+        }
+    }
+
+    private void RevertNonTitleTextNudge() {
+        for (var i = 0; i < _nudgedTextRects.Count; i++) {
+            var (rect, anchoredPosition) = _nudgedTextRects[i];
+            if (rect == null) {
+                continue;
+            }
+
+            try {
+                rect.anchoredPosition = anchoredPosition;
+            }
+            catch (ArgumentException) {
+            }
+        }
+
+        _nudgedTextRects.Clear();
+    }
+
+    private List<TMP_Text> CollectNonTitleTexts() {
+        var texts = new List<TMP_Text>();
+        GetComponentsInChildren(true, texts);
+
+        if (Main == null) {
+            return texts;
+        }
+
+        var mainTexts = Main.GetComponentsInChildren<TMP_Text>(true);
+        for (var i = 0; i < mainTexts.Length; i++) {
+            var tmp = mainTexts[i];
+            if (tmp == null || tmp.gameObject.name == "title") {
+                continue;
+            }
+
+            var ownerScreen = tmp.GetComponentInParent<ScreenBase>();
+            if (ownerScreen != null) {
+                continue;
+            }
+
+            texts.Add(tmp);
+        }
+
+        return texts;
+    }
+
+    private static float MeasureTextHeight(TMP_Text tmp) {
+        var height = tmp.fontSize;
+        if (tmp.font != null) {
+            var face = tmp.font.faceInfo;
+            if (face.pointSize > 0.01f) {
+                height = Mathf.Max(height, face.lineHeight * (tmp.fontSize / face.pointSize));
+            }
+        }
+
+        return height;
     }
 
     public override void Show() {
         base.Show();
         InvokeRepeating(nameof(DisplayCurrentPage), 0, 0.2f);
+        ApplyNonTitleTextNudge();
     }
 
     public override void Hide() {
+        RevertNonTitleTextNudge();
         base.Hide();
         CancelInvoke(nameof(DisplayCurrentPage));
     }

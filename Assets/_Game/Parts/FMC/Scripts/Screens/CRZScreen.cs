@@ -13,6 +13,12 @@ public class CRZScreen : ScreenBase
     [SerializeField] private TMP_Text _destination;
     [SerializeField] private TMP_Text _fuelAtDestination;
 
+    private const float FuelAtHeaderFontSize = 26.1f;
+    private const float FuelAtValueFontSize = 40f;
+    private const float NumericValueFontSize = 40f;
+    private const string FuelAtPrefix = "FUEL AT  ";
+    private Vector2? _fuelBaseAnchoredPos;
+
     private const string ERASE_TITLE = "<ERASE";
     private ScratchPadInterpreter _scratchPadInterpreter;
     private string _scratchPadBuffer = "";
@@ -51,23 +57,109 @@ public class CRZScreen : ScreenBase
         //_crzAltitude.SetAsDefault(crz.Altitude);
         if (Session.IsMod)
         {
-            _crzAltitude.SetAsModified(crzAltitude == null
+            SetNumericValue(_crzAltitude, crzAltitude == null
                 ? crz.Altitude
-                : Calculator.FormatFmcAltitudeFromEntry(crzAltitude) ?? crz.Altitude);
+                : Calculator.FormatFmcAltitudeFromEntry(crzAltitude) ?? crz.Altitude, modified: true);
         }
         else
         {
-            _crzAltitude.SetAsDefault(crzAltitude == null
+            SetNumericValue(_crzAltitude, crzAltitude == null
                 ? crz.Altitude
-                : Calculator.FormatFmcAltitudeFromEntry(crzAltitude) ?? crz.Altitude);
+                : Calculator.FormatFmcAltitudeFromEntry(crzAltitude) ?? crz.Altitude, modified: false);
         }
         if (!Session.IsMod)
         {
-            _crzSpeed.SetAsDefault(crz.Speed);
+            SetNumericValue(_crzSpeed, crz.Speed, modified: false);
         }
         _actualWind.text = crz.ActualWind;
-        _destination.text = initRef.Destination;
-        _fuelAtDestination.text = crz.FuelAtDestination;
+        ApplyFuelAtDestination(initRef.Destination, crz.FuelAtDestination);
+    }
+
+    private void ApplyFuelAtDestination(string destination, string fuel)
+    {
+        if (_destination != null)
+        {
+            _destination.enableAutoSizing = false;
+            _destination.enableWordWrapping = false;
+            _destination.fontSize = FuelAtHeaderFontSize;
+            _destination.alignment = TextAlignmentOptions.TopLeft;
+            _destination.text = $"{FuelAtPrefix}<size={FuelAtValueFontSize}>{destination}</size>";
+        }
+
+        if (_fuelAtDestination == null)
+        {
+            return;
+        }
+
+        _fuelAtDestination.enableAutoSizing = false;
+        _fuelAtDestination.enableWordWrapping = false;
+        _fuelAtDestination.fontSize = FuelAtValueFontSize;
+        _fuelAtDestination.alignment = TextAlignmentOptions.MidlineLeft;
+        _fuelAtDestination.text = fuel;
+        AlignFuelUnderDestination();
+    }
+
+    private void AlignFuelUnderDestination()
+    {
+        if (_destination == null || _fuelAtDestination == null)
+        {
+            return;
+        }
+
+        _destination.ForceMeshUpdate();
+        var info = _destination.textInfo;
+        var destIndex = FuelAtPrefix.Length;
+        if (info == null || destIndex >= info.characterCount)
+        {
+            return;
+        }
+
+        var destChar = info.characterInfo[destIndex];
+        var world = _destination.rectTransform.TransformPoint(new Vector3(destChar.origin, 0f, 0f));
+        var fuelLocalX = _fuelAtDestination.rectTransform.InverseTransformPoint(world).x;
+        var margin = _fuelAtDestination.margin;
+        margin.x = fuelLocalX - _fuelAtDestination.rectTransform.rect.xMin;
+        _fuelAtDestination.margin = margin;
+
+        var fuelRect = _fuelAtDestination.rectTransform;
+        if (_fuelBaseAnchoredPos == null)
+        {
+            _fuelBaseAnchoredPos = fuelRect.anchoredPosition;
+        }
+
+        var pos = _fuelBaseAnchoredPos.Value;
+        pos.y -= FuelAtValueFontSize * 0.5f;
+        fuelRect.anchoredPosition = pos;
+    }
+
+    private static void SetNumericValue(BgText field, string text, bool modified)
+    {
+        if (field == null)
+        {
+            return;
+        }
+
+        if (modified)
+        {
+            field.SetAsModified(text);
+        }
+        else
+        {
+            field.SetAsTall(text);
+        }
+
+        ApplyNumericFont(field);
+    }
+
+    private static void ApplyNumericFont(BgText field)
+    {
+        if (field == null || field.label == null)
+        {
+            return;
+        }
+
+        field.label.enableAutoSizing = false;
+        field.label.fontSize = NumericValueFontSize;
     }
 
     public override void OnLineSelectLeft(int index)
@@ -98,6 +190,7 @@ public class CRZScreen : ScreenBase
                 if (pendingAlt == null) break;
 
                 _crzAltitude.SetAsModified(pendingAlt);
+                ApplyNumericFont(_crzAltitude);
                 crzAltitude = _scratchPadInterpreter.AltRegulation;
                 Session.IsMod = true;
                 ClearScratchPad();
@@ -106,7 +199,7 @@ public class CRZScreen : ScreenBase
                 if (ScratchPadInterpreter.IsDeletePending(_scratchPadBuffer))
                 {
                     _scratchPadBuffer = string.Empty;
-                    _crzSpeed.SetAsDefault(infoFMC.Instance.Fmc.Crz.Speed);
+                    SetNumericValue(_crzSpeed, infoFMC.Instance.Fmc.Crz.Speed, modified: false);
                     ClearScratchPad();
                     break;
                 }
@@ -115,15 +208,16 @@ public class CRZScreen : ScreenBase
 
                 if (_scratchPadInterpreter.SpeedRegulation != null)
                 {
-                    _crzSpeed.SetAsModified(
+                    SetNumericValue(_crzSpeed,
                         Calculator.FormatFmcSpeedDisplay(
                             _scratchPadInterpreter.SpeedRegulation.Value,
                             Session.CurrentLevel.levelInfo.CrzAltitude,
-                            machDigits: 3));
+                            machDigits: 3),
+                        modified: true);
                 }
                 else
                 {
-                    _crzSpeed.SetAsModified(_scratchPadBuffer);
+                    SetNumericValue(_crzSpeed, _scratchPadBuffer, modified: true);
                 }
                 Session.IsMod = true;
                 ClearScratchPad();

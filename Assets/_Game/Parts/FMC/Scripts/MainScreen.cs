@@ -23,10 +23,19 @@ public class MainScreen : Singleton<MainScreen>
 
     public void UpdatePageInfo( bool isMod = false, string firstInfo = "", string pageTitle = "", string secondInfo = "",int currentPage = -1, int totalPages = -1)
     {
-        leftInfo2.text = secondInfo;
-        pageNumber.text = currentPage == -1 ? "" : $"{currentPage + 1}/{totalPages}";
+        SetHeaderText(leftInfo2, secondInfo);
+        SetHeaderText(pageNumber, currentPage == -1 ? "" : $"{currentPage + 1}/{totalPages}");
 
-        if (isMod)
+        if (leftInfo1 == null)
+        {
+            return;
+        }
+
+        if (string.IsNullOrEmpty(firstInfo))
+        {
+            leftInfo1.Clear();
+        }
+        else if (isMod)
         {
             leftInfo1.SetAsModified(firstInfo);
         }
@@ -34,7 +43,19 @@ public class MainScreen : Singleton<MainScreen>
         {
             leftInfo1.SetAsDefault(firstInfo);
         }
-        title.text = pageTitle;
+
+        SetHeaderText(title, pageTitle);
+    }
+
+    private static void SetHeaderText(TMP_Text tmp, string text)
+    {
+        if (tmp == null)
+        {
+            return;
+        }
+
+        tmp.text = text ?? "";
+        tmp.ForceMeshUpdate(true);
     }
 
    

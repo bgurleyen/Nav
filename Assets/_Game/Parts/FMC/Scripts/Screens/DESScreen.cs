@@ -5,6 +5,8 @@ using UnityEngine;
 
 public class DESScreen : ScreenBase
 {
+    private const float LargeFontSize = 40f;
+    private const float LargeFontThreshold = 30f;
 
     [SerializeField] private TMP_Text _rwAltitude;
     //[SerializeField] private TMP_Text _econSpeed_Mach;
@@ -40,7 +42,7 @@ public class DESScreen : ScreenBase
            pageTitle: "DES",
            currentPage: 0, totalPages: 1);
 
-        InvokeRepeating(nameof(Refresh), 0, 1f);
+        InvokeRepeating(nameof(Refresh), 0, 0.2f);
     }
 
     public override void Hide()
@@ -62,17 +64,104 @@ public class DESScreen : ScreenBase
 
         var des = infoFMC.Instance.Fmc.Des;
 
-        _rwAltitude.text = des.RWAltitude;
+        if (!string.IsNullOrEmpty(des.RWAltitude))
+        {
+            _rwAltitude.text = des.RWAltitude;
+        }
         if (!Session.IsMod)
         {
-            _econSpeed_Mach.SetAsDefault(string.IsNullOrEmpty(des.EconSpeed) ? "??/??" : des.EconSpeed);
+            _econSpeed_Mach.SetAsTall(string.IsNullOrEmpty(des.EconSpeed) ? "??/??" : des.EconSpeed);
         }
         _wptAltFix.text = des.WptAltFix;
+        if (_wptAltFix != null)
+        {
+            _wptAltFix.enableAutoSizing = false;
+            _wptAltFix.fontSize = LargeFontSize;
+        }
 
         _arrTansition.text = Calculator.FormatFmcAltitude(Calculator.TransitionAltitudeFeet);
-        _fpa.text = des.FPA;
-        _vb.text = des.VB;
-        _vs.text = des.VS;
+        SetDesValue(_fpa, des.FPA);
+        SetDesValue(_vb, des.VB);
+        SetDesValue(_vs, des.VS);
+        ApplyColumnLayout();
+        ApplyLargeFontSize();
+    }
+
+    private void SetDesValue(TMP_Text tmp, string value)
+    {
+        if (tmp == null)
+        {
+            return;
+        }
+
+        tmp.text = value ?? "";
+        tmp.ForceMeshUpdate(true);
+    }
+
+    private void ApplyColumnLayout()
+    {
+        var texts = GetComponentsInChildren<TMP_Text>(true);
+        for (var i = 0; i < texts.Length; i++)
+        {
+            var tmp = texts[i];
+            if (tmp == null)
+            {
+                continue;
+            }
+
+            var name = tmp.gameObject.name;
+            if (name != "h left" && name != "left label")
+            {
+                continue;
+            }
+
+            tmp.horizontalAlignment = HorizontalAlignmentOptions.Left;
+        }
+
+        var rects = GetComponentsInChildren<RectTransform>(true);
+        for (var i = 0; i < rects.Length; i++)
+        {
+            var rt = rects[i];
+            if (rt == null)
+            {
+                continue;
+            }
+
+            var name = rt.name;
+            if (name != "h left" && name != "left label")
+            {
+                continue;
+            }
+
+            var min = rt.anchorMin;
+            min.x = 0f;
+            rt.anchorMin = min;
+            var pos = rt.anchoredPosition;
+            pos.x = 0f;
+            rt.anchoredPosition = pos;
+        }
+    }
+
+    private void ApplyLargeFontSize()
+    {
+        var texts = GetComponentsInChildren<TMP_Text>(true);
+        for (var i = 0; i < texts.Length; i++)
+        {
+            var tmp = texts[i];
+            if (tmp == null)
+            {
+                continue;
+            }
+
+            tmp.ForceMeshUpdate();
+            if (tmp.fontSize <= LargeFontThreshold)
+            {
+                continue;
+            }
+
+            tmp.enableAutoSizing = false;
+            tmp.fontSize = LargeFontSize;
+        }
     }
 
     public override void OnLineSelectLeft(int index)
@@ -87,7 +176,7 @@ public class DESScreen : ScreenBase
                     {
                         _scratchPadBuffer = string.Empty;
                         var econ = infoFMC.Instance.Fmc.Des.EconSpeed;
-                        _econSpeed_Mach.SetAsDefault(string.IsNullOrEmpty(econ) ? "??/??" : econ);
+                        _econSpeed_Mach.SetAsTall(string.IsNullOrEmpty(econ) ? "??/??" : econ);
                         ClearScratchPad();
                         break;
                     }
@@ -105,7 +194,7 @@ public class DESScreen : ScreenBase
     public override void OnExecPress()
     {
         Session.IsMod = false;
-        _econSpeed_Mach.SetAsDefault(_econSpeed_Mach.GetText());
+        _econSpeed_Mach.SetAsTall(_econSpeed_Mach.GetText());
         //_econSpeed_Mach.text = _scratchPadInterpreter.AltRegulation;
     }
 

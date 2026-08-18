@@ -1,4 +1,5 @@
 using Navigation;
+using Navigation.Data;
 using System;
 using System.Collections;
 using System.Text;
@@ -20,9 +21,16 @@ public class LevelStartInformation : MonoBehaviour
     const float DimAlpha = 0.35f;
 
     Coroutine _glowRoutine;
+    Coroutine _showRoutine;
     TextMeshProUGUI _buttonLabel;
     Color _buttonLabelColor;
     bool _buttonLabelColorCached;
+
+    void Awake()
+    {
+        if (LevelStartInfo != null)
+            LevelStartInfo.gameObject.SetActive(false);
+    }
 
     public void ShowInfo()
     {
@@ -32,6 +40,38 @@ public class LevelStartInformation : MonoBehaviour
             return;
         }
 
+        if (_showRoutine != null)
+            StopCoroutine(_showRoutine);
+        _showRoutine = StartCoroutine(ShowInfoWhenFmcReady());
+    }
+
+    IEnumerator ShowInfoWhenFmcReady()
+    {
+        Time.timeScale = 1f;
+        if (LevelStartInfo != null)
+            LevelStartInfo.gameObject.SetActive(false);
+
+        const float timeoutSeconds = 8f;
+        var elapsed = 0f;
+        while (!IsFmcReady() && elapsed < timeoutSeconds)
+        {
+            Time.timeScale = 1f;
+            infoFMC.Instance?.TryPopulate();
+            elapsed += Time.deltaTime;
+            yield return null;
+        }
+
+        PresentInfoAndPause();
+        _showRoutine = null;
+    }
+
+    static bool IsFmcReady()
+    {
+        return infoFMC.Instance != null && infoFMC.Instance.IsPopulated;
+    }
+
+    void PresentInfoAndPause()
+    {
         var panelTransform = LevelStartInfo.transform;
         panelTransform.gameObject.SetActive(true);
         panelTransform.SetAsLastSibling();
@@ -137,6 +177,12 @@ public class LevelStartInformation : MonoBehaviour
 
     public void ButtonClick()
     {
+        if (_showRoutine != null)
+        {
+            StopCoroutine(_showRoutine);
+            _showRoutine = null;
+        }
+
         StopButtonTextGlow();
 
         Time.timeScale = 1f;
@@ -147,6 +193,12 @@ public class LevelStartInformation : MonoBehaviour
 
     void OnDisable()
     {
+        if (_showRoutine != null)
+        {
+            StopCoroutine(_showRoutine);
+            _showRoutine = null;
+        }
+
         StopButtonTextGlow();
     }
 }

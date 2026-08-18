@@ -20,11 +20,23 @@ public class GameManager : MonoBehaviour
 
         UYServiceLocator.Register(this);
 
+        if (_gameConfig == null || _gameConfig.Settings == null)
+        {
+            Debug.LogError("GameManager: GameConfig or Settings is not assigned.");
+            return;
+        }
+
         Session.Settings = _gameConfig.Settings;
     }
 
     private void Start()
     {
+        if (!UYServiceLocator.Has<McpUI>() || !UYServiceLocator.Has<Simulation>() || !UYServiceLocator.Has<LegsScreen>())
+        {
+            Debug.LogError("GameManager: required services are not registered.");
+            return;
+        }
+
         var mcpUI = UYServiceLocator.Get<McpUI>();
 
         _simulation = UYServiceLocator.Get<Simulation>();
@@ -74,6 +86,7 @@ public class GameManager : MonoBehaviour
 
         Session.Routes = _routes;
 
+        Session.RollRteOrigin();
 
         Move.Instance.Init(levelData);
 
@@ -112,6 +125,11 @@ public class GameManager : MonoBehaviour
 
         //[ESA] High Performance, normal time calculation attempt regarding the solution of the original developer.
         //I am suspicious that SplittedTickComputeTrace() may be needed to run on demand for some situtations.
+        if (Session.Settings == null || _simulation == null)
+        {
+            return;
+        }
+
         Session.Settings.FlyingTickDuration = Time.deltaTime * Session.Settings.SpeedMultiplier;
 
         _pendingDeltaTime += Time.deltaTime;

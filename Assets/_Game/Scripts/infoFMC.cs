@@ -9,15 +9,27 @@ namespace Navigation.Data
     public class infoFMC : Singleton<infoFMC>
     {
         public Text Infotext, pages;
-        private int previousPrvIndex = 0;
+        private int previousPrvIndex = -1;
         private int Level = Calculator.Level;
 
         public FMC Fmc = new FMC();
 
         
 
+        public bool IsPopulated =>
+            Fmc != null
+            && !string.IsNullOrEmpty(Fmc.Initref.Destination)
+            && !string.IsNullOrEmpty(Fmc.Crz.Altitude)
+            && !string.IsNullOrEmpty(Fmc.Prog.NxtName);
+
+        public void TryPopulate()
+        {
+            ComputeFMCFields();
+        }
+
         private void Start()
         {
+             DisplayFields();
              InvokeRepeating(nameof(DisplayFields), 1f, 1f) ;
 
         }
@@ -30,21 +42,65 @@ namespace Navigation.Data
             double Distance;
 
             RouteScriptableObject activePoints = Session.ActiveRoute;
+            if (activePoints?.Points == null || activePoints.Points.Length == 0)
+            {
+                return;
+            }
 
+            var levelData = Session.CurrentLevel?.levelInfo;
+            if (levelData == null)
+            {
+                return;
+            }
 
             PrvAltitude = Calculator.CAltitude;
 
             Calculator.WindElements WE;
-            int prvWptIdx = PositionVirtualNode.PassedNodeIndex;
+            int prvWptIdx = Session.PlayerAircraft != null ? PositionVirtualNode.PassedNodeIndex : -1;
             int WPTCount = activePoints.Points.Length;
             double[] fr_onpoint = new double[WPTCount];
             int[] GS_onpoint = new int[WPTCount];
             double[] totalDistLeft = new double[WPTCount];
-            double RW_Alt = activePoints.Points[WPTCount - 1].Altitude.ComputedValue;
+            double RW_Alt = ResolveEndOfDescentAltitude(activePoints);
             double fuelBurn, fuelRemaining = Calculator.totalFuel / 100;
-            float DirectDistance = (Vector2.Distance(Session.ActiveRoute.GetCartesianPosition(WPTCount - 1),
-                Session.PlayerAircraft.NMPosition));
-            if (prvWptIdx < 0) return;
+
+            Fmc.Initref.GWT = "" + (long)(levelData.ZFW + Calculator.totalFuel / 100);
+            Fmc.Initref.Destination = levelData.Destination;
+            Fmc.Initref.RW = levelData.Runway;
+            Fmc.Initref.Field = levelData.FieldInfo;
+            Fmc.Initref.Freq = levelData.Freq;
+            Fmc.Initref.Course = levelData.Course;
+            Fmc.Initref.F15 = "" + (levelData.F30Speed - 10);
+            Fmc.Initref.F30 = levelData.F30Speed.ToString();
+            Fmc.Initref.F40 = "" + (levelData.F30Speed + 10);
+            Fmc.Initref.Vref = "" + levelData.F30Speed;
+            Fmc.Initref.GlideSlope = levelData.GlideSlope;
+
+            Fmc.Rte.Destination = levelData.Destination;
+            Fmc.Rte.RW = levelData.Runway;
+            Fmc.Rte.Origin = Session.RteOrigin;
+            Fmc.Des.RWAltitude = Calculator.FormatFmcAltitude((long)RW_Alt);
+            Fmc.Des.EconSpeed = Calculator.FormatMachIas(levelData.DesEconMach, levelData.DesEconSpeed);
+
+            Fmc.Crz.Destination = levelData.Destination;
+            Fmc.Crz.Altitude = Calculator.FormatFmcCruiseAltitude(levelData.CrzAltitude);
+            Fmc.Crz.Speed = Calculator.FormatFmcSpeedDisplay(
+                levelData.CrzSpeed, levelData.CrzAltitude, machDigits: 3);
+            Fmc.Crz.ActualWind = "" + Calculator.CWind;
+
+            Fmc.Arr.Destination = levelData.Destination;
+            Fmc.Arr.STAR = levelData.Star;
+            Fmc.Arr.Transition = levelData.Transition;
+            Fmc.Arr.RW = levelData.Runway;
+
+            ApplyDesGateFields(activePoints, prvWptIdx, totalDistLeft);
+            ApplyDesVerticalBearing(activePoints, RW_Alt);
+
+            if (prvWptIdx < 0 || prvWptIdx + 1 >= activePoints.Points.Length)
+            {
+                return;
+            }
+
             for (int i = prvWptIdx + 1; i < activePoints.Points.Length; i++)
             {
                 Altitude = (int)activePoints.Points[i].Altitude.ComputedValue;
@@ -59,8 +115,6 @@ namespace Navigation.Data
                 fuelBurn = System.Math.Round((Distance / WE.GS * ff * 2 / 100), 3);
                 fuelRemaining -= fuelBurn;
 
-                //Infotext.text +=  activePoints.Points[i].Name;+ " D:" + Distance + " S:" + WE.GS + " A:" + Altitude + " V:" + VS + "   ff:" + ff + "   fb:" + fb + "   fr:" + System.Math.Round(fr,2) + "\n";
-
                 totalDistLeft[i] = (i == prvWptIdx + 1)
                     ? Session.PlayerAircraft.ComputedDistanceLeftOnSegment
                     : totalDistLeft[i - 1] + Distance;
@@ -70,54 +124,10 @@ namespace Navigation.Data
 
             }
 
-            var levelData = Session.CurrentLevel.levelInfo;
+            ApplyDesGateFields(activePoints, prvWptIdx, totalDistLeft);
+            ApplyDesVerticalBearing(activePoints, RW_Alt);
 
-            Fmc.Initref.GWT = "" + (long)(levelData.ZFW + Calculator.totalFuel / 100);
-            Fmc.Initref.Destination = levelData.Destination;
-            Fmc.Initref.RW = levelData.Runway;
-            Fmc.Initref.Field = levelData.FieldInfo;
-            Fmc.Initref.Freq = levelData.Freq;
-            Fmc.Initref.Course = levelData.Course;
-            Fmc.Initref.F15 = "" + (levelData.F30Speed - 10);
-            Fmc.Initref.F30 = levelData.F30Speed.ToString();
-            Fmc.Initref.F40 = "" + (levelData.F30Speed + 10);
-            Fmc.Initref.Vref = "" + levelData.F30Speed;
-
-            Fmc.Initref.GlideSlope = levelData.GlideSlope;
-
-
-            Fmc.Rte.Destination = levelData.Destination;
-            Fmc.Rte.RW = levelData.Runway;
-            Fmc.Des.RWAltitude = Calculator.FormatFmcAltitude((long)RW_Alt);
-            //Fmc.Des.WptAltFix = activePoints.Points[levelsInfoData[Level].GateIdx].Name+ "/" + (int)activePoints.Points[levelsInfoData[Level].GateIdx].Altitude.ComputedValue;
-            Fmc.Des.EconSpeed = Calculator.FormatMachIas(levelData.DesEconMach, levelData.DesEconSpeed);
-
-            Fmc.Des.FPA = "" +
-                          System.Math.Round(
-                              Mathf.Atan((float)(-Calculator.CVS / (Calculator.GS / 60 * 6076))) * Mathf.Rad2Deg, 2);
-            Fmc.Des.VB = "" +
-                         System.Math.Round(
-                             Mathf.Atan((float)(Calculator.CAltitude - RW_Alt) / (DirectDistance * 6076)) *
-                             Mathf.Rad2Deg, 2);
-            Fmc.Des.VS = "" + (int)((Calculator.CAltitude - RW_Alt) / (DirectDistance / Calculator.GS * 60));
-
-
-            Fmc.Crz.Destination = levelData.Destination;
-            Fmc.Crz.Altitude = Calculator.FormatFmcCruiseAltitude(levelData.CrzAltitude);
-            Fmc.Crz.Speed = Calculator.FormatFmcSpeedDisplay(
-                levelData.CrzSpeed, levelData.CrzAltitude, machDigits: 3);
-            Fmc.Crz.Destination = levelData.Destination;
             Fmc.Crz.FuelAtDestination = "" + System.Math.Round(fr_onpoint[WPTCount - 1], 2);
-            Fmc.Crz.ActualWind = "" + Calculator.CWind;
-
-
-            Fmc.Arr.Destination = levelData.Destination;
-            /*Fmc.Arr.STAR = levelData.Runway;
-            Fmc.Arr.Transition = levelData.Star;
-            Fmc.Arr.RW = levelData.Transition;*/
-            Fmc.Arr.STAR = levelData.Star;
-            Fmc.Arr.Transition = levelData.Transition;
-            Fmc.Arr.RW = levelData.Runway;
 
               Fmc.Prog.PrvName = "" + activePoints.Points[prvWptIdx].Name; 
        
@@ -163,6 +173,157 @@ namespace Navigation.Data
             Fmc.Prog.FuelQty = "" + System.Math.Round(Calculator.totalFuel / 100, 1);
 
             }
+
+        private static double ResolveEndOfDescentAltitude(RouteScriptableObject route)
+        {
+            var points = route.Points;
+            for (var i = points.Length - 1; i >= 0; i--)
+            {
+                var point = points[i];
+                var alt = point.Altitude;
+                if (alt.ComputedValue > 0)
+                {
+                    return alt.ComputedValue;
+                }
+
+                if (alt.RestrictionExact > 0)
+                {
+                    return alt.RestrictionExact;
+                }
+
+                if (alt.RestrictionBelow > 0)
+                {
+                    return alt.RestrictionBelow;
+                }
+
+                if (!string.IsNullOrEmpty(point.RawAltitude)
+                    && float.TryParse(point.RawAltitude, out var raw)
+                    && raw > 0)
+                {
+                    return raw;
+                }
+            }
+
+            if (Move.Instance != null)
+            {
+                var runwayAlt = Move.Instance.RunwayAltitudeFeet();
+                if (runwayAlt > 0)
+                {
+                    return runwayAlt;
+                }
+            }
+
+            return -1;
+        }
+
+        private void ApplyDesGateFields(RouteScriptableObject route, int prvWptIdx, double[] totalDistLeft)
+        {
+            if (!route.TryGetGatePoint(out var gate, out var gateIdx))
+            {
+                Fmc.Des.WptAltFix = "";
+                Fmc.Des.FPA = FormatFpaFromVerticalSpeed(Calculator.CVS, Calculator.GS);
+                Fmc.Des.VS = "";
+                return;
+            }
+
+            var gateAlt = ResolvePointAltitude(gate);
+            Fmc.Des.WptAltFix = $"{gate.Name}/{Calculator.FormatFmcAltitude((long)gateAlt)}";
+
+            double distToGateNm;
+            if (gateIdx > prvWptIdx && totalDistLeft != null && gateIdx < totalDistLeft.Length)
+            {
+                distToGateNm = totalDistLeft[gateIdx];
+            }
+            else
+            {
+                distToGateNm = Vector2.Distance(
+                    route.GetCartesianPosition(gateIdx),
+                    Session.PlayerAircraft.NMPosition);
+            }
+
+            if (distToGateNm <= 0.01 || Calculator.GS <= 0)
+            {
+                Fmc.Des.FPA = "0";
+                Fmc.Des.VS = "0";
+                return;
+            }
+
+            var requiredVs = (Calculator.CAltitude - gateAlt) / (distToGateNm / Calculator.GS * 60);
+            Fmc.Des.FPA = FormatFpaFromVerticalSpeed(-requiredVs, Calculator.GS);
+            Fmc.Des.VS = "" + (int)requiredVs;
+        }
+
+        private void ApplyDesVerticalBearing(RouteScriptableObject route, double rwAlt)
+        {
+            if (route?.Points == null || route.Points.Length == 0 || Session.PlayerAircraft == null)
+            {
+                Fmc.Des.VB = "";
+                return;
+            }
+
+            var distNm = Vector2.Distance(
+                route.GetCartesianPosition(route.Points.Length - 1),
+                Session.PlayerAircraft.NMPosition);
+            if (distNm <= 0.01)
+            {
+                Fmc.Des.VB = "0";
+                return;
+            }
+
+            Fmc.Des.VB = "" +
+                         System.Math.Round(
+                             Mathf.Atan((float)((Calculator.CAltitude - rwAlt) / (distNm * 6076))) *
+                             Mathf.Rad2Deg, 2);
+        }
+
+        private static string FormatFpaFromVerticalSpeed(double vsFeetPerMin, float gsKnots)
+        {
+            if (gsKnots <= 0.01f)
+            {
+                return "0";
+            }
+
+            var deg = Mathf.Atan((float)(-vsFeetPerMin / (gsKnots / 60f * 6076f))) * Mathf.Rad2Deg;
+            return "" + System.Math.Round(deg, 2);
+        }
+
+        private static double ResolvePointAltitude(RoutePoint point)
+        {
+            if (point == null)
+            {
+                return -1;
+            }
+
+            var alt = point.Altitude;
+            if (alt.ComputedValue > 0)
+            {
+                return alt.ComputedValue;
+            }
+
+            if (alt.RestrictionExact > 0)
+            {
+                return alt.RestrictionExact;
+            }
+
+            if (alt.RestrictionBelow > 0)
+            {
+                return alt.RestrictionBelow;
+            }
+
+            if (alt.RestrictionAbove > 0)
+            {
+                return alt.RestrictionAbove;
+            }
+
+            if (!string.IsNullOrEmpty(point.RawAltitude)
+                && float.TryParse(point.RawAltitude, out var raw)
+                && raw > 0)
+            {
+                return raw;
+            }
+
+            return -1;
+        }
 
         private void DisplayFields()
         {
@@ -235,7 +396,7 @@ namespace Navigation.Data
 
     public class RTE
     {
-        public string Destination, RW;
+        public string Destination, RW, Origin;
     }
 
     public class DES

@@ -97,6 +97,31 @@ namespace Navigation
             return false;
         }
 
+        public bool TryGetGatePoint(out RoutePoint point, out int index)
+        {
+            point = null;
+            index = -1;
+            if (Points == null)
+            {
+                return false;
+            }
+
+            for (var i = 0; i < Points.Length; i++)
+            {
+                var p = Points[i];
+                if (p == null || !p.IsGate)
+                {
+                    continue;
+                }
+
+                point = p;
+                index = i;
+                return true;
+            }
+
+            return false;
+        }
+
         public bool GetPoint(int nodeId, out RoutePoint point, out int index)
         {
             Points.GetNodeIndex(nodeId, out index);
