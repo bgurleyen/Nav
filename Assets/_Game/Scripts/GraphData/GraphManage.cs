@@ -521,6 +521,10 @@ public class GraphManage : MonoBehaviour
 
     void OnGameFinished(bool isStable)
     {
+        // Level Test: skip debrief/cloud/UI and auto-advance to the next level.
+        if (LevelTestMode.TryHandleGameFinished())
+            return;
+
         SwitchToGraphUi();
 
         // Unstable approach: no debrief, no cloud save — go straight to level select.

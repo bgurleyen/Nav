@@ -34,7 +34,15 @@ namespace Navigation {
         }
 
         public void Init() {
-            DataHandler.BuildSetDetails(Session.ActiveRoute);
+            try
+            {
+                DataHandler.BuildSetDetails(Session.ActiveRoute);
+            }
+            catch (Exception e)
+            {
+                Debug.LogException(e);
+                Debug.LogError("[Simulation.Init] BuildSetDetails failed — continuing so the flight can still run.");
+            }
 
             Session.PlayerAircraft = _playerAircraft;
 
@@ -55,8 +63,9 @@ namespace Navigation {
             Session.IsRunning = true;
             // Briefing pauses until REQUEST DESCENT; don't unpause over LevelStartInformation.
             // Score-test / level-select / pause can leave timeScale at 0; only force-run when no briefing UI.
-            if (!PlayerPrefsHolder.ShowLevelSelectOnLoad
-                && FindFirstObjectByType<LevelStartInformation>() == null)
+            if (LevelTestMode.IsActive
+                || (!PlayerPrefsHolder.ShowLevelSelectOnLoad
+                    && FindFirstObjectByType<LevelStartInformation>() == null))
                 Time.timeScale = 1f;
 
         }

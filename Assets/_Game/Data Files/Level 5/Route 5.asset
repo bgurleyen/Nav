@@ -23,7 +23,7 @@ MonoBehaviour:
   - ID: 0
     Name: REDFA
     RawDegrees: 5
-    Distance: 99
+    Distance: 9
     RawSpeed: 280
     RawAltitude: 23000B
     Details: 

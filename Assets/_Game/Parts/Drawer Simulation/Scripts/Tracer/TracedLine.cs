@@ -24,14 +24,16 @@ namespace Navigation
             var lineLenght = (EndNMPosition - StartNMPosition).magnitude;
 
             // compute granular intervals on the straight line to prevent calculations everytime
-            var vertexCount = Mathf.CeilToInt(lineLenght / Session.Settings.SegmentGranularity);
+            // Zero-length legs (duplicate coords) must still expose at least one vertex.
+            var vertexCount = Mathf.Max(1, Mathf.CeilToInt(lineLenght / Session.Settings.SegmentGranularity));
             SegmentVertices = new Vector2[vertexCount];
             var straightTracerPosition = lastPointPosition;
             for (var i = 0; i < SegmentVertices.Length; i++)
             {
                 SegmentVertices[i] = straightTracerPosition;
 
-                straightTracerPosition += lineDirection * Session.Settings.SegmentGranularity;
+                if (lineLenght > 0f)
+                    straightTracerPosition += lineDirection * Session.Settings.SegmentGranularity;
             }
 
             TraceFromPilot(pilot, seekDistance);
@@ -103,7 +105,15 @@ namespace Navigation
 
             var maxSqrDistance = seekDistance * seekDistance;
 
+            if (SegmentVertices == null || SegmentVertices.Length == 0)
+            {
+                foundVertex = forPosition;
+                lastFoundVertexIndex = 0;
+                reachedEnd = true;
+                return true;
+            }
 
+            startFromIndex = Mathf.Clamp(startFromIndex, 0, SegmentVertices.Length - 1);
             var fistSqrDistance = (SegmentVertices[startFromIndex] - forPosition).sqrMagnitude;
             if (beginningIsAlwaysValid && fistSqrDistance > maxSqrDistance)
             {

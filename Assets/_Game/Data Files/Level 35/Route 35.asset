@@ -20,77 +20,77 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 20000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: BASOT
-    RawDegrees: 87
-    Distance: 99
+    RawDegrees: 287
+    Distance: 9
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 2
     Name: CHI27
     RawDegrees: 209
     Distance: 33.7
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 3
     Name: DI26Z
     RawDegrees: 153
     Distance: 18.4
     RawSpeed: 0
     RawAltitude: 8000A
     Details: 
-  - ID: 0
+  - ID: 4
     Name: RUGDA
     RawDegrees: 146
     Distance: 2
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 5
     Name: D274V
     RawDegrees: 93
     Distance: 9.7
     RawSpeed: 0
     RawAltitude: 6500A
     Details: 
-  - ID: 0
+  - ID: 6
     Name: PEDKA
     RawDegrees: 92
     Distance: 1.6
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 7
     Name: DI170
     RawDegrees: 32
     Distance: 2.6
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 8
     Name: VENGI
     RawDegrees: 22
     Distance: 2.2
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 9
     Name: CI28
     RawDegrees: 294
     Distance: 6.5
     RawSpeed: 0
     RawAltitude: 2600
     Details: 
-  - ID: 0
+  - ID: 10
     Name: OM28
     RawDegrees: 294
     Distance: 2.9
     RawSpeed: 0
     RawAltitude: 2140
     Details: 
-  - ID: 0
+  - ID: 11
     Name: RW288
     RawDegrees: 283
     Distance: 4.2

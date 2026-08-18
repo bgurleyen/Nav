@@ -20,56 +20,56 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 20000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: ALM
-    RawDegrees: 63
-    Distance: 99
+    RawDegrees: 263
+    Distance: 9
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 2
     Name: REPRO
     RawDegrees: 261
     Distance: 15.5
     RawSpeed: 250
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 3
     Name: CH552
     RawDegrees: 261
     Distance: 5.1
     RawSpeed: 220
     RawAltitude: 5000A
     Details: 
-  - ID: 0
+  - ID: 4
     Name: CH551
     RawDegrees: 261
     Distance: 15.7
     RawSpeed: 220
     RawAltitude: 4000A
     Details: 
-  - ID: 0
+  - ID: 5
     Name: CH441
     RawDegrees: 309
     Distance: 7
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 6
     Name: CI04L
     RawDegrees: 39
     Distance: 4.4
     RawSpeed: 0
     RawAltitude: 3000
     Details: 
-  - ID: 0
+  - ID: 7
     Name: FI04L
     RawDegrees: 38
     Distance: 4.3
     RawSpeed: 0
     RawAltitude: 1600
     Details: 
-  - ID: 0
+  - ID: 8
     Name: RW04L
     RawDegrees: 38
     Distance: 4.9

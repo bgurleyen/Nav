@@ -20,56 +20,56 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 20000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: DRNB
-    RawDegrees: 66
-    Distance: 99
+    RawDegrees: 366
+    Distance: 9
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 2
     Name: GOTMA
     RawDegrees: 326
     Distance: 27.9
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 3
     Name: 054KS
     RawDegrees: 336
     Distance: 7
     RawSpeed: 0
     RawAltitude: 4900A
     Details: 
-  - ID: 0
+  - ID: 4
     Name: KSNB
     RawDegrees: 62
     Distance: 12.2
     RawSpeed: 0
     RawAltitude: 3590
     Details: 
-  - ID: 0
+  - ID: 5
     Name: 180SX
     RawDegrees: 125
     Distance: 3.3
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 6
     Name: D1690
     RawDegrees: 171
     Distance: 5.3
     RawSpeed: 0
     RawAltitude: 1950
     Details: 
-  - ID: 0
+  - ID: 7
     Name: 89ITA
     RawDegrees: 190
     Distance: 2.1
     RawSpeed: 0
     RawAltitude: 1950
     Details: 
-  - ID: 0
+  - ID: 8
     Name: RW19
     RawDegrees: 193
     Distance: 4

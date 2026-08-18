@@ -23,7 +23,7 @@ MonoBehaviour:
   - ID: 0
     Name: BLM
     RawDegrees: 159
-    Distance: 99
+    Distance: 9
     RawSpeed: 0
     RawAltitude: 2000B
     Details: 

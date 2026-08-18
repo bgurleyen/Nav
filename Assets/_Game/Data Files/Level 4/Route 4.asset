@@ -20,98 +20,98 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 20000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: 'SABLE '
-    RawDegrees: 231
-    Distance: 99
+    RawDegrees: 31
+    Distance: 9
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 2
     Name: LUMAN
     RawDegrees: 80
     Distance: 27.2
     RawSpeed: 280
     RawAltitude: 24000
     Details: 
-  - ID: 0
-    Name: TROMLO
+  - ID: 3
+    Name: ROMLO
     RawDegrees: 36
     Distance: 29.7
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 4
     Name: BALOD
     RawDegrees: 63
     Distance: 29.4
     RawSpeed: 250
     RawAltitude: 14000
     Details: 
-  - ID: 0
+  - ID: 5
     Name: CR43A
     RawDegrees: 45
     Distance: 14.5
     RawSpeed: 0
     RawAltitude: 14000
     Details: 
-  - ID: 0
+  - ID: 6
     Name: DOMUS
     RawDegrees: 45
     Distance: 12
     RawSpeed: 220
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 7
     Name: PG517
     RawDegrees: 86
     Distance: 10.1
     RawSpeed: 0
     RawAltitude: 13000
     Details: 
-  - ID: 0
+  - ID: 8
     Name: PG514
     RawDegrees: 86
     Distance: 3.2
     RawSpeed: 0
     RawAltitude: 12000A
     Details: 
-  - ID: 0
+  - ID: 9
     Name: PG515
     RawDegrees: 86
     Distance: 6.3
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 10
     Name: PG516
     RawDegrees: 90
     Distance: 8
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 11
     Name: VECTOR
     RawDegrees: 90
     Distance: 7.7
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 12
     Name: CI26L
     RawDegrees: 48
     Distance: 2.3
     RawSpeed: 0
     RawAltitude: 3000
     Details: 
-  - ID: 0
+  - ID: 13
     Name: FI26L
     RawDegrees: 266
     Distance: 5.9
     RawSpeed: 0
     RawAltitude: 2260
     Details: 
-  - ID: 0
+  - ID: 14
     Name: 'RW26L '
     RawDegrees: 266
     Distance: 9.1

@@ -20,70 +20,70 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 20000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: LANUX
     RawDegrees: 136
-    Distance: 99
+    Distance: 9
     RawSpeed: 0
     RawAltitude: 15000B
     Details: 
-  - ID: 0
+  - ID: 2
     Name: NERDU
     RawDegrees: 139
-    Distance: 31
+    Distance: 25
     RawSpeed: 0
     RawAltitude: 6000A
     Details: 
-  - ID: 0
+  - ID: 3
     Name: WW925
     RawDegrees: 111
     Distance: 20.8
     RawSpeed: 0
     RawAltitude: 6000A
     Details: 
-  - ID: 0
+  - ID: 4
     Name: WW926
     RawDegrees: 136
     Distance: 15.3
     RawSpeed: 0
     RawAltitude: 6000A
     Details: 
-  - ID: 0
+  - ID: 5
     Name: WW927
     RawDegrees: 178
     Distance: 16.6
     RawSpeed: 0
     RawAltitude: 4000A
     Details: 
-  - ID: 0
+  - ID: 6
     Name: WW924
     RawDegrees: 25
-    Distance: 5
+    Distance: 8
     RawSpeed: 0
     RawAltitude: 4000A
     Details: 
-  - ID: 0
+  - ID: 7
     Name: WW834
     RawDegrees: 341
-    Distance: 5
+    Distance: 8
     RawSpeed: 0
     RawAltitude: 3000A
     Details: 
-  - ID: 0
+  - ID: 8
     Name: CI34
     RawDegrees: 342
     Distance: 2.8
     RawSpeed: 0
     RawAltitude: 3000
     Details: 
-  - ID: 0
+  - ID: 9
     Name: OM34
     RawDegrees: 341
     Distance: 2.9
     RawSpeed: 0
     RawAltitude: 2004
     Details: 
-  - ID: 0
+  - ID: 10
     Name: RW34
     RawDegrees: 341
     Distance: 4.3

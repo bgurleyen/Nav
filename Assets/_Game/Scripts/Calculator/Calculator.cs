@@ -16,7 +16,7 @@ using Unyawn.Utils;
 public class Calculator : MonoBehaviour
 {
 
-    public static int Level =11 ;             // ***  Level
+    public static int Level = 11;             // ***  Level
 
     public int prvIndex4Speed;
 
@@ -199,9 +199,17 @@ public class Calculator : MonoBehaviour
 
     private void Start()
     {
-        
-        Session.CurrentLevel.levelInfo.CrzAltitude = (long) Session.ActiveRoute.Points[0].Altitude.RestrictionExact;
-        StartAltitude = Session.CurrentLevel.levelInfo.CrzAltitude;
+        // Force-parse route altitude tokens; RestrictionExact stays -1 until GetFlag runs.
+        var startPoint = Session.ActiveRoute.Points[0];
+        _ = startPoint.AltitudeRegulation;
+        long cruiseAltitude = startPoint.Altitude.RestrictionExact;
+        if (cruiseAltitude <= 0)
+            cruiseAltitude = Session.CurrentLevel.levelInfo.CrzAltitude;
+        if (cruiseAltitude <= 0)
+            cruiseAltitude = 10000;
+
+        Session.CurrentLevel.levelInfo.CrzAltitude = cruiseAltitude;
+        StartAltitude = cruiseAltitude;
 
         CSpeed = Session.CurrentLevel.levelInfo.CrzSpeed;
         CAltitude = StartAltitude;
@@ -234,6 +242,23 @@ public class Calculator : MonoBehaviour
         // Score Test scene drives Main with its own dialog (pauses). Skip normal briefing.
         if (ScoreTestSceneBootstrap.ConsumePending())
             return;
+
+        // Level Test scene: pick starting level, then fly 320 kt @ 10x with ATC ignored.
+        if (LevelTestMode.IsActive)
+        {
+            if (LevelTestMode.ConsumeAwaitingLevelPick())
+            {
+                Time.timeScale = 0f;
+                LevelTestDialog.ShowLevelPicker();
+                return;
+            }
+
+            if (LevelTestMode.ConsumePendingApplyConfig())
+            {
+                LevelTestMode.ApplyFlightConfig();
+                return;
+            }
+        }
 
         var levelInfo = FindFirstObjectByType<LevelStartInformation>();
         if (levelInfo != null)
@@ -318,7 +343,7 @@ public class Calculator : MonoBehaviour
             DrawVDI();
             DisplayWindElements();
             CheckStabilization();
-  
+
             //Debug.Log(Move.Instance.FuelPenalty);
             yield return new WaitForSeconds(1);
         }
@@ -497,6 +522,9 @@ public class Calculator : MonoBehaviour
     }
     private void Speed_Equalize()
     {
+        if (LevelTestMode.IsActive)
+            LevelTestMode.EnforceFlightConfig();
+
         double C0Speed = CSpeed;
         void DrawSpeedTrend(float Time)
         {
@@ -904,6 +932,10 @@ public class Calculator : MonoBehaviour
     }
     private int ApplyVnavPointSpeedLimit(int targetSpeed)
     {
+        // Level test: pilot sets IAS manually; do not clamp to route RawSpeed.
+        if (LevelTestMode.IsActive)
+            return targetSpeed;
+
         if (!Session.State.VNAV || Session.ActiveRoute?.Points == null || Session.ActiveRoute.Points.Length == 0)
         {
             return targetSpeed;
@@ -912,13 +944,13 @@ public class Calculator : MonoBehaviour
         var pointIndex = Mathf.Clamp(PositionVirtualNode.NextNodeIndex, 0, Session.ActiveRoute.Points.Length - 1);
         var pointSpeed = Session.ActiveRoute.Points[pointIndex].RawSpeed;
 
-        pointSpeed = (prvIndex4Speed != pointIndex) ? pointSpeed:0;
+        pointSpeed = (prvIndex4Speed != pointIndex) ? pointSpeed : 0;
         prvIndex4Speed = pointIndex;
 
-         return pointSpeed > 0 ? Mathf.Min(targetSpeed, pointSpeed) : targetSpeed;
+        return pointSpeed > 0 ? Mathf.Min(targetSpeed, pointSpeed) : targetSpeed;
 
 
-         
+
     }
     public void FlyVerticalPath()
     {
@@ -1319,9 +1351,9 @@ public class Calculator : MonoBehaviour
     }
     public static double Speed2Mach(double Speed, double Altitude)
     {
-        Altitude = Altitude > 39900 ? 39900 : Altitude;
+        Altitude = Mathf.Clamp((float)Altitude, 0f, 39900f);
 
-        int F = 8 - Mathf.FloorToInt((float)Altitude / 5000);
+        int F = Mathf.Clamp(8 - Mathf.FloorToInt((float)Altitude / 5000), 1, Pressure.Length - 1);
         float p = Mathf.Lerp(Pressure[F], Pressure[F - 1], (float)(Altitude % 5000) / 5000);
 
         return Mathf.Sqrt(Mathf.Pow(1 / p * (Mathf.Pow((float)Speed * (float)Speed / 2187771 + 1, 3.5f) - 1) + 1, 0.2857f) - 1) * Mathf.Sqrt(5);
@@ -1330,8 +1362,8 @@ public class Calculator : MonoBehaviour
     /// <summary>CAS (kt) from Mach — inverse of Speed2Mach (pressure ratio only; no TAS path).</summary>
     public static double Mach2Speed(double Mach, double Altitude)
     {
-        Altitude = Altitude > 39900 ? 39900 : Altitude;
-        int F = 8 - Mathf.FloorToInt((float)Altitude / 5000);
+        Altitude = Mathf.Clamp((float)Altitude, 0f, 39900f);
+        int F = Mathf.Clamp(8 - Mathf.FloorToInt((float)Altitude / 5000), 1, Pressure.Length - 1);
         float p = Mathf.Lerp(Pressure[F], Pressure[F - 1], (float)(Altitude % 5000) / 5000);
         return Mathf.Sqrt(Mathf.Pow(p * (Mathf.Pow(1f + 0.2f * (float)(Mach * Mach), 3.5f) - 1) + 1, 0.2857f) - 1) * Mathf.Sqrt(5) * 661.4787f;
     }
@@ -1649,6 +1681,24 @@ public class Calculator : MonoBehaviour
 
         UYServiceLocator.Get<McpUI>().RefreshHS();
     }
+
+    /// <summary>
+    /// Snap MCP selected heading to current magnetic heading so HDG after LNAV/LOC continues straight.
+    /// </summary>
+    public void SyncRHeadingToCurrent()
+    {
+        if (Session.PlayerAircraft == null)
+            return;
+
+        int currentTrack = NormalizeHeading360(Mathf.RoundToInt(Session.PlayerAircraft.DisplayHeadingDegrees));
+        WindElements we = CalculateWindElements(CAltitude, CSpeed, currentTrack);
+        int currentHeading = NormalizeHeading360(currentTrack + we.HeadingWindAddition);
+        if (RHeading == currentHeading)
+            return;
+
+        RHeading = currentHeading;
+        AddWindEffectToRHeading();
+    }
     public void AddWindEffectToCHeading()
     {
         WindElements we = CalculateWindElements(CAltitude, CSpeed, CHeading);
@@ -1764,7 +1814,7 @@ public class Calculator : MonoBehaviour
         CHeading = NormalizeHeading360(CTrack + we.HeadingWindAddition);
         CHeadingWindAddition = we.HeadingWindAddition;
     }
-       
+
     public class WindElements
     {
         public int GS, HeadingWindAddition, relativeWindD, WindM, WindD, TAS;
@@ -1838,6 +1888,10 @@ public class Calculator : MonoBehaviour
     public void CheckStabilization()
     {
         if (_approachEndTriggered)
+            return;
+
+        // Level test finishes at RW (DME), not via the normal short-final dialog.
+        if (LevelTestMode.IsActive)
             return;
 
         float dme = Move.Instance.DME();
@@ -1918,5 +1972,5 @@ public class Calculator : MonoBehaviour
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #endif
-     }
+    }
 }

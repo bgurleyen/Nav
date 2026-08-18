@@ -20,77 +20,77 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 20000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: ARVOL
-    RawDegrees: 253
-    Distance: 99
+    RawDegrees: 53
+    Distance: 9
     RawSpeed: 250
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 2
     Name: AKOVI
     RawDegrees: 35
     Distance: 14.7
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 3
     Name: RODRI
     RawDegrees: 35
     Distance: 9.5
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 4
     Name: KERKY
     RawDegrees: 59
     Distance: 5.8
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 5
     Name: AFI
     RawDegrees: 102
     Distance: 5.7
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 6
     Name: AFI-12
     RawDegrees: 167
     Distance: 12
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 7
     Name: NIVOR
     RawDegrees: 90
     Distance: 3.2
     RawSpeed: 0
     RawAltitude: 2000A
     Details: 
-  - ID: 0
+  - ID: 8
     Name: HUL-11
     RawDegrees: 77
     Distance: 2.7
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 9
     Name: CF02
     RawDegrees: 26
     Distance: 7.3
     RawSpeed: 0
     RawAltitude: 2000
     Details: 
-  - ID: 0
+  - ID: 10
     Name: OM02
     RawDegrees: 14
     Distance: 1.7
     RawSpeed: 0
     RawAltitude: 1430
     Details: 
-  - ID: 0
+  - ID: 11
     Name: RW02
     RawDegrees: 15
     Distance: 3.8

@@ -20,49 +20,49 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 20000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: LAT
-    RawDegrees: 144
-    Distance: 99
+    RawDegrees: 344
+    Distance: 9
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 2
     Name: ROM
     RawDegrees: 315
     Distance: 21.6
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 3
     Name: INTC
     RawDegrees: 315
     Distance: 19.7
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 4
     Name: MIKSO
     RawDegrees: 252
     Distance: 4.6
     RawSpeed: 0
     RawAltitude: 2500A
     Details: 
-  - ID: 0
+  - ID: 5
     Name: CI16C
     RawDegrees: 162
     Distance: 3.3
     RawSpeed: 0
     RawAltitude: 2500
     Details: 
-  - ID: 0
+  - ID: 6
     Name: FI16C
     RawDegrees: 161
     Distance: 4
     RawSpeed: 0
     RawAltitude: 1340
     Details: 
-  - ID: 0
+  - ID: 7
     Name: RW16C
     RawDegrees: 161
     Distance: 4.5

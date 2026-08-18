@@ -20,133 +20,133 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 20000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: GISIN
-    RawDegrees: 63
-    Distance: 99
+    RawDegrees: 163
+    Distance: 9
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 2
     Name: OKLIT
     RawDegrees: 169
     Distance: 7.7
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 3
     Name: TURUG
     RawDegrees: 169
     Distance: 7.6
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 4
     Name: WW521
     RawDegrees: 187
     Distance: 19.3
     RawSpeed: 230
     RawAltitude: 5900A
     Details: 
-  - ID: 0
+  - ID: 5
     Name: WW522
     RawDegrees: 172
     Distance: 5.4
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 6
     Name: WW523
     RawDegrees: 172
     Distance: 5.4
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 7
     Name: WW524
     RawDegrees: 172
     Distance: 5.4
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 8
     Name: WW525
     RawDegrees: 82
     Distance: 6.5
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 9
     Name: WW505
     RawDegrees: 352
     Distance: 5.4
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 10
     Name: WW504
     RawDegrees: 352
     Distance: 5.4
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 11
     Name: DRNB
     RawDegrees: 352
     Distance: 5.4
     RawSpeed: 0
     RawAltitude: 5900
     Details: 
-  - ID: 0
+  - ID: 12
     Name: WW502
     RawDegrees: 352
     Distance: 5.4
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 13
     Name: WW501
     RawDegrees: 352
     Distance: 5.4
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 14
     Name: OSTIS
     RawDegrees: 8
     Distance: 6.8
     RawSpeed: 0
     RawAltitude: 3640
     Details: 
-  - ID: 0
+  - ID: 15
     Name: 290OB
     RawDegrees: 15
     Distance: 4.1
     RawSpeed: 0
     RawAltitude: 2650
     Details: 
-  - ID: 0
+  - ID: 16
     Name: 258OB
     RawDegrees: 339
     Distance: 2.9
     RawSpeed: 0
     RawAltitude: 2320
     Details: 
-  - ID: 0
+  - ID: 17
     Name: CF24
     RawDegrees: 299
     Distance: 1.9
     RawSpeed: 0
     RawAltitude: 2000
     Details: 
-  - ID: 0
+  - ID: 18
     Name: FF24
     RawDegrees: 239
     Distance: 0.8
     RawSpeed: 0
     RawAltitude: 1991
     Details: 
-  - ID: 0
+  - ID: 19
     Name: RW24
     RawDegrees: 238
     Distance: 4

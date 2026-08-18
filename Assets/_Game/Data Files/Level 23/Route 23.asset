@@ -20,63 +20,63 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 20000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: CABIN
-    RawDegrees: 80
-    Distance: 99
+    RawDegrees: 380
+    Distance: 9
     RawSpeed: 240
     RawAltitude: 9000A
     Details: 
-  - ID: 0
+  - ID: 2
     Name: BS652
     RawDegrees: 321
     Distance: 24
     RawSpeed: 210
     RawAltitude: 7000A
     Details: 
-  - ID: 0
+  - ID: 3
     Name: BS651
     RawDegrees: 281
     Distance: 6
     RawSpeed: 0
     RawAltitude: 6000A
     Details: 
-  - ID: 0
+  - ID: 4
     Name: BYLON
     RawDegrees: 195
     Distance: 10
     RawSpeed: 0
     RawAltitude: 4000A
     Details: 
-  - ID: 0
+  - ID: 5
     Name: SHEEN
     RawDegrees: 285
     Distance: 5
     RawSpeed: 0
     RawAltitude: 2000A
     Details: 
-  - ID: 0
+  - ID: 6
     Name: LASER
     RawDegrees: 354
     Distance: 3.4
     RawSpeed: 0
     RawAltitude: 2000A
     Details: 
-  - ID: 0
+  - ID: 7
     Name: LEVIN
     RawDegrees: 15
     Distance: 1.7
     RawSpeed: 0
     RawAltitude: 2000
     Details: 
-  - ID: 0
+  - ID: 8
     Name: FI09L
     RawDegrees: 15
     Distance: 2.5
     RawSpeed: 0
     RawAltitude: 1290
     Details: 
-  - ID: 0
+  - ID: 9
     Name: RW01L
     RawDegrees: 15
     Distance: 3.9

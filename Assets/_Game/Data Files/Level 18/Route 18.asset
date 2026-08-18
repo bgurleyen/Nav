@@ -20,63 +20,63 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 20000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: TULNI
-    RawDegrees: 254
-    Distance: 99
+    RawDegrees: 54
+    Distance: 9
     RawSpeed: 250
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 2
     Name: CIV
     RawDegrees: 88
     Distance: 21
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 3
     Name: HUL
     RawDegrees: 71
     Distance: 32.5
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 4
     Name: FLO
     RawDegrees: 68
     Distance: 20.2
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 5
     Name: FLO-10
     RawDegrees: 310
     Distance: 10
     RawSpeed: 0
     RawAltitude: 2000A
     Details: 
-  - ID: 0
+  - ID: 6
     Name: INTC
     RawDegrees: 276
     Distance: 4.7
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 7
     Name: CF25R
     RawDegrees: 246
     Distance: 7.1
     RawSpeed: 0
     RawAltitude: 2000
     Details: 
-  - ID: 0
+  - ID: 8
     Name: OM25R
     RawDegrees: 245
     Distance: 1.9
     RawSpeed: 0
     RawAltitude: 1400
     Details: 
-  - ID: 0
+  - ID: 9
     Name: RW25R
     RawDegrees: 245
     Distance: 4

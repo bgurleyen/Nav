@@ -28,6 +28,9 @@ public class Aircraft : MovingActor
     private RoutePosition _lastFoundRoutePosition = new() { SegmentIndex = 1 };
     private RoutePosition? _pendingJoinRoutePosition = new() { SegmentIndex = 1 };
 
+    private bool _lnavTurnInProgress;
+    private bool _lnavHeadingSynced;
+
     private AircraftDebugHelper debugHelper = null;
 
 
@@ -47,7 +50,7 @@ public class Aircraft : MovingActor
         Debug.Log(isStable ? "Finish GAME (stable)" : "Finish GAME (unstable)");
         GraphManage.OnGameFinish?.Invoke(isStable);
         Session.State.AutoSetHDG(true);
-    }        
+    }
     public override void SimulateTick()
     {
         DrawHeadingLine();
@@ -63,6 +66,7 @@ public class Aircraft : MovingActor
         if (Session.State.LOCCaptured)
         {
             SteerLocalizer();
+            SyncHeadingBugAfterLnavTurn();
             return;
         }
 
@@ -88,6 +92,7 @@ public class Aircraft : MovingActor
             {
                 Debug.LogError("No Intersection Point Found");
                 Session.State.AutoSetHDG(true);
+                ClearLnavHeadingSyncState();
                 return;
             }
 
@@ -102,16 +107,20 @@ public class Aircraft : MovingActor
 
             CurrentSegmentIndex = _lastFoundRoutePosition.SegmentIndex;
             NMWalkedOnCurrentSegment = foundAtDistanceOnSegment;
+
+            SyncHeadingBugAfterLnavTurn();
         }
         else if (Session.State.HDG)
         {
             TargetHeading = Calculator.RTrack;
             _pilot.TickSteerToTargetHeading(TargetHeading);
             _pilot.TickAdvance();
+            ClearLnavHeadingSyncState();
         }
         else
         {
             _pilot.TickAdvance();
+            ClearLnavHeadingSyncState();
         }
     }
 
@@ -127,11 +136,39 @@ public class Aircraft : MovingActor
         Session.State.LOCCaptured = true;
         _pendingJoinRoutePosition = null;
         Session.State.AutoSetHDG(true);
+        _lnavHeadingSynced = false;
 
         // Snap MCP track to inbound course so HDG mode starts on the localizer.
         int courseHdg = Calculator.NormalizeHeading360(Mathf.RoundToInt(course));
         Calculator.RHeading = courseHdg;
         Calculator.Instance?.AddWindEffectToRHeading();
+    }
+
+    /// <summary>
+    /// Airbus-style: in LNAV or LOC, freeze the MCP heading bug during a turn,
+    /// then snap it to current heading when the aircraft rolls out.
+    /// </summary>
+    private void SyncHeadingBugAfterLnavTurn()
+    {
+        // Same threshold as Calculator.PFD_Bank: |angle| > 3 → banked.
+        if (Mathf.Abs(_pilot.CachedDisplayLastAngleDiff) > 3f)
+        {
+            _lnavTurnInProgress = true;
+            return;
+        }
+
+        if (!_lnavTurnInProgress && _lnavHeadingSynced)
+            return;
+
+        _lnavTurnInProgress = false;
+        _lnavHeadingSynced = true;
+        Calculator.Instance?.SyncRHeadingToCurrent();
+    }
+
+    private void ClearLnavHeadingSyncState()
+    {
+        _lnavTurnInProgress = false;
+        _lnavHeadingSynced = false;
     }
 
     /// <summary>
@@ -242,6 +279,7 @@ public class Aircraft : MovingActor
         _pilot.NMPosition = Vector2.zero;
         NMWalkedOnCurrentSegment = 0;
         _pendingJoinRoutePosition = null;
+        ClearLnavHeadingSyncState();
         Session.State.AutoSetLNAV(true, true);
         ResetSeekProgress(1, 0);
     }
@@ -294,7 +332,7 @@ public class Aircraft : MovingActor
         {
             return;
         }
-        if (firstNextPoint < 0) firstNextPoint=0;
+        if (firstNextPoint < 0) firstNextPoint = 0;
         var nodePosition = Session.ActiveRoute.Points[firstNextPoint].CartesianPosition;
         proximityDistance = Vector2.Distance(nodePosition, _pilot.NMPosition);
         if (proximityDistance <= Session.Settings.HDGProximityAdvanceDistance)

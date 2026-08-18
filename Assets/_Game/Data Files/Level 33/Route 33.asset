@@ -20,63 +20,63 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 20000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: 'STONE '
-    RawDegrees: 38
-    Distance: 99
+    RawDegrees: 118
+    Distance: 9
     RawSpeed: 250
     RawAltitude: 11000
     Details: 
-  - ID: 0
+  - ID: 2
     Name: TLE
     RawDegrees: 195
     Distance: 15.8
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 3
     Name: CURRY
     RawDegrees: 186
     Distance: 14.6
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 4
     Name: COUPE
     RawDegrees: 186
     Distance: 9.6
     RawSpeed: 0
     RawAltitude: 8000A
     Details: 
-  - ID: 0
+  - ID: 5
     Name: CUTIE
     RawDegrees: 179
     Distance: 9.2
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 6
     Name: CREAM
     RawDegrees: 224
     Distance: 11.7
     RawSpeed: 0
     RawAltitude: 5000A
     Details: 
-  - ID: 0
+  - ID: 7
     Name: ARLON
     RawDegrees: 247
     Distance: 6.3
     RawSpeed: 0
     RawAltitude: 5000
     Details: 
-  - ID: 0
+  - ID: 8
     Name: APOLO
     RawDegrees: 337
     Distance: 15
     RawSpeed: 0
     RawAltitude: 5000
     Details: 
-  - ID: 0
+  - ID: 9
     Name: RW34L
     RawDegrees: 337
     Distance: 2.4

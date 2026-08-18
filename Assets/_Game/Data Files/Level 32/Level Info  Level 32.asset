@@ -19,10 +19,10 @@ MonoBehaviour:
   Runway: 22
   FieldInfo: 8202FT2500M
   Freq: 108.1
-  Course: 222
+  Course: 252
   ZFW: 48
   Fuel: 12
-  CrzAltitude: 36000
+  CrzAltitude: 20000
   CrzSpeed: 273
   F30Speed: 121
   DesEconSpeed: 280

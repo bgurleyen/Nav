@@ -20,98 +20,98 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 20000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: GIGOR
-    RawDegrees: 132
-    Distance: 99
+    RawDegrees: 232
+    Distance: 9
     RawSpeed: 250
     RawAltitude: 16000B
     Details: 
-  - ID: 0
+  - ID: 2
     Name: PESAT
     RawDegrees: 261
     Distance: 25.3
     RawSpeed: 0
     RawAltitude: 6000A
     Details: 
-  - ID: 0
+  - ID: 3
     Name: WW841
     RawDegrees: 321
     Distance: 14.4
     RawSpeed: 0
     RawAltitude: 6000A
     Details: 
-  - ID: 0
+  - ID: 4
     Name: WW843
     RawDegrees: 293
     Distance: 15
     RawSpeed: 0
     RawAltitude: 6000A
     Details: 
-  - ID: 0
+  - ID: 5
     Name: WW844
     RawDegrees: 298
     Distance: 11.9
     RawSpeed: 0
     RawAltitude: 5000A
     Details: 
-  - ID: 0
+  - ID: 6
     Name: WW845
     RawDegrees: 293
     Distance: 5
     RawSpeed: 0
     RawAltitude: 5000A
     Details: 
-  - ID: 0
+  - ID: 7
     Name: WW846
     RawDegrees: 293
     Distance: 10
     RawSpeed: 0
     RawAltitude: 5000A
     Details: 
-  - ID: 0
+  - ID: 8
     Name: WW813
     RawDegrees: 23
     Distance: 5
     RawSpeed: 0
     RawAltitude: 5000A
     Details: 
-  - ID: 0
+  - ID: 9
     Name: WW812
     RawDegrees: 113
     Distance: 5
     RawSpeed: 0
     RawAltitude: 5000A
     Details: 
-  - ID: 0
+  - ID: 10
     Name: WW811
     RawDegrees: 113
     Distance: 5
     RawSpeed: 0
     RawAltitude: 5000A
     Details: 
-  - ID: 0
+  - ID: 11
     Name: WW919
     RawDegrees: 113
     Distance: 4.8
     RawSpeed: 0
     RawAltitude: 3400A
     Details: 
-  - ID: 0
+  - ID: 12
     Name: CI11X
     RawDegrees: 114
     Distance: 1.9
     RawSpeed: 0
     RawAltitude: 3400
     Details: 
-  - ID: 0
+  - ID: 13
     Name: 36DME
     RawDegrees: 113
     Distance: 4.8
     RawSpeed: 0
     RawAltitude: 1765
     Details: 
-  - ID: 0
+  - ID: 14
     Name: RW11
     RawDegrees: 113
     Distance: 3.5

@@ -79,6 +79,9 @@ public class Move : Singleton<Move>
     public static long XFRAltitude = 0;
     public static int XFRHdg = 0;
 
+    Button _armButton;
+    TextMeshProUGUI _armButtonTxt;
+
     public void Init(LevelDataScriptableObject levelData)
     {
         _currentLevelData = levelData;
@@ -91,21 +94,32 @@ public class Move : Singleton<Move>
         {
             Pos = Session.OriginalReferenceRoute.GetCartesianPosition(j);
             var pt = GameObject.Find("pt (" + j + ")");
+            if (pt == null)
+            {
+                Debug.LogWarning($"[Move.Init] Missing EditMap marker 'pt ({j})' — skipping (route has {Session.OriginalReferenceRoute.Points.Length} points).");
+                TempPtsPos[j] = Pos;
+                continue;
+            }
 
             pt.transform.localPosition = Pos;
-
             TempPtsPos[j] = Pos;
         }
 
         for (int j = 1; j < 21; j++) //Locate Virtual points on EditMap
         {
-
             var pt = GameObject.Find("pt (" + (j + 50) + ")");
+            if (_currentLevelData.VirtualPoints == null || j - 1 >= _currentLevelData.VirtualPoints.Length || 20 >= _currentLevelData.VirtualPoints.Length)
+            {
+                Debug.LogWarning($"[Move.Init] VirtualPoints incomplete for index {j} — skipping.");
+                continue;
+            }
+
             VirtualPtsPos[j].x = Pos.x + _currentLevelData.VirtualPoints[j - 1].x -
                                  _currentLevelData.VirtualPoints[20].x;
             VirtualPtsPos[j].y = Pos.y + _currentLevelData.VirtualPoints[j - 1].y -
                                  _currentLevelData.VirtualPoints[20].y;
-            pt.transform.localPosition = VirtualPtsPos[j];
+            if (pt != null)
+                pt.transform.localPosition = VirtualPtsPos[j];
         }
 
         myAC = GameObject.Find("AC (0)"); // Init my AC
@@ -131,6 +145,7 @@ public class Move : Singleton<Move>
         XFRSpeed = 0;
         XFRHdg = 0;
         ATCAltitude = 0;
+        HideArmButton();
 
         var otherACsCount = _currentLevelData.otherACs.Length;
         _otherACs = new OtherAC[otherACsCount];
@@ -389,6 +404,83 @@ public class Move : Singleton<Move>
         SetXfrGlow(3, false);
     }
 
+    void EnsureArmButton()
+    {
+        if (_armButton != null)
+            return;
+        if (XFR3 == null || Atc2 == null)
+            return;
+
+        var go = Instantiate(XFR3.gameObject, Atc2.transform);
+        go.name = "ARM";
+        var rt = go.GetComponent<RectTransform>();
+        if (rt != null)
+            rt.anchoredPosition = new Vector2(365f, 0f);
+
+        _armButton = go.GetComponent<Button>();
+        _armButton.onClick = new Button.ButtonClickedEvent();
+        _armButton.onClick.AddListener(OnArmApproachClicked);
+        _armButton.interactable = true;
+
+        _armButtonTxt = go.GetComponentInChildren<TextMeshProUGUI>(true);
+        if (_armButtonTxt != null)
+            _armButtonTxt.text = "ARM";
+
+        go.SetActive(false);
+    }
+
+    void ShowArmButton()
+    {
+        if (Session.State != null && Session.State.AppArmed)
+            return;
+
+        EnsureArmButton();
+        if (_armButton == null)
+            return;
+
+        _armButton.gameObject.SetActive(true);
+        _armButton.interactable = true;
+        if (_armButtonTxt != null)
+            _armButtonTxt.fontMaterial.SetFloat(ShaderUtilities.ID_GlowPower, 1f);
+        SlowDown();
+    }
+
+    void HideArmButton()
+    {
+        if (_armButton == null)
+            return;
+
+        if (_armButtonTxt != null)
+            _armButtonTxt.fontMaterial.SetFloat(ShaderUtilities.ID_GlowPower, 0f);
+        _armButton.gameObject.SetActive(false);
+    }
+
+    public void OnArmApproachClicked()
+    {
+        if (Session.State == null || Session.State.AppArmed)
+            return;
+
+        Session.State.AppArmed = true;
+        HideArmButton();
+
+        if (Atc2 != null)
+        {
+            Atc2.text = "LOC/GS Armed , MA altitude 5000 ft set";
+            Atc2.color = Color.white;
+            _atc2GrayDone = true;
+        }
+
+        if (Calculator.Instance != null)
+        {
+            Calculator.RAltitude = 5000;
+            if (Calculator.Instance.txtRAltitude != null)
+                Calculator.Instance.txtRAltitude.text = "5000";
+            if (Calculator.Instance.txtRAltitude_overTape != null)
+                Calculator.Instance.txtRAltitude_overTape.text = "5000";
+            Calculator.Instance.SetFMA();
+        }
+    }
+
     static void ClearOutsideBorderSteer()
     {
         TurnRateMul = 1f;
@@ -618,8 +710,7 @@ public class Move : Singleton<Move>
             if (VS_nx == 3)
             {
                 Atc2.text += " CLEAR ILS APPROACH ";
-                Session.State.AppArmed = true;
-
+                ShowArmButton();
             }
 
             Atc3.text = Speed > 0 ? "Speed " + Speed + " knots " + NxToString(Speed_nx) :
@@ -721,6 +812,13 @@ public class Move : Singleton<Move>
 
     public void CheckAirplaneMove()
     {
+        // Level Test: skip ATC clearances / border / SlowDown, but still advance
+        // instruction points so APP arms at VS_nx==3 (CLEAR ILS) like normal play.
+        if (LevelTestMode.IsActive)
+        {
+            TickLevelTestApproachArm();
+            return;
+        }
 
         ATCCall();
 
@@ -743,6 +841,43 @@ public class Move : Singleton<Move>
                 MoveOnNextInstruction();
                 PrvPoint = point;
             }
+        }
+    }
+
+    /// <summary>
+    /// Level-test only: walk ATC waypoints silently; arm APP when VS_nx==3 becomes active.
+    /// Does not issue clearances, SlowDown, BorderGuard, or XFR UI.
+    /// </summary>
+    void TickLevelTestApproachArm()
+    {
+        if (_currentLevelData?.ATCs == null || _currentLevelData.ATCs.Length == 0)
+            return;
+
+        if (_currentInstructionIndex < 0 || _currentInstructionIndex >= _currentLevelData.ATCs.Length)
+            return;
+
+        var currentInstruction = _currentLevelData.ATCs[_currentInstructionIndex];
+        point = currentInstruction.point;
+
+        if (NewPoint)
+        {
+            if (currentInstruction.VS_nx == 3)
+                Session.State.AppArmed = true;
+
+            NextInstructionDistance = currentInstruction.Speed_nx > 2
+                ? currentInstruction.Speed_nx
+                : 1.3f;
+            NewPoint = false;
+        }
+
+        if (_currentInstructionIndex >= _currentLevelData.ATCs.Length - 1)
+            return;
+
+        DistanceToPoint = Vector2.Distance(Session.PlayerAircraft.NMPosition, PointPos(point));
+        if ((point != prvWptIdx) && (DistanceToPoint < NextInstructionDistance))
+        {
+            MoveOnNextInstruction();
+            PrvPoint = point;
         }
     }
 

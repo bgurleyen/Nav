@@ -20,45 +20,45 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 20000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: AVITU
     RawDegrees: 146
-    Distance: 99
+    Distance: 9
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 2
     Name: TV
     RawDegrees: 219
     Distance: 106.7
     RawSpeed: 0
     RawAltitude: 10000A
     Details: 
-  - ID: 0
+  - ID: 3
     Name: TV-11
     RawDegrees: 287
     Distance: 11
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 4
     Name: CI06
-    RawDegrees: 355
+    RawDegrees: 55
     Distance: 4.9
     RawSpeed: 0
-    RawAltitude: 7500
+    RawAltitude: 3200
     Details: 
-  - ID: 0
+  - ID: 5
     Name: NONB
     RawDegrees: 54
     Distance: 2.8
     RawSpeed: 0
-    RawAltitude: 6622
+    RawAltitude: 1000
     Details: 
-  - ID: 0
+  - ID: 6
     Name: RW06
     RawDegrees: 54
     Distance: 4
     RawSpeed: 0
-    RawAltitude: 5380
+    RawAltitude: 100
     Details: 

@@ -20,77 +20,77 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 20000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: KENET
-    RawDegrees: 267
-    Distance: 99
+    RawDegrees: 167
+    Distance: 9
     RawSpeed: 0
     RawAltitude: 140007000
     Details: 
-  - ID: 0
+  - ID: 2
     Name: D291L
     RawDegrees: 111
     Distance: 28
     RawSpeed: 250
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 3
     Name: OCK
     RawDegrees: 111
     Distance: 11.9
     RawSpeed: 220
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 4
     Name: OCK07
     RawDegrees: 76
     Distance: 7
     RawSpeed: 220
     RawAltitude: 7000A
     Details: 
-  - ID: 0
+  - ID: 5
     Name: OC11A
     RawDegrees: 76
     Distance: 4
     RawSpeed: 0
     RawAltitude: 6000A
     Details: 
-  - ID: 0
+  - ID: 6
     Name: OC12B
     RawDegrees: 76
     Distance: 1
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 7
     Name: INTC
     RawDegrees: 360
     Distance: 3.3
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 8
     Name: ILL10
     RawDegrees: 330
     Distance: 3.9
     RawSpeed: 0
     RawAltitude: 3000
     Details: 
-  - ID: 0
+  - ID: 9
     Name: CF27L
     RawDegrees: 270
     Distance: 2.5
     RawSpeed: 0
     RawAltitude: 2500
     Details: 
-  - ID: 0
+  - ID: 10
     Name: FF27L
     RawDegrees: 270
     Distance: 3.5
     RawSpeed: 0
     RawAltitude: 1400
     Details: 
-  - ID: 0
+  - ID: 11
     Name: RW27L
     RawDegrees: 272
     Distance: 5.5

@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Other AC 3 Level 33
   m_EditorClassIdentifier: 
   ACItems:
-  - Point: 636
+  - Point: 63
     Altitude: 16000
     Speed: 250
   - Point: 54

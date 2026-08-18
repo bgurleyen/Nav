@@ -20,42 +20,42 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 20000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: GAGAK
-    RawDegrees: 82
-    Distance: 99
+    RawDegrees: 382
+    Distance: 9
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 2
     Name: KEDAT
     RawDegrees: 316
     Distance: 80.3
     RawSpeed: 0
     RawAltitude: 7000
     Details: 
-  - ID: 0
+  - ID: 3
     Name: BENOA
     RawDegrees: 336
     Distance: 27.7
     RawSpeed: 0
     RawAltitude: 3000A
     Details: 
-  - ID: 0
+  - ID: 4
     Name: 97DME
     RawDegrees: 266
     Distance: 3.4
     RawSpeed: 0
     RawAltitude: 2000
     Details: 
-  - ID: 0
+  - ID: 5
     Name: 62DME
     RawDegrees: 266
     Distance: 3.5
     RawSpeed: 0
     RawAltitude: 2000
     Details: 
-  - ID: 0
+  - ID: 6
     Name: RW27
     RawDegrees: 266
     Distance: 6.1

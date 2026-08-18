@@ -20,49 +20,49 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 20000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: WYNB
     RawDegrees: 172
-    Distance: 99
+    Distance: 9
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 2
     Name: CTV30
     RawDegrees: 245
     Distance: 14.2
     RawSpeed: 250
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 3
     Name: D065H
     RawDegrees: 190
     Distance: 22
     RawSpeed: 210
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 4
     Name: VECTOR
     RawDegrees: 219
     Distance: 0
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 5
     Name: CI01
-    RawDegrees: 220
+    RawDegrees: 320
     Distance: 13.9
     RawSpeed: 0
     RawAltitude: 2000
     Details: 
-  - ID: 0
+  - ID: 6
     Name: FI01
     RawDegrees: 10
     Distance: 3.1
     RawSpeed: 0
     RawAltitude: 1320
     Details: 
-  - ID: 0
+  - ID: 7
     Name: RW01
     RawDegrees: 9
     Distance: 3.6

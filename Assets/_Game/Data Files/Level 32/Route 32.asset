@@ -20,56 +20,56 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 20000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: 'ADDUM '
     RawDegrees: 38
-    Distance: 99
+    Distance: 9
     RawSpeed: 0
     RawAltitude: 10000
     Details: 
-  - ID: 0
+  - ID: 2
     Name: BLITZ
     RawDegrees: 27
     Distance: 15
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 3
     Name: BRASS
     RawDegrees: 351
     Distance: 17
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 4
     Name: NYLON
     RawDegrees: 351
     Distance: 17
     RawSpeed: 0
-    RawAltitude: 5000
+    RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 5
     Name: NIFTY
     RawDegrees: 342
     Distance: 10.5
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 6
     Name: NEXUS
     RawDegrees: 252
     Distance: 4.9
     RawSpeed: 0
     RawAltitude: 5000
     Details: 
-  - ID: 0
+  - ID: 7
     Name: NITRO
     RawDegrees: 252
     Distance: 2
     RawSpeed: 0
     RawAltitude: 5000
     Details: 
-  - ID: 0
+  - ID: 8
     Name: 'RW22 '
     RawDegrees: 252
     Distance: 14.9

@@ -20,56 +20,56 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 20000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: CAB
-    RawDegrees: 63
-    Distance: 99
+    RawDegrees: 163
+    Distance: 9
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 2
     Name: TARTA
     RawDegrees: 170
     Distance: 27.4
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 3
     Name: GARAY
     RawDegrees: 170
     Distance: 7.6
     RawSpeed: 0
     RawAltitude: 7000A
     Details: 
-  - ID: 0
+  - ID: 4
     Name: MIA
     RawDegrees: 198
     Distance: 25.4
     RawSpeed: 0
     RawAltitude: 4000A
     Details: 
-  - ID: 0
+  - ID: 5
     Name: MIA-10
     RawDegrees: 224
-    Distance: 10
+    Distance: 14
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 6
     Name: CI06
     RawDegrees: 1
     Distance: 5.9
     RawSpeed: 0
     RawAltitude: 2500
     Details: 
-  - ID: 0
+  - ID: 7
     Name: FI06
     RawDegrees: 61
     Distance: 1.2
     RawSpeed: 0
     RawAltitude: 2500
     Details: 
-  - ID: 0
+  - ID: 8
     Name: RW06
     RawDegrees: 61
     Distance: 7.9

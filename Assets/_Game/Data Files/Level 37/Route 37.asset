@@ -20,56 +20,56 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 20000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: IPATA
-    RawDegrees: 64
-    Distance: 99
+    RawDegrees: 364
+    Distance: 9
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 2
     Name: KABAN
     RawDegrees: 311
     Distance: 27
     RawSpeed: 0
     RawAltitude: 10000A
     Details: 
-  - ID: 0
+  - ID: 3
     Name: CAMBA
     RawDegrees: 311
     Distance: 15.8
     RawSpeed: 0
     RawAltitude: 6000A
     Details: 
-  - ID: 0
+  - ID: 4
     Name: MIA
     RawDegrees: 311
     Distance: 17.2
     RawSpeed: 0
     RawAltitude: 4000A
     Details: 
-  - ID: 0
+  - ID: 5
     Name: MIA-9
     RawDegrees: 80
-    Distance: 9
+    Distance: 13
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 6
     Name: CF24
     RawDegrees: 247
     Distance: 7.3
     RawSpeed: 0
     RawAltitude: 2500
     Details: 
-  - ID: 0
+  - ID: 7
     Name: FF24
     RawDegrees: 242
     Distance: 3.3
     RawSpeed: 0
     RawAltitude: 1424
     Details: 
-  - ID: 0
+  - ID: 8
     Name: RW24
     RawDegrees: 242
     Distance: 4.1

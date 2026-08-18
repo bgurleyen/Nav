@@ -20,70 +20,70 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 20000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: PESER
-    RawDegrees: 166
-    Distance: 53.7
+    RawDegrees: 366
+    Distance: 9
     RawSpeed: 280
     RawAltitude: 7000B
     Details: 
-  - ID: 0
+  - ID: 2
     Name: 'STDNB '
     RawDegrees: 306
     Distance: 13
     RawSpeed: 0
     RawAltitude: 11000B
     Details: 
-  - ID: 0
+  - ID: 3
     Name: 'RIVER '
     RawDegrees: 339
     Distance: 11.1
     RawSpeed: 250
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 4
     Name: 'D2230 '
     RawDegrees: 42
     Distance: 18.9
     RawSpeed: 220
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 5
     Name: 'SPL '
     RawDegrees: 42
     Distance: 15
     RawSpeed: 0
     RawAltitude: 7000A
     Details: 
-  - ID: 0
+  - ID: 6
     Name: 'EH644 '
     RawDegrees: 339
     Distance: 12.1
     RawSpeed: 0
     RawAltitude: 3000A
     Details: 
-  - ID: 0
+  - ID: 7
     Name: 'INTC '
     RawDegrees: 139
     Distance: 3.7
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 8
     Name: 'EH621 '
     RawDegrees: 184
     Distance: 3.7
     RawSpeed: 0
     RawAltitude: 2000
     Details: 
-  - ID: 0
+  - ID: 9
     Name: 'EH622 '
     RawDegrees: 183
     Distance: 2.2
     RawSpeed: 0
     RawAltitude: 1310
     Details: 
-  - ID: 0
+  - ID: 10
     Name: 'RW18R '
     RawDegrees: 183
     Distance: 4.1

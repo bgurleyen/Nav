@@ -20,91 +20,91 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 20000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: NUGRA
-    RawDegrees: 318
-    Distance: 99
+    RawDegrees: 118
+    Distance: 9
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 2
     Name: TOBID
     RawDegrees: 151
     Distance: 57.5
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 3
     Name: SOPIT
     RawDegrees: 142
     Distance: 20.4
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 4
     Name: 'WCONB '
     RawDegrees: 142
     Distance: 8.3
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 5
     Name: BNN
     RawDegrees: 118
     Distance: 17.1
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 6
     Name: BNN05
     RawDegrees: 179
     Distance: 5
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 7
     Name: LAM30
     RawDegrees: 255
     Distance: 5.3
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 8
     Name: 'LAM34 '
     RawDegrees: 267
     Distance: 4
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 9
     Name: 'GWC39 '
     RawDegrees: 178
     Distance: 6.7
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 10
     Name: 'IAA10 '
     RawDegrees: 170
     Distance: 2.1
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 11
     Name: 'CF09L '
     RawDegrees: 92
     Distance: 2.5
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 12
     Name: 'FF09L '
     RawDegrees: 92
     Distance: 3.5
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 13
     Name: 'RW09L '
     RawDegrees: 92
     Distance: 4.1

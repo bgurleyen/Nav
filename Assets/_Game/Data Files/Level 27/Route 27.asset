@@ -20,49 +20,49 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 20000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: POPET
     RawDegrees: 78
-    Distance: 99
+    Distance: 9
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 2
     Name: SAPEN
     RawDegrees: 110
     Distance: 14.6
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 3
     Name: TSN
     RawDegrees: 114
     Distance: 29.8
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 4
     Name: DISC
     RawDegrees: 0
     Distance: 0
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 5
     Name: CI25L
     RawDegrees: 0
-    Distance: 0
+    Distance: 4
     RawSpeed: 0
     RawAltitude: 1750
     Details: 
-  - ID: 0
+  - ID: 6
     Name: SGNB
     RawDegrees: 249
     Distance: 4
     RawSpeed: 0
     RawAltitude: 1750
     Details: 
-  - ID: 0
+  - ID: 7
     Name: RW25L
     RawDegrees: 249
     Distance: 5.3
