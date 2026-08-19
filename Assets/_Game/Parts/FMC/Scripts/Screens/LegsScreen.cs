@@ -161,6 +161,7 @@ public class LegsScreen : ScreenBase {
 
     public override void Show() {
         base.Show();
+        _currentPage = 0;
         InvokeRepeating(nameof(DisplayCurrentPage), 0, 0.2f);
         ApplyNonTitleTextNudge();
     }
