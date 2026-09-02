@@ -2,6 +2,8 @@
 <projectSettings>
   <projectSetting name="com.google.external-dependency-managerAnalyticsCookie" value="c9acf1e565c54069aa8e595ba0076b68" />
   <projectSetting name="com.google.external-dependency-managerAnalyticsEnabled" value="True" />
+  <projectSetting name="com.google.firebaseAnalyticsCookie" value="21e3ea7899ae405f816b955c5ffd8c45" />
+  <projectSetting name="com.google.firebaseAnalyticsEnabled" value="True" />
   <projectSetting name="Google.IOSResolver.AutoPodToolInstallInEditor" value="True" />
   <projectSetting name="Google.IOSResolver.CocoapodsIntegrationMethod" value="2" />
   <projectSetting name="Google.IOSResolver.PodfileAddUseFrameworks" value="True" />

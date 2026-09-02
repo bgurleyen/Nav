@@ -222,148 +222,200 @@ function tooClose(pt, list, minDist) {
   return false;
 }
 
-function minDist2(pt, list) {
-  let best = Infinity;
-  for (const o of list) {
-    const dx = pt.x - o.x;
-    const dy = pt.y - o.y;
-    const dd = dx * dx + dy * dy;
-    if (dd < best) best = dd;
+/**
+ * View bbox where the route occupies ~2/3 of the frame (equal pad on each side).
+ * padFrac = (1/ROUTE_FRAME - 1) / 2  with ROUTE_FRAME = 2/3 → 0.25 each side.
+ */
+function routeFrameBounds(routePts, routeFrame = 2 / 3) {
+  let minX = Infinity,
+    maxX = -Infinity,
+    minY = Infinity,
+    maxY = -Infinity;
+  for (const p of routePts) {
+    minX = Math.min(minX, p.x);
+    maxX = Math.max(maxX, p.x);
+    minY = Math.min(minY, p.y);
+    maxY = Math.max(maxY, p.y);
   }
-  return best;
+  const spanX = Math.max(maxX - minX, 8);
+  const spanY = Math.max(maxY - minY, 8);
+  const padFrac = (1 / routeFrame - 1) / 2;
+  return {
+    minX: minX - spanX * padFrac,
+    maxX: maxX + spanX * padFrac,
+    minY: minY - spanY * padFrac,
+    maxY: maxY + spanY * padFrac,
+    routeMinX: minX,
+    routeMaxX: maxX,
+    routeMinY: minY,
+    routeMaxY: maxY,
+    spanX,
+    spanY,
+  };
 }
 
 /**
- * Place EVERY virtual point for descent-route drawing.
- * No VP is within 2 NM of another VP or a route waypoint.
+ * Place ALL virtual points as a balanced pool around the route:
+ * - view frame sized so route fills ~2/3
+ * - VPs fill the remaining page area homogeneously
+ * - no point (VP↔VP or VP↔route) closer than MIN_SEP_NM
  */
 function redistributeVirtualPointsHomogeneous(routePts, virtualPts) {
+  const MIN_SEP_NM = 2;
   const vps = (virtualPts || []).slice();
   if (!vps.length || !routePts.length) return [];
 
-  const MIN_SEP = 2; // NM
-  const L = Math.max(routeLength(routePts), 10);
-  const d = Math.max(6, Math.min(18, L * 0.1));
-  const d2 = d * 1.85;
+  const frame = routeFrameBounds(routePts, 2 / 3);
+  const { minX, maxX, minY, maxY } = frame;
+  const routeOcc = routePts.map((p) => ({ x: p.x, y: p.y }));
 
-  const occupied = routePts.map((p) => ({ x: p.x, y: p.y }));
-  const candidates = [];
-
-  const addCand = (x, y) => {
-    if (!Number.isFinite(x) || !Number.isFinite(y)) return;
-    const pt = { x, y };
-    if (tooClose(pt, occupied, MIN_SEP)) return;
-    if (tooClose(pt, candidates, MIN_SEP * 0.5)) return;
-    candidates.push(pt);
-  };
-
-  // Preferred route-drawing locations
-  for (let k = 1; k <= 12; k++) {
-    const t = k / 13;
-    const s = sampleRoute(routePts, t);
-    for (const off of [d, d2, d * 2.6, 8, 12, 16]) {
-      addCand(s.x + s.nx * off, s.y + s.ny * off);
-      addCand(s.x - s.nx * off, s.y - s.ny * off);
+  function distToRoute(pt) {
+    let best = Infinity;
+    for (let i = 1; i < routePts.length; i++) {
+      const a = routePts[i - 1];
+      const b = routePts[i];
+      const vx = b.x - a.x;
+      const vy = b.y - a.y;
+      const len2 = vx * vx + vy * vy || 1;
+      let t = ((pt.x - a.x) * vx + (pt.y - a.y) * vy) / len2;
+      t = Math.max(0, Math.min(1, t));
+      const px = a.x + t * vx;
+      const py = a.y + t * vy;
+      const dd = (pt.x - px) * (pt.x - px) + (pt.y - py) * (pt.y - py);
+      if (dd < best) best = dd;
     }
-  }
-
-  const fin = sampleRoute(routePts, 0.92);
-  const faf = sampleRoute(routePts, 0.78);
-  const rwy = routePts[routePts.length - 1];
-  const app = unitVec(rwy.x - faf.x, rwy.y - faf.y);
-  const appN = { x: -app.y, y: app.x };
-  for (const off of [d, d2, 10, 14]) {
-    addCand(faf.x + appN.x * off, faf.y + appN.y * off);
-    addCand(faf.x - appN.x * off, faf.y - appN.y * off);
-    addCand(fin.x + appN.x * off, fin.y + appN.y * off);
-    addCand(fin.x - appN.x * off, fin.y - appN.y * off);
-  }
-  const forty = 0.7071;
-  const midFin = sampleRoute(routePts, 0.85);
-  addCand(midFin.x + (app.x * forty + appN.x * forty) * d, midFin.y + (app.y * forty + appN.y * forty) * d);
-  addCand(midFin.x + (app.x * forty - appN.x * forty) * d, midFin.y + (app.y * forty - appN.y * forty) * d);
-
-  for (let i = 0; i < routePts.length - 2; i++) {
-    const a = routePts[i];
-    const b = routePts[i + 2];
-    const dir = unitVec(b.x - a.x, b.y - a.y);
-    const n = { x: -dir.y, y: dir.x };
-    const side = i % 2 === 0 ? 1 : -1;
-    addCand((a.x + b.x) / 2 + n.x * d * side, (a.y + b.y) / 2 + n.y * d * side);
-  }
-
-  for (let i = 1; i < routePts.length - 1; i++) {
-    const a = routePts[i - 1];
-    const b = routePts[i];
-    const c = routePts[i + 1];
-    const u1 = unitVec(b.x - a.x, b.y - a.y);
-    const u2 = unitVec(c.x - b.x, c.y - b.y);
-    const cross = u1.x * u2.y - u1.y * u2.x;
-    const dot = u1.x * u2.x + u1.y * u2.y;
-    if (dot > 0.86) continue;
-    const out = unitVec(u2.x - u1.x, u2.y - u1.y);
-    const sign = cross >= 0 ? 1 : -1;
-    addCand(b.x - out.x * d * sign, b.y - out.y * d * sign);
-  }
-
-  // Expanding rings around the route so every VP always gets a unique 2 NM slot
-  const cx = routePts.reduce((s, p) => s + p.x, 0) / routePts.length;
-  const cy = routePts.reduce((s, p) => s + p.y, 0) / routePts.length;
-  for (let ring = 1; ring <= 18 && candidates.length < vps.length * 8; ring++) {
-    const rad = 4 + ring * 2.2;
-    const count = 8 + ring * 3;
-    for (let i = 0; i < count; i++) {
-      const ang = (i / count) * Math.PI * 2 + ring * 0.17;
-      addCand(cx + Math.cos(ang) * rad, cy + Math.sin(ang) * rad);
+    for (const p of routePts) {
+      const dx = pt.x - p.x;
+      const dy = pt.y - p.y;
+      const dd = dx * dx + dy * dy;
+      if (dd < best) best = dd;
     }
+    return Math.sqrt(best);
   }
 
-  const placedPts = [];
-  for (let i = 0; i < vps.length; i++) {
-    const blocked = occupied.concat(placedPts);
+  function minDist2(pt, list) {
+    let best = Infinity;
+    for (const o of list) {
+      const dx = pt.x - o.x;
+      const dy = pt.y - o.y;
+      const dd = dx * dx + dy * dy;
+      if (dd < best) best = dd;
+    }
+    return best;
+  }
+
+  // Candidate lattice covering the full page frame (route = center 2/3)
+  function buildCandidates() {
+    const candidates = [];
+    const seen = new Set();
+    const add = (x, y) => {
+      if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+      if (x < minX || x > maxX || y < minY || y > maxY) return;
+      const key = `${x.toFixed(2)},${y.toFixed(2)}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      candidates.push({ x, y });
+    };
+
+    const width = maxX - minX;
+    const height = maxY - minY;
+    const nVp = vps.length;
+    // Slightly denser than sqrt(N) so farthest-point has room to choose
+    const targetCells = Math.max(nVp * 8, 80);
+    const aspect = width / height;
+    const cols = Math.max(4, Math.ceil(Math.sqrt(targetCells * aspect)));
+    const rows = Math.max(4, Math.ceil(targetCells / cols));
+    for (let r = 0; r <= rows; r++) {
+      for (let c = 0; c <= cols; c++) {
+        const jx = (((r * 17 + c * 13) % 7) / 7 - 0.5) * 0.15;
+        const jy = (((r * 11 + c * 19) % 7) / 7 - 0.5) * 0.15;
+        add(minX + ((c + 0.5 + jx) / (cols + 1)) * width, minY + ((r + 0.5 + jy) / (rows + 1)) * height);
+      }
+    }
+
+    // Extra ring samples around the route corridor (balanced sides)
+    const offsets = [MIN_SEP_NM * 1.05, MIN_SEP_NM * 1.8, MIN_SEP_NM * 2.8, MIN_SEP_NM * 4.0];
+    for (let ti = 0; ti <= 24; ti++) {
+      const s = sampleRoute(routePts, ti / 24);
+      for (const off of offsets) {
+        add(s.x + s.nx * off, s.y + s.ny * off);
+        add(s.x - s.nx * off, s.y - s.ny * off);
+      }
+    }
+    return candidates;
+  }
+
+  // Farthest-point style: fill empty regions → homogeneous pool with route
+  function scoreCandidate(cand, occupied) {
+    const d2 = minDist2(cand, occupied);
+    if (d2 < MIN_SEP_NM * MIN_SEP_NM) return -1;
+    const nearest = Math.sqrt(d2);
+    const routeD = distToRoute(cand);
+    if (routeD < MIN_SEP_NM) return -1;
+    // Prefer empty space (homogeneity) while staying on-page around the route
+    return nearest + routeD * 0.15;
+  }
+
+  const candidates = buildCandidates();
+  const occupied = routeOcc.slice();
+  const slots = [];
+  const remaining = candidates.slice();
+
+  while (slots.length < vps.length && remaining.length) {
     let bestIdx = -1;
     let bestScore = -1;
-    for (let ci = 0; ci < candidates.length; ci++) {
-      const cand = candidates[ci];
-      if (tooClose(cand, blocked, MIN_SEP)) continue;
-      const score = minDist2(cand, blocked);
-      if (score > bestScore) {
-        bestScore = score;
-        bestIdx = ci;
+    for (let i = 0; i < remaining.length; i++) {
+      const sc = scoreCandidate(remaining[i], occupied);
+      if (sc > bestScore) {
+        bestScore = sc;
+        bestIdx = i;
       }
     }
-    let chosen;
-    if (bestIdx >= 0) {
-      chosen = candidates[bestIdx];
-      candidates.splice(bestIdx, 1);
-    } else {
-      // Last resort: walk outward from centroid until 2 NM clear
-      let found = null;
-      for (let ring = 2; ring < 80 && !found; ring++) {
-        const rad = ring * MIN_SEP;
-        const steps = Math.max(12, ring * 6);
-        for (let s = 0; s < steps; s++) {
-          const ang = (s / steps) * Math.PI * 2;
-          const pt = { x: cx + Math.cos(ang) * rad, y: cy + Math.sin(ang) * rad };
-          if (!tooClose(pt, blocked, MIN_SEP)) {
-            found = pt;
-            break;
-          }
-        }
-      }
-      chosen = found || { x: cx + (i + 1) * MIN_SEP, y: cy };
-    }
-    placedPts.push(chosen);
+    if (bestIdx < 0 || bestScore < 0) break;
+    const chosen = remaining.splice(bestIdx, 1)[0];
+    if (tooClose(chosen, occupied, MIN_SEP_NM)) continue;
+    slots.push(chosen);
+    occupied.push(chosen);
   }
 
-  return vps.map((v, i) => ({
-    Number: v.Number,
-    x: placedPts[i].x,
-    y: placedPts[i].y,
-    rawX: v.rawX,
-    rawY: v.rawY,
-    redistributed: true,
-  }));
+  // Fallback: expand frame slightly and spiral until all VPs placed
+  if (slots.length < vps.length) {
+    let radius = Math.max(frame.spanX, frame.spanY) * 0.35 + MIN_SEP_NM;
+    const cx = (frame.routeMinX + frame.routeMaxX) / 2;
+    const cy = (frame.routeMinY + frame.routeMaxY) / 2;
+    let angle = 0;
+    let guard = 0;
+    while (slots.length < vps.length && guard++ < 8000) {
+      const pt = { x: cx + Math.cos(angle) * radius, y: cy + Math.sin(angle) * radius };
+      if (!tooClose(pt, occupied, MIN_SEP_NM)) {
+        slots.push(pt);
+        occupied.push(pt);
+      }
+      angle += 0.4;
+      if (angle > Math.PI * 2) {
+        angle -= Math.PI * 2;
+        radius += MIN_SEP_NM * 1.02;
+      }
+    }
+  }
+
+  const placed = [];
+  for (let i = 0; i < vps.length; i++) {
+    const s = slots[i];
+    if (!s) {
+      console.warn(`VP placement shortfall: only ${slots.length}/${vps.length}`);
+      break;
+    }
+    placed.push({
+      Number: vps[i].Number,
+      x: s.x,
+      y: s.y,
+      rawX: vps[i].rawX,
+      rawY: vps[i].rawY,
+      redistributed: true,
+    });
+  }
+  return placed;
 }
 
 function degreesOf(raw) {
@@ -587,7 +639,7 @@ function drawPlanView(page, fonts, level) {
   const w = 340;
   const h = PAGE.h - 56 - 40;
   drawRoundedRect(page, x0, y0, w, h, rgb(1, 1, 1), rgb(0.78, 0.82, 0.88));
-  page.drawText("ROUTE PLAN (NM) + VP vektor/DCT", {
+  page.drawText("ROUTE PLAN (NM) + ALL VP (>=2NM)", {
     x: x0 + 12,
     y: y0 + h - 18,
     size: 10,
@@ -613,18 +665,14 @@ function drawPlanView(page, fonts, level) {
   }
 
   const atcPoints = new Set(level.atc.map((a) => a.point));
-  const displayVps = redistributeVirtualPointsHomogeneous(pts, level.virtualPts || []);
+  const displayVps = level.displayVps || redistributeVirtualPointsHomogeneous(pts, level.virtualPts || []);
 
-  let minX = Infinity,
-    maxX = -Infinity,
-    minY = Infinity,
-    maxY = -Infinity;
-  for (const p of pts) {
-    minX = Math.min(minX, p.x);
-    maxX = Math.max(maxX, p.x);
-    minY = Math.min(minY, p.y);
-    maxY = Math.max(maxY, p.y);
-  }
+  // Frame sized so route fills ~2/3; VPs live in the remaining page margin
+  const frame = routeFrameBounds(pts, 2 / 3);
+  let minX = frame.minX;
+  let maxX = frame.maxX;
+  let minY = frame.minY;
+  let maxY = frame.maxY;
   for (const v of displayVps) {
     minX = Math.min(minX, v.x);
     maxX = Math.max(maxX, v.x);
@@ -633,7 +681,7 @@ function drawPlanView(page, fonts, level) {
   }
   const spanX = Math.max(maxX - minX, 1);
   const spanY = Math.max(maxY - minY, 1);
-  const scale = Math.min(plotW / spanX, plotH / spanY) * 0.9;
+  const scale = Math.min(plotW / spanX, plotH / spanY) * 0.92;
   const cx = (minX + maxX) / 2;
   const cy = (minY + maxY) / 2;
   const map = (p) => ({
@@ -709,7 +757,7 @@ function drawPlanView(page, fonts, level) {
     });
   }
 
-  page.drawText(`* start  * ATC  * end  * VP vektor/base/DCT (${displayVps.length})`, {
+  page.drawText(`* start  * ATC  * end  * ALL VP >=2NM apart (${displayVps.length})`, {
     x: x0 + 12,
     y: y0 + 8,
     size: 7,
@@ -795,6 +843,20 @@ async function main() {
     bold: await pdf.embedFont(StandardFonts.HelveticaBold),
   };
   for (const level of levels) {
+    level.displayVps = redistributeVirtualPointsHomogeneous(level.routePts, level.virtualPts || []);
+    let minVp = Infinity;
+    for (let i = 0; i < level.displayVps.length; i++) {
+      for (let j = i + 1; j < level.displayVps.length; j++) {
+        const dx = level.displayVps[i].x - level.displayVps[j].x;
+        const dy = level.displayVps[i].y - level.displayVps[j].y;
+        minVp = Math.min(minVp, Math.sqrt(dx * dx + dy * dy));
+      }
+      for (const p of level.routePts) {
+        const dx = level.displayVps[i].x - p.x;
+        const dy = level.displayVps[i].y - p.y;
+        minVp = Math.min(minVp, Math.sqrt(dx * dx + dy * dy));
+      }
+    }
     const page = pdf.addPage([PAGE.w, PAGE.h]);
     page.drawRectangle({ x: 0, y: 0, width: PAGE.w, height: PAGE.h, color: rgb(0.93, 0.94, 0.96) });
     drawHeader(page, fonts, level);
@@ -809,20 +871,8 @@ async function main() {
       font: fonts.regular,
       color: rgb(0.55, 0.58, 0.62),
     });
-    const vps = redistributeVirtualPointsHomogeneous(level.routePts, level.virtualPts || []);
-    let minPair = Infinity;
-    for (let i = 0; i < vps.length; i++) {
-      for (const p of level.routePts) {
-        const d = hypot(vps[i].x - p.x, vps[i].y - p.y);
-        if (d < minPair) minPair = d;
-      }
-      for (let j = i + 1; j < vps.length; j++) {
-        const d = hypot(vps[i].x - vps[j].x, vps[i].y - vps[j].y);
-        if (d < minPair) minPair = d;
-      }
-    }
     console.log(
-      `  Level ${level.index}: ${level.info.Destination} | VP ${vps.length}/${level.virtualPts.length} | minSep ${minPair.toFixed(2)} NM`
+      `  Level ${level.index}: ${level.info.Destination} | VP ${level.displayVps.length}/${level.virtualPts.length} | minSep ${minVp === Infinity ? "-" : minVp.toFixed(2)} NM`
     );
   }
   const bytes = await pdf.save();
@@ -831,7 +881,17 @@ async function main() {
   console.log(`Wrote ${OUT_PDF} (${bytes.length} bytes, ${levels.length} pages)`);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+module.exports = {
+  buildGuidIndex,
+  loadLevels,
+  redistributeVirtualPointsHomogeneous,
+  routeFrameBounds,
+  parseLevelData,
+};
+
+if (require.main === module) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
