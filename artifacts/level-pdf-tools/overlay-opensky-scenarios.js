@@ -15,6 +15,7 @@ const SLIDE_DUMP = path.join(ROOT, "artifacts", "ppt-slide-shapes.json");
 const CACHE = path.join(__dirname, "opensky-cache");
 const TURNS = path.join(__dirname, "opensky-turns.json");
 const OUT_PPTX = path.join(ROOT, "artifacts", "Level-Maps-1-39.pptx");
+const OUT_PDF = path.join(ROOT, "artifacts", "Level-Maps-1-39.pdf");
 const OUT_JSON = path.join(ROOT, "artifacts", "level-opensky-scenarios.json");
 const PREVIEW_DIR = path.join(ROOT, "artifacts", "scenario-previews");
 
@@ -695,7 +696,7 @@ async function main() {
 
   fs.mkdirSync(PREVIEW_DIR, { recursive: true });
   const dump = [];
-  const previewIdx = new Set([1, 2, 5, 7, 11, 21, 32]);
+  const svgFiles = [];
 
   for (let i = 0; i < levels.length; i++) {
     const level = levels[i];
@@ -739,9 +740,9 @@ async function main() {
     drawScenarios(slide, built, view.fitX, view.fitY);
     drawLegend(slide, level, built);
 
-    if (previewIdx.has(level.index)) {
-      writePreviewSvg(level, view, built, slideData.shapes || [], path.join(PREVIEW_DIR, `level-${level.index}.svg`));
-    }
+    const svgPath = path.join(PREVIEW_DIR, `level-${String(level.index).padStart(2, "0")}.svg`);
+    writePreviewSvg(level, view, built, slideData.shapes || [], svgPath);
+    svgFiles.push(svgPath);
     dump.push({
       level: level.index,
       icao,
@@ -763,6 +764,18 @@ async function main() {
   await pres.writeFile({ fileName: OUT_PPTX });
   console.log(`Wrote ${OUT_PPTX}`);
   console.log(`Wrote ${OUT_JSON}`);
+
+  const listFile = path.join(PREVIEW_DIR, "svg-pages.txt");
+  fs.writeFileSync(listFile, svgFiles.join("\n"));
+  const py = path.join(__dirname, "svg-pages-to-pdf.py");
+  const r = require("child_process").spawnSync("python3", [py, listFile, OUT_PDF], {
+    encoding: "utf8",
+    timeout: 0,
+  });
+  if (r.stdout) process.stdout.write(r.stdout);
+  if (r.stderr) process.stderr.write(r.stderr);
+  if (r.status !== 0) throw new Error(`PDF convert failed status=${r.status}`);
+  console.log(`Wrote ${OUT_PDF}`);
 }
 
 main().catch((err) => {
