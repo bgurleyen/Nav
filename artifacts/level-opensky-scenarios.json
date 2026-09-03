@@ -1,0 +1,1557 @@
+[
+  {
+    "level": 1,
+    "icao": "EDDV",
+    "runway": "27R",
+    "star": "ELNA2P",
+    "oskyCallsign": "SXS9FU",
+    "oskyInView": 18,
+    "trackCount": 2,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR ELNA2P",
+        "n": 14,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY SXS9FU",
+        "n": 18,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V59-V64",
+        "n": 5,
+        "via": [
+          59,
+          64
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V58-V69-V62",
+        "n": 6,
+        "via": [
+          58,
+          69,
+          62
+        ]
+      }
+    ]
+  },
+  {
+    "level": 2,
+    "icao": "EDDV",
+    "runway": "09L",
+    "star": "HLZ4R",
+    "oskyCallsign": "SXS9FU",
+    "oskyInView": 18,
+    "trackCount": 2,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR HLZ4R",
+        "n": 15,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY SXS9FU",
+        "n": 18,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V63",
+        "n": 4,
+        "via": [
+          63
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V64-V66",
+        "n": 5,
+        "via": [
+          64,
+          66
+        ]
+      }
+    ]
+  },
+  {
+    "level": 3,
+    "icao": "LFPG",
+    "runway": "08L",
+    "star": "DINA4E",
+    "oskyCallsign": "EFW62T",
+    "oskyInView": 4,
+    "trackCount": 5,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR DINA4E",
+        "n": 13,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY EFW62T",
+        "n": 4,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT shortcut",
+        "n": 3,
+        "via": []
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V51",
+        "n": 4,
+        "via": [
+          51
+        ]
+      }
+    ]
+  },
+  {
+    "level": 4,
+    "icao": "LFPG",
+    "runway": "26L",
+    "star": "SABLO4W",
+    "oskyCallsign": "TRA124X",
+    "oskyInView": 3,
+    "trackCount": 4,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR SABLO4W",
+        "n": 14,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY TRA124X",
+        "n": 3,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT shortcut",
+        "n": 3,
+        "via": []
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V51-V53",
+        "n": 5,
+        "via": [
+          51,
+          53
+        ]
+      }
+    ]
+  },
+  {
+    "level": 5,
+    "icao": "EHAM",
+    "runway": "06",
+    "star": "REDF1A",
+    "oskyCallsign": "WMT4942",
+    "oskyInView": 30,
+    "trackCount": 4,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR REDF1A",
+        "n": 11,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY WMT4942",
+        "n": 30,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V69-V64",
+        "n": 5,
+        "via": [
+          69,
+          64
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V51-V53",
+        "n": 5,
+        "via": [
+          51,
+          53
+        ]
+      }
+    ]
+  },
+  {
+    "level": 6,
+    "icao": "EHAM",
+    "runway": "18R",
+    "star": "PESE2A",
+    "oskyCallsign": "WMT4942",
+    "oskyInView": 14,
+    "trackCount": 6,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR PESE2A",
+        "n": 10,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY WMT4942",
+        "n": 14,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V51-V66",
+        "n": 5,
+        "via": [
+          51,
+          66
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V67-V60-V51",
+        "n": 6,
+        "via": [
+          67,
+          60,
+          51
+        ]
+      }
+    ]
+  },
+  {
+    "level": 7,
+    "icao": "EGLL",
+    "runway": "09L",
+    "star": "BNN1B",
+    "oskyCallsign": "EZY31UA",
+    "oskyInView": 13,
+    "trackCount": 4,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR BNN1B",
+        "n": 13,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY EZY31UA",
+        "n": 13,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT shortcut",
+        "n": 3,
+        "via": []
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V52-V51-V66",
+        "n": 6,
+        "via": [
+          52,
+          51,
+          66
+        ]
+      }
+    ]
+  },
+  {
+    "level": 8,
+    "icao": "EGLL",
+    "runway": "27L",
+    "star": "OCK1A",
+    "oskyCallsign": "EZY31UA",
+    "oskyInView": 10,
+    "trackCount": 4,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR OCK1A",
+        "n": 11,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY EZY31UA",
+        "n": 10,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V57-V60-V61",
+        "n": 6,
+        "via": [
+          57,
+          60,
+          61
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V51-V63-V59",
+        "n": 6,
+        "via": [
+          51,
+          63,
+          59
+        ]
+      }
+    ]
+  },
+  {
+    "level": 9,
+    "icao": "EKCH",
+    "runway": "04L",
+    "star": "ALM3M",
+    "oskyCallsign": "RYR30MV",
+    "oskyInView": 7,
+    "trackCount": 1,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR ALM3M",
+        "n": 8,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY RYR30MV",
+        "n": 7,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V57",
+        "n": 4,
+        "via": [
+          57
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V65-V51-V63",
+        "n": 6,
+        "via": [
+          65,
+          51,
+          63
+        ]
+      }
+    ]
+  },
+  {
+    "level": 10,
+    "icao": "EKCH",
+    "runway": "22L",
+    "star": "CDA3N",
+    "oskyCallsign": "RYR30MV",
+    "oskyInView": 8,
+    "trackCount": 1,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR CDA3N",
+        "n": 10,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY RYR30MV",
+        "n": 8,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V68",
+        "n": 4,
+        "via": [
+          68
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V51-V70",
+        "n": 5,
+        "via": [
+          51,
+          70
+        ]
+      }
+    ]
+  },
+  {
+    "level": 11,
+    "icao": "LIRF",
+    "runway": "16C",
+    "star": "LAT3A",
+    "oskyCallsign": "RYR2CV",
+    "oskyInView": 13,
+    "trackCount": 1,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR LAT3A",
+        "n": 7,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY RYR2CV",
+        "n": 13,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V59-V66",
+        "n": 5,
+        "via": [
+          59,
+          66
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V51-V60-V52",
+        "n": 6,
+        "via": [
+          51,
+          60,
+          52
+        ]
+      }
+    ]
+  },
+  {
+    "level": 12,
+    "icao": "LIRF",
+    "runway": "25",
+    "star": "ELKA3A",
+    "oskyCallsign": "RYR2CV",
+    "oskyInView": 9,
+    "trackCount": 3,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR ELKA3A",
+        "n": 9,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY RYR2CV",
+        "n": 9,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V70-V67",
+        "n": 5,
+        "via": [
+          70,
+          67
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V51",
+        "n": 4,
+        "via": [
+          51
+        ]
+      }
+    ]
+  },
+  {
+    "level": 13,
+    "icao": "LSZH",
+    "runway": "14",
+    "star": "NEGR1A",
+    "oskyCallsign": "SVA932",
+    "oskyInView": 6,
+    "trackCount": 4,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR NEGR1A",
+        "n": 10,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY SVA932",
+        "n": 6,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V68-V60",
+        "n": 5,
+        "via": [
+          68,
+          60
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V58-V53-V62",
+        "n": 6,
+        "via": [
+          58,
+          53,
+          62
+        ]
+      }
+    ]
+  },
+  {
+    "level": 14,
+    "icao": "LSZH",
+    "runway": "34",
+    "star": "BLM2G",
+    "oskyCallsign": "ELY326",
+    "oskyInView": 12,
+    "trackCount": 3,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR BLM2G",
+        "n": 8,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY ELY326",
+        "n": 12,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V63-V65",
+        "n": 5,
+        "via": [
+          63,
+          65
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V51-V64-V62",
+        "n": 6,
+        "via": [
+          51,
+          64,
+          62
+        ]
+      }
+    ]
+  },
+  {
+    "level": 15,
+    "icao": "LEBL",
+    "runway": "02",
+    "star": "VERDB",
+    "oskyCallsign": "RYR916W",
+    "oskyInView": 29,
+    "trackCount": 4,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR VERDB",
+        "n": 8,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY RYR916W",
+        "n": 29,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V51-V52",
+        "n": 5,
+        "via": [
+          51,
+          52
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V57-V65-V51",
+        "n": 6,
+        "via": [
+          57,
+          65,
+          51
+        ]
+      }
+    ]
+  },
+  {
+    "level": 16,
+    "icao": "LEBL",
+    "runway": "25R",
+    "star": "BIS2DD",
+    "oskyCallsign": "RYR916W",
+    "oskyInView": 36,
+    "trackCount": 4,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR BIS2DD",
+        "n": 11,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY RYR916W",
+        "n": 36,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V63-V69-V56",
+        "n": 6,
+        "via": [
+          63,
+          69,
+          56
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V57-V51-V68",
+        "n": 6,
+        "via": [
+          57,
+          51,
+          68
+        ]
+      }
+    ]
+  },
+  {
+    "level": 17,
+    "icao": "EBBR",
+    "runway": "02",
+    "star": "ARVO2A",
+    "oskyCallsign": "DHK453",
+    "oskyInView": 18,
+    "trackCount": 3,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR ARVO2A",
+        "n": 11,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY DHK453",
+        "n": 18,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V66-V68-V60",
+        "n": 6,
+        "via": [
+          66,
+          68,
+          60
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V69-V52-V51",
+        "n": 6,
+        "via": [
+          69,
+          52,
+          51
+        ]
+      }
+    ]
+  },
+  {
+    "level": 18,
+    "icao": "EBBR",
+    "runway": "25R",
+    "star": "TULN3B",
+    "oskyCallsign": "DHK453",
+    "oskyInView": 20,
+    "trackCount": 5,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR TULN3B",
+        "n": 9,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY DHK453",
+        "n": 20,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V67-V65",
+        "n": 5,
+        "via": [
+          67,
+          65
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V69-V51",
+        "n": 5,
+        "via": [
+          69,
+          51
+        ]
+      }
+    ]
+  },
+  {
+    "level": 19,
+    "icao": "LOWW",
+    "runway": "11",
+    "star": "GIGOW1W",
+    "oskyCallsign": "VIR346",
+    "oskyInView": 17,
+    "trackCount": 4,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR GIGOW1W",
+        "n": 14,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY VIR346",
+        "n": 17,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V64-V70",
+        "n": 5,
+        "via": [
+          64,
+          70
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V67-V69-V66",
+        "n": 6,
+        "via": [
+          67,
+          69,
+          66
+        ]
+      }
+    ]
+  },
+  {
+    "level": 20,
+    "icao": "LOWW",
+    "runway": "34",
+    "star": "LANU5W",
+    "oskyCallsign": "VIR346",
+    "oskyInView": 30,
+    "trackCount": 4,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR LANU5W",
+        "n": 10,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY VIR346",
+        "n": 30,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V53-V54-V61",
+        "n": 6,
+        "via": [
+          53,
+          54,
+          61
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V51-V52",
+        "n": 5,
+        "via": [
+          51,
+          52
+        ]
+      }
+    ]
+  },
+  {
+    "level": 21,
+    "icao": "LTFJ",
+    "runway": "06",
+    "star": "GELG1G",
+    "oskyCallsign": "THY5FM",
+    "oskyInView": 32,
+    "trackCount": 5,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR GELG1G",
+        "n": 17,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY THY5FM",
+        "n": 32,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V64-V52",
+        "n": 5,
+        "via": [
+          64,
+          52
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V51",
+        "n": 4,
+        "via": [
+          51
+        ]
+      }
+    ]
+  },
+  {
+    "level": 22,
+    "icao": "LTFJ",
+    "runway": "24",
+    "star": "TETS1H",
+    "oskyCallsign": "THY5FM",
+    "oskyInView": 32,
+    "trackCount": 7,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR TETS1H",
+        "n": 14,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY THY5FM",
+        "n": 32,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V53-V51",
+        "n": 5,
+        "via": [
+          53,
+          51
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V55-V51",
+        "n": 5,
+        "via": [
+          55,
+          51
+        ]
+      }
+    ]
+  },
+  {
+    "level": 23,
+    "icao": "VTBS",
+    "runway": "01L",
+    "star": "CABI1B",
+    "oskyCallsign": "THA920",
+    "oskyInView": 19,
+    "trackCount": 2,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR CABI1B",
+        "n": 9,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY THA920",
+        "n": 19,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V69-V51-V70",
+        "n": 6,
+        "via": [
+          69,
+          51,
+          70
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V66-V58-V63",
+        "n": 6,
+        "via": [
+          66,
+          58,
+          63
+        ]
+      }
+    ]
+  },
+  {
+    "level": 24,
+    "icao": "VTBS",
+    "runway": "19L",
+    "star": "SILV1B",
+    "oskyCallsign": "THA920",
+    "oskyInView": 28,
+    "trackCount": 2,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR SILV1B",
+        "n": 8,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY THA920",
+        "n": 28,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V55-V51-V66",
+        "n": 6,
+        "via": [
+          55,
+          51,
+          66
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V63-V70-V51",
+        "n": 6,
+        "via": [
+          63,
+          70,
+          51
+        ]
+      }
+    ]
+  },
+  {
+    "level": 25,
+    "icao": "WADD",
+    "runway": "27",
+    "star": "GAGA1B",
+    "oskyCallsign": null,
+    "oskyInView": 0,
+    "trackCount": 0,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR GAGA1B",
+        "n": 6,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V51",
+        "n": 4,
+        "via": [
+          51
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V51",
+        "n": 4,
+        "via": [
+          51
+        ]
+      }
+    ]
+  },
+  {
+    "level": 26,
+    "icao": "WIII",
+    "runway": "07R",
+    "star": "CARLI2",
+    "oskyCallsign": "CTV936",
+    "oskyInView": 9,
+    "trackCount": 3,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR CARLI2",
+        "n": 9,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY CTV936",
+        "n": 9,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V63",
+        "n": 4,
+        "via": [
+          63
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V67-V51",
+        "n": 5,
+        "via": [
+          67,
+          51
+        ]
+      }
+    ]
+  },
+  {
+    "level": 27,
+    "icao": "VVTS",
+    "runway": "25L",
+    "star": "T10",
+    "oskyCallsign": null,
+    "oskyInView": 0,
+    "trackCount": 0,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR T10",
+        "n": 7,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V57-V60",
+        "n": 5,
+        "via": [
+          57,
+          60
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V51-V65-V68",
+        "n": 6,
+        "via": [
+          51,
+          65,
+          68
+        ]
+      }
+    ]
+  },
+  {
+    "level": 28,
+    "icao": "FACT",
+    "runway": "01",
+    "star": "WY4C",
+    "oskyCallsign": null,
+    "oskyInView": 0,
+    "trackCount": 0,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR WY4C",
+        "n": 7,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V60-V68",
+        "n": 5,
+        "via": [
+          60,
+          68
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V51-V57-V55",
+        "n": 6,
+        "via": [
+          51,
+          57,
+          55
+        ]
+      }
+    ]
+  },
+  {
+    "level": 29,
+    "icao": "HKJK",
+    "runway": "6",
+    "star": "AVIT1P",
+    "oskyCallsign": "ABD3163",
+    "oskyInView": 32,
+    "trackCount": 2,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR AVIT1P",
+        "n": 6,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY ABD3163",
+        "n": 32,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT shortcut",
+        "n": 3,
+        "via": []
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V51",
+        "n": 4,
+        "via": [
+          51
+        ]
+      }
+    ]
+  },
+  {
+    "level": 30,
+    "icao": "GMMX",
+    "runway": "10",
+    "star": "BGA7A",
+    "oskyCallsign": null,
+    "oskyInView": 0,
+    "trackCount": 0,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR BGA7A",
+        "n": 10,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V68-V62",
+        "n": 5,
+        "via": [
+          68,
+          62
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V55-V59-V61",
+        "n": 6,
+        "via": [
+          55,
+          59,
+          61
+        ]
+      }
+    ]
+  },
+  {
+    "level": 31,
+    "icao": "DTTA",
+    "runway": "29",
+    "star": "NOLSI",
+    "oskyCallsign": null,
+    "oskyInView": 0,
+    "trackCount": 0,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR NOLSI",
+        "n": 8,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT shortcut",
+        "n": 3,
+        "via": []
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V51",
+        "n": 4,
+        "via": [
+          51
+        ]
+      }
+    ]
+  },
+  {
+    "level": 32,
+    "icao": "RJTT",
+    "runway": "22",
+    "star": "NYLON2",
+    "oskyCallsign": "ANA452D",
+    "oskyInView": 36,
+    "trackCount": 4,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR NYLON2",
+        "n": 8,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY ANA452D",
+        "n": 36,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V65-V69-V70",
+        "n": 6,
+        "via": [
+          65,
+          69,
+          70
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V51-V67-V62",
+        "n": 6,
+        "via": [
+          51,
+          67,
+          62
+        ]
+      }
+    ]
+  },
+  {
+    "level": 33,
+    "icao": "RJTT",
+    "runway": "34L",
+    "star": "CREAM",
+    "oskyCallsign": "ANA452D",
+    "oskyInView": 35,
+    "trackCount": 4,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR CREAM",
+        "n": 9,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY ANA452D",
+        "n": 35,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V70-V57",
+        "n": 5,
+        "via": [
+          70,
+          57
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V51-V60",
+        "n": 5,
+        "via": [
+          51,
+          60
+        ]
+      }
+    ]
+  },
+  {
+    "level": 34,
+    "icao": "VIDP",
+    "runway": "11",
+    "star": "AKBA2B",
+    "oskyCallsign": "BDA684",
+    "oskyInView": 19,
+    "trackCount": 3,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR AKBA2B",
+        "n": 9,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY BDA684",
+        "n": 19,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V65-V68-V56",
+        "n": 6,
+        "via": [
+          65,
+          68,
+          56
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V51-V59-V66",
+        "n": 6,
+        "via": [
+          51,
+          59,
+          66
+        ]
+      }
+    ]
+  },
+  {
+    "level": 35,
+    "icao": "VIDP",
+    "runway": "28",
+    "star": "BASO1A",
+    "oskyCallsign": "BDA684",
+    "oskyInView": 25,
+    "trackCount": 4,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR BASO1A",
+        "n": 11,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY BDA684",
+        "n": 25,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V56-V63",
+        "n": 5,
+        "via": [
+          56,
+          63
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V51-V58-V52",
+        "n": 6,
+        "via": [
+          51,
+          58,
+          52
+        ]
+      }
+    ]
+  },
+  {
+    "level": 36,
+    "icao": "RPLL",
+    "runway": "06",
+    "star": "CAB1",
+    "oskyCallsign": "GAP2922",
+    "oskyInView": 36,
+    "trackCount": 3,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR CAB1",
+        "n": 8,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY GAP2922",
+        "n": 36,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V59",
+        "n": 4,
+        "via": [
+          59
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V57-V51",
+        "n": 5,
+        "via": [
+          57,
+          51
+        ]
+      }
+    ]
+  },
+  {
+    "level": 37,
+    "icao": "RPLL",
+    "runway": "24",
+    "star": "IPA1",
+    "oskyCallsign": "GAP2922",
+    "oskyInView": 36,
+    "trackCount": 4,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR IPA1",
+        "n": 8,
+        "via": []
+      },
+      {
+        "id": "OSKY",
+        "title": "OSKY GAP2922",
+        "n": 36,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V60-V62-V56",
+        "n": 6,
+        "via": [
+          60,
+          62,
+          56
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V69-V54-V51",
+        "n": 6,
+        "via": [
+          69,
+          54,
+          51
+        ]
+      }
+    ]
+  },
+  {
+    "level": 38,
+    "icao": "UUWW",
+    "runway": "19",
+    "star": "DR19A",
+    "oskyCallsign": null,
+    "oskyInView": 0,
+    "trackCount": 1,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR DR19A",
+        "n": 8,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT V66-V56",
+        "n": 5,
+        "via": [
+          66,
+          56
+        ]
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V54",
+        "n": 4,
+        "via": [
+          54
+        ]
+      }
+    ]
+  },
+  {
+    "level": 39,
+    "icao": "UUWW",
+    "runway": "24",
+    "star": "GIS24R",
+    "oskyCallsign": null,
+    "oskyInView": 0,
+    "trackCount": 1,
+    "scenarios": [
+      {
+        "id": "STAR",
+        "title": "STAR GIS24R",
+        "n": 19,
+        "via": []
+      },
+      {
+        "id": "DCT",
+        "title": "DCT shortcut",
+        "n": 3,
+        "via": []
+      },
+      {
+        "id": "HDG",
+        "title": "HDG V66",
+        "n": 4,
+        "via": [
+          66
+        ]
+      }
+    ]
+  }
+]
