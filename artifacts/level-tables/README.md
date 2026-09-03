@@ -1,6 +1,6 @@
 # Level tables 1–39
 
-Plain-text related tables (Route, ATC, Virtual Points, Other AC). One file per level.
+Plain-text tables per level: 1 Route+restrictions, 2 ATC, 3 other traffic. Waypoints are numbers only.
 
 | Level | Destination | Runway | STAR | Transition | Course | ILS Freq | CrzAlt | CrzSpeed | RoutePts | ATC | VirtualPts | OtherAC | OtherAC legs | File |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -11,7 +11,7 @@ Plain-text related tables (Route, ATC, Virtual Points, Other AC). One file per l
 | 5 | EHAM | 06 | REDF1A | SUGOL | 59 | 110.55 | 36000 | 273 | 12 | 6 | 20 | 7 | 68 | [L05-EHAM.md](./L05-EHAM.md) |
 | 6 | EHAM | 18R | PESE2A | RIVER | 184 | 110.1 | 36000 | 273 | 11 | 8 | 20 | 7 | 59 | [L06-EHAM.md](./L06-EHAM.md) |
 | 7 | EGLL | 09L | BNN1B | BNN | 91 | 110.3 | 36000 | 273 | 14 | 10 | 20 | 7 | 79 | [L07-EGLL.md](./L07-EGLL.md) |
-| 8 | EGLL | 27L | OCK1A | Runway: 27L | 271 | 109.5 | 36000 | 273 | 12 | 10 | 20 | 5 | 52 | [L08-EGLL.md](./L08-EGLL.md) |
+| 8 | EGLL | 27L | OCK1A |  | 271 | 109.5 | 36000 | 273 | 12 | 10 | 20 | 5 | 52 | [L08-EGLL.md](./L08-EGLL.md) |
 | 9 | EKCH | 04L | ALM3M | KAS | 38 | 110.5 | 36000 | 273 | 9 | 6 | 20 | 6 | 43 | [L09-EKCH.md](./L09-EKCH.md) |
 | 10 | EKCH | 22L | CDA3N | KAS | 218 | 109.5 | 36000 | 273 | 11 | 6 | 20 | 6 | 56 | [L10-EKCH.md](./L10-EKCH.md) |
 | 11 | LIRF | 16C | LAT3A | ROM | 161 | 108.5 | 36000 | 273 | 8 | 5 | 20 | 6 | 43 | [L11-LIRF.md](./L11-LIRF.md) |
@@ -30,15 +30,15 @@ Plain-text related tables (Route, ATC, Virtual Points, Other AC). One file per l
 | 24 | VTBS | 19L | SILV1B | LYNDA | 195 | 110.5 | 36000 | 273 | 9 | 8 | 20 | 6 | 46 | [L24-VTBS.md](./L24-VTBS.md) |
 | 25 | WADD | 27 | GAGA1B | BENOA | 266 | 110.3 | 36000 | 273 | 7 | 5 | 20 | 5 | 35 | [L25-WADD.md](./L25-WADD.md) |
 | 26 | WIII | 07R | CARLI2 | NOKTA | 68 | 110.5 | 36000 | 273 | 10 | 5 | 20 | 4 | 32 | [L26-WIII.md](./L26-WIII.md) |
-| 27 | VVTS | 25L | T10 | Runway: 25L | 249 | 108.3 | 36000 | 273 | 8 | 5 | 20 | 7 | 50 | [L27-VVTS.md](./L27-VVTS.md) |
-| 28 | FACT | 01 | WY4C | Runway: 01 | 9 | 110.3 | 36000 | 273 | 8 | 5 | 20 | 5 | 34 | [L28-FACT.md](./L28-FACT.md) |
+| 27 | VVTS | 25L | T10 |  | 249 | 108.3 | 36000 | 273 | 8 | 5 | 20 | 7 | 50 | [L27-VVTS.md](./L27-VVTS.md) |
+| 28 | FACT | 01 | WY4C |  | 9 | 110.3 | 36000 | 273 | 8 | 5 | 20 | 5 | 34 | [L28-FACT.md](./L28-FACT.md) |
 | 29 | HKJK | 6 | AVIT1P | TV | 55 | 110.3 | 36000 | 273 | 7 | 6 | 20 | 5 | 33 | [L29-HKJK.md](./L29-HKJK.md) |
-| 30 | GMMX | 10 | BGA7A | Runway: 10 | 99 | 109.7 | 36000 | 273 | 11 | 8 | 20 | 6 | 43 | [L30-GMMX.md](./L30-GMMX.md) |
+| 30 | GMMX | 10 | BGA7A |  | 99 | 109.7 | 36000 | 273 | 11 | 8 | 20 | 6 | 43 | [L30-GMMX.md](./L30-GMMX.md) |
 | 31 | DTTA | 29 | NOLSI | MARSA | 291 | 108.5 | 36000 | 273 | 9 | 10 | 20 | 7 | 47 | [L31-DTTA.md](./L31-DTTA.md) |
 | 32 | RJTT | 22 | NYLON2 | NYLON | 252 | 108.1 | 20000 | 273 | 9 | 5 | 20 | 7 | 41 | [L32-RJTT.md](./L32-RJTT.md) |
-| 33 | RJTT | 34L | CREAM | Runway: 34L | 337 | 111.7 | 36000 | 273 | 10 | 6 | 20 | 6 | 41 | [L33-RJTT.md](./L33-RJTT.md) |
+| 33 | RJTT | 34L | CREAM |  | 337 | 111.7 | 36000 | 273 | 10 | 6 | 20 | 6 | 41 | [L33-RJTT.md](./L33-RJTT.md) |
 | 34 | VIDP | 11 | AKBA2B | CHI | 103 | 111.3 | 36000 | 273 | 10 | 8 | 20 | 6 | 51 | [L34-VIDP.md](./L34-VIDP.md) |
-| 35 | VIDP | 28 | BASO1A | Runway: 28 | 284 | 110.3 | 36000 | 273 | 12 | 4 | 20 | 6 | 41 | [L35-VIDP.md](./L35-VIDP.md) |
+| 35 | VIDP | 28 | BASO1A |  | 284 | 110.3 | 36000 | 273 | 12 | 4 | 20 | 6 | 41 | [L35-VIDP.md](./L35-VIDP.md) |
 | 36 | RPLL | 06 | CAB1 | MIA | 61 | 109.1 | 36000 | 273 | 9 | 6 | 20 | 7 | 52 | [L36-RPLL.md](./L36-RPLL.md) |
 | 37 | RPLL | 24 | IPA1 | MIA | 241 | 109.9 | 36000 | 273 | 9 | 5 | 20 | 6 | 44 | [L37-RPLL.md](./L37-RPLL.md) |
 | 38 | UUWW | 19 | DR19A | KS | 194 | 111.5 | 36000 | 273 | 9 | 8 | 20 | 8 | 60 | [L38-UUWW.md](./L38-UUWW.md) |

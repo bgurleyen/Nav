@@ -1,7 +1,7 @@
 /**
- * Builds an Excel workbook of related level tables (levels 1–39).
- * One sheet per level: Level Info, Point Catalog, Route, ATC, Virtual Points, Other AC.
- * Point numbers are the shared key: < 50 = route index, >= 50 = virtual point.
+ * Builds related level tables (levels 1–39), one sheet per level:
+ * 1) Route + restrictions  2) ATC instructions  3) Other traffic routes.
+ * Waypoints are numbers only (no names; virtuals are 51+ with no V prefix).
  */
 const fs = require("fs");
 const path = require("path");
@@ -14,7 +14,6 @@ const OUT_HTML = path.join(ROOT, "artifacts", "Level-Tables-1-39.html");
 const OUT_MD_DIR = path.join(ROOT, "artifacts", "level-tables");
 
 const MODE_NAMES = { 0: "NO CHANGE", 1: "DCT", 2: "HDG", 3: "CLR ILS" };
-const NX_NAMES = { 0: "exact", 1: "min / or greater", 2: "max / or less", 3: "CLEAR ILS" };
 
 function walkFiles(dir, acc = []) {
   if (!fs.existsSync(dir)) return acc;
@@ -47,7 +46,7 @@ function extractGuids(block) {
 }
 
 function yamlStr(text, key) {
-  const m = text.match(new RegExp(`${key}:\\s*(.*)`));
+  const m = text.match(new RegExp(`${key}:([^\\n]*)`));
   return m ? m[1].trim() : "";
 }
 
@@ -102,7 +101,7 @@ function parseRoute(filePath) {
   const items = block[1].split(/(?:^|\r?\n)\s*-\s*ID:/).filter((s) => s.trim());
   for (const item of items) {
     const get = (k) => {
-      const m = item.match(new RegExp(`${k}:\\s*(.*)`));
+      const m = item.match(new RegExp(`${k}:([^\\n]*)`));
       return m ? m[1].trim() : "";
     };
     const idMatch = item.match(/^\s*(\d+)/);
@@ -209,28 +208,6 @@ function computeVirtualWorldPositions(routePts, virtualItems) {
     });
   }
   return list;
-}
-
-function round(n, d = 3) {
-  if (!Number.isFinite(n)) return "";
-  const f = 10 ** d;
-  return Math.round(n * f) / f;
-}
-
-function nxLabel(nx, kind) {
-  if (kind === "speed" && nx > 2) return `next dist ${nx} NM`;
-  return NX_NAMES[nx] || String(nx);
-}
-
-function pointLookup(pt, routePts, virtualPts) {
-  if (pt < 50) {
-    const p = routePts[pt] || routePts.find((x) => x.ID === pt);
-    if (!p) return { type: "Route", name: `#${pt}`, x: "", y: "", missing: true };
-    return { type: "Route", name: p.Name || `#${pt}`, x: p.x, y: p.y, missing: false, id: p.ID };
-  }
-  const vp = virtualPts.find((v) => v.Number === pt) || virtualPts[pt - 51];
-  if (!vp) return { type: "Virtual", name: `V${pt}`, x: "", y: "", missing: true };
-  return { type: "Virtual", name: `V${pt}`, x: vp.x, y: vp.y, missing: false };
 }
 
 function loadLevels(guidIndex) {
@@ -351,42 +328,21 @@ const INDEX_HEADERS = [
 function levelTableBlocks(level) {
   return [
     {
-      title: "POINT CATALOG  (shared key: Point → Route index or Virtual Number)",
-      color: "#2E75B6",
-      headers: ["Point", "Type", "Name", "X_NM", "Y_NM", "InATC", "InOtherAC", "ATC", "OtherAC"],
-      rows: buildPointCatalog(level),
-    },
-    {
-      title: "ROUTE",
+      title: "1. ROUTE + RESTRICTIONS",
       color: "#1F4E79",
-      headers: [
-        "Idx", "ID", "Name", "Heading", "RawDegrees", "Dist_NM", "CumDist_NM",
-        "Speed", "Altitude", "Details", "X_NM", "Y_NM", "ATC_Seq", "ATC_Mode", "OtherAC",
-      ],
+      headers: ["Wpt", "Degrees", "Dist", "Speed", "Altitude", "AltRest", "Details"],
       rows: buildRouteRows(level),
     },
     {
-      title: "ATC INSTRUCTIONS",
+      title: "2. ATC INSTRUCTIONS",
       color: "#C65911",
-      headers: [
-        "Seq", "Point", "PointType", "PointName", "Mode", "ModeName", "Altitude", "VS",
-        "VS_nx", "VS_nxName", "Speed", "Speed_nx", "Speed_nxName", "X_NM", "Y_NM", "Missing",
-      ],
+      headers: ["Wpt", "Mode", "Altitude", "VS", "VS_nx", "Speed", "Speed_nx"],
       rows: buildAtcRows(level),
     },
     {
-      title: "VIRTUAL POINTS",
-      color: "#7030A0",
-      headers: ["Number", "Name", "RawX", "RawY", "WorldX_NM", "WorldY_NM", "InATC", "OtherAC"],
-      rows: buildVpRows(level),
-    },
-    {
-      title: "OTHER AC ROUTES",
+      title: "3. OTHER TRAFFIC ROUTES",
       color: "#548235",
-      headers: [
-        "AC", "AC_Name", "Seq", "Point", "PointType", "PointName", "Altitude", "Speed",
-        "X_NM", "Y_NM", "LegDist_NM", "LegHdg", "Missing",
-      ],
+      headers: ["AC", "Seq", "Wpt", "Altitude", "Speed"],
       rows: buildOtherAcRows(level),
     },
   ];
@@ -426,7 +382,7 @@ function writeMarkdown(levels) {
   const indexMd = [
     "# Level tables 1–39",
     "",
-    "Plain-text related tables (Route, ATC, Virtual Points, Other AC). One file per level.",
+    "Plain-text tables per level: 1 Route+restrictions, 2 ATC, 3 other traffic. Waypoints are numbers only.",
     "",
     toMarkdownTable(
       INDEX_HEADERS.slice(0, 14).concat(["File"]),
@@ -508,7 +464,7 @@ tbody tr:nth-child(even) { background: #f4f7fb; }
 <main>
 <section id="index">
 <h1>Level tables 1–39</h1>
-<p class="meta">Related tables: Route, ATC Instructions, Virtual Points, Other AC. Point &lt; 50 = route index, Point ≥ 50 = virtual point.</p>
+<p class="meta">Three tables per level: Route+restrictions, ATC instructions, other traffic routes. Waypoints are numbers only (51+ = virtual, no V prefix).</p>
 ${indexTable}
 </section>
 ${sections}
@@ -563,171 +519,66 @@ function addTable(ws, name, startRow, headers, rows, theme) {
   return endRow + 2;
 }
 
-function uniqueUsed(list) {
-  return [...new Set(list)].filter((x) => x !== undefined && x !== "").join(", ");
+function blankZero(n) {
+  return n ? n : "";
 }
 
-function buildPointCatalog(level) {
-  const atcByPoint = new Map();
-  level.atc.forEach((a, i) => {
-    const arr = atcByPoint.get(a.point) || [];
-    arr.push({ seq: i + 1, mode: MODE_NAMES[a.mode] || a.mode });
-    atcByPoint.set(a.point, arr);
-  });
-  const acByPoint = new Map();
-  level.otherACs.forEach((ac) => {
-    ac.items.forEach((item, seq) => {
-      const arr = acByPoint.get(item.Point) || [];
-      arr.push(`AC${ac.index}#${seq + 1}`);
-      acByPoint.set(item.Point, arr);
-    });
-  });
-
-  const rows = [];
-  for (const p of level.routePts) {
-    const atc = atcByPoint.get(p.ID) || atcByPoint.get(p.index) || [];
-    rows.push([
-      p.index,
-      "Route",
-      p.Name,
-      round(p.x),
-      round(p.y),
-      atc.length ? "Y" : "",
-      acByPoint.has(p.index) || acByPoint.has(p.ID) ? "Y" : "",
-      uniqueUsed(atc.map((x) => `${x.seq}:${x.mode}`)),
-      uniqueUsed(acByPoint.get(p.index) || acByPoint.get(p.ID) || []),
-    ]);
+function altRestFlag(raw) {
+  const s = String(raw || "").trim();
+  if (!s) return "";
+  const re = /(\d+)([A-Za-z]?)/g;
+  let above = false;
+  let below = false;
+  let exact = false;
+  let m;
+  while ((m = re.exec(s))) {
+    const ind = (m[2] || "").toUpperCase();
+    if (ind === "A") above = true;
+    else if (ind === "B") below = true;
+    else exact = true;
   }
-  for (const v of level.virtualPts) {
-    const atc = atcByPoint.get(v.Number) || [];
-    rows.push([
-      v.Number,
-      "Virtual",
-      `V${v.Number}`,
-      round(v.x),
-      round(v.y),
-      atc.length ? "Y" : "",
-      acByPoint.has(v.Number) ? "Y" : "",
-      uniqueUsed(atc.map((x) => `${x.seq}:${x.mode}`)),
-      uniqueUsed(acByPoint.get(v.Number) || []),
-    ]);
-  }
-  return rows;
+  if (above && below) return "A/B";
+  if (above) return "A";
+  if (below) return "B";
+  if (exact) return "AT";
+  return "";
 }
 
 function buildRouteRows(level) {
-  return level.routePts.map((p) => {
-    const atcHits = level.atc
-      .map((a, i) => ({ a, i }))
-      .filter(({ a }) => a.point === p.ID || a.point === p.index);
-    const acHits = [];
-    level.otherACs.forEach((ac) => {
-      ac.items.forEach((item, seq) => {
-        if (item.Point === p.index || item.Point === p.ID) acHits.push(`AC${ac.index}#${seq + 1}`);
-      });
-    });
-    return [
-      p.index,
-      p.ID,
-      p.Name,
-      round(degreesOf(p.RawDegrees), 1),
-      p.RawDegrees,
-      p.Distance,
-      round(p.cumDist, 2),
-      p.RawSpeed || "",
-      p.RawAltitude || "",
-      p.Details || "",
-      round(p.x),
-      round(p.y),
-      uniqueUsed(atcHits.map(({ i }) => i + 1)),
-      uniqueUsed(atcHits.map(({ a }) => MODE_NAMES[a.mode] || a.mode)),
-      uniqueUsed(acHits),
-    ];
-  });
+  return level.routePts.map((p) => [
+    p.index,
+    p.RawDegrees,
+    p.Distance,
+    blankZero(p.RawSpeed),
+    p.RawAltitude || "",
+    altRestFlag(p.RawAltitude),
+    p.Details || "",
+  ]);
 }
 
 function buildAtcRows(level) {
-  return level.atc.map((a, i) => {
-    const ref = pointLookup(a.point, level.routePts, level.virtualPts);
-    return [
-      i + 1,
-      a.point,
-      ref.type,
-      ref.name,
-      a.mode,
-      MODE_NAMES[a.mode] || String(a.mode),
-      a.Altitude || "",
-      a.VS || "",
-      a.VS_nx,
-      nxLabel(a.VS_nx, "vs"),
-      a.Speed || "",
-      a.Speed_nx,
-      nxLabel(a.Speed_nx, "speed"),
-      round(ref.x),
-      round(ref.y),
-      ref.missing ? "MISSING" : "",
-    ];
-  });
-}
-
-function buildVpRows(level) {
-  return level.virtualPts.map((v) => {
-    const inAtc = level.atc.some((a) => a.point === v.Number);
-    const acHits = [];
-    level.otherACs.forEach((ac) => {
-      ac.items.forEach((item, seq) => {
-        if (item.Point === v.Number) acHits.push(`AC${ac.index}#${seq + 1}`);
-      });
-    });
-    return [
-      v.Number,
-      `V${v.Number}`,
-      round(v.rawX),
-      round(v.rawY),
-      round(v.x),
-      round(v.y),
-      inAtc ? "Y" : "",
-      uniqueUsed(acHits),
-    ];
-  });
-}
-
-function hypot(dx, dy) {
-  return Math.sqrt(dx * dx + dy * dy);
-}
-
-function headingBetween(a, b) {
-  if (!a || !b || a.x === "" || b.x === "") return "";
-  let ang = (Math.atan2(b.x - a.x, b.y - a.y) * 180) / Math.PI;
-  if (ang < 0) ang += 360;
-  return round(ang, 1);
+  return level.atc.map((a) => [
+    a.point,
+    MODE_NAMES[a.mode] || a.mode,
+    blankZero(a.Altitude),
+    blankZero(a.VS),
+    a.VS_nx,
+    blankZero(a.Speed),
+    a.Speed_nx,
+  ]);
 }
 
 function buildOtherAcRows(level) {
   const rows = [];
   for (const ac of level.otherACs) {
-    let prev = null;
     ac.items.forEach((item, seq) => {
-      const ref = pointLookup(item.Point, level.routePts, level.virtualPts);
-      const cur = { x: ref.x, y: ref.y };
-      const dist = prev && Number.isFinite(prev.x) && Number.isFinite(cur.x) ? round(hypot(cur.x - prev.x, cur.y - prev.y), 2) : "";
-      const hdg = prev ? headingBetween(prev, cur) : "";
       rows.push([
         ac.index,
-        ac.name,
         seq + 1,
         item.Point,
-        ref.type,
-        ref.name,
-        item.Altitude || "",
-        item.Speed || "",
-        round(ref.x),
-        round(ref.y),
-        dist,
-        hdg,
-        ref.missing ? "MISSING" : "",
+        item.Altitude,
+        item.Speed,
       ]);
-      prev = Number.isFinite(cur.x) ? cur : prev;
     });
   }
   return rows;
@@ -742,17 +593,15 @@ function writeLegendSheet(wb) {
   styleTitle(ws.getCell("A1"), "1A2A40");
   ws.mergeCells("A1:B1");
   const rows = [
-    ["Point < 50", "Route waypoint index (GetCartesianPosition / Points[index]). ATC.point and OtherAC.Point use this index."],
-    ["Point >= 50", "Virtual point. Game uses VirtualPtsPos[point-50]. VP Number 51 is the first virtual point."],
-    ["Route.ID", "Stored waypoint ID; usually equals index. ATC/Other AC reference the index, not the name."],
-    ["ATC.mode", "0 NO CHANGE, 1 DCT, 2 HDG, 3 CLR ILS"],
-    ["ATC.VS_nx", "0 exact, 1 min/or greater, 2 max/or less, 3 CLEAR ILS (APP arm)"],
-    ["ATC.Speed_nx", "0 exact, 1 min, 2 max, >2 NextInstructionDistance in NM"],
-    ["Virtual raw x/y", "Asset coordinates. World x/y are runway-relative using VP[20] as origin, same as Move.Init."],
-    ["Other AC", "Traffic path: sequence of Point + Altitude + Speed. Each AC is a separate asset referenced by Level Data."],
-    ["MISSING", "ATC or Other AC Point has no matching route index or virtual number in the live Level Data assets (GUID refs). Often leftover copy files or extra landing points."],
-    ["Source assets", "Level Data GUIDs are used, not folder filenames. A level may reference 'ATC Instructions copy' / 'Virtual Points Copy' rather than the numbered file."],
-    ["Sheets", "Index = all levels. L01…L39 = one level each, with related tables stacked on the same sheet."],
+    ["Wpt < 50", "Route waypoint number = array index (not the Name). ATC and other traffic use this number."],
+    ["Wpt >= 50", "Virtual waypoint number (51, 52, …). No V prefix."],
+    ["Table 1", "Route + restrictions: Degrees, Dist, Speed restriction, Altitude restriction (AT / A / B / A/B), Details."],
+    ["Altitude A/B/AT", "A = at or above, B = at or below, AT = exact. Combined window is A/B (e.g. 8000A9000B)."],
+    ["Table 2", "ATC instructions. Wpt is the target waypoint number. Mode: NO CHANGE / DCT / HDG / CLR ILS."],
+    ["VS_nx", "0 exact, 1 min, 2 max, 3 CLEAR ILS (APP arm)."],
+    ["Speed_nx", "0 exact, 1 min, 2 max, >2 next-instruction distance NM."],
+    ["Table 3", "Other traffic routes: each AC is a sequence of Wpt + Altitude + Speed."],
+    ["Sheets", "Index = all levels. L01…L39 = one level each with the three tables."],
   ];
   ws.getRow(2).values = ["Key", "Meaning"];
   ws.getRow(2).font = { bold: true };
@@ -833,124 +682,29 @@ function writeLevelSheet(wb, level) {
     views: [{ state: "frozen", ySplit: 3 }],
     properties: { tabColor: { argb: "2E75B6" } },
   });
-  setColWidths(ws, [10, 22, 12, 14, 12, 12, 12, 12, 16, 14, 10, 10, 14, 14, 16, 12]);
+  setColWidths(ws, [10, 14, 10, 12, 14, 10, 12, 12]);
 
   const info = level.info;
-  ws.mergeCells("A1:P1");
+  ws.mergeCells("A1:G1");
   const title = ws.getCell("A1");
   title.value = `LEVEL ${level.index}  |  ${info.Destination || "-"}  |  RWY ${info.Runway || "-"}  |  STAR ${info.Star || "-"}  |  TRANS ${info.Transition || "-"}`;
   styleTitle(title, "1A2A40");
   ws.getRow(1).height = 22;
 
-  ws.mergeCells("A2:P2");
-  ws.getCell("A2").value =
-    `Course ${info.Course}°  |  ILS ${info.Freq || "-"}  |  Field ${info.FieldInfo || "-"}  |  CRZ ${info.CrzAltitude}/${info.CrzSpeed}  |  DES ${info.DesEconSpeed} / M.${info.DesEconMach}  |  F30 ${info.F30Speed}  |  GS ${info.GlideSlope}°  |  ZFW ${info.ZFW}  Fuel ${info.Fuel}  |  assets: ${path.basename(level.routePath || "")} / ${path.basename(level.atcPath || "")} / ${path.basename(level.vpPath || "")}`;
+  ws.mergeCells("A2:G2");
+  ws.getCell("A2").value = levelInfoLine(level);
   ws.getCell("A2").font = { size: 9, color: { argb: "334155" } };
 
-  let row = 4;
   const tag = String(level.index).padStart(2, "0");
-
-  writeSectionTitle(ws, row, 1, "POINT CATALOG  (shared key: Point → Route index or Virtual Number)", "2E75B6", 9);
-  row += 1;
-  row = addTable(
-    ws,
-    `PointCatalog_L${tag}`,
-    row,
-    ["Point", "Type", "Name", "X_NM", "Y_NM", "InATC", "InOtherAC", "ATC", "OtherAC"],
-    buildPointCatalog(level),
-    "TableStyleMedium2"
-  );
-
-  writeSectionTitle(ws, row, 1, "ROUTE", "1F4E79", 15);
-  row += 1;
-  row = addTable(
-    ws,
-    `Route_L${tag}`,
-    row,
-    [
-      "Idx",
-      "ID",
-      "Name",
-      "Heading",
-      "RawDegrees",
-      "Dist_NM",
-      "CumDist_NM",
-      "Speed",
-      "Altitude",
-      "Details",
-      "X_NM",
-      "Y_NM",
-      "ATC_Seq",
-      "ATC_Mode",
-      "OtherAC",
-    ],
-    buildRouteRows(level),
-    "TableStyleMedium9"
-  );
-
-  writeSectionTitle(ws, row, 1, "ATC INSTRUCTIONS", "C65911", 16);
-  row += 1;
-  row = addTable(
-    ws,
-    `ATC_L${tag}`,
-    row,
-    [
-      "Seq",
-      "Point",
-      "PointType",
-      "PointName",
-      "Mode",
-      "ModeName",
-      "Altitude",
-      "VS",
-      "VS_nx",
-      "VS_nxName",
-      "Speed",
-      "Speed_nx",
-      "Speed_nxName",
-      "X_NM",
-      "Y_NM",
-      "Missing",
-    ],
-    buildAtcRows(level),
-    "TableStyleMedium3"
-  );
-
-  writeSectionTitle(ws, row, 1, "VIRTUAL POINTS", "7030A0", 8);
-  row += 1;
-  row = addTable(
-    ws,
-    `VP_L${tag}`,
-    row,
-    ["Number", "Name", "RawX", "RawY", "WorldX_NM", "WorldY_NM", "InATC", "OtherAC"],
-    buildVpRows(level),
-    "TableStyleMedium4"
-  );
-
-  writeSectionTitle(ws, row, 1, "OTHER AC ROUTES", "548235", 13);
-  row += 1;
-  addTable(
-    ws,
-    `OtherAC_L${tag}`,
-    row,
-    [
-      "AC",
-      "AC_Name",
-      "Seq",
-      "Point",
-      "PointType",
-      "PointName",
-      "Altitude",
-      "Speed",
-      "X_NM",
-      "Y_NM",
-      "LegDist_NM",
-      "LegHdg",
-      "Missing",
-    ],
-    buildOtherAcRows(level),
-    "TableStyleMedium7"
-  );
+  const themes = ["TableStyleMedium9", "TableStyleMedium3", "TableStyleMedium7"];
+  const fills = ["1F4E79", "C65911", "548235"];
+  const names = [`Route_L${tag}`, `ATC_L${tag}`, `OtherAC_L${tag}`];
+  let row = 4;
+  levelTableBlocks(level).forEach((block, i) => {
+    writeSectionTitle(ws, row, 1, block.title, fills[i], Math.max(block.headers.length, 6));
+    row += 1;
+    row = addTable(ws, names[i], row, block.headers, block.rows, themes[i]);
+  });
 }
 
 async function main() {
