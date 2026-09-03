@@ -31,10 +31,12 @@ else
 fi
 
 # --- Firebase CLI (for the Firestore config under ./firebase) ---
-# Use a user-writable npm global prefix so installs never try to write to "/".
+# Install into a user-writable global prefix. We pass --prefix per invocation
+# instead of `npm config set prefix` so we do NOT write a `prefix` line into
+# ~/.npmrc (that setting is incompatible with nvm and triggers a warning on
+# every node invocation).
 NPM_GLOBAL="$HOME/.npm-global"
 mkdir -p "$NPM_GLOBAL"
-npm config set prefix "$NPM_GLOBAL"
 export PATH="$NPM_GLOBAL/bin:$PATH"
 
 # Persist the npm-global bin on PATH for interactive agent shells.
@@ -51,7 +53,7 @@ if command -v firebase >/dev/null 2>&1; then
   log "Firebase CLI already present: $(firebase --version)"
 else
   log "Installing firebase-tools"
-  npm install -g firebase-tools@13
+  npm install -g --prefix "$NPM_GLOBAL" firebase-tools@13
 fi
 
 # Pre-cache the Firestore emulator so it is available without a runtime download.
