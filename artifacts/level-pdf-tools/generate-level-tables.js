@@ -10,6 +10,8 @@ const ExcelJS = require("exceljs");
 const ROOT = path.resolve(__dirname, "..", "..");
 const DATA_ROOT = path.join(ROOT, "Assets", "_Game", "Data Files");
 const OUT_XLSX = path.join(ROOT, "artifacts", "Level-Tables-1-39.xlsx");
+const OUT_HTML = path.join(ROOT, "artifacts", "Level-Tables-1-39.html");
+const OUT_MD_DIR = path.join(ROOT, "artifacts", "level-tables");
 
 const MODE_NAMES = { 0: "NO CHANGE", 1: "DCT", 2: "HDG", 3: "CLR ILS" };
 const NX_NAMES = { 0: "exact", 1: "min / or greater", 2: "max / or less", 3: "CLEAR ILS" };
@@ -285,6 +287,235 @@ function loadLevels(guidIndex) {
 function sheetNameFor(level) {
   const dest = String(level.info.Destination || "").replace(/[\\/?*[\]]/g, "").slice(0, 12);
   return `L${String(level.index).padStart(2, "0")} ${dest}`.trim().slice(0, 31);
+}
+
+function levelStem(level) {
+  const dest = String(level.info.Destination || "LVL").replace(/[^A-Za-z0-9]/g, "");
+  return `L${String(level.index).padStart(2, "0")}-${dest}`;
+}
+
+function levelInfoLine(level) {
+  const info = level.info;
+  return `Course ${info.Course}°  |  ILS ${info.Freq || "-"}  |  Field ${info.FieldInfo || "-"}  |  CRZ ${info.CrzAltitude}/${info.CrzSpeed}  |  DES ${info.DesEconSpeed} / M.${info.DesEconMach}  |  F30 ${info.F30Speed}  |  GS ${info.GlideSlope}°  |  ZFW ${info.ZFW}  Fuel ${info.Fuel}  |  assets: ${path.basename(level.routePath || "")} / ${path.basename(level.atcPath || "")} / ${path.basename(level.vpPath || "")}`;
+}
+
+function levelTitle(level) {
+  const info = level.info;
+  return `LEVEL ${level.index}  |  ${info.Destination || "-"}  |  RWY ${info.Runway || "-"}  |  STAR ${info.Star || "-"}  |  TRANS ${info.Transition || "-"}`;
+}
+
+function indexRows(levels) {
+  return levels.map((l) => [
+    l.index,
+    l.info.Destination,
+    l.info.Runway,
+    l.info.Star,
+    l.info.Transition,
+    l.info.Course,
+    l.info.Freq,
+    l.info.CrzAltitude,
+    l.info.CrzSpeed,
+    l.routePts.length,
+    l.atc.length,
+    l.virtualPts.length,
+    l.otherACs.length,
+    l.otherACs.reduce((n, ac) => n + ac.items.length, 0),
+    sheetNameFor(l),
+    path.basename(l.routePath || ""),
+    path.basename(l.atcPath || ""),
+    path.basename(l.vpPath || ""),
+  ]);
+}
+
+const INDEX_HEADERS = [
+  "Level",
+  "Destination",
+  "Runway",
+  "STAR",
+  "Transition",
+  "Course",
+  "ILS Freq",
+  "CrzAlt",
+  "CrzSpeed",
+  "RoutePts",
+  "ATC",
+  "VirtualPts",
+  "OtherAC",
+  "OtherAC legs",
+  "Sheet",
+  "Route asset",
+  "ATC asset",
+  "VP asset",
+];
+
+function levelTableBlocks(level) {
+  return [
+    {
+      title: "POINT CATALOG  (shared key: Point → Route index or Virtual Number)",
+      color: "#2E75B6",
+      headers: ["Point", "Type", "Name", "X_NM", "Y_NM", "InATC", "InOtherAC", "ATC", "OtherAC"],
+      rows: buildPointCatalog(level),
+    },
+    {
+      title: "ROUTE",
+      color: "#1F4E79",
+      headers: [
+        "Idx", "ID", "Name", "Heading", "RawDegrees", "Dist_NM", "CumDist_NM",
+        "Speed", "Altitude", "Details", "X_NM", "Y_NM", "ATC_Seq", "ATC_Mode", "OtherAC",
+      ],
+      rows: buildRouteRows(level),
+    },
+    {
+      title: "ATC INSTRUCTIONS",
+      color: "#C65911",
+      headers: [
+        "Seq", "Point", "PointType", "PointName", "Mode", "ModeName", "Altitude", "VS",
+        "VS_nx", "VS_nxName", "Speed", "Speed_nx", "Speed_nxName", "X_NM", "Y_NM", "Missing",
+      ],
+      rows: buildAtcRows(level),
+    },
+    {
+      title: "VIRTUAL POINTS",
+      color: "#7030A0",
+      headers: ["Number", "Name", "RawX", "RawY", "WorldX_NM", "WorldY_NM", "InATC", "OtherAC"],
+      rows: buildVpRows(level),
+    },
+    {
+      title: "OTHER AC ROUTES",
+      color: "#548235",
+      headers: [
+        "AC", "AC_Name", "Seq", "Point", "PointType", "PointName", "Altitude", "Speed",
+        "X_NM", "Y_NM", "LegDist_NM", "LegHdg", "Missing",
+      ],
+      rows: buildOtherAcRows(level),
+    },
+  ];
+}
+
+function mdCell(v) {
+  return String(v ?? "").replace(/\|/g, "\\|").replace(/\r?\n/g, " ");
+}
+
+function toMarkdownTable(headers, rows) {
+  const head = `| ${headers.map(mdCell).join(" | ")} |`;
+  const sep = `| ${headers.map(() => "---").join(" | ")} |`;
+  const body = (rows.length ? rows : [headers.map(() => "")])
+    .map((r) => `| ${r.map(mdCell).join(" | ")} |`)
+    .join("\n");
+  return `${head}\n${sep}\n${body}`;
+}
+
+function htmlEscape(v) {
+  return String(v ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function toHtmlTable(headers, rows) {
+  const th = headers.map((h) => `<th>${htmlEscape(h)}</th>`).join("");
+  const body = (rows.length ? rows : [headers.map(() => "")])
+    .map((r) => `<tr>${r.map((c) => `<td>${htmlEscape(c)}</td>`).join("")}</tr>`)
+    .join("");
+  return `<div class="table-wrap"><table><thead><tr>${th}</tr></thead><tbody>${body}</tbody></table></div>`;
+}
+
+function writeMarkdown(levels) {
+  fs.mkdirSync(OUT_MD_DIR, { recursive: true });
+  const indexMd = [
+    "# Level tables 1–39",
+    "",
+    "Plain-text related tables (Route, ATC, Virtual Points, Other AC). One file per level.",
+    "",
+    toMarkdownTable(
+      INDEX_HEADERS.slice(0, 14).concat(["File"]),
+      levels.map((l, i) => {
+        const row = indexRows(levels)[i].slice(0, 14);
+        row.push(`[${levelStem(l)}.md](./${levelStem(l)}.md)`);
+        return row;
+      })
+    ),
+    "",
+  ].join("\n");
+  fs.writeFileSync(path.join(OUT_MD_DIR, "README.md"), indexMd);
+  for (const level of levels) {
+    const parts = [
+      `# ${levelTitle(level)}`,
+      "",
+      levelInfoLine(level),
+      "",
+      `[← Index](./README.md)`,
+      "",
+    ];
+    for (const block of levelTableBlocks(level)) {
+      parts.push(`## ${block.title}`, "", toMarkdownTable(block.headers, block.rows), "");
+    }
+    fs.writeFileSync(path.join(OUT_MD_DIR, `${levelStem(level)}.md`), `${parts.join("\n")}\n`);
+  }
+}
+
+function writeHtml(levels) {
+  const nav = levels
+    .map(
+      (l) =>
+        `<a href="#l${l.index}">L${String(l.index).padStart(2, "0")} ${htmlEscape(l.info.Destination)}</a>`
+    )
+    .join("\n");
+  const sections = levels
+    .map((level) => {
+      const tables = levelTableBlocks(level)
+        .map(
+          (b) =>
+            `<h2 style="background:${b.color}">${htmlEscape(b.title)}</h2>\n${toHtmlTable(b.headers, b.rows)}`
+        )
+        .join("\n");
+      return `<section id="l${level.index}">
+<h1>${htmlEscape(levelTitle(level))}</h1>
+<p class="meta">${htmlEscape(levelInfoLine(level))}</p>
+${tables}
+</section>`;
+    })
+    .join("\n");
+  const indexTable = toHtmlTable(INDEX_HEADERS, indexRows(levels));
+  const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Level Tables 1–39</title>
+<style>
+:root { font-family: Segoe UI, system-ui, sans-serif; color: #1e293b; }
+body { margin: 0; background: #eef2f6; }
+nav { position: sticky; top: 0; z-index: 5; background: #1a2a40; padding: 8px 12px; display: flex; flex-wrap: wrap; gap: 6px; }
+nav a { color: #fff; text-decoration: none; font-size: 12px; padding: 4px 8px; border-radius: 4px; background: #2e75b6; }
+nav a:hover { background: #c65911; }
+main { padding: 16px; max-width: 1400px; margin: 0 auto; }
+h1 { font-size: 20px; margin: 0 0 6px; color: #1a2a40; }
+h2 { color: #fff; font-size: 13px; margin: 18px 0 0; padding: 6px 10px; }
+.meta { font-size: 12px; color: #475569; margin: 0 0 12px; }
+section { background: #fff; margin: 0 0 28px; padding: 16px; border-radius: 8px; box-shadow: 0 1px 3px #0001; }
+.table-wrap { overflow: auto; }
+table { border-collapse: collapse; font-size: 12px; min-width: 100%; }
+th, td { border: 1px solid #dbe3ee; padding: 3px 7px; white-space: nowrap; }
+th { background: #1a2a40; color: #fff; position: sticky; top: 42px; }
+tbody tr:nth-child(even) { background: #f4f7fb; }
+.missing { color: #b91c1c; font-weight: 700; }
+</style>
+</head>
+<body>
+<nav>${nav}</nav>
+<main>
+<section id="index">
+<h1>Level tables 1–39</h1>
+<p class="meta">Related tables: Route, ATC Instructions, Virtual Points, Other AC. Point &lt; 50 = route index, Point ≥ 50 = virtual point.</p>
+${indexTable}
+</section>
+${sections}
+</main>
+</body>
+</html>`;
+  fs.writeFileSync(OUT_HTML, html);
 }
 
 function setColWidths(ws, widths) {
@@ -744,8 +975,12 @@ async function main() {
   }
 
   await wb.xlsx.writeFile(OUT_XLSX);
+  writeMarkdown(levels);
+  writeHtml(levels);
   const st = fs.statSync(OUT_XLSX);
-  console.log(`Wrote ${OUT_XLSX} (${st.size} bytes, ${levels.length} level sheets)`);
+  console.log(`Wrote ${OUT_XLSX} (${st.size} bytes)`);
+  console.log(`Wrote ${OUT_HTML} (${fs.statSync(OUT_HTML).size} bytes)`);
+  console.log(`Wrote ${OUT_MD_DIR} (${levels.length} markdown sheets + README)`);
 }
 
 if (require.main === module) {
