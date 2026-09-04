@@ -98,10 +98,11 @@ function parseRoute(filePath) {
   const points = [];
   const block = text.match(/Points:\r?\n([\s\S]*?)(?:\r?\nm_|\r?\n---|$)/);
   if (!block) return points;
-  const items = block[1].split(/\r?\n\s*-\s*ID:/).slice(1);
+  // Prepend a newline so the first "- ID:" item is not dropped by split.
+  const items = (`\n${block[1]}`).split(/\r?\n\s*-\s*ID:/).slice(1);
   for (const item of items) {
     const get = (k) => {
-      const m = item.match(new RegExp(`${k}:\\s*(.*)`));
+      const m = item.match(new RegExp(`${k}:\\s*([^\\n]*)`));
       return m ? m[1].trim() : "";
     };
     const id = Number((item.match(/^\s*(\d+)/) || [])[1] || get("ID") || 0);
