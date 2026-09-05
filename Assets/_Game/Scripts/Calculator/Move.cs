@@ -442,6 +442,16 @@ public class Move : Singleton<Move>
     }
 
 
+    private string AtcPointName(int pt)
+    {
+        var points = Session.OriginalReferenceRoute?.Points;
+        if (pt < 50 && points != null && pt >= 0 && pt < points.Length
+            && !string.IsNullOrEmpty(points[pt].Name))
+            return points[pt].Name;
+
+        return "V" + pt;
+    }
+
     private float TrackToPoint(int pt)
     {
         float x1 = Session.PlayerAircraft.NMPosition.x;
@@ -621,25 +631,33 @@ public class Move : Singleton<Move>
             if (mode > 0)
                 Cmode = mode;
 
-            bool newLateral = issuedMode == 1 || issuedMode == 2;
-
-            if (newLateral)
+            // Publish Atc1 on every new instruction. mode=0 uses the continued
+            // LNAV/DCT (1) or HDG (2) phraseology for this waypoint.
+            if (mode == 1)
             {
-                Atc1.text = mode == 1
-                    ? "Proceed direct to  " + Session.OriginalReferenceRoute.Points[point].Name
-                    : "Turn " + TurnDirection(TrackToPoint(point))
-                      + "Heading " + Calculator.NormalizeHeading360(TrackToPointFactored(point));
+                Atc1.text = "Proceed direct to  " + AtcPointName(point);
+                XFR1.interactable = false;
+                SetXfrGlow(1, false);
+            }
+            else if (mode == 2)
+            {
+                Atc1.text = "Turn " + TurnDirection(TrackToPoint(point))
+                            + "Heading " + Calculator.NormalizeHeading360(TrackToPointFactored(point));
+                XFRHdg = TrackToPointFactored(point);
+                XFR1.interactable = true;
+                SetXfrGlow(1, true);
+            }
+            else
+            {
+                Atc1.text = "";
+                XFR1.interactable = false;
+                SetXfrGlow(1, false);
+            }
 
+            if (mode > 0)
+            {
                 Atc1.color = Color.green;
                 _atc1GrayDone = false;
-                XFR1.interactable = mode == 2;
-                if (mode == 2)
-                {
-                    XFRHdg = TrackToPointFactored(point);
-                    SetXfrGlow(1, true);
-                }
-                else
-                    SetXfrGlow(1, false);
             }
 
             string s = VS < 0 ? ", ROD " + (-VS) + " fpm" + NxToString(VS_nx) : "";
@@ -678,7 +696,7 @@ public class Move : Singleton<Move>
             CaptureRouteAB();
             ResetBorderState();
 
-            if (newLateral || XFR2.interactable || XFR3.interactable) SlowDown();
+            if (mode > 0 || XFR2.interactable || XFR3.interactable) SlowDown();
 
         }
         else // Not New
