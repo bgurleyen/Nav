@@ -16,7 +16,7 @@ public class SFXAudioManager : MonoBehaviour
     public static SFXAudioManager Instance { get; private set; }
 
     [SerializeField] private AudioSource audioSource;
-    private AudioClip defaultButtonClick;
+    [SerializeField] private AudioClip defaultButtonClick;
     [SerializeField] private SFXAudioClips[] customButtonSounds;
     private Dictionary<string, SFXAudioClips> soundIdMap;
 
@@ -33,20 +33,43 @@ public class SFXAudioManager : MonoBehaviour
         }
 
         soundIdMap = new Dictionary<string, SFXAudioClips>();
-        foreach (var sound in customButtonSounds)
+        if (customButtonSounds != null)
         {
-            if (!string.IsNullOrEmpty(sound.soundId) && sound.clip != null)
+            foreach (var sound in customButtonSounds)
             {
-                if (!soundIdMap.ContainsKey(sound.soundId))
+                if (!string.IsNullOrEmpty(sound.soundId) && sound.clip != null)
                 {
-                    soundIdMap[sound.soundId] = sound;
-                }
-                else
-                {
-                    Debug.LogWarning($"Duplicate sound ID '{sound.soundId}' found in AudioManager!");
+                    if (!soundIdMap.ContainsKey(sound.soundId))
+                    {
+                        soundIdMap[sound.soundId] = sound;
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"Duplicate sound ID '{sound.soundId}' found in AudioManager!");
+                    }
                 }
             }
         }
+
+        if (defaultButtonClick == null)
+            defaultButtonClick = ResolveDefaultButtonClick();
+    }
+
+    private AudioClip ResolveDefaultButtonClick()
+    {
+        if (soundIdMap != null && soundIdMap.TryGetValue("TickButton", out var tick) && tick.clip != null)
+            return tick.clip;
+
+        if (customButtonSounds == null)
+            return null;
+
+        foreach (var sound in customButtonSounds)
+        {
+            if (sound != null && sound.clip != null)
+                return sound.clip;
+        }
+
+        return null;
     }
 
     public void PlaySound(AudioClip clip, float volume = 1f, float pitch = 1f)
