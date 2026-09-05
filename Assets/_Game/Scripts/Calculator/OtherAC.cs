@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Navigation;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -83,9 +84,9 @@ public class OtherAC
         Speed = _acItems[_currentPointIndex].Speed;
 
         if (Speed > 0)
-            _lastPositiveSpeed = Speed;
+            _lastPositiveSpeed = Mathf.RoundToInt(Speed);
 
-        int moveSpeed = Speed > 0 ? Speed : _lastPositiveSpeed;
+        int moveSpeed = Speed > 0 ? Mathf.RoundToInt(Speed) : _lastPositiveSpeed;
 
         PtPos = Move.Instance.PointPos(PointIndex);
 
