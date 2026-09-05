@@ -14,65 +14,65 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   VirtualPointsItems:
   - Number: 51
-    x: -17.124241
-    y: 59.654861
+    x: -135.1
+    y: -222
   - Number: 52
-    x: 65.55604
-    y: 33.457239
+    x: -142.7
+    y: -208.1
   - Number: 53
-    x: 22.424849
-    y: 66.86398
-  - Number: 54
-    x: 37.516836
-    y: -11.818721
-  - Number: 55
-    x: -22.839881
-    y: 34.512779
-  - Number: 56
-    x: 6.266093
-    y: 10.819259
-  - Number: 57
-    x: 22.424849
-    y: 9.730031
-  - Number: 58
-    x: 63.669542
-    y: 14.019568
-  - Number: 59
-    x: 49.386054
-    y: 56.095219
-  - Number: 60
-    x: -17.854136
-    y: -13.233595
-  - Number: 61
-    x: 25.658846
-    y: 26.989244
-  - Number: 62
-    x: 32.13807
-    y: 43.15923
-  - Number: 63
-    x: 4.110095
-    y: 41.003232
-  - Number: 64
-    x: 78.492028
-    y: -8.584724
-  - Number: 65
-    x: 49.386054
-    y: 5.429264
-  - Number: 66
-    x: 84.33119
-    y: 39.857858
-  - Number: 67
-    x: 84.634377
-    y: 59.374132
-  - Number: 68
-    x: 10.56686
-    y: -2.11673
-  - Number: 69
-    x: 0.876097
-    y: 19.443251
-  - Number: 70
-    x: -17.562178
-    y: 7.270845
-  - Number: 71
     x: 0
     y: 0
+  - Number: 54
+    x: 0
+    y: 0
+  - Number: 55
+    x: 0
+    y: 0
+  - Number: 56
+    x: 0
+    y: 0
+  - Number: 57
+    x: 0
+    y: 0
+  - Number: 58
+    x: 0
+    y: 0
+  - Number: 59
+    x: 0
+    y: 0
+  - Number: 60
+    x: 0
+    y: 0
+  - Number: 61
+    x: -66.3
+    y: -151.3
+  - Number: 62
+    x: -122.4
+    y: -151.89
+  - Number: 63
+    x: -108.3
+    y: -142.6
+  - Number: 64
+    x: -95.585
+    y: -134.77
+  - Number: 65
+    x: -73.1
+    y: -231.2
+  - Number: 66
+    x: 0
+    y: 0
+  - Number: 67
+    x: 0
+    y: 0
+  - Number: 68
+    x: 0
+    y: 0
+  - Number: 69
+    x: 0
+    y: 0
+  - Number: 70
+    x: 0
+    y: 0
+  - Number: 71
+    x: -151.4729
+    y: -220.613
