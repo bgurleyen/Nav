@@ -120,7 +120,11 @@ public class Move : Singleton<Move>
         ResetBorderState();
         _routeValid = false;
 
-        var otherACsCount = _currentLevelData.otherACs.Length;
+        ACPositions.Clear();
+        ACTexts.Clear();
+
+        var tables = _currentLevelData.otherACs;
+        var otherACsCount = tables != null ? tables.Length : 0;
         _otherACs = new OtherAC[otherACsCount];
         for (var i = 0; i < otherACsCount; i++)
         {
@@ -135,15 +139,38 @@ public class Move : Singleton<Move>
 
     public void Tick()
     {
-        for (int i = 0; i < _otherACs.Length; i++)
+        if (_otherACs != null)
         {
-            _otherACs[i].Tick(ACTexts, ACPositions);
+            for (int i = 0; i < _otherACs.Length; i++)
+                _otherACs[i].Tick(ACTexts, ACPositions);
         }
 
         CheckAirplaneMove();
-
-
     }
+
+    /// <summary>
+    /// Player is on final when localizer is captured, or when inside 10 NM
+    /// and within the LOC capture beam (same 2.5° window used for intercept).
+    /// </summary>
+    public bool IsPlayerOnFinalApproach()
+    {
+        if (Session.PlayerAircraft == null || Session.State == null)
+            return false;
+
+        float dme = DME();
+        if (dme < 0.3f)
+            return false;
+
+        if (Session.State.LOCCaptured)
+            return true;
+
+        if (dme > 10f || _currentLevelData?.levelInfo == null)
+            return false;
+
+        float course = _currentLevelData.levelInfo.Course;
+        return Mathf.Abs(ComputeLocDeviationDegrees(course)) <= LocCaptureDegrees;
+    }
+
     void SlowDown()
     {
         Session.State.Speed10X.Set(false);
