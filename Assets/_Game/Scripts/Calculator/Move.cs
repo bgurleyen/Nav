@@ -120,7 +120,11 @@ public class Move : Singleton<Move>
         ResetBorderState();
         _routeValid = false;
 
-        var otherACsCount = _currentLevelData.otherACs.Length;
+        ACPositions.Clear();
+        ACTexts.Clear();
+
+        var tables = _currentLevelData.otherACs;
+        var otherACsCount = tables != null ? tables.Length : 0;
         _otherACs = new OtherAC[otherACsCount];
         for (var i = 0; i < otherACsCount; i++)
         {
@@ -135,15 +139,38 @@ public class Move : Singleton<Move>
 
     public void Tick()
     {
-        for (int i = 0; i < _otherACs.Length; i++)
+        if (_otherACs != null)
         {
-            _otherACs[i].Tick(ACTexts, ACPositions);
+            for (int i = 0; i < _otherACs.Length; i++)
+                _otherACs[i].Tick(ACTexts, ACPositions);
         }
 
         CheckAirplaneMove();
-
-
     }
+
+    /// <summary>
+    /// Player is on final when localizer is captured, or when inside 10 NM
+    /// and within the LOC capture beam (same 2.5° window used for intercept).
+    /// </summary>
+    public bool IsPlayerOnFinalApproach()
+    {
+        if (Session.PlayerAircraft == null || Session.State == null)
+            return false;
+
+        float dme = DME();
+        if (dme < 0.3f)
+            return false;
+
+        if (Session.State.LOCCaptured)
+            return true;
+
+        if (dme > 10f || _currentLevelData?.levelInfo == null)
+            return false;
+
+        float course = _currentLevelData.levelInfo.Course;
+        return Mathf.Abs(ComputeLocDeviationDegrees(course)) <= LocCaptureDegrees;
+    }
+
     void SlowDown()
     {
         Session.State.Speed10X.Set(false);
@@ -415,6 +442,16 @@ public class Move : Singleton<Move>
     }
 
 
+    private string AtcPointName(int pt)
+    {
+        var points = Session.OriginalReferenceRoute?.Points;
+        if (pt < 50 && points != null && pt >= 0 && pt < points.Length
+            && !string.IsNullOrEmpty(points[pt].Name))
+            return points[pt].Name;
+
+        return "V" + pt;
+    }
+
     private float TrackToPoint(int pt)
     {
         float x1 = Session.PlayerAircraft.NMPosition.x;
@@ -549,8 +586,8 @@ public class Move : Singleton<Move>
 
     void ATCCall()
     //mode              pt  Alt VS  nx          Speed   nx
-    //0..NoChg				0..exact	        0..exact
-    //1..DCT				1..min	   	        1..min
+    //0..continue prev		0..exact	        0..exact
+    //1..DCT / LNAV			1..min	   	        1..min
     //2..HDG				2..max		        2..max
     //                      3..CLEAR ILS       >2..NextInstructionDistance
 
@@ -558,10 +595,8 @@ public class Move : Singleton<Move>
 
         var currentInstruction = _currentLevelData.ATCs[_currentInstructionIndex];
 
-        int oncemode = mode;
-
         point = currentInstruction.point;
-        mode = (mode == 11) ? 1 : currentInstruction.mode;
+        int issuedMode = currentInstruction.mode;
         Altitude = currentInstruction.Altitude;
         VS = currentInstruction.VS;
         VS_nx = currentInstruction.VS_nx;
@@ -586,12 +621,44 @@ public class Move : Singleton<Move>
 
         if (NewPoint)
         {
+            // 0 = keep previous lateral mode (1 LNAV/DCT, 2 HDG). Do not rewrite mode
+            // on later ticks — BorderGuard may temporarily set mode = 2.
+            if (issuedMode <= 0)
+                mode = Cmode > 0 ? Cmode : 1;
+            else
+                mode = issuedMode == 11 ? 1 : issuedMode;
 
+            if (mode > 0)
+                Cmode = mode;
 
-            Atc1.text = mode == 1 ? "Proceed direct to  " + Session.OriginalReferenceRoute.Points[point].Name :
-                mode == 2 ? "Turn " + TurnDirection(TrackToPoint(point))
-                          + "Heading " + Calculator.NormalizeHeading360(TrackToPointFactored(point)) : "";
+            // Publish Atc1 on every new instruction. mode=0 uses the continued
+            // LNAV/DCT (1) or HDG (2) phraseology for this waypoint.
+            if (mode == 1)
+            {
+                Atc1.text = "Proceed direct to  " + AtcPointName(point);
+                XFR1.interactable = false;
+                SetXfrGlow(1, false);
+            }
+            else if (mode == 2)
+            {
+                Atc1.text = "Turn " + TurnDirection(TrackToPoint(point))
+                            + "Heading " + Calculator.NormalizeHeading360(TrackToPointFactored(point));
+                XFRHdg = TrackToPointFactored(point);
+                XFR1.interactable = true;
+                SetXfrGlow(1, true);
+            }
+            else
+            {
+                Atc1.text = "";
+                XFR1.interactable = false;
+                SetXfrGlow(1, false);
+            }
 
+            if (mode > 0)
+            {
+                Atc1.color = Color.green;
+                _atc1GrayDone = false;
+            }
 
             string s = VS < 0 ? ", ROD " + (-VS) + " fpm" + NxToString(VS_nx) : "";
 
@@ -609,30 +676,15 @@ public class Move : Singleton<Move>
 
             NextInstructionDistance = Speed_nx > 2 ? Speed_nx : 1.3f;
 
-            XFR1.interactable = mode == 2 ? true : false;
             XFR2.interactable = Altitude > 0 ? true : false;
 
             if (Speed > 0) XFRSpeed = Speed;
-            if (mode == 2) XFRHdg = TrackToPointFactored(point);
             if (Altitude > 0) XFRAltitude = Altitude;
 
             XFR3.interactable = Speed > 0;
 
 
             PrvTrackToPoint = TrackToPoint(point);
-            if (mode > 0)
-            {
-                Atc1.color = Color.green;
-                _atc1GrayDone = false;
-                if (mode == 2)
-                    SetXfrGlow(1, true);
-                else
-                    SetXfrGlow(1, false);
-            }
-            else
-                SetXfrGlow(1, false);
-
-            if (mode > 0) Cmode = mode;
             if (Cmode == 1) FuelPenaltyAtFMCAltConstain(); // Check  Alt constrains on point for penalty
 
             // Re-arm Atc3/XFR3 UI when this instruction includes a speed (even if value repeats)

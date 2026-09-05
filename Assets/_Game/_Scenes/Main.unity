@@ -4745,6 +4745,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   audioSource: {fileID: 811485075}
+  defaultButtonClick: {fileID: 8300000, guid: e106ab52e6bdc2e44ab1fd18d05f5a4e, type: 3}
   customButtonSounds:
   - soundId: KnobTurning
     clip: {fileID: 8300000, guid: 7f1f311d6d157794ab912a24ce297733, type: 3}

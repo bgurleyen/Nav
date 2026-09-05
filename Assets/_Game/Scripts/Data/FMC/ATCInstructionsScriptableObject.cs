@@ -14,7 +14,7 @@ public class ATCInstructionsScriptableObject : ScriptableObject
 public class ATCInstructionInfo
 {
         public int point;
-        public int mode; //0 nochange, 1 DCT , 2 HDG , 3 ClrILS
+        public int mode; // 0 = previous mode continues (1 LNAV/DCT, 2 HDG), 1 DCT/LNAV, 2 HDG, 3 ClrILS
         public long Altitude;
         public int VS;
         public int VS_nx; //0 exact, 1 min , 2 max
