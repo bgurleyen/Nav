@@ -576,8 +576,8 @@ public class Move : Singleton<Move>
 
     void ATCCall()
     //mode              pt  Alt VS  nx          Speed   nx
-    //0..NoChg				0..exact	        0..exact
-    //1..DCT				1..min	   	        1..min
+    //0..continue prev		0..exact	        0..exact
+    //1..DCT / LNAV			1..min	   	        1..min
     //2..HDG				2..max		        2..max
     //                      3..CLEAR ILS       >2..NextInstructionDistance
 
@@ -585,10 +585,8 @@ public class Move : Singleton<Move>
 
         var currentInstruction = _currentLevelData.ATCs[_currentInstructionIndex];
 
-        int oncemode = mode;
-
         point = currentInstruction.point;
-        mode = (mode == 11) ? 1 : currentInstruction.mode;
+        int issuedMode = currentInstruction.mode;
         Altitude = currentInstruction.Altitude;
         VS = currentInstruction.VS;
         VS_nx = currentInstruction.VS_nx;
@@ -613,12 +611,36 @@ public class Move : Singleton<Move>
 
         if (NewPoint)
         {
+            // 0 = keep previous lateral mode (1 LNAV/DCT, 2 HDG). Do not rewrite mode
+            // on later ticks — BorderGuard may temporarily set mode = 2.
+            if (issuedMode <= 0)
+                mode = Cmode > 0 ? Cmode : 1;
+            else
+                mode = issuedMode == 11 ? 1 : issuedMode;
 
+            if (mode > 0)
+                Cmode = mode;
 
-            Atc1.text = mode == 1 ? "Proceed direct to  " + Session.OriginalReferenceRoute.Points[point].Name :
-                mode == 2 ? "Turn " + TurnDirection(TrackToPoint(point))
-                          + "Heading " + Calculator.NormalizeHeading360(TrackToPointFactored(point)) : "";
+            bool newLateral = issuedMode == 1 || issuedMode == 2;
 
+            if (newLateral)
+            {
+                Atc1.text = mode == 1
+                    ? "Proceed direct to  " + Session.OriginalReferenceRoute.Points[point].Name
+                    : "Turn " + TurnDirection(TrackToPoint(point))
+                      + "Heading " + Calculator.NormalizeHeading360(TrackToPointFactored(point));
+
+                Atc1.color = Color.green;
+                _atc1GrayDone = false;
+                XFR1.interactable = mode == 2;
+                if (mode == 2)
+                {
+                    XFRHdg = TrackToPointFactored(point);
+                    SetXfrGlow(1, true);
+                }
+                else
+                    SetXfrGlow(1, false);
+            }
 
             string s = VS < 0 ? ", ROD " + (-VS) + " fpm" + NxToString(VS_nx) : "";
 
@@ -636,30 +658,15 @@ public class Move : Singleton<Move>
 
             NextInstructionDistance = Speed_nx > 2 ? Speed_nx : 1.3f;
 
-            XFR1.interactable = mode == 2 ? true : false;
             XFR2.interactable = Altitude > 0 ? true : false;
 
             if (Speed > 0) XFRSpeed = Speed;
-            if (mode == 2) XFRHdg = TrackToPointFactored(point);
             if (Altitude > 0) XFRAltitude = Altitude;
 
             XFR3.interactable = Speed > 0;
 
 
             PrvTrackToPoint = TrackToPoint(point);
-            if (mode > 0)
-            {
-                Atc1.color = Color.green;
-                _atc1GrayDone = false;
-                if (mode == 2)
-                    SetXfrGlow(1, true);
-                else
-                    SetXfrGlow(1, false);
-            }
-            else
-                SetXfrGlow(1, false);
-
-            if (mode > 0) Cmode = mode;
             if (Cmode == 1) FuelPenaltyAtFMCAltConstain(); // Check  Alt constrains on point for penalty
 
             // Re-arm Atc3/XFR3 UI when this instruction includes a speed (even if value repeats)
@@ -671,7 +678,7 @@ public class Move : Singleton<Move>
             CaptureRouteAB();
             ResetBorderState();
 
-            if (mode > 0 || XFR2.interactable || XFR3.interactable) SlowDown();
+            if (newLateral || XFR2.interactable || XFR3.interactable) SlowDown();
 
         }
         else // Not New
