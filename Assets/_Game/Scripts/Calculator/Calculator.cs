@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -1896,6 +1896,10 @@ public class Calculator : MonoBehaviour
 
         float dme = Move.Instance.DME();
         if (dme >= 3f && CAltitude > 1000)
+            return;
+
+        // Overflying RW / short final on a heading other than inbound final: keep flying.
+        if (!Move.Instance.IsWithinFinalApproachCourse(20f))
             return;
 
         _approachEndTriggered = true;

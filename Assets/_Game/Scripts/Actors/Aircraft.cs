@@ -142,6 +142,8 @@ public class Aircraft : MovingActor
         int courseHdg = Calculator.NormalizeHeading360(Mathf.RoundToInt(course));
         Calculator.RHeading = courseHdg;
         Calculator.Instance?.AddWindEffectToRHeading();
+
+        Move.Instance.CancelRerouteForLocCapture();
     }
 
     /// <summary>
@@ -197,7 +199,8 @@ public class Aircraft : MovingActor
         _pilot.TickSteerToTargetHeading(TargetHeading);
         _pilot.TickAdvance();
 
-        if (Move.Instance != null && Move.Instance.DME() < 0.3f)
+        if (Move.Instance != null && Move.Instance.DME() < 0.3f
+            && Move.Instance.IsWithinFinalApproachCourse(20f))
             FinishGame();
     }
 
@@ -262,6 +265,7 @@ public class Aircraft : MovingActor
 
     public float HeadingDegrees => Calculator.CTrack;
     public float DisplayHeadingDegrees => _pilot.DisplayHeadingDegrees;
+    public float TrackDegrees => _pilot.HeadingDegrees;
 
     /// <summary>Instantly set aircraft track (no turn lerp).</summary>
     public void SnapToTrack(float trackDegrees)

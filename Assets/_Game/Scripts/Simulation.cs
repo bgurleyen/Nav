@@ -20,10 +20,6 @@ namespace Navigation {
 
         // if we detect that during MOD the current node has passed we reExecute all the commands until that point
         private int _modReExecutedForIndex = -1;
-        private bool _modeSetDirty;
-        private float _modPreviewDistanceAccum;
-        private Vector2 _modPreviewLastNmPosition;
-        private const float ModPreviewRebuildDistanceNm = 0.5f;
 
         private void Awake() {
             UYServiceLocator.Register(this);
@@ -74,9 +70,7 @@ namespace Navigation {
             Session.ModRoute = null;
             Session.IsMod = false;
             ClearModeSetWithPosition();
-            _modeSetDirty = false;
             _modReExecutedForIndex = -1;
-            ResetModPreviewDistanceTracking();
             _legsScreen.DisplayOperation("0k");
         }
 
@@ -89,12 +83,13 @@ namespace Navigation {
 
             if (Session.IsRunning) {
                 Session.ActiveRoute.ComputeTrace();
-                ComputeMod();
 
                 _playerAircraft.SimulateTick();
 
 
                 Move.Instance.Tick();
+
+                ComputeMod();
 
                 _drawer.Clear();
                 _drawer.Display();
@@ -114,7 +109,6 @@ namespace Navigation {
         public void SplittedTickComputeTrace() {
             if (Session.IsRunning) {
                 Session.ActiveRoute.ComputeTrace();
-                ComputeMod();
             }
         }
 
@@ -122,6 +116,12 @@ namespace Navigation {
             if (Session.IsRunning) {
                 _playerAircraft.SimulateTick();
                 Move.Instance.Tick();
+            }
+        }
+
+        public void SplittedTickComputeMod() {
+            if (Session.IsRunning) {
+                ComputeMod();
             }
         }
 
@@ -141,8 +141,6 @@ namespace Navigation {
             if (Session.ModRoute == null) {
                 ClearModeSetWithPosition();
                 _modReExecutedForIndex = -1;
-                _modeSetDirty = false;
-                ResetModPreviewDistanceTracking();
                 return;
             }
 
@@ -160,22 +158,13 @@ namespace Navigation {
                 }
             }
 
-            var currentNm = Session.PlayerAircraft.NMPosition;
-            _modPreviewDistanceAccum += Vector2.Distance(currentNm, _modPreviewLastNmPosition);
-            _modPreviewLastNmPosition = currentNm;
-
-            // Rebuild on content change, missing preview, or every 0.5 NM — not every frame.
-            if (Session.ModeSetWithPosition == null || _modeSetDirty
-                || _modPreviewDistanceAccum >= ModPreviewRebuildDistanceNm) {
-                RebuildModeSetWithPosition();
-            }
+            // Rebuild from a 10s look-ahead every frame so the dashed MOD stays ahead of the aircraft.
+            RebuildModeSetWithPosition();
         }
 
         public void RebuildModeSetWithPosition() {
             if (Session.ModRoute == null) {
                 ClearModeSetWithPosition();
-                _modeSetDirty = false;
-                ResetModPreviewDistanceTracking();
                 return;
             }
 
@@ -183,18 +172,10 @@ namespace Navigation {
             Session.ModeSetWithPosition = Session.ModRoute.CloneAndInit();
             Session.ModeSetWithPosition.AddModPositionNodes();
             Session.ModeSetWithPosition.ComputeTrace();
-            _modeSetDirty = false;
-            ResetModPreviewDistanceTracking();
         }
 
         private void InvalidateModeSet() {
-            _modeSetDirty = true;
-        }
-
-        private void ResetModPreviewDistanceTracking() {
-            _modPreviewDistanceAccum = 0f;
-            if (Session.PlayerAircraft != null)
-                _modPreviewLastNmPosition = Session.PlayerAircraft.NMPosition;
+            // Preview is rebuilt from live aircraft position every frame after simulation.
         }
 
         private void ClearModeSetWithPosition() {
@@ -206,8 +187,6 @@ namespace Navigation {
 
         public void ClearModPreview() {
             ClearModeSetWithPosition();
-            _modeSetDirty = false;
-            ResetModPreviewDistanceTracking();
         }
 
         public void ReExecuteCachedCommands() {
@@ -378,7 +357,6 @@ namespace Navigation {
 
             _cachedCommands = new List<ICommand>();
             Session.IsMod = true;
-            ResetModPreviewDistanceTracking();
             InvalidateModeSet();
 
             // in case the aircraft was in free flight with intersection valid, shortcut mod until the node after intersection

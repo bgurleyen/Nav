@@ -154,6 +154,16 @@ public class ApproachStatusDialog : MonoBehaviour
         Time.timeScale = 0f;
     }
 
+    /// <summary>Hide the modal without running the close callback (e.g. LOC capture cancels reroute).</summary>
+    public static void DismissWithoutCallback()
+    {
+        if (_instance == null || !_instance.gameObject.activeSelf)
+            return;
+
+        _instance._onClosed = null;
+        _instance.Close();
+    }
+
     void Close()
     {
         gameObject.SetActive(false);
