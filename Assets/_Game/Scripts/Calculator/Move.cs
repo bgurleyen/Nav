@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using Gamelogic.Extensions;
 using Navigation;
@@ -66,6 +67,8 @@ public class Move : Singleton<Move>
     bool _atc1GrayDone;
     bool _atc2GrayDone;
     bool _atc3GrayDone;
+    bool _clearIlsAwaitingXfr;
+    Coroutine _armPulse;
 
     /// <summary>1 normal; 20 during hard catch-up toward B.</summary>
     public static float TurnRateMul { get; private set; } = 1f;
@@ -130,6 +133,7 @@ public class Move : Singleton<Move>
         _atc1GrayDone = false;
         _atc2GrayDone = false;
         _atc3GrayDone = false;
+        _clearIlsAwaitingXfr = false;
         _atc3IssuedSpeed = 0;
         ResetBorderState();
         _routeValid = false;
@@ -213,6 +217,12 @@ public class Move : Singleton<Move>
         const float hardDeg = 15f;
         const float hardGateNm = 1.3f;
         const float beyondAbExtraNm = 5f;
+
+        if (Session.State != null && Session.State.LOCCaptured)
+        {
+            CancelRerouteForLocCapture();
+            return;
+        }
 
         if (_borderBusy || Session.PlayerAircraft == null || !_routeValid)
             return;
@@ -330,6 +340,30 @@ public class Move : Singleton<Move>
         ClearOutsideBorderSteer();
     }
 
+    /// <summary>LOC capture cancels hard/soft reroute: no 20x turn, no standby ATC1, no reroute dialog callback.</summary>
+    public void CancelRerouteForLocCapture()
+    {
+        bool dismissRerouteDialog = _borderBusy;
+        bool wasRerouting = _hardActive || _rerouteStandbyUntilNextClearance || _borderBusy || IsOutsideBorder;
+
+        ResetBorderState();
+
+        if (dismissRerouteDialog)
+            ApproachStatusDialog.DismissWithoutCallback();
+
+        if (!wasRerouting || Atc1 == null || string.IsNullOrEmpty(Atc1.text))
+            return;
+
+        if (Atc1.text.IndexOf("Rerouting", StringComparison.OrdinalIgnoreCase) < 0)
+            return;
+
+        Atc1.text = "";
+        Atc1.color = Color.gray;
+        _atc1GrayDone = true;
+        if (XFR1 != null) XFR1.interactable = false;
+        SetXfrGlow(1, false);
+    }
+
     void EndHardMode()
     {
         _hardActive = false;
@@ -370,7 +404,7 @@ public class Move : Singleton<Move>
             txt.fontMaterial.SetFloat(ShaderUtilities.ID_GlowPower, glow ? 1f : 0f);
     }
 
-    /// <summary>ATC text gray + XFR matte — only from XFR click.</summary>
+    /// <summary>ATC text gray + XFR matte — XFR click, or DCT already first on LEGS.</summary>
     public void AcknowledgeAtc1()
     {
         if (_atc1GrayDone || Atc1 == null || string.IsNullOrEmpty(Atc1.text))
@@ -384,6 +418,75 @@ public class Move : Singleton<Move>
         SetXfrGlow(1, false);
     }
 
+    void TryGrayAtc1IfLegsMatches()
+    {
+        if (_atc1GrayDone || _rerouteStandbyUntilNextClearance || mode != 1)
+            return;
+        if (Atc1 == null || string.IsNullOrEmpty(Atc1.text))
+            return;
+
+        var atcName = GetAtc1WaypointName();
+        if (string.IsNullOrEmpty(atcName))
+            return;
+
+        if (WaypointNamesEqual(atcName, FirstLegsWaypointName(Session.VisibleRoute))
+            || WaypointNamesEqual(atcName, FirstLegsWaypointName(Session.ActiveRoute)))
+            AcknowledgeAtc1();
+    }
+
+    string GetAtc1WaypointName()
+    {
+        if (Atc1 != null && !string.IsNullOrEmpty(Atc1.text))
+        {
+            const string prefix = "Proceed direct to";
+            var text = Atc1.text.Trim();
+            if (text.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                return text.Substring(prefix.Length).Trim();
+        }
+
+        var points = Session.OriginalReferenceRoute?.Points;
+        if (points == null || point < 0 || point >= points.Length)
+            return "";
+
+        return (points[point].Name ?? "").Trim();
+    }
+
+    static string FirstLegsWaypointName(RouteScriptableObject route)
+    {
+        if (route?.Points == null || route.Points.Length == 0)
+            return "";
+
+        int start = 0;
+        if (Session.PlayerAircraft != null)
+            start = Mathf.Clamp(PositionVirtualNode.NextNodeIndex, 0, route.Points.Length - 1);
+
+        for (int i = start; i < route.Points.Length; i++)
+        {
+            var p = route.Points[i];
+            if (!IsDisplayedLegsWaypoint(p))
+                continue;
+            return p.Name.Trim();
+        }
+
+        return "";
+    }
+
+    static bool IsDisplayedLegsWaypoint(RoutePoint p)
+    {
+        if (p == null || p.IsSkippable || string.IsNullOrEmpty(p.Name))
+            return false;
+        if (p.Name == "_START_" || p.Name == "_Position_")
+            return false;
+        return true;
+    }
+
+    static bool WaypointNamesEqual(string a, string b)
+    {
+        if (string.IsNullOrEmpty(a) || string.IsNullOrEmpty(b))
+            return false;
+        return string.Equals(a.Trim(), b.Trim(), StringComparison.OrdinalIgnoreCase);
+    }
+
     public void AcknowledgeAtc2()
     {
         if (_atc2GrayDone || Atc2 == null || string.IsNullOrEmpty(Atc2.text))
@@ -392,6 +495,12 @@ public class Move : Singleton<Move>
         Atc2.color = Color.gray;
         if (XFR2 != null) XFR2.interactable = false;
         SetXfrGlow(2, false);
+
+        if (_clearIlsAwaitingXfr)
+        {
+            _clearIlsAwaitingXfr = false;
+            ShowArmButton();
+        }
     }
 
     public void AcknowledgeAtc3()
@@ -415,16 +524,49 @@ public class Move : Singleton<Move>
         go.name = "ARM";
         var rt = go.GetComponent<RectTransform>();
         if (rt != null)
+        {
             rt.anchoredPosition = new Vector2(365f, 0f);
+            rt.sizeDelta = new Vector2(
+                Mathf.Max(rt.sizeDelta.x, 120f),
+                Mathf.Max(rt.sizeDelta.y, 48f));
+        }
 
         _armButton = go.GetComponent<Button>();
         _armButton.onClick = new Button.ButtonClickedEvent();
         _armButton.onClick.AddListener(OnArmApproachClicked);
         _armButton.interactable = true;
 
+        var colors = _armButton.colors;
+        colors.normalColor = new Color(1f, 0.78f, 0.08f, 1f);
+        colors.highlightedColor = new Color(1f, 0.92f, 0.25f, 1f);
+        colors.pressedColor = new Color(1f, 0.55f, 0f, 1f);
+        colors.selectedColor = colors.highlightedColor;
+        _armButton.colors = colors;
+
+        var img = go.GetComponent<Image>();
+        if (img != null)
+        {
+            img.enabled = true;
+            img.color = new Color(1f, 0.78f, 0.08f, 1f);
+        }
+
         _armButtonTxt = go.GetComponentInChildren<TextMeshProUGUI>(true);
         if (_armButtonTxt != null)
+        {
             _armButtonTxt.text = "ARM";
+            _armButtonTxt.fontStyle = FontStyles.Bold;
+            _armButtonTxt.fontSize = Mathf.Max(_armButtonTxt.fontSize * 1.35f, 30f);
+            _armButtonTxt.color = Color.black;
+            _armButtonTxt.enableVertexGradient = false;
+
+            var mat = new Material(_armButtonTxt.fontMaterial);
+            mat.EnableKeyword("GLOW_ON");
+            mat.SetFloat(ShaderUtilities.ID_GlowPower, 1f);
+            mat.SetColor(ShaderUtilities.ID_GlowColor, new Color(1f, 0.95f, 0.2f, 1f));
+            mat.SetFloat(ShaderUtilities.ID_GlowOffset, 0.2f);
+            mat.SetFloat(ShaderUtilities.ID_GlowOuter, 0.75f);
+            _armButtonTxt.fontMaterial = mat;
+        }
 
         go.SetActive(false);
     }
@@ -442,17 +584,41 @@ public class Move : Singleton<Move>
         _armButton.interactable = true;
         if (_armButtonTxt != null)
             _armButtonTxt.fontMaterial.SetFloat(ShaderUtilities.ID_GlowPower, 1f);
+
+        if (_armPulse != null)
+            StopCoroutine(_armPulse);
+        _armPulse = StartCoroutine(PulseArmButton());
         SlowDown();
     }
 
     void HideArmButton()
     {
+        if (_armPulse != null)
+        {
+            StopCoroutine(_armPulse);
+            _armPulse = null;
+        }
+
         if (_armButton == null)
             return;
 
         if (_armButtonTxt != null)
             _armButtonTxt.fontMaterial.SetFloat(ShaderUtilities.ID_GlowPower, 0f);
         _armButton.gameObject.SetActive(false);
+    }
+
+    IEnumerator PulseArmButton()
+    {
+        var rt = _armButton != null ? _armButton.GetComponent<RectTransform>() : null;
+        while (_armButton != null && _armButton.gameObject.activeSelf)
+        {
+            float t = (Mathf.Sin(Time.unscaledTime * 7f) + 1f) * 0.5f;
+            if (rt != null)
+                rt.localScale = Vector3.one * Mathf.Lerp(1.25f, 1.55f, t);
+            if (_armButtonTxt != null)
+                _armButtonTxt.color = Color.Lerp(Color.black, new Color(0.45f, 0.12f, 0f), t);
+            yield return null;
+        }
     }
 
     public void OnArmApproachClicked()
@@ -500,6 +666,9 @@ public class Move : Singleton<Move>
 
         ApproachStatusDialog.Show(title, body, "OK", () =>
         {
+            if (Session.State != null && Session.State.LOCCaptured)
+                return;
+
             _borderBusy = false;
 
             Calculator.RHeading = Calculator.NormalizeHeading360(hdg);
@@ -578,6 +747,19 @@ public class Move : Singleton<Move>
     {
         return Vector2.Distance(Session.PlayerAircraft.NMPosition, PointPos(RW));
     } // Distance from RW
+
+    /// <summary>
+    /// True when aircraft heading is within ±tolerance of inbound final (levelInfo.Course).
+    /// Overflying the runway off-axis must not end the level.
+    /// </summary>
+    public bool IsWithinFinalApproachCourse(float toleranceDeg = 20f)
+    {
+        var levelInfo = Session.CurrentLevel?.levelInfo;
+        if (levelInfo == null || Session.PlayerAircraft == null)
+            return false;
+
+        return Mathf.Abs(Mathf.DeltaAngle(levelInfo.Course, Session.PlayerAircraft.HeadingDegrees)) <= toleranceDeg;
+    }
 
     /// <summary>Runway threshold elevation (ft MSL) from the last route point.</summary>
     public float RunwayAltitudeFeet()
@@ -710,8 +892,12 @@ public class Move : Singleton<Move>
             if (VS_nx == 3)
             {
                 Atc2.text += " CLEAR ILS APPROACH ";
-                ShowArmButton();
+                _clearIlsAwaitingXfr = true;
+                _atc2GrayDone = false;
+                Atc2.color = Color.green;
+                HideArmButton();
             }
+        
 
             Atc3.text = Speed > 0 ? "Speed " + Speed + " knots " + NxToString(Speed_nx) :
                 Speed == 0 ? Atc3.text : "";
@@ -719,7 +905,7 @@ public class Move : Singleton<Move>
             NextInstructionDistance = Speed_nx > 2 ? Speed_nx : 1.3f;
 
             XFR1.interactable = mode == 2 ? true : false;
-            XFR2.interactable = Altitude > 0;
+            XFR2.interactable = Altitude > 0 || VS_nx == 3;
             XFR3.interactable = Speed > 0;
 
             if (Speed > 0) XFRSpeed = Speed;
@@ -766,6 +952,8 @@ public class Move : Singleton<Move>
 
             BorderGuard();
         }
+
+        TryGrayAtc1IfLegsMatches();
 
         if ((Altitude > 0) && (Altitude != ATCAltitude)) //Descent clr changed
         {

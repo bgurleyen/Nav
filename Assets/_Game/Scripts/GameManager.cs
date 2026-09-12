@@ -145,6 +145,7 @@ public class GameManager : MonoBehaviour
         {
             _simulation.SplittedTickSimulation();
         }
+        _simulation.SplittedTickComputeMod();
         _simulation.SplittedTickDraw();
         if (tickDuration > 0f)
             _pendingDeltaTime -= ticksInDeltaTime * tickDuration;

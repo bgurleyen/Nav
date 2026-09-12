@@ -45,6 +45,6 @@ MonoBehaviour:
     mode: 2
     Altitude: 0
     VS: 0
-    VS_nx: 4
+    VS_nx: 0
     Speed: 0
     Speed_nx: 0

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -1898,6 +1898,10 @@ public class Calculator : MonoBehaviour
         if (dme >= 3f && CAltitude > 1000)
             return;
 
+        // Overflying RW / short final on a heading other than inbound final: keep flying.
+        if (!Move.Instance.IsWithinFinalApproachCourse(20f))
+            return;
+
         _approachEndTriggered = true;
 
         var report = BuildStabilizationReport(out bool allOk);
@@ -1960,7 +1964,7 @@ public class Calculator : MonoBehaviour
 
     static int GetFlapSettingDegrees(int flapIdx)
     {
-        // UP, 1, 5, 10, 15, 25, 30, 40, 40
+        // UP, 1, 5, 10, 15, 25, 30, 40, 40 ..
         int[] settings = { 0, 1, 5, 10, 15, 25, 30, 40, 40 };
         if (flapIdx < 0 || flapIdx >= settings.Length)
             return 0;

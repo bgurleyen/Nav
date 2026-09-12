@@ -646,64 +646,119 @@ namespace Navigation
             var nodeBeforePlaneIndex = FindNodeBeforePlaneOnMode();
             var nodeBeforePosition = Points[nodeBeforePlaneIndex];
             int nodeAfterPlaneIndex = nodeBeforePlaneIndex + 1;
+            var routeNextNode = Points[nodeAfterPlaneIndex];
 
-            // Preview starts 0.5 NM ahead of the aircraft, not at the exact current position.
-            ConstructPositionNodes(nodeBeforePosition, Points[nodeAfterPlaneIndex],
+            ConstructPositionNodes(nodeBeforePosition, routeNextNode,
                 out var airplanePositionNodeToAdd, out var frontOfAirplanePositionNodeToAdd,
-                startAheadNm: 0.5f);
+                startAheadNm: GetLiveStartAheadNm());
+
+            var intendedStart = airplanePositionNodeToAdd.CartesianPosition;
+            var intendedFuture = frontOfAirplanePositionNodeToAdd.CartesianPosition;
+            var intendedNext = routeNextNode.CartesianPosition;
 
             InsertNodes(nodeAfterPlaneIndex,
                 airplanePositionNodeToAdd,
                 frontOfAirplanePositionNodeToAdd);
 
             ComputeCartesianPositions();
+
+            // Polar rebuild can drift the stub; snap back to the intended look-ahead geometry.
+            SnapPositionStubToWorld(
+                nodeBeforePosition,
+                airplanePositionNodeToAdd,
+                frontOfAirplanePositionNodeToAdd,
+                routeNextNode,
+                intendedStart,
+                intendedFuture,
+                intendedNext);
         }
 
         public int FindForwardPositionNodeIndex()
         {
             for (var i = 0; i < Points.Length; i++)
             {
-                if (Points[i].Name == "_Position_" || Points[i].IsPositionNode)
+                if (Points[i].Name == "_Position_")
+                    return i;
+            }
+
+            for (var i = 0; i < Points.Length; i++)
+            {
+                if (Points[i].IsPositionNode)
                     return i;
             }
 
             return -1;
         }
 
+        private const float DirectToLookAheadSeconds = 10f;
+
+        private static float GetLiveStartAheadNm()
+        {
+            // Dashed MOD origin: 10s along current track. Tick floor so a sim step cannot overtake it.
+            var lookAheadNm = Mathf.Max(0f, Calculator.GS) / 3600f * DirectToLookAheadSeconds;
+            var tickFloorNm = Mathf.Max(0.02f, Session.Settings.PlayerTickDistance * 2f);
+            return Mathf.Max(lookAheadNm, tickFloorNm);
+        }
+
+        private static void SnapPositionStubToWorld(
+            RoutePoint nodeBeforePosition,
+            RoutePoint airplanePositionNode,
+            RoutePoint frontOfAirplanePositionNode,
+            RoutePoint routeNextNode,
+            Vector2 startPosition,
+            Vector2 futurePosition,
+            Vector2 nextPosition)
+        {
+            airplanePositionNode.CartesianPosition = startPosition;
+            airplanePositionNode.Distance = Vector2.Distance(startPosition, nodeBeforePosition.CartesianPosition);
+            airplanePositionNode.RawDegrees = Geometry.AngleOfPosition(startPosition, nodeBeforePosition.CartesianPosition);
+
+            frontOfAirplanePositionNode.CartesianPosition = futurePosition;
+            frontOfAirplanePositionNode.Distance = Vector2.Distance(futurePosition, startPosition);
+            frontOfAirplanePositionNode.RawDegrees = Geometry.AngleOfPosition(futurePosition, startPosition);
+
+            if (routeNextNode == null)
+                return;
+
+            routeNextNode.CartesianPosition = nextPosition;
+            routeNextNode.Distance = Vector2.Distance(nextPosition, futurePosition);
+            routeNextNode.RawDegrees = Geometry.AngleOfPosition(nextPosition, futurePosition);
+        }
+
         private void ConstructPositionNodes(RoutePoint nodeBeforePosition, RoutePoint routeNextNode,
             out RoutePoint airplanePositionNodeToAdd, out RoutePoint frontOfAirplanePositionNodeToAdd,
             float startAheadNm = 0f)
         {
-            // Stub ahead of the aircraft so the first turn can use turn radius.
+            // Origin can sit 10s ahead of the aircraft (MOD dashed). The turn-radius stub
+            // still starts from that origin with full ForwardThreshold inbound length.
             // Prefer current heading, but if that points opposite the new route leg,
             // align the stub with route-forward so EXEC does not U-turn the wrong way.
             var aircraftPos = Session.PlayerAircraft.NMPosition;
+            var headingDegrees = Session.PlayerAircraft.TrackDegrees;
             var headingFuture = Geometry.GetNextPosition(
                 aircraftPos,
                 Session.Settings.ForwardThreshold,
-                -Session.PlayerAircraft.HeadingDegrees);
+                -headingDegrees);
 
-            var futurePosition = headingFuture;
+            var forwardDir = headingFuture - aircraftPos;
             if (routeNextNode != null)
             {
                 var routeDelta = routeNextNode.CartesianPosition - aircraftPos;
-                if (routeDelta.sqrMagnitude > 0.0001f)
+                if (routeDelta.sqrMagnitude > 0.0001f && Vector2.Dot(forwardDir, routeDelta) < 0f)
                 {
-                    var headingDir = headingFuture - aircraftPos;
-                    if (Vector2.Dot(headingDir, routeDelta) < 0f)
-                    {
-                        futurePosition = aircraftPos +
-                                         routeDelta.normalized * Session.Settings.ForwardThreshold;
-                    }
+                    forwardDir = routeDelta;
                 }
             }
 
-            var startPosition = aircraftPos;
-            var forwardDelta = futurePosition - aircraftPos;
-            if (startAheadNm > 0f && forwardDelta.sqrMagnitude > 0.0001f)
-            {
-                startPosition = aircraftPos + forwardDelta.normalized * startAheadNm;
-            }
+            if (forwardDir.sqrMagnitude < 0.0001f)
+                forwardDir = Vector2.up;
+            else
+                forwardDir.Normalize();
+
+            var startPosition = startAheadNm > 0f
+                ? aircraftPos + forwardDir * startAheadNm
+                : aircraftPos;
+            var futurePosition = startPosition + forwardDir * Session.Settings.ForwardThreshold;
 
             airplanePositionNodeToAdd = RoutePoint.ConstructFromPosition(
                 startPosition,
@@ -722,10 +777,11 @@ namespace Navigation
                 "_Position_");
 
 
-            airplanePositionNodeToAdd.IndicateHiddenLine();
+            // Keep "P" so IsPositionNode stays true; hide only the inbound from the last waypoint.
+            airplanePositionNodeToAdd.Details = "HP";
             if (HasActiveDirectApproach(out _))
             {
-                frontOfAirplanePositionNodeToAdd.IndicateHiddenLine();
+                frontOfAirplanePositionNodeToAdd.Details = "HP";
             }
         }
 
