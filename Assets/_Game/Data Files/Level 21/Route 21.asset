@@ -123,7 +123,7 @@ MonoBehaviour:
     RawDegrees: 59
     Distance: 1.6
     RawSpeed: 0
-    RawAltitude: 
+    RawAltitude: 3000
     Details: 
   - ID: 0
     Name: FI06
@@ -137,5 +137,5 @@ MonoBehaviour:
     RawDegrees: 60
     Distance: 4.2
     RawSpeed: 0
-    RawAltitude: 
+    RawAltitude: 320
     Details: 

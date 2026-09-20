@@ -53,26 +53,26 @@ MonoBehaviour:
     RawDegrees: 141
     Distance: 16
     RawSpeed: 0
-    RawAltitude: 6000
+    RawAltitude: 6000A
     Details: 
   - ID: 0
     Name: UTIXO
     RawDegrees: 320
     Distance: 8.3
     RawSpeed: 0
-    RawAltitude: 5000
+    RawAltitude: 5000A
     Details: 
   - ID: 0
     Name: MILNI
     RawDegrees: 334
     Distance: 2.9
     RawSpeed: 0
-    RawAltitude: 1458
+    RawAltitude: 5000
     Details: 
   - ID: 0
     Name: RW24
     RawDegrees: 334
     Distance: 10.2
     RawSpeed: 0
-    RawAltitude: 
+    RawAltitude: 1458
     Details: 

@@ -25,7 +25,7 @@ MonoBehaviour:
     RawDegrees: 38
     Distance: 9
     RawSpeed: 0
-    RawAltitude: 10000
+    RawAltitude: 
     Details: 
   - ID: 2
     Name: BLITZ

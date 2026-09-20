@@ -38,7 +38,7 @@ MonoBehaviour:
     Name: DV460
     RawDegrees: 260
     Distance: 17.5
-    RawSpeed: 220
+    RawSpeed: 0
     RawAltitude: 
     Details: 
   - ID: 4

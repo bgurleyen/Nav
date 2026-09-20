@@ -32,7 +32,7 @@ MonoBehaviour:
     RawDegrees: 306
     Distance: 13
     RawSpeed: 0
-    RawAltitude: 11000B
+    RawAltitude: 
     Details: 
   - ID: 3
     Name: 'RIVER '
@@ -53,14 +53,14 @@ MonoBehaviour:
     RawDegrees: 42
     Distance: 15
     RawSpeed: 0
-    RawAltitude: 7000A
+    RawAltitude: 
     Details: 
   - ID: 6
     Name: 'EH644 '
     RawDegrees: 339
     Distance: 12.1
     RawSpeed: 0
-    RawAltitude: 3000A
+    RawAltitude: 
     Details: 
   - ID: 7
     Name: 'INTC '

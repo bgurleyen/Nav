@@ -39,7 +39,7 @@ MonoBehaviour:
     RawDegrees: 6
     Distance: 3
     RawSpeed: 0
-    RawAltitude: 8000A9000B
+    RawAltitude: 
     Details: 
   - ID: 4
     Name: DV582
@@ -87,7 +87,7 @@ MonoBehaviour:
     Name: DV573
     RawDegrees: 271
     Distance: 3
-    RawSpeed: 190
+    RawSpeed: 0
     RawAltitude: 
     Details: 
   - ID: 11

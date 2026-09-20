@@ -24,15 +24,15 @@ MonoBehaviour:
     Name: SILVA
     RawDegrees: 80
     Distance: 9
-    RawSpeed: 0
+    RawSpeed: 240
     RawAltitude: 9000A
     Details: 
   - ID: 0
     Name: BAKKE
     RawDegrees: 38
     Distance: 20
-    RawSpeed: 240
-    RawAltitude: 7000
+    RawSpeed: 210
+    RawAltitude: 7000A
     Details: 
   - ID: 0
     Name: PETER

@@ -46,19 +46,19 @@ MonoBehaviour:
     RawDegrees: 55
     Distance: 4.9
     RawSpeed: 0
-    RawAltitude: 3200
+    RawAltitude: 7500
     Details: 
   - ID: 5
     Name: NONB
     RawDegrees: 54
     Distance: 2.8
     RawSpeed: 0
-    RawAltitude: 1000
+    RawAltitude: 6500
     Details: 
   - ID: 6
     Name: RW06
     RawDegrees: 54
     Distance: 4
     RawSpeed: 0
-    RawAltitude: 100
+    RawAltitude: 5330
     Details: 

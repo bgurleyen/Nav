@@ -24,7 +24,7 @@ MonoBehaviour:
     Name: NUGRA
     RawDegrees: 118
     Distance: 9
-    RawSpeed: 0
+    RawSpeed: 250
     RawAltitude: 
     Details: 
   - ID: 2
@@ -32,14 +32,14 @@ MonoBehaviour:
     RawDegrees: 151
     Distance: 57.5
     RawSpeed: 0
-    RawAltitude: 
+    RawAltitude: 20000B
     Details: 
   - ID: 3
     Name: SOPIT
     RawDegrees: 142
     Distance: 20.4
-    RawSpeed: 0
-    RawAltitude: 
+    RawSpeed: 220
+    RawAltitude: 15000B
     Details: 
   - ID: 4
     Name: 'WCONB '
@@ -52,8 +52,8 @@ MonoBehaviour:
     Name: BNN
     RawDegrees: 118
     Distance: 17.1
-    RawSpeed: 0
-    RawAltitude: 
+    RawSpeed: 220
+    RawAltitude: 7000
     Details: 
   - ID: 6
     Name: BNN05
