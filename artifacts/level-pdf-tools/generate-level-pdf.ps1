@@ -3,6 +3,7 @@ $ErrorActionPreference = "Stop"
 $Root = (Resolve-Path (Join-Path $PSScriptRoot "..\..")).Path
 $DataRoot = Join-Path $Root "Assets\_Game\Data Files"
 $OutPdf = Join-Path $Root "artifacts\Level-Routes-ATC.pdf"
+$OutPdfAlt = Join-Path $Root "artifacts\Level-Routes-ATC-new.pdf"
 
 $PageW = 1191.0
 $PageH = 842.0
@@ -94,6 +95,35 @@ function Format-AtcSpd($a) {
 function Test-IsIlsClr($a) {
   if (-not $a) { return $false }
   return ([int]$a.mode -eq 3 -or [int]$a.VS_nx -eq 3)
+}
+$script:NmToFt = 6076.1154855642
+$script:Tan3Deg = [Math]::Tan(3.0 * [Math]::PI / 180.0)
+function Get-NumericAlt([string]$raw) {
+  if ([string]::IsNullOrWhiteSpace($raw)) { return 0.0 }
+  $m = [regex]::Match($raw, "(\d+(?:\.\d+)?)")
+  if ($m.Success) { return [double]$m.Groups[1].Value }
+  return 0.0
+}
+function Get-Gs3Alt([double]$remainNm, [double]$rwyElev) {
+  $alt = $rwyElev + $remainNm * $script:NmToFt * $script:Tan3Deg
+  if ($alt -lt 0) { $alt = 0 }
+  if ($remainNm -le 0.02) { return [int][Math]::Round($rwyElev) }
+  if ($alt -ge 1000) { return [int]([Math]::Round($alt / 100.0) * 100) }
+  return [int]([Math]::Round($alt / 10.0) * 10)
+}
+function Format-Gs3Alt([int]$alt) {
+  return "$alt"
+}
+function Add-GsCircle($page, [double]$cx, [double]$cy, [string]$label, $fill, $stroke, [double]$lw, [bool]$ils) {
+  $size = 6.4
+  $tw = Get-TextWidth $label $size $true
+  $r = [Math]::Max(10.6, ($tw / 2.0) + 3.3)
+  Add-Circle $page $cx $cy $r $fill $stroke $lw
+  if ($ils) {
+    Add-Circle $page $cx $cy ($r + 3.0) $null $C.ils 1.4
+  }
+  Add-Text $page $label ($cx - $tw / 2.0) ($cy - $size * 0.35) $size @(0.08, 0.12, 0.2) $true
+  return $r
 }
 function Get-ModeLabel($a) {
   if ($a.VS_nx -eq 3 -or $a.mode -eq 3) { return "CLR ILS" }
@@ -431,8 +461,18 @@ function Save-PdfDoc($doc, [string]$path) {
   $sw.WriteLine("startxref"); $sw.WriteLine("$xref"); $sw.WriteLine("%%EOF"); $sw.Flush()
   $dir = Split-Path $path
   if (-not (Test-Path $dir)) { New-Item -ItemType Directory -Path $dir | Out-Null }
-  [IO.File]::WriteAllBytes($path, $ms.ToArray())
+  $bytes = $ms.ToArray()
   $sw.Dispose(); $ms.Dispose()
+  $tried = @($path, (Join-Path (Split-Path $path) "Level-Routes-ATC-new.pdf"), (Join-Path (Split-Path $path) "Level-Routes-ATC-gs3.pdf"))
+  $script:SavedPdfPath = $null
+  foreach ($cand in $tried) {
+    try {
+      [IO.File]::WriteAllBytes($cand, $bytes)
+      $script:SavedPdfPath = $cand
+      break
+    } catch { }
+  }
+  if (-not $script:SavedPdfPath) { throw "Could not write PDF (files open). Close the PDF and retry." }
 }
 
 $C = @{
@@ -444,21 +484,61 @@ $C = @{
   leader = @(0.7, 0.72, 0.76); grid = @(0.88, 0.9, 0.93); ils = @(0.82, 0.12, 0.55)
 }
 
-function Pick-LabelSlot([double]$px, [double]$py, [double]$boxW, [double]$boxH, $boxes) {
-  $candsX = @(6, 6, (-$boxW - 4), (-$boxW - 4), 8, 8, (-$boxW - 6), (-$boxW - 6), 14, (-$boxW - 16), 6, 6)
-  $candsY = @(5, (-$boxH - 2), 5, (-$boxH - 2), 16, (-$boxH - 14), 16, (-$boxH - 14), 2, 2, 28, (-$boxH - 26))
-  for ($ci = 0; $ci -lt $candsX.Count; $ci++) {
-    $bx = $px + [double]$candsX[$ci]
-    $by = $py + [double]$candsY[$ci]
-    $clash = $false
-    foreach ($b in $boxes) {
-      if ($bx -lt ([double]$b.x + [double]$b.w) -and ($bx + $boxW) -gt [double]$b.x -and $by -lt ([double]$b.y + [double]$b.h) -and ($by + $boxH) -gt [double]$b.y) {
-        $clash = $true; break
+function Test-BoxClash([double]$bx, [double]$by, [double]$bw, [double]$bh, $boxes, [double]$gap) {
+  foreach ($b in $boxes) {
+    if (($bx - $gap) -lt ([double]$b.x + [double]$b.w) -and ($bx + $bw + $gap) -gt [double]$b.x -and ($by - $gap) -lt ([double]$b.y + [double]$b.h) -and ($by + $bh + $gap) -gt [double]$b.y) {
+      return $true
+    }
+  }
+  return $false
+}
+
+function Pick-LabelSlot([double]$px, [double]$py, [double]$boxW, [double]$boxH, $boxes, [double]$left, [double]$right, [double]$bottom, [double]$top) {
+  $radii = @(24, 32, 42, 54, 68, 84, 102, 122, 144, 168, 196)
+  $nDir = 16
+  foreach ($r in $radii) {
+    for ($d = 0; $d -lt $nDir; $d++) {
+      $ang = ($d * 2.0 * [Math]::PI / $nDir) + 0.2
+      $ax = $px + [Math]::Cos($ang) * $r
+      $ay = $py + [Math]::Sin($ang) * $r
+      $bx = if ([Math]::Cos($ang) -ge 0) { $ax } else { $ax - $boxW }
+      $by = if ([Math]::Sin($ang) -ge 0) { $ay } else { $ay - $boxH }
+      if ($bx -lt $left) { $bx = $left }
+      if (($bx + $boxW) -gt $right) { $bx = $right - $boxW }
+      if ($by -lt $bottom) { $by = $bottom }
+      if (($by + $boxH) -gt $top) { $by = $top - $boxH }
+      if ($bx -lt $left -or $by -lt $bottom) { continue }
+      if (-not (Test-BoxClash $bx $by $boxW $boxH $boxes 3.5)) {
+        return @{ x = $bx; y = $by; w = $boxW; h = $boxH }
       }
     }
-    if (-not $clash) { return @{ x = $bx; y = $by; w = $boxW; h = $boxH } }
   }
-  return @{ x = $px + 6; y = $py + 5; w = $boxW; h = $boxH }
+  return @{ x = [Math]::Max($left, [Math]::Min($right - $boxW, $px + 14)); y = [Math]::Max($bottom, [Math]::Min($top - $boxH, $py + 14)); w = $boxW; h = $boxH }
+}
+
+function Nearest-OnBox($px, $py, $box) {
+  $nx = [Math]::Max([double]$box.x, [Math]::Min([double]$box.x + [double]$box.w, $px))
+  $ny = [Math]::Max([double]$box.y, [Math]::Min([double]$box.y + [double]$box.h, $py))
+  return @{ x = $nx; y = $ny }
+}
+
+function Add-Arrow($page, $from, $to, $color, [double]$lw, [double]$stopR = 0) {
+  $dx = [double]$to.x - [double]$from.x
+  $dy = [double]$to.y - [double]$from.y
+  $len = [Math]::Sqrt($dx * $dx + $dy * $dy)
+  if ($len -lt 8) { return }
+  $ux = $dx / $len
+  $uy = $dy / $len
+  $gap = [Math]::Max(0.0, $stopR)
+  if (($len - $gap) -lt 10) { return }
+  $end = @{ x = [double]$to.x - $ux * $gap; y = [double]$to.y - $uy * $gap }
+  Add-Line $page $from $end $color $lw
+  $ah = 5.5
+  $aw = 2.8
+  $p1 = @{ x = [double]$end.x - $ux * $ah + $uy * $aw; y = [double]$end.y - $uy * $ah - $ux * $aw }
+  $p2 = @{ x = [double]$end.x - $ux * $ah - $uy * $aw; y = [double]$end.y - $uy * $ah + $ux * $aw }
+  Add-Line $page $end $p1 $color $lw
+  Add-Line $page $end $p2 $color $lw
 }
 
 function Project-ToEdge([double]$px, [double]$py, [double]$left, [double]$right, [double]$bottom, [double]$top) {
@@ -535,31 +615,95 @@ function Draw-Header($page, $level, [int]$pageNo, [int]$pageCount) {
   Add-Text $page "LEVEL $n" 16 ($PageH - 28) 20 $C.gold $true
   $title = "$($level.info.Destination)  |  RWY $($level.info.Runway)  |  STAR $($level.info.Star)  |  TRANS $($level.info.Transition)"
   Add-Text $page (Fit-Text $title 12 900 $true) 140 ($PageH - 22) 12 $C.white $true
-  $sub = "CRS $($level.info.Course) deg  |  ILS $($level.info.Freq)  |  CRZ $(Format-Alt $level.info.CrzAltitude)  |  page $pageNo/$pageCount"
+  $sub = "CRS $($level.info.Course) deg  |  ILS $($level.info.Freq)  |  CRZ $(Format-Alt $level.info.CrzAltitude)  |  circle = 3deg path alt (ft)  |  page $pageNo/$pageCount"
   Add-Text $page $sub 140 ($PageH - 36) 8 @(0.7, 0.78, 0.88) $false
 }
 
 function Draw-Footer($page, $level) {
   Add-Rect $page 10 6 1171 28 $C.paper $C.border
-  Add-Text $page "STAR rest.  ATC rest.  magenta = ILS CLR  |  edge VP = outside" 16 16 7 $C.muted $false
-  $parts = New-ObjList
-  for ($i = 0; $i -lt $level.atc.Count; $i++) {
-    $a = $level.atc[$i]
-    $r = Resolve-Point $a.point $level.routePts $level.virtualPts
-    $bit = [string]$r.name
-    $aa = Format-AtcAlt $a
-    $as = Format-AtcSpd $a
-    if ($aa) { $bit += " $aa" }
-    if ($as) { $bit += " $as" }
-    if (Test-IsIlsClr $a) { $bit += " ILS CLR" }
-    else {
-      $ml = Get-ModeLabel $a
-      if ($ml -ne "NO CHANGE") { $bit += " $ml" }
+  Add-Text $page "circle = 3deg GS alt (ft) to RWY  |  STAR rest.  ATC rest.  magenta = ILS CLR  |  VP circle = ATC only  |  table = ATC instructions" 16 16 6.4 $C.muted $false
+}
+
+function Get-AtcTableSize($atc) {
+  $n = [Math]::Max(1, $atc.Count)
+  $rowH = if ($n -ge 11) { 10.0 } else { 11.4 }
+  $w = 292.0
+  $h = 5.0 + 13.0 + 12.0 + ($n * $rowH) + 5.0
+  return @{ w = $w; h = $h; rowH = $rowH }
+}
+
+function Pick-TablePos([double]$plotX, [double]$plotY, [double]$plotW, [double]$plotH, [double]$tw, [double]$th, $anchors) {
+  $m = 10.0
+  $cands = @(
+    @{ x = $plotX + $m; y = $plotY + $plotH - $th - $m },
+    @{ x = $plotX + $plotW - $tw - $m; y = $plotY + $plotH - $th - $m },
+    @{ x = $plotX + $m; y = $plotY + $m },
+    @{ x = $plotX + $plotW - $tw - $m; y = $plotY + $m },
+    @{ x = $plotX + $m; y = $plotY + ($plotH - $th) / 2.0 },
+    @{ x = $plotX + $plotW - $tw - $m; y = $plotY + ($plotH - $th) / 2.0 }
+  )
+  $best = $cands[0]
+  $bestScore = -1.0
+  foreach ($c in $cands) {
+    $cx = [double]$c.x + $tw / 2.0
+    $cy = [double]$c.y + $th / 2.0
+    $minD = 1.0e9
+    $inside = 0
+    foreach ($a in $anchors) {
+      $ax = [double]$a.x; $ay = [double]$a.y
+      $dx = $cx - $ax; $dy = $cy - $ay
+      $d = [Math]::Sqrt($dx * $dx + $dy * $dy)
+      if ($d -lt $minD) { $minD = $d }
+      if ($ax -ge [double]$c.x -and $ax -le ([double]$c.x + $tw) -and $ay -ge [double]$c.y -and $ay -le ([double]$c.y + $th)) { $inside++ }
     }
-    [void]$parts.Add($bit)
+    $score = $minD - ($inside * 80.0)
+    if ($score -gt $bestScore) { $bestScore = $score; $best = $c }
   }
-  $chain = if ($parts.Count) { "ATC: " + ($parts -join " > ") } else { "" }
-  Add-Text $page (Fit-Text $chain 7 900 $false) 250 16 7 $C.ink $false
+  return $best
+}
+
+function Draw-AtcTable($page, $level, [double]$x, [double]$y, [double]$w, [double]$h, [double]$rowH) {
+  Add-Rect $page $x $y $w $h @(0.995, 0.995, 0.997) @(0.45, 0.5, 0.58) 0.85
+  $top = $y + $h
+  $titleH = 13.0
+  $headH = 12.0
+  Add-Rect $page $x ($top - $titleH) $w $titleH $C.atc $null
+  Add-Text $page "ATC INSTRUCTIONS" ($x + 6) ($top - $titleH + 3.2) 8 $C.white $true
+  $hx = @(6.0, 26.0, 118.0, 176.0, 230.0)
+  $headers = @("#", "POINT", "MODE", "ALT", "SPD")
+  $hy = $top - $titleH - $headH + 3.0
+  Add-Rect $page $x ($top - $titleH - $headH) $w $headH @(0.93, 0.94, 0.96) $null
+  for ($ci = 0; $ci -lt $headers.Count; $ci++) {
+    Add-Text $page $headers[$ci] ($x + $hx[$ci]) $hy 6.2 @(0.28, 0.32, 0.4) $true
+  }
+  $n = $level.atc.Count
+  if ($n -eq 0) {
+    Add-Text $page "none" ($x + 6) ($y + 8) 7 $C.muted $false
+    return
+  }
+  $colW = @(18.0, 88.0, 54.0, 50.0, 50.0)
+  for ($i = 0; $i -lt $n; $i++) {
+    $a = $level.atc[$i]
+    $ry = $top - $titleH - $headH - (($i + 1) * $rowH)
+    if (($i % 2) -eq 0) {
+      Add-Rect $page ($x + 1) $ry ($w - 2) $rowH @(0.97, 0.98, 1.0) $null
+    }
+    $r = Resolve-Point $a.point $level.routePts $level.virtualPts
+    $ptName = if ($r.kind -eq "virtual") { "V$($r.id)" } else { "#$($r.id) $($r.name)" }
+    $mode = Get-ModeLabel $a
+    if ($mode -eq "NO CHANGE") { $mode = "-" }
+    $aa = Format-AtcAlt $a
+    if (-not $aa) { $aa = "-" }
+    $as = Format-AtcSpd $a
+    if (-not $as) { $as = "-" }
+    $ink = if (Test-IsIlsClr $a) { $C.ils } else { $C.ink }
+    $vals = @("$($i + 1)", $ptName, $mode, $aa, $as)
+    $ty = $ry + 2.6
+    for ($ci = 0; $ci -lt $vals.Count; $ci++) {
+      $bold = ($ci -eq 0)
+      Add-Text $page (Fit-Text ([string]$vals[$ci]) 6.3 ($colW[$ci] - 2) $bold) ($x + $hx[$ci]) $ty 6.3 $ink $bold
+    }
+  }
 }
 
 function Draw-Plan($page, $level) {
@@ -574,7 +718,7 @@ function Draw-Plan($page, $level) {
   }
   $vpGroups = Group-VirtualPoints $vps
   $atcMap = Get-AtcMap $level.atc
-  $pad = 32.0
+  $pad = 52.0
   $plotX = $x0 + $pad
   $plotY = $y0 + $pad
   $plotW = $w - $pad * 2
@@ -589,7 +733,7 @@ function Draw-Plan($page, $level) {
   }
   $spanX = [Math]::Max($maxX - $minX, 1.0)
   $spanY = [Math]::Max($maxY - $minY, 1.0)
-  $scale = [Math]::Min($plotW / $spanX, $plotH / $spanY) * 0.92
+  $scale = [Math]::Min($plotW / $spanX, $plotH / $spanY) * 0.82
   $cx = ($minX + $maxX) / 2.0
   $cy = ($minY + $maxY) / 2.0
   $map = {
@@ -669,40 +813,114 @@ function Draw-Plan($page, $level) {
     Add-Line $page $atcPath[$i - 1] $atcPath[$i] $C.atc 2.3 @(7, 3.5)
   }
 
+  $rwyPt = $pts[$pts.Count - 1]
+  $rwyElev = Get-NumericAlt ([string]$rwyPt.RawAltitude)
+  $totalNm = [double]$rwyPt.cumDist
+
   $boxes = New-Object System.Collections.Generic.List[object]
+  $starMarks = New-ObjList
+  for ($i = 0; $i -lt $pts.Count; $i++) {
+    $p = $pts[$i]
+    $mpt = $posByKey["R:$($p.ID)"]
+    $remain = $totalNm - [double]$p.cumDist
+    $gsTxt = Format-Gs3Alt (Get-Gs3Alt $remain $rwyElev)
+    $atc = $atcMap[[string]$p.ID]
+    $isIls = Test-IsIlsClr $atc
+    $isStart = ($i -eq 0)
+    $isEnd = ($i -eq $pts.Count - 1)
+    $fill = if ($isIls) { @(0.98, 0.88, 0.94) } elseif ($isStart) { @(0.82, 0.95, 0.86) } elseif ($isEnd) { @(0.98, 0.88, 0.88) } elseif ($atc) { @(1.0, 0.93, 0.86) } else { @(0.99, 0.995, 1.0) }
+    $stroke = if ($isIls) { $C.ils } elseif ($atc) { $C.atc } elseif ($isStart) { $C.start } elseif ($isEnd) { $C.end } else { @(0.1, 0.2, 0.35) }
+    $lw = if ($isIls) { 1.8 } elseif ($atc) { 1.3 } else { 0.7 }
+    $r = Add-GsCircle $page ([double]$mpt.x) ([double]$mpt.y) $gsTxt $fill $stroke $lw $isIls
+    $outer = if ($isIls) { $r + 3.0 } else { $r }
+    $pad = $outer + 1.5
+    [void]$boxes.Add(@{ x = [double]$mpt.x - $pad; y = [double]$mpt.y - $pad; w = 2.0 * $pad; h = 2.0 * $pad })
+    [void]$starMarks.Add(@{ p = $p; mpt = $mpt; atc = $atc; isIls = $isIls; isEnd = $isEnd; stopR = ($outer + 1.6) })
+  }
+
+  $vpMarks = New-ObjList
+  foreach ($item in $vpDraw) {
+    $g = $item.group
+    $atcItem = $null
+    $used = $false
+    foreach ($v in $g.members) {
+      if ($atcMap.ContainsKey([string]$v.Number)) {
+        $used = $true
+        if ($null -eq $atcItem) { $atcItem = $atcMap[[string]$v.Number] }
+      }
+    }
+    $isIls = Test-IsIlsClr $atcItem
+    $stopR = 5.0
+    if ($used) {
+      $dx = [double]$g.x - [double]$rwyPt.x
+      $dy = [double]$g.y - [double]$rwyPt.y
+      $remain = [Math]::Sqrt($dx * $dx + $dy * $dy)
+      $gsTxt = Format-Gs3Alt (Get-Gs3Alt $remain $rwyElev)
+      $stroke = if ($isIls) { $C.ils } else { $C.atc }
+      $lw = if ($isIls) { 1.8 } else { 1.3 }
+      $r = Add-GsCircle $page ([double]$item.x) ([double]$item.y) $gsTxt $C.vpFill $stroke $lw $isIls
+      $outer = if ($isIls) { $r + 3.0 } else { $r }
+      $stopR = $outer + 1.6
+      $pad = $outer + 1.5
+      [void]$boxes.Add(@{ x = [double]$item.x - $pad; y = [double]$item.y - $pad; w = 2.0 * $pad; h = 2.0 * $pad })
+    } else {
+      $sz = if ($item.outside) { 4.6 } else { 3.4 }
+      Add-Diamond $page ([double]$item.x) ([double]$item.y) $sz $C.vpFill $C.vp
+      $stopR = $sz + 1.6
+      [void]$boxes.Add(@{ x = [double]$item.x - 8; y = [double]$item.y - 8; w = 16; h = 16 })
+    }
+    if ($item.outside) {
+      $tick = 7.0
+      switch ($item.edge) {
+        "L" { Add-Line $page @{ x = [double]$item.x; y = [double]$item.y } @{ x = [double]$item.x - $tick; y = [double]$item.y } $C.vp 1.2 }
+        "R" { Add-Line $page @{ x = [double]$item.x; y = [double]$item.y } @{ x = [double]$item.x + $tick; y = [double]$item.y } $C.vp 1.2 }
+        "T" { Add-Line $page @{ x = [double]$item.x; y = [double]$item.y } @{ x = [double]$item.x; y = [double]$item.y + $tick } $C.vp 1.2 }
+        default { Add-Line $page @{ x = [double]$item.x; y = [double]$item.y } @{ x = [double]$item.x; y = [double]$item.y - $tick } $C.vp 1.2 }
+      }
+    }
+    [void]$vpMarks.Add(@{ item = $item; atcItem = $atcItem; isIls = $isIls; used = $used; stopR = $stopR })
+  }
+
+  $anchors = New-ObjList
+  foreach ($p in $pts) { [void]$anchors.Add($posByKey["R:$($p.ID)"]) }
+  foreach ($item in $vpDraw) { [void]$anchors.Add(@{ x = [double]$item.x; y = [double]$item.y }) }
+  $tblSz = Get-AtcTableSize $level.atc
+  $tblPos = Pick-TablePos $plotX $plotY $plotW $plotH ([double]$tblSz.w) ([double]$tblSz.h) $anchors
+  Draw-AtcTable $page $level ([double]$tblPos.x) ([double]$tblPos.y) ([double]$tblSz.w) ([double]$tblSz.h) ([double]$tblSz.rowH)
+  [void]$boxes.Add(@{ x = [double]$tblPos.x - 3; y = [double]$tblPos.y - 3; w = [double]$tblSz.w + 6; h = [double]$tblSz.h + 6 })
+
+  $lblLeft = $x0 + 6
+  $lblRight = $x0 + $w - 6
+  $lblBottom = $y0 + 6
+  $lblTop = $y0 + $h - 6
   $drawLabel = {
-    param($m, $lineList, $color)
-    $size = 7.0
+    param($m, $lineList, $color, $stopR)
+    $size = 6.6
     $wBox = 0.0
     foreach ($t in $lineList) {
       $tw = Get-TextWidth (ConvertTo-Ascii ([string]$t)) $size $false
       if ($tw -gt $wBox) { $wBox = $tw }
     }
-    $wBox += 2
-    $hBox = ([double]$lineList.Count * 8.5) + 1.0
-    $box = Pick-LabelSlot ([double]$m.x) ([double]$m.y) $wBox $hBox $boxes
+    $wBox += 4
+    $hBox = ([double]$lineList.Count * 8.2) + 3.0
+    $box = Pick-LabelSlot ([double]$m.x) ([double]$m.y) $wBox $hBox $boxes $lblLeft $lblRight $lblBottom $lblTop
     [void]$boxes.Add($box)
-    Add-Line $page $m @{ x = [double]$box.x + 1; y = [double]$box.y + 2 } $C.leader 0.35
+    $attach = Nearest-OnBox ([double]$m.x) ([double]$m.y) $box
+    $dx = [double]$attach.x - [double]$m.x
+    $dy = [double]$attach.y - [double]$m.y
+    $clearR = if ($null -eq $stopR) { 12.0 } else { [double]$stopR }
+    if (($dx * $dx + $dy * $dy) -gt (($clearR + 6) * ($clearR + 6))) {
+      Add-Arrow $page $attach $m $color 0.7 $clearR
+    }
+    Add-Rect $page ([double]$box.x) ([double]$box.y) ([double]$box.w) ([double]$box.h) @(0.99, 0.99, 0.99) @(0.82, 0.84, 0.88) 0.35
     for ($li = 0; $li -lt $lineList.Count; $li++) {
-      Add-Text $page (Fit-Text ([string]$lineList[$li]) $size 110 $false) ([double]$box.x) ([double]$box.y + ($lineList.Count - 1 - $li) * 8.5) $size $color $false
+      Add-Text $page (Fit-Text ([string]$lineList[$li]) $size 140 $false) ([double]$box.x + 2) ([double]$box.y + 1.5 + ($lineList.Count - 1 - $li) * 8.2) $size $color $false
     }
   }
 
-  for ($i = 0; $i -lt $pts.Count; $i++) {
-    $p = $pts[$i]
-    $mpt = $posByKey["R:$($p.ID)"]
-    $isStart = ($i -eq 0)
-    $isEnd = ($i -eq $pts.Count - 1)
-    $atc = $atcMap[[string]$p.ID]
-    $fill = if ($isStart) { $C.start } elseif ($isEnd) { $C.end } else { $C.star }
-    $isIls = Test-IsIlsClr $atc
-    $stroke = if ($isIls) { $C.ils } elseif ($atc) { $C.atc } else { @(0.1, 0.2, 0.35) }
-    $lw = if ($isIls) { 1.8 } elseif ($atc) { 1.3 } else { 0.45 }
-    $sz = if ($isIls) { 5.6 } elseif ($isStart -or $isEnd) { 4.4 } else { 2.9 }
-    Add-Circle $page $mpt.x $mpt.y $sz $fill $stroke $lw
-    if ($isIls) {
-      Add-Circle $page $mpt.x $mpt.y 8.2 $null $C.ils 1.4
-    }
+  foreach ($mark in $starMarks) {
+    $p = $mark.p
+    $atc = $mark.atc
     $lineList = New-ObjList
     [void]$lineList.Add(("#$($p.ID) $($p.Name)".Trim()))
     $starBits = New-ObjList
@@ -717,33 +935,15 @@ function Draw-Plan($page, $level) {
     if ($aa) { [void]$atcBits.Add($aa) }
     if ($as) { [void]$atcBits.Add($as) }
     if ($atcBits.Count) { [void]$lineList.Add("ATC " + ($atcBits -join " ")) }
-    if ($isIls) { [void]$lineList.Add("ILS CLR") }
-    $lcol = if ($isIls) { $C.ils } elseif ($isEnd) { $C.end } else { $C.ink }
-    & $drawLabel $mpt $lineList $lcol
+    if ($mark.isIls) { [void]$lineList.Add("ILS CLR") }
+    $lcol = if ($mark.isIls) { $C.ils } elseif ($mark.isEnd) { $C.end } else { $C.ink }
+    & $drawLabel $mark.mpt $lineList $lcol $mark.stopR
   }
 
-  foreach ($item in $vpDraw) {
+  foreach ($vm in $vpMarks) {
+    $item = $vm.item
     $g = $item.group
-    $used = $false
-    foreach ($v in $g.members) { if ($atcMap.ContainsKey([string]$v.Number)) { $used = $true; break } }
-    $atcItem = $null
-    foreach ($v in $g.members) { if ($atcMap.ContainsKey([string]$v.Number)) { $atcItem = $atcMap[[string]$v.Number]; break } }
-    $isIls = Test-IsIlsClr $atcItem
-    $sz = if ($isIls) { 5.8 } elseif ($item.outside) { 4.6 } elseif ($used) { 4.4 } else { 3.4 }
-    $stroke = if ($isIls) { $C.ils } elseif ($used) { $C.atc } else { $C.vp }
-    Add-Diamond $page ([double]$item.x) ([double]$item.y) $sz $C.vpFill $stroke
-    if ($isIls) {
-      Add-Circle $page ([double]$item.x) ([double]$item.y) 8.4 $null $C.ils 1.4
-    }
-    if ($item.outside) {
-      $tick = 7.0
-      switch ($item.edge) {
-        "L" { Add-Line $page @{ x = [double]$item.x; y = [double]$item.y } @{ x = [double]$item.x - $tick; y = [double]$item.y } $C.vp 1.2 }
-        "R" { Add-Line $page @{ x = [double]$item.x; y = [double]$item.y } @{ x = [double]$item.x + $tick; y = [double]$item.y } $C.vp 1.2 }
-        "T" { Add-Line $page @{ x = [double]$item.x; y = [double]$item.y } @{ x = [double]$item.x; y = [double]$item.y + $tick } $C.vp 1.2 }
-        default { Add-Line $page @{ x = [double]$item.x; y = [double]$item.y } @{ x = [double]$item.x; y = [double]$item.y - $tick } $C.vp 1.2 }
-      }
-    }
+    $atcItem = $vm.atcItem
     $nums = @($g.members | ForEach-Object { $_.Number } | Sort-Object)
     $name = if ($nums.Count -le 3) { ($nums | ForEach-Object { "V$_" }) -join "/" } else { "V$($nums[0])-$($nums[-1]) ($($nums.Count))" }
     $lineList = New-ObjList
@@ -755,26 +955,34 @@ function Draw-Plan($page, $level) {
     if ($aa) { [void]$atcBits.Add($aa) }
     if ($as) { [void]$atcBits.Add($as) }
     if ($atcBits.Count) { [void]$lineList.Add("ATC " + ($atcBits -join " ")) }
-    if ($isIls) { [void]$lineList.Add("ILS CLR") }
+    if ($vm.isIls) { [void]$lineList.Add("ILS CLR") }
     elseif ($atcItem) {
       $ml = Get-ModeLabel $atcItem
       if ($ml -ne "NO CHANGE") { [void]$lineList.Add($ml) }
     }
-    $lcol = if ($isIls) { $C.ils } else { $C.vp }
-    & $drawLabel @{ x = [double]$item.x; y = [double]$item.y } $lineList $lcol
+    $lcol = if ($vm.isIls) { $C.ils } else { $C.vp }
+    & $drawLabel @{ x = [double]$item.x; y = [double]$item.y } $lineList $lcol $vm.stopR
   }
 
   $nm = 10.0
   $bar = $nm * $scale
+  $tblMidX = [double]$tblPos.x + ([double]$tblSz.w / 2.0)
+  $tblMidY = [double]$tblPos.y + ([double]$tblSz.h / 2.0)
   if ($bar -gt 16 -and $bar -lt ($plotW * 0.35)) {
-    $bx = $plotX + 12; $by = $plotY + 12
+    $bx = if ($tblMidX -lt ($plotX + $plotW * 0.5) -and $tblMidY -lt ($plotY + $plotH * 0.45)) { $plotX + $plotW - $bar - 36 } else { $plotX + 12 }
+    $by = $plotY + 12
     Add-Line $page @{ x = $bx; y = $by } @{ x = $bx + $bar; y = $by } $C.ink 1.5
     Add-Line $page @{ x = $bx; y = $by - 3 } @{ x = $bx; y = $by + 3 } $C.ink 1
     Add-Line $page @{ x = $bx + $bar; y = $by - 3 } @{ x = $bx + $bar; y = $by + 3 } $C.ink 1
     Add-Text $page "$nm NM" ($bx + 4) ($by + 6) 7 $C.muted $false
   }
-  Add-Text $page "N" ($plotX + $plotW - 18) ($plotY + $plotH - 16) 9 $C.ink $true
-  Add-Line $page @{ x = $plotX + $plotW - 14; y = $plotY + $plotH - 26 } @{ x = $plotX + $plotW - 14; y = $plotY + $plotH - 8 } $C.ink 1.2
+  $nX = $plotX + $plotW - 18
+  $nY = $plotY + $plotH - 16
+  if ($tblMidX -gt ($plotX + $plotW * 0.55) -and $tblMidY -gt ($plotY + $plotH * 0.55)) {
+    $nX = $plotX + 16
+  }
+  Add-Text $page "N" $nX $nY 9 $C.ink $true
+  Add-Line $page @{ x = ($nX + 4); y = ($nY - 10) } @{ x = ($nX + 4); y = ($nY + 8) } $C.ink 1.2
 }
 
 Write-Host "Indexing assets..."
@@ -800,5 +1008,5 @@ for ($i = 0; $i -lt $levels.Count; $i++) {
 }
 
 Save-PdfDoc $pdf $OutPdf
-$fi = Get-Item $OutPdf
-Write-Host ("Wrote {0} ({1} bytes, {2} pages)" -f $OutPdf, $fi.Length, $levels.Count)
+$fi = Get-Item $script:SavedPdfPath
+Write-Host ("Wrote {0} ({1} bytes, {2} pages)" -f $script:SavedPdfPath, $fi.Length, $levels.Count)
