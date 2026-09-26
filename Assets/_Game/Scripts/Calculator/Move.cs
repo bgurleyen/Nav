@@ -213,8 +213,8 @@ public class Move : Singleton<Move>
     void BorderGuard()
     {
         const float abeamNm = 1.3f;
-        const float softDeg = 7f;
-        const float hardDeg = 15f;
+        const float softDeg = 13f;
+        const float hardDeg = 26f;
         const float hardGateNm = 1.3f;
         const float beyondAbExtraNm = 5f;
 
@@ -236,10 +236,10 @@ public class Move : Singleton<Move>
         float abLen = Vector2.Distance(_routeA, _routeB);
         bool beyondAb = DistanceToPoint > abLen + beyondAbExtraNm;
 
-        string modeName = _hardActive || xte > hardHalf || beyondAb
-            ? "Hard"
-            : (xte > softHalf ? "Soft" : "Normal");
-        Debug.Log($"Mode={modeName}, XTE={xte:F2}, DistB={DistanceToPoint:F2}");
+        // string modeName = _hardActive || xte > hardHalf || beyondAb
+        //     ? "Hard"
+        //     : (xte > softHalf ? "Soft" : "Normal");
+        // Debug.Log($"Mode={modeName}, XTE={xte:F2}, DistB={DistanceToPoint:F2}");
 
         // signedXte > 0 (right of A→B) → turn left to reduce.
         XteReduceHeadingSign = signedXte > 0.05f ? -1f : signedXte < -0.05f ? 1f : 0f;
@@ -403,6 +403,10 @@ public class Move : Singleton<Move>
         if (txt != null)
             txt.fontMaterial.SetFloat(ShaderUtilities.ID_GlowPower, glow ? 1f : 0f);
     }
+
+    /// <summary>True while ATC1 shows a new uncleared instruction (DCT/HDG, still green).</summary>
+    public bool HasNewAtc1Instruction =>
+        !_atc1GrayDone && Atc1 != null && !string.IsNullOrEmpty(Atc1.text);
 
     /// <summary>ATC text gray + XFR matte — XFR click, or DCT already first on LEGS.</summary>
     public void AcknowledgeAtc1()
@@ -631,20 +635,28 @@ public class Move : Singleton<Move>
 
         if (Atc2 != null)
         {
-            Atc2.text = "LOC/GS Armed , MA altitude 5000 ft set";
+            Atc2.text = "LOC/GS Armed";
             Atc2.color = Color.white;
             _atc2GrayDone = true;
         }
+    }
 
-        if (Calculator.Instance != null)
-        {
-            Calculator.RAltitude = 5000;
-            if (Calculator.Instance.txtRAltitude != null)
-                Calculator.Instance.txtRAltitude.text = "5000";
-            if (Calculator.Instance.txtRAltitude_overTape != null)
-                Calculator.Instance.txtRAltitude_overTape.text = "5000";
-            Calculator.Instance.SetFMA();
-        }
+    public void NotifyLocCaptured()
+    {
+        if (Atc2 == null)
+            return;
+        Atc2.text = "LOC captured";
+        Atc2.color = Color.white;
+        _atc2GrayDone = true;
+    }
+
+    public void NotifyGsCaptured()
+    {
+        if (Atc2 == null)
+            return;
+        Atc2.text = "LOC/GS Captured , set MA altitude 5000";
+        Atc2.color = Color.white;
+        _atc2GrayDone = true;
     }
 
     static void ClearOutsideBorderSteer()

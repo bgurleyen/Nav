@@ -63,6 +63,10 @@ namespace Navigation
                        lastFoundVertexIndex,
                        breakOnFirstSolution:true))
             {
+                var segmentDir = EndNMPosition - StartNMPosition;
+                if (segmentDir.sqrMagnitude > 0.0001f)
+                    pilot.NotifyTargetCourse(Geometry.GetHeadingOfDirection(segmentDir));
+
                 pilot.TickSteerToPathFoundVertex(foundVertex, out var heading );
                 pilot.TickAdvance();
                 if (Math.Abs(heading - cachedLastHeading) < 0.001f && tracePositions.Count > 1)

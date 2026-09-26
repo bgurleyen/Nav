@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Navigation;
@@ -31,12 +31,20 @@ public class TracedRoute
 
         for (int i = 1; i < pointsArray.Length; i++)
         {
+            var point = pointsArray[i];
             var line = new TracedLine(
                 Session.Settings.PilotSeekDistancePathFollow,
                 pilot,
                 pointsArray[i - 1].CartesianPosition,
-                pointsArray[i]);
+                point);
             ComputedLines[i] = line;
+
+            if (point.IsHiddenLine)
+            {
+                // Hidden inbound from a passed waypoint must not pull the dashed MOD
+                // trace from behind the aircraft. Jump the tracer to this node.
+                SnapTracerToPoint(pilot, pointsArray, i);
+            }
 
 
             // S.A. Code
@@ -76,10 +84,18 @@ public class TracedRoute
         }
     }
 
+    private static void SnapTracerToPoint(Pilot pilot, RoutePoint[] pointsArray, int index)
+    {
+        var point = pointsArray[index];
+        pilot.NMPosition = point.CartesianPosition;
 
-
-
-
+        var next = index + 1 < pointsArray.Length ? pointsArray[index + 1].CartesianPosition : point.CartesianPosition;
+        var dir = next - point.CartesianPosition;
+        if (dir.sqrMagnitude < 0.0001f)
+            dir = Geometry.GetDirectionFromHeading(Session.PlayerAircraft.HeadingDegrees);
+        if (dir.sqrMagnitude > 0.0001f)
+            pilot.HeadingDegrees = Geometry.GetHeadingOfDirection(dir);
+    }
 
     public bool FindClosestVertexToPositionOnLineActive(Vector2 position, int lineIndex, out int vertexIndex,
         out Vector2 vertexPosition)

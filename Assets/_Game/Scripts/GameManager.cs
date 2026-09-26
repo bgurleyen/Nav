@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Navigation;
 using UnityEngine;
 using Unyawn.Utils;
@@ -170,13 +170,11 @@ public class GameManager : MonoBehaviour
 
     private void ApplyMod()
     {
-        // Refresh dashed snapshot with current aircraft position before commit
         _simulation.RebuildModeSetWithPosition();
 
         Session.ModRoute.ClearModifiedFlags();
         Session.ModeSetWithPosition.ClearModifiedFlags();
         Session.ActiveRoute = Session.ModeSetWithPosition.CloneAndInit();
-        // Clone does not copy TracedRoute — rebuild before rejoin/seek.
         Session.ActiveRoute.ComputeTrace();
 
         Session.ModRoute = null;
@@ -192,7 +190,6 @@ public class GameManager : MonoBehaviour
         }
         else
         {
-            // Seek the forward position stub inserted by AddModPositionNodes.
             var seekIndex = Session.ActiveRoute.FindForwardPositionNodeIndex();
             if (seekIndex < 0)
             {

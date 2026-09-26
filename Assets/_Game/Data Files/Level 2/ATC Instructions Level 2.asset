@@ -15,21 +15,21 @@ MonoBehaviour:
   ATCInstrucitonItems:
   - point: 1
     mode: 1
-    Altitude: 14000
+    Altitude: 0
     VS: 0
     VS_nx: 0
     Speed: 0
     Speed_nx: 0
   - point: 2
     mode: 0
-    Altitude: 6000
+    Altitude: 14000
     VS: 0
     VS_nx: 0
     Speed: 0
     Speed_nx: 0
   - point: 3
     mode: 0
-    Altitude: 0
+    Altitude: 6000
     VS: 0
     VS_nx: 0
     Speed: 0
@@ -43,22 +43,22 @@ MonoBehaviour:
     Speed_nx: 0
   - point: 5
     mode: 0
+    Altitude: 0
+    VS: 0
+    VS_nx: 0
+    Speed: 0
+    Speed_nx: 0
+  - point: 6
+    mode: 0
     Altitude: 3000
     VS: 0
     VS_nx: 0
     Speed: 180
     Speed_nx: 2
-  - point: 6
-    mode: 0
-    Altitude: 0
-    VS: 0
-    VS_nx: 3
-    Speed: 0
-    Speed_nx: 0
   - point: 12
     mode: 1
     Altitude: 0
     VS: 0
-    VS_nx: 0
+    VS_nx: 3
     Speed: 0
     Speed_nx: 0

@@ -62,7 +62,7 @@ public class ApproachStatusDialog : MonoBehaviour
         panelRt.anchorMin = new Vector2(0.5f, 0.5f);
         panelRt.anchorMax = new Vector2(0.5f, 0.5f);
         panelRt.pivot = new Vector2(0.5f, 0.5f);
-        panelRt.sizeDelta = new Vector2(720, 540);
+        panelRt.sizeDelta = new Vector2(720, 660);
         panelGo.GetComponent<Image>().color = new Color32(28, 36, 48, 245);
 
         var accentGo = new GameObject("Accent", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
@@ -80,9 +80,11 @@ public class ApproachStatusDialog : MonoBehaviour
             new Vector2(0f, -32f), new Vector2(660f, 56f), new Color32(245, 232, 214, 255));
 
         CreateTmp(panelGo.transform, "Body", "", 42f, FontStyles.Normal,
-            TextAlignmentOptions.Center, new Vector2(0.5f, 1f), new Vector2(0.5f, 1f),
-            new Vector2(0f, -100f), new Vector2(640f, 320f), new Color32(210, 218, 228, 255),
-            wordWrap: true);
+            TextAlignmentOptions.Center, new Vector2(0.08f, 0f), new Vector2(0.92f, 1f),
+            Vector2.zero, Vector2.zero, new Color32(210, 218, 228, 255),
+            wordWrap: true,
+            offsetMin: new Vector2(0f, 110f),
+            offsetMax: new Vector2(0f, -108f));
 
         var buttonGo = new GameObject("Exit Button", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Button));
         buttonGo.transform.SetParent(panelGo.transform, false);
@@ -90,7 +92,7 @@ public class ApproachStatusDialog : MonoBehaviour
         buttonRt.anchorMin = new Vector2(0.5f, 0f);
         buttonRt.anchorMax = new Vector2(0.5f, 0f);
         buttonRt.pivot = new Vector2(0.5f, 0f);
-        buttonRt.anchoredPosition = new Vector2(0f, 32f);
+        buttonRt.anchoredPosition = new Vector2(0f, 28f);
         buttonRt.sizeDelta = new Vector2(220f, 58f);
         buttonGo.GetComponent<Image>().color = new Color32(56, 110, 130, 255);
         var button = buttonGo.GetComponent<Button>();
@@ -130,7 +132,8 @@ public class ApproachStatusDialog : MonoBehaviour
             bodyTmp.fontStyle = FontStyles.Normal;
             bodyTmp.alignment = TextAlignmentOptions.Center;
             bodyTmp.enableWordWrapping = true;
-            bodyTmp.lineSpacing = 16f;
+            bodyTmp.lineSpacing = 6f;
+            bodyTmp.overflowMode = TextOverflowModes.Truncate;
         }
 
         if (buttonLabelTmp != null)
@@ -185,7 +188,9 @@ public class ApproachStatusDialog : MonoBehaviour
         Vector2 anchoredPos,
         Vector2 size,
         Color color,
-        bool wordWrap = false)
+        bool wordWrap = false,
+        Vector2? offsetMin = null,
+        Vector2? offsetMax = null)
     {
         var go = new GameObject(name, typeof(RectTransform), typeof(TextMeshProUGUI));
         go.transform.SetParent(parent, false);
@@ -195,6 +200,10 @@ public class ApproachStatusDialog : MonoBehaviour
         rt.pivot = new Vector2(0.5f, anchorMin.y > 0.9f ? 1f : 0.5f);
         rt.anchoredPosition = anchoredPos;
         rt.sizeDelta = size;
+        if (offsetMin.HasValue)
+            rt.offsetMin = offsetMin.Value;
+        if (offsetMax.HasValue)
+            rt.offsetMax = offsetMax.Value;
 
         var tmp = go.GetComponent<TextMeshProUGUI>();
         tmp.text = text;

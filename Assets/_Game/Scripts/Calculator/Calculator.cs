@@ -1278,6 +1278,8 @@ public class Calculator : MonoBehaviour
                     || (Move.Instance != null
                         && Move.Instance.CanCaptureGs(Session.CurrentLevel.levelInfo.GlideSlope)))
                 {
+                    if (!Session.State.GSCaptured)
+                        Move.Instance?.NotifyGsCaptured();
                     Session.State.GSCaptured = true;
                     FMA1.text = "MCP SPD";
                     FMA3.text = "GS";

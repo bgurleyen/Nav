@@ -662,7 +662,6 @@ namespace Navigation
 
             ComputeCartesianPositions();
 
-            // Polar rebuild can drift the stub; snap back to the intended look-ahead geometry.
             SnapPositionStubToWorld(
                 nodeBeforePosition,
                 airplanePositionNodeToAdd,
@@ -690,11 +689,10 @@ namespace Navigation
             return -1;
         }
 
-        private const float DirectToLookAheadSeconds = 10f;
+        private const float DirectToLookAheadSeconds = 5f;
 
         private static float GetLiveStartAheadNm()
         {
-            // Dashed MOD origin: 10s along current track. Tick floor so a sim step cannot overtake it.
             var lookAheadNm = Mathf.Max(0f, Calculator.GS) / 3600f * DirectToLookAheadSeconds;
             var tickFloorNm = Mathf.Max(0.02f, Session.Settings.PlayerTickDistance * 2f);
             return Mathf.Max(lookAheadNm, tickFloorNm);
@@ -729,27 +727,9 @@ namespace Navigation
             out RoutePoint airplanePositionNodeToAdd, out RoutePoint frontOfAirplanePositionNodeToAdd,
             float startAheadNm = 0f)
         {
-            // Origin can sit 10s ahead of the aircraft (MOD dashed). The turn-radius stub
-            // still starts from that origin with full ForwardThreshold inbound length.
-            // Prefer current heading, but if that points opposite the new route leg,
-            // align the stub with route-forward so EXEC does not U-turn the wrong way.
             var aircraftPos = Session.PlayerAircraft.NMPosition;
-            var headingDegrees = Session.PlayerAircraft.TrackDegrees;
-            var headingFuture = Geometry.GetNextPosition(
-                aircraftPos,
-                Session.Settings.ForwardThreshold,
-                -headingDegrees);
-
-            var forwardDir = headingFuture - aircraftPos;
-            if (routeNextNode != null)
-            {
-                var routeDelta = routeNextNode.CartesianPosition - aircraftPos;
-                if (routeDelta.sqrMagnitude > 0.0001f && Vector2.Dot(forwardDir, routeDelta) < 0f)
-                {
-                    forwardDir = routeDelta;
-                }
-            }
-
+            // Same convention as aircraft movement / ND nose — never flip toward a behind waypoint.
+            var forwardDir = Geometry.GetDirectionFromHeading(Session.PlayerAircraft.HeadingDegrees);
             if (forwardDir.sqrMagnitude < 0.0001f)
                 forwardDir = Vector2.up;
             else
@@ -776,8 +756,6 @@ namespace Navigation
                 "P",
                 "_Position_");
 
-
-            // Keep "P" so IsPositionNode stays true; hide only the inbound from the last waypoint.
             airplanePositionNodeToAdd.Details = "HP";
             if (HasActiveDirectApproach(out _))
             {
@@ -807,11 +785,6 @@ namespace Navigation
 
 
             Points = newSet;
-            for (int i = 0; i < Points.Length; i++)
-            {
-
-                Debug.Log("ID :" + Points[i].ID + "|| Name :" + Points[i].Name + "|| Details :" + Points[i].Details);
-            }
         }
 
         public void AddNodeAtLast(int NodeId, string name, float rawDegrees, float distance)
