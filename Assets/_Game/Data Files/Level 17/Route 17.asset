@@ -15,15 +15,15 @@ MonoBehaviour:
   Points:
   - ID: 0
     Name: _START_
-    RawDegrees: 0
+    RawDegrees: 53
     Distance: 0
     RawSpeed: 0
-    RawAltitude: 20000
+    RawAltitude: 29000
     Details: 
   - ID: 1
     Name: ARVOL
     RawDegrees: 53
-    Distance: 9
+    Distance: 60
     RawSpeed: 250
     RawAltitude: 
     Details: 

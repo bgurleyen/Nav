@@ -8,11 +8,17 @@ public class DataHandler
     public static void BuildSetDetails(RouteScriptableObject route)
     {
         route.ComputeCartesianPositions();
-        
-        BuildAltitudes(route);
 
-        
-        BuildSpeeds(route);
+        // Altitude solving can throw (a backward-anchor walk with no previous anchor).
+        // Speeds must still be filled; otherwise every LEGS speed stays at the -1 default.
+        try
+        {
+            BuildAltitudes(route);
+        }
+        finally
+        {
+            BuildSpeeds(route);
+        }
     }
 
     private static void BuildSpeeds(RouteScriptableObject set, int startFrom = 270)
@@ -28,10 +34,9 @@ public class DataHandler
             {
                 lastRegulation = point.RawSpeed;
             }
-            else
-            {
-                point.SetSpeedComputed(lastRegulation);
-            }
+
+            // Restricted points used to leave ComputedValue at -1. FMC predictions read that field.
+            point.SetSpeedComputed(lastRegulation);
         }
         
         set.FirstSpeedRegulationNodeId = -1;
@@ -200,12 +205,17 @@ public class DataHandler
                     do
                     {
                         // shift validation interval to previous
-                        validationAnchoredFrom = validationAnchoredFrom.AnchoredPrev == validationCursor
+                        var shiftedFrom = validationAnchoredFrom.AnchoredPrev == validationCursor
                             ? validationAnchoredFrom.AnchoredPrev.AnchoredPrev
                             : validationAnchoredFrom.AnchoredPrev;
+                        var shiftedTo = validationAnchoredTo.AnchoredPrev;
 
-                        validationAnchoredTo = validationAnchoredTo.AnchoredPrev;
+                        // Level 19: the walk reaches the cruise anchor, whose previous anchor is null.
+                        if (shiftedFrom == null || shiftedTo == null)
+                            break;
 
+                        validationAnchoredFrom = shiftedFrom;
+                        validationAnchoredTo = shiftedTo;
 
                         validationUpdated = false;
 

@@ -15,15 +15,15 @@ MonoBehaviour:
   Points:
   - ID: 0
     Name: _START_
-    RawDegrees: 0
+    RawDegrees: 54
     Distance: 0
     RawSpeed: 0
-    RawAltitude: 20000
+    RawAltitude: 30000
     Details: 
   - ID: 1
     Name: TULNI
     RawDegrees: 54
-    Distance: 9
+    Distance: 17
     RawSpeed: 250
     RawAltitude: 
     Details: 

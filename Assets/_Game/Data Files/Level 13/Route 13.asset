@@ -15,75 +15,75 @@ MonoBehaviour:
   Points:
   - ID: 0
     Name: _START_
-    RawDegrees: 0
+    RawDegrees: 133
     Distance: 0
     RawSpeed: 0
-    RawAltitude: 20000
+    RawAltitude: 24000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: NEGRA
     RawDegrees: 133
-    Distance: 9
+    Distance: 35
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 2
     Name: MATIV
     RawDegrees: 229
     Distance: 12.3
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 3
     Name: AMIKI
     RawDegrees: 158
     Distance: 6.4
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 4
     Name: ZUE
     RawDegrees: 176
     Distance: 9
     RawSpeed: 0
     RawAltitude: 7000A
     Details: 
-  - ID: 0
+  - ID: 5
     Name: ZH701
     RawDegrees: 190
     Distance: 6.5
     RawSpeed: 0
     RawAltitude: 6000A
     Details: 
-  - ID: 0
+  - ID: 6
     Name: TRA
     RawDegrees: 290
     Distance: 10
     RawSpeed: 0
     RawAltitude: 5000A
     Details: 
-  - ID: 0
+  - ID: 7
     Name: INTC
     RawDegrees: 227
     Distance: 5.6
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 8
     Name: CF14
     RawDegrees: 136
     Distance: 2.8
     RawSpeed: 0
     RawAltitude: 4000
     Details: 
-  - ID: 0
+  - ID: 9
     Name: OSNEM
     RawDegrees: 136
     Distance: 2
     RawSpeed: 0
     RawAltitude: 4000
     Details: 
-  - ID: 0
+  - ID: 10
     Name: RW14
     RawDegrees: 136
     Distance: 8.1

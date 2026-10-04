@@ -15,124 +15,124 @@ MonoBehaviour:
   Points:
   - ID: 0
     Name: _START_
-    RawDegrees: 0
+    RawDegrees: 128
     Distance: 0
     RawSpeed: 0
-    RawAltitude: 20000
+    RawAltitude: 38000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: GELBU
     RawDegrees: 128
     Distance: 9
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 2
     Name: TURKO
     RawDegrees: 126
     Distance: 26.5
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 3
     Name: FJ510
     RawDegrees: 79
     Distance: 23.4
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 4
     Name: FJ511
     RawDegrees: 89
     Distance: 33.1
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 5
     Name: FJ512
     RawDegrees: 149
     Distance: 10.9
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 6
     Name: FJ513
     RawDegrees: 59
     Distance: 15.4
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 7
     Name: BUKED
     RawDegrees: 60
     Distance: 5
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 8
     Name: FJ515
     RawDegrees: 60
     Distance: 7.6
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 9
     Name: FJ516
     RawDegrees: 330
     Distance: 8
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 10
     Name: FJ517
     RawDegrees: 240
     Distance: 7.6
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 11
     Name: FJ518
     RawDegrees: 240
     Distance: 5
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 12
     Name: FJ519
     RawDegrees: 239
     Distance: 3
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 13
     Name: DISC
     RawDegrees: 0
     Distance: 4
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 14
     Name: ASDEV
     RawDegrees: 59
     Distance: 0
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 15
     Name: CI06
     RawDegrees: 59
     Distance: 1.6
     RawSpeed: 0
     RawAltitude: 3000
     Details: 
-  - ID: 0
+  - ID: 16
     Name: FI06
     RawDegrees: 59
     Distance: 3
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 17
     Name: RW06
     RawDegrees: 60
     Distance: 4.2

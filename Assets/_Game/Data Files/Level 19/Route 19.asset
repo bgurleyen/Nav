@@ -15,16 +15,16 @@ MonoBehaviour:
   Points:
   - ID: 0
     Name: _START_
-    RawDegrees: 0
+    RawDegrees: 232
     Distance: 0
     RawSpeed: 0
-    RawAltitude: 20000
+    RawAltitude: 35000
     Details: 
   - ID: 1
     Name: GIGOR
     RawDegrees: 232
-    Distance: 9
-    RawSpeed: 250
+    Distance: 20
+    RawSpeed: 0
     RawAltitude: 16000B
     Details: 
   - ID: 2

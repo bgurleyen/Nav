@@ -244,9 +244,21 @@ public class Aircraft : MovingActor
     public void ResetOnActiveSet(float aircraftSpeed, float altitude)
     {
         _pilot.NMPosition = Vector2.zero;
-        _pilot.HeadingDegrees = -Session.ActiveRoute.Points[1].Degrees;
 
-        _pilot.NMPosition = Vector2.zero;
+        // Course authored on the start waypoint (route point 0). Snap track and
+        // compass together so the level does not open on 000 and turn onto it.
+        float startTrack = 0f;
+        var points = Session.ActiveRoute?.Points;
+        if (points != null && points.Length > 0)
+            startTrack = Mathf.Repeat(points[0].RawDegrees, 360f);
+
+        _pilot.HeadingDegrees = startTrack;
+        _pilot.DisplayHeadingDegrees = startTrack;
+
+        int startHdg = Calculator.NormalizeHeading360(Mathf.RoundToInt(startTrack));
+        Calculator.RHeading = startHdg;
+        Calculator.RTrack = startHdg;
+
         NMWalkedOnCurrentSegment = 0;
         _pendingJoinRoutePosition = null;
         _pilot.ClearWholeTurn();

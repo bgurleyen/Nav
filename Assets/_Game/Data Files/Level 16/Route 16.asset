@@ -15,82 +15,82 @@ MonoBehaviour:
   Points:
   - ID: 0
     Name: _START_
-    RawDegrees: 0
+    RawDegrees: 209
     Distance: 0
     RawSpeed: 0
-    RawAltitude: 20000
+    RawAltitude: 32000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: BISBA
     RawDegrees: 209
-    Distance: 9
+    Distance: 20
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 2
     Name: BGR
     RawDegrees: 246
     Distance: 20.4
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 3
     Name: BL045
     RawDegrees: 205
     Distance: 19.4
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 4
     Name: XAMUR
     RawDegrees: 205
     Distance: 16.6
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 5
     Name: D0970
     RawDegrees: 205
     Distance: 10.5
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 6
     Name: LESBA
     RawDegrees: 278
     Distance: 5.1
     RawSpeed: 0
     RawAltitude: 4000A
     Details: 
-  - ID: 0
+  - ID: 7
     Name: SLL-16
     RawDegrees: 302
     Distance: 13.5
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 8
     Name: TEBLA
     RawDegrees: 271
     Distance: 4.3
     RawSpeed: 0
     RawAltitude: 2300A
     Details: 
-  - ID: 0
+  - ID: 9
     Name: CI25R
     RawDegrees: 246
     Distance: 4.1
     RawSpeed: 0
     RawAltitude: 2300
     Details: 
-  - ID: 0
+  - ID: 10
     Name: FU25R
     RawDegrees: 246
     Distance: 2.9
     RawSpeed: 0
     RawAltitude: 1351
     Details: 
-  - ID: 0
+  - ID: 11
     Name: RW25R
     RawDegrees: 246
     Distance: 4.1

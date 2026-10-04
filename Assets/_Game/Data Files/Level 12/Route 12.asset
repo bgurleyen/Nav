@@ -15,68 +15,68 @@ MonoBehaviour:
   Points:
   - ID: 0
     Name: _START_
-    RawDegrees: 0
+    RawDegrees: 154
     Distance: 0
     RawSpeed: 0
-    RawAltitude: 20000
+    RawAltitude: 35000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: ELKAP
     RawDegrees: 154
     Distance: 9
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 2
     Name: BIBEK
     RawDegrees: 120
     Distance: 31.7
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 3
     Name: TAQ
     RawDegrees: 120
     Distance: 25.3
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 4
     Name: CMP
     RawDegrees: 99
     Distance: 29.4
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 5
     Name: URBNB
     RawDegrees: 154
     Distance: 11.8
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 6
     Name: INTC
     RawDegrees: 154
     Distance: 4.2
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 7
     Name: CF25
     RawDegrees: 248
     Distance: 0.9
     RawSpeed: 0
     RawAltitude: 3000
     Details: 
-  - ID: 0
+  - ID: 8
     Name: FF25
     RawDegrees: 248
     Distance: 2
     RawSpeed: 0
     RawAltitude: 3000
     Details: 
-  - ID: 0
+  - ID: 9
     Name: RW25
     RawDegrees: 248
     Distance: 9.6

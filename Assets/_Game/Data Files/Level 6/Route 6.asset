@@ -15,22 +15,22 @@ MonoBehaviour:
   Points:
   - ID: 0
     Name: _START_
-    RawDegrees: 0
+    RawDegrees: 366
     Distance: 0
     RawSpeed: 0
-    RawAltitude: 20000
+    RawAltitude: 24000
     Details: 
   - ID: 1
     Name: PESER
     RawDegrees: 366
     Distance: 9
     RawSpeed: 280
-    RawAltitude: 7000B
+    RawAltitude: 7000A
     Details: 
   - ID: 2
     Name: 'STDNB '
     RawDegrees: 306
-    Distance: 13
+    Distance: 33
     RawSpeed: 0
     RawAltitude: 
     Details: 

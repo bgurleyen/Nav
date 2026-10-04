@@ -15,15 +15,15 @@ MonoBehaviour:
   Points:
   - ID: 0
     Name: _START_
-    RawDegrees: 0
+    RawDegrees: 172
     Distance: 0
     RawSpeed: 0
-    RawAltitude: 20000
+    RawAltitude: 25000
     Details: 
   - ID: 1
     Name: WYNB
     RawDegrees: 172
-    Distance: 9
+    Distance: 25
     RawSpeed: 0
     RawAltitude: 
     Details: 

@@ -15,15 +15,15 @@ MonoBehaviour:
   Points:
   - ID: 0
     Name: _START_
-    RawDegrees: 0
+    RawDegrees: 364
     Distance: 0
     RawSpeed: 0
-    RawAltitude: 20000
+    RawAltitude: 33000
     Details: 
   - ID: 1
     Name: IPATA
     RawDegrees: 364
-    Distance: 9
+    Distance: 30
     RawSpeed: 0
     RawAltitude: 
     Details: 

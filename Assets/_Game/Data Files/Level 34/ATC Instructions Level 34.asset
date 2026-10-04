@@ -46,15 +46,15 @@ MonoBehaviour:
     Altitude: 0
     VS: 0
     VS_nx: 0
-    Speed: 200
-    Speed_nx: 2
+    Speed: 0
+    Speed_nx: 0
   - point: 51
     mode: 2
     Altitude: 2600
     VS: 0
     VS_nx: 0
-    Speed: 0
-    Speed_nx: 0
+    Speed: 190
+    Speed_nx: 2
   - point: 52
     mode: 2
     Altitude: 0

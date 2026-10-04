@@ -15,61 +15,61 @@ MonoBehaviour:
   Points:
   - ID: 0
     Name: _START_
-    RawDegrees: 0
+    RawDegrees: 200
     Distance: 0
     RawSpeed: 0
-    RawAltitude: 20000
+    RawAltitude: 27000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: VERSO
     RawDegrees: 200
     Distance: 9
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 2
     Name: BL038
     RawDegrees: 263
     Distance: 30.6
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 3
     Name: BL012
     RawDegrees: 263
     Distance: 33.4
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 4
     Name: VIBIM
     RawDegrees: 297
     Distance: 7.6
     RawSpeed: 0
     RawAltitude: 4000A7000B
     Details: 
-  - ID: 0
+  - ID: 5
     Name: INTC
     RawDegrees: 259
     Distance: 4.5
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 6
     Name: SANIS
     RawDegrees: 304
     Distance: 5.7
     RawSpeed: 0
     RawAltitude: 2000
     Details: 
-  - ID: 0
+  - ID: 7
     Name: DM06A
     RawDegrees: 19
     Distance: 5.3
     RawSpeed: 0
     RawAltitude: 2000
     Details: 
-  - ID: 0
+  - ID: 8
     Name: RW02
     RawDegrees: 19
     Distance: 6.1

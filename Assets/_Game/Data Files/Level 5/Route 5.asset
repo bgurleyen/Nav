@@ -15,82 +15,82 @@ MonoBehaviour:
   Points:
   - ID: 0
     Name: _START_
-    RawDegrees: 0
+    RawDegrees: 5
     Distance: 0
     RawSpeed: 0
-    RawAltitude: 20000
+    RawAltitude: 27000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: REDFA
     RawDegrees: 5
     Distance: 9
     RawSpeed: 280
     RawAltitude: 23000B
     Details: 
-  - ID: 0
+  - ID: 2
     Name: SULUT
     RawDegrees: 60
     Distance: 39.7
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 3
     Name: SUGOL
     RawDegrees: 77
     Distance: 20.5
     RawSpeed: 250
     RawAltitude: 7000A10000B
     Details: 
-  - ID: 0
+  - ID: 4
     Name: D2930
     RawDegrees: 112
     Distance: 15.9
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 5
     Name: SPL
     RawDegrees: 112
     Distance: 15
     RawSpeed: 0
     RawAltitude: 7000A
     Details: 
-  - ID: 0
+  - ID: 6
     Name: CHNB
     RawDegrees: 227
     Distance: 9.7
     RawSpeed: 0
     RawAltitude: 3000A
     Details: 
-  - ID: 0
+  - ID: 7
     Name: CHNB-4
     RawDegrees: 186
     Distance: 4
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
-    Name: CHNB
+  - ID: 8
+    Name: CHNB-5
     RawDegrees: 46
     Distance: 10.6
     RawSpeed: 0
     RawAltitude: 2000A
     Details: 
-  - ID: 0
+  - ID: 9
     Name: EH609
     RawDegrees: 60
     Distance: 1.6
     RawSpeed: 0
     RawAltitude: 2000
     Details: 
-  - ID: 0
+  - ID: 10
     Name: EH616
     RawDegrees: 58
     Distance: 2.1
     RawSpeed: 0
     RawAltitude: 1310
     Details: 
-  - ID: 0
+  - ID: 11
     Name: RW06
     RawDegrees: 58
     Distance: 4.1

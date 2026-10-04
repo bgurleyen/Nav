@@ -15,75 +15,75 @@ MonoBehaviour:
   Points:
   - ID: 0
     Name: _START_
-    RawDegrees: 0
+    RawDegrees: 64
     Distance: 0
     RawSpeed: 0
-    RawAltitude: 20000
+    RawAltitude: 27000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: CDA
     RawDegrees: 64
-    Distance: 9
+    Distance: 29
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 2
     Name: KUTAX
     RawDegrees: 19
     Distance: 14.5
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 3
     Name: CH993
     RawDegrees: 19
     Distance: 15.7
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 4
     Name: CH992
     RawDegrees: 19
     Distance: 6.6
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 5
     Name: CH991
     RawDegrees: 39
     Distance: 12.3
     RawSpeed: 0
     RawAltitude: 5000A
     Details: 
-  - ID: 0
+  - ID: 6
     Name: CH881
     RawDegrees: 328
     Distance: 5.3
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 7
     Name: LAMOX
     RawDegrees: 219
     Distance: 3.8
     RawSpeed: 0
     RawAltitude: 3000A
     Details: 
-  - ID: 0
+  - ID: 8
     Name: 93DME
     RawDegrees: 219
     Distance: 0.9
     RawSpeed: 0
     RawAltitude: 3000
     Details: 
-  - ID: 0
+  - ID: 9
     Name: 'FI22L '
     RawDegrees: 219
     Distance: 4.6
     RawSpeed: 0
     RawAltitude: 1600
     Details: 
-  - ID: 0
+  - ID: 10
     Name: 'RW22L '
     RawDegrees: 219
     Distance: 4.9

@@ -15,7 +15,7 @@ MonoBehaviour:
   Points:
   - ID: 0
     Name: _START
-    RawDegrees: 0
+    RawDegrees: 20
     Distance: 0
     RawSpeed: 0
     RawAltitude: 10000
@@ -23,14 +23,14 @@ MonoBehaviour:
   - ID: 1
     Name: ELNAT
     RawDegrees: 20
-    Distance: 6
+    Distance: 5
     RawSpeed: 0
     RawAltitude: 
     Details: 
   - ID: 2
     Name: NORTA
     RawDegrees: 5
-    Distance: 6
+    Distance: 14
     RawSpeed: 240
     RawAltitude: 
     Details: 

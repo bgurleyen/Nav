@@ -15,7 +15,7 @@ MonoBehaviour:
   Points:
   - ID: 0
     Name: _START_
-    RawDegrees: 0
+    RawDegrees: 267
     Distance: 0
     RawSpeed: 0
     RawAltitude: 20000
@@ -23,7 +23,7 @@ MonoBehaviour:
   - ID: 1
     Name: HLZ
     RawDegrees: 267
-    Distance: 9
+    Distance: 20
     RawSpeed: 0
     RawAltitude: 
     Details: 
@@ -32,7 +32,7 @@ MonoBehaviour:
     RawDegrees: 294
     Distance: 31.1
     RawSpeed: 0
-    RawAltitude: 11000B
+    RawAltitude: 11000
     Details: 
   - ID: 3
     Name: DV460

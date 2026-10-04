@@ -15,10 +15,10 @@ MonoBehaviour:
   Points:
   - ID: 0
     Name: _START_
-    RawDegrees: 0
+    RawDegrees: 118
     Distance: 0
     RawSpeed: 0
-    RawAltitude: 20000
+    RawAltitude: 27000
     Details: 
   - ID: 1
     Name: 'STONE '

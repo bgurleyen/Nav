@@ -54,10 +54,13 @@ public class Move : Singleton<Move>
     int RW;
     float NextInstructionDistance = 1.3f;
 
-    // BorderGuard: route A→B after each clearance (A = AC at issue, B = clearance point).
+    // BorderGuard: A→B from the last lateral clearance (or a non-early row).
+    // Distance gates and reroute aim at _routeB, not the current ATC point.
     Vector2 _routeA;
     Vector2 _routeB;
     bool _routeValid;
+    bool _openedByEarlyCall;
+    bool _borderLegComplete;
     bool _borderBusy;
     bool _hardActive;
     bool _softClearanceIssued;
@@ -201,12 +204,14 @@ public class Move : Singleton<Move>
     /*
      * BORDERGUARD
      * -----------
-     * 1) Each new clearance defines route A→B (A = AC position at issue, B = clearance point).
-     * 2) Soft: cone from B abeam ±1.3 NM toward A at 7°.
-     * 3) Hard: same abeam anchors, 15° cone toward A.
-     * 4) Soft breach → one FactoredHeading clearance.
-     * 5) Hard breach (15° cone OR Dist(B) > |A-B|+5 NM) → dialog, one-shot TrackToPoint(B) at 20x.
-     *    Hard mode until Dist(B) ≤ 1.3 NM. No per-tick heading recompute.
+     * 1) DCT, heading, or a row that was not opened early defines route A→B.
+     *    An early call (Speed_nx > 2 on this row or the previous one) keeps the previous B
+     *    unless this row itself has DCT or heading.
+     * 2) Soft: cone from B abeam ±1.3 NM toward A at 13°.
+     * 3) Hard: same abeam anchors, 26° cone toward A.
+     * 4) Soft breach → one FactoredHeading toward _routeB.
+     * 5) Hard breach (26° cone OR dist(_routeB) > |A-B|+5 NM) → dialog, one-shot track to _routeB at 20x.
+     *    After dist(_routeB) ≤ 1.3 NM the cone stays quiet until the next capture.
      *    ATC1 red "Rerouting , Standby!!" until next clearance. No turn-in-progress skip.
      *    Turn direction always reduces XTE (Pilot).
      */
@@ -234,7 +239,11 @@ public class Move : Singleton<Move>
         float softHalf = abeamNm + Mathf.Max(0f, alongFromBTowardA) * Mathf.Tan(softDeg * Mathf.Deg2Rad);
         float hardHalf = abeamNm + Mathf.Max(0f, alongFromBTowardA) * Mathf.Tan(hardDeg * Mathf.Deg2Rad);
         float abLen = Vector2.Distance(_routeA, _routeB);
-        bool beyondAb = DistanceToPoint > abLen + beyondAbExtraNm;
+        float distToRouteB = Vector2.Distance(Session.PlayerAircraft.NMPosition, _routeB);
+        bool beyondAb = distToRouteB > abLen + beyondAbExtraNm;
+
+        if (distToRouteB <= hardGateNm)
+            _borderLegComplete = true;
 
         // string modeName = _hardActive || xte > hardHalf || beyondAb
         //     ? "Hard"
@@ -249,8 +258,8 @@ public class Move : Singleton<Move>
         if (_rerouteStandbyUntilNextClearance)
             SetAtcReroutingStandby();
 
-        // Near B: hard mode ends; sequencing owns the aircraft.
-        if (DistanceToPoint <= hardGateNm)
+        // B has been reached. Stay quiet until the next cone, so the leg after an early call does not warn.
+        if (_borderLegComplete)
         {
             if (_hardActive)
                 EndHardMode();
@@ -270,7 +279,7 @@ public class Move : Singleton<Move>
 
         if (xte > hardHalf || beyondAb)
         {
-            int directHdg = Calculator.NormalizeHeading360((int)Mathf.Round(TrackToPoint(point)));
+            int directHdg = Calculator.NormalizeHeading360((int)Mathf.Round(TrackToPosition(_routeB)));
             IssueHeadingCorrection(
                 directHdg,
                 title: "PILOT RESPONSE",
@@ -336,6 +345,7 @@ public class Move : Singleton<Move>
         _borderBusy = false;
         _hardActive = false;
         _softClearanceIssued = false;
+        _borderLegComplete = false;
         _rerouteStandbyUntilNextClearance = false;
         ClearOutsideBorderSteer();
     }
@@ -383,7 +393,7 @@ public class Move : Singleton<Move>
 
     void RefreshAtcFactoredClearance()
     {
-        int hdg = Calculator.NormalizeHeading360(TrackToPointFactored(point));
+        int hdg = Calculator.NormalizeHeading360(TrackToPositionFactored(_routeB));
         XFRHdg = hdg;
         mode = 2;
         XFR1.interactable = true;
@@ -391,7 +401,7 @@ public class Move : Singleton<Move>
         if (Atc1 == null)
             return;
 
-        Atc1.text = "Turn " + TurnDirection(TrackToPoint(point))
+        Atc1.text = "Turn " + TurnDirection(TrackToPosition(_routeB))
                     + "Heading " + hdg;
         Atc1.color = Color.green;
         _atc1GrayDone = false;
@@ -708,17 +718,19 @@ public class Move : Singleton<Move>
 
     private float TrackToPoint(int pt)
     {
-        float x1 = Session.PlayerAircraft.NMPosition.x;
-        float y1 = Session.PlayerAircraft.NMPosition.y;
+        return TrackToPosition(PointPos(pt));
+    }
 
-        float x2 = PointPos(pt).x;
-        float y2 = PointPos(pt).y;
+    private float TrackToPosition(Vector2 dest)
+    {
+        return Bearing(Session.PlayerAircraft.NMPosition, dest);
+    }
 
-
-        float Angle = Mathf.Atan2(x2 - x1, y2 - y1) * Mathf.Rad2Deg;
-        if (Angle < 0) Angle += 360;
-
-        return Angle;
+    private static float Bearing(Vector2 from, Vector2 dest)
+    {
+        float angle = Mathf.Atan2(dest.x - from.x, dest.y - from.y) * Mathf.Rad2Deg;
+        if (angle < 0f) angle += 360f;
+        return angle;
     }
     private float TrackToPoint(float x1, float y1, int pt)
     {
@@ -733,26 +745,26 @@ public class Move : Singleton<Move>
 
     private int TrackToPointFactored(int pt)
     {
+        return TrackToPositionFactored(PointPos(pt));
+    }
 
-        float x1 = Session.PlayerAircraft.NMPosition.x;
-        float y1 = Session.PlayerAircraft.NMPosition.y;
-        float alfa = Mathf.DeltaAngle(Calculator.CTrack, TrackToPoint(pt)) * Mathf.Deg2Rad;
-        float Track = Calculator.CTrack * Mathf.Deg2Rad;
+    private int TrackToPositionFactored(Vector2 dest)
+    {
+        Vector2 from = Session.PlayerAircraft.NMPosition;
+        float direct = Bearing(from, dest);
+        float alfa = Mathf.DeltaAngle(Calculator.CTrack, direct) * Mathf.Deg2Rad;
+        float track = Calculator.CTrack * Mathf.Deg2Rad;
+        float turnRadius = 1.6f * Calculator.GS / 280f;
+        int sign = Mathf.DeltaAngle(Calculator.CTrack, direct) >= 0 ? 1 : -1;
 
+        float h = turnRadius * (1f - Mathf.Cos(alfa));
+        float v = Mathf.Sin(alfa) * turnRadius;
+        float x2 = from.x + sign * (h * Mathf.Cos(track) + v * Mathf.Sin(track));
+        float y2 = from.y + sign * (v * Mathf.Cos(track) - h * Mathf.Sin(track));
 
-        float TurnRadius = 1.6f * Calculator.GS / 280;
-
-
-        int Sign = Mathf.DeltaAngle(Calculator.CTrack, TrackToPoint(pt)) >= 0 ? 1 : -1;
-
-        float H = TurnRadius * (1 - Mathf.Cos(alfa)); //Horizantal
-        float V = Mathf.Sin(alfa) * TurnRadius;  //Vertical
-        float x2 = x1 + Sign * (H * Mathf.Cos(Track) + V * Mathf.Sin(Track));
-        float y2 = y1 + Sign * (V * Mathf.Cos(Track) - H * Mathf.Sin(Track));
-
-
-        Calculator.WindElements WE = Calculator.CalculateWindElements(Calculator.CAltitude, Calculator.CSpeed, (int)TrackToPoint(x2, y2, pt));
-        return (int)(Mathf.Round(TrackToPoint(x2, y2, pt)) + WE.HeadingWindAddition);
+        float leadTrack = Bearing(new Vector2(x2, y2), dest);
+        Calculator.WindElements we = Calculator.CalculateWindElements(Calculator.CAltitude, Calculator.CSpeed, (int)leadTrack);
+        return (int)(Mathf.Round(leadTrack) + we.HeadingWindAddition);
     }
 
     public float DME()
@@ -949,8 +961,16 @@ public class Move : Singleton<Move>
 
             NewPoint = false;
 
-            CaptureRouteAB();
-            ResetBorderState();
+            // A row opened early (previous Speed_nx > 2), or this row's own Speed_nx > 2,
+            // does not move the cone unless it also has DCT or heading.
+            bool lateralClearance = mode == 1 || mode == 2;
+            bool earlyDistance = _openedByEarlyCall || Speed_nx > 2;
+            if (lateralClearance || !earlyDistance)
+            {
+                CaptureRouteAB();
+                ResetBorderState();
+            }
+            _openedByEarlyCall = false;
 
             if (mode > 0 || XFR2.interactable || XFR3.interactable) SlowDown();
 
@@ -1083,6 +1103,7 @@ public class Move : Singleton<Move>
 
     void MoveOnNextInstruction()
     {
+        _openedByEarlyCall = NextInstructionDistance > 2.5f;
         _currentInstructionIndex += 1;
         NewPoint = true;
         // Force altitude arming to re-evaluate on next ATCCall (do not store VS here).

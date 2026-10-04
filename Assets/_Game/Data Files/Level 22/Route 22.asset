@@ -15,10 +15,10 @@ MonoBehaviour:
   Points:
   - ID: 0
     Name: _START_
-    RawDegrees: 0
+    RawDegrees: 122
     Distance: 0
     RawSpeed: 0
-    RawAltitude: 20000
+    RawAltitude: 35000
     Details: 
   - ID: 0
     Name: TETSA
