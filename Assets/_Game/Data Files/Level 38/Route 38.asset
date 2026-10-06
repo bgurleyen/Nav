@@ -18,12 +18,12 @@ MonoBehaviour:
     RawDegrees: 366
     Distance: 0
     RawSpeed: 0
-    RawAltitude: 24000
+    RawAltitude: 34000
     Details: 
   - ID: 1
     Name: DRNB
     RawDegrees: 366
-    Distance: 25
+    Distance: 55
     RawSpeed: 0
     RawAltitude: 
     Details: 

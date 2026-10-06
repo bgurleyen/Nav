@@ -23,7 +23,7 @@ MonoBehaviour:
   - ID: 1
     Name: IPATA
     RawDegrees: 364
-    Distance: 30
+    Distance: 45
     RawSpeed: 0
     RawAltitude: 
     Details: 

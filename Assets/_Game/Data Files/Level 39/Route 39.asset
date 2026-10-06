@@ -18,12 +18,12 @@ MonoBehaviour:
     RawDegrees: 163
     Distance: 0
     RawSpeed: 0
-    RawAltitude: 35000
+    RawAltitude: 37000
     Details: 
   - ID: 1
     Name: GISIN
     RawDegrees: 163
-    Distance: 13
+    Distance: 70
     RawSpeed: 0
     RawAltitude: 
     Details: 
@@ -116,33 +116,33 @@ MonoBehaviour:
     RawDegrees: 8
     Distance: 6.8
     RawSpeed: 0
-    RawAltitude: 3640
+    RawAltitude: 
     Details: 
   - ID: 15
     Name: 290OB
     RawDegrees: 15
     Distance: 4.1
     RawSpeed: 0
-    RawAltitude: 2650
+    RawAltitude: 
     Details: 
   - ID: 16
     Name: 258OB
     RawDegrees: 339
     Distance: 2.9
     RawSpeed: 0
-    RawAltitude: 2320
+    RawAltitude: 
     Details: 
   - ID: 17
     Name: CF24
-    RawDegrees: 299
-    Distance: 1.9
+    RawDegrees: 250
+    Distance: 2.9
     RawSpeed: 0
-    RawAltitude: 2000
+    RawAltitude: 3000
     Details: 
   - ID: 18
     Name: FF24
     RawDegrees: 239
-    Distance: 0.8
+    Distance: 1.8
     RawSpeed: 0
     RawAltitude: 1991
     Details: 

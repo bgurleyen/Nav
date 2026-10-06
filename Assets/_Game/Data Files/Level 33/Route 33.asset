@@ -23,7 +23,7 @@ MonoBehaviour:
   - ID: 1
     Name: 'STONE '
     RawDegrees: 118
-    Distance: 9
+    Distance: 25
     RawSpeed: 250
     RawAltitude: 
     Details: 

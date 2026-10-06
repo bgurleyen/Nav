@@ -41,7 +41,7 @@ MonoBehaviour:
     x: 0
     y: 0
   - Number: 60
-    x: 0
+    x: 30
     y: 0
   - Number: 61
     x: 56.782

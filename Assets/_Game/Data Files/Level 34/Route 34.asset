@@ -20,63 +20,63 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 22000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: AKBAN
     RawDegrees: 88
     Distance: 30
     RawSpeed: 0
     RawAltitude: 12000A
     Details: 
-  - ID: 0
+  - ID: 2
     Name: CHI
     RawDegrees: 58
     Distance: 13.5
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 3
     Name: D240T
     RawDegrees: 60
     Distance: 6.4
     RawSpeed: 0
     RawAltitude: 6500A
     Details: 
-  - ID: 0
+  - ID: 4
     Name: D240O
     RawDegrees: 60
     Distance: 5
     RawSpeed: 0
     RawAltitude: 2600A
     Details: 
-  - ID: 0
+  - ID: 5
     Name: D253M
     RawDegrees: 9
     Distance: 3.6
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 6
     Name: D267M
     RawDegrees: 350
     Distance: 3.3
     RawSpeed: 0
     RawAltitude: 2600A
     Details: 
-  - ID: 0
+  - ID: 7
     Name: CI11
     RawDegrees: 83
     Distance: 6.3
     RawSpeed: 0
     RawAltitude: 2600
     Details: 
-  - ID: 0
+  - ID: 8
     Name: 'FI11 '
     RawDegrees: 103
     Distance: 1.9
     RawSpeed: 0
     RawAltitude: 2000
     Details: 
-  - ID: 0
+  - ID: 9
     Name: RW11
     RawDegrees: 103
     Distance: 3.9

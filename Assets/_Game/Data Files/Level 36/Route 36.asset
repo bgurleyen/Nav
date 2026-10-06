@@ -18,12 +18,12 @@ MonoBehaviour:
     RawDegrees: 163
     Distance: 0
     RawSpeed: 0
-    RawAltitude: 28000
+    RawAltitude: 31000
     Details: 
   - ID: 1
     Name: CAB
     RawDegrees: 163
-    Distance: 9
+    Distance: 40
     RawSpeed: 0
     RawAltitude: 
     Details: 

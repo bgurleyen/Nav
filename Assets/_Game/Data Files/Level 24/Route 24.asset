@@ -20,56 +20,56 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 25000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: SILVA
     RawDegrees: 80
-    Distance: 30
+    Distance: 50
     RawSpeed: 240
     RawAltitude: 9000A
     Details: 
-  - ID: 0
+  - ID: 2
     Name: BAKKE
     RawDegrees: 38
     Distance: 20
     RawSpeed: 210
     RawAltitude: 7000A
     Details: 
-  - ID: 0
+  - ID: 3
     Name: PETER
     RawDegrees: 15
     Distance: 15.1
     RawSpeed: 210
     RawAltitude: 4000A
     Details: 
-  - ID: 0
+  - ID: 4
     Name: ROBIN
     RawDegrees: 105
     Distance: 5
     RawSpeed: 0
     RawAltitude: 2000A
     Details: 
-  - ID: 0
+  - ID: 5
     Name: LYNDA
     RawDegrees: 175
     Distance: 3.5
     RawSpeed: 0
     RawAltitude: 2000A
     Details: 
-  - ID: 0
+  - ID: 6
     Name: LEMON
     RawDegrees: 195
     Distance: 2.7
     RawSpeed: 0
     RawAltitude: 2000
     Details: 
-  - ID: 0
+  - ID: 7
     Name: FI19L
     RawDegrees: 195
     Distance: 2.2
     RawSpeed: 0
     RawAltitude: 1300
     Details: 
-  - ID: 0
+  - ID: 8
     Name: RW19L
     RawDegrees: 195
     Distance: 4

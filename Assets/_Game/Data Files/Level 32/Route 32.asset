@@ -18,12 +18,12 @@ MonoBehaviour:
     RawDegrees: 38
     Distance: 0
     RawSpeed: 0
-    RawAltitude: 26000
+    RawAltitude: 32000
     Details: 
   - ID: 1
     Name: 'ADDUM '
     RawDegrees: 38
-    Distance: 9
+    Distance: 40
     RawSpeed: 0
     RawAltitude: 
     Details: 

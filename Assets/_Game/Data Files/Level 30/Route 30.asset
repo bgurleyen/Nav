@@ -20,70 +20,70 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 23000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: OBOGA
     RawDegrees: 221
-    Distance: 25
+    Distance: 35
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 2
     Name: D032M
     RawDegrees: 255
     Distance: 8.2
     RawSpeed: 0
-    RawAltitude: 
+    RawAltitude: 10000B
     Details: 
-  - ID: 0
+  - ID: 3
     Name: D013M
     RawDegrees: 296
     Distance: 4.3
-    RawSpeed: 0
-    RawAltitude: 
-    Details: 
-  - ID: 0
-    Name: D354M
-    RawDegrees: 276
-    Distance: 4.9
     RawSpeed: 230
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 4
+    Name: D354M
+    RawDegrees: 276
+    Distance: 4.9
+    RawSpeed: 0
+    RawAltitude: 
+    Details: 
+  - ID: 5
     Name: D332M
     RawDegrees: 254
     Distance: 4.4
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 6
     Name: D310M
     RawDegrees: 234
     Distance: 5
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 7
     Name: D288M
     RawDegrees: 210
     Distance: 5.6
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 8
     Name: CI10
     RawDegrees: 111
     Distance: 10.5
     RawSpeed: 0
     RawAltitude: 3200
     Details: 
-  - ID: 0
+  - ID: 9
     Name: MAK
     RawDegrees: 99
     Distance: 2.6
     RawSpeed: 0
     RawAltitude: 2390
     Details: 
-  - ID: 0
+  - ID: 10
     Name: RW10
     RawDegrees: 99
     Distance: 2.7
