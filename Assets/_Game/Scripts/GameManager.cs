@@ -191,7 +191,14 @@ public class GameManager : MonoBehaviour
         else
         {
             var seekIndex = Session.ActiveRoute.FindForwardPositionNodeIndex();
-            if (seekIndex < 0)
+            var seekVertex = 0;
+            if (Session.ActiveRoute.IsCourseInterceptRoute)
+            {
+                // The route now starts on the 200 NM course. Join the closest point on it.
+                Session.ActiveRoute.FindClosestPointOnRoute(
+                    Session.PlayerAircraft.NMPosition, out seekIndex, out seekVertex);
+            }
+            else if (seekIndex < 0)
             {
                 seekIndex = Mathf.Clamp(
                     PositionVirtualNode.PassedNodeIndex + 2,
@@ -199,7 +206,7 @@ public class GameManager : MonoBehaviour
                     Session.ActiveRoute.Points.Length - 1);
             }
 
-            Session.PlayerAircraft.ResetSeekProgress(seekIndex, 0);
+            Session.PlayerAircraft.ResetSeekProgress(seekIndex, seekVertex);
         }
     }
 

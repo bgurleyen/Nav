@@ -80,20 +80,20 @@ MonoBehaviour:
     Name: EH609
     RawDegrees: 60
     Distance: 1.6
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 2000
     Details: 
   - ID: 10
     Name: EH616
     RawDegrees: 58
     Distance: 2.1
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 1310
     Details: 
   - ID: 11
     Name: RW06
     RawDegrees: 58
     Distance: 4.1
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 49
     Details: 

@@ -66,20 +66,20 @@ MonoBehaviour:
     Name: CF25R
     RawDegrees: 246
     Distance: 7.1
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 2000
     Details: 
   - ID: 8
     Name: OM25R
     RawDegrees: 245
     Distance: 1.9
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 1400
     Details: 
   - ID: 9
     Name: RW25R
     RawDegrees: 245
     Distance: 4
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 160
     Details: 

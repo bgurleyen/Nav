@@ -101,20 +101,20 @@ MonoBehaviour:
     Name: CI11X
     RawDegrees: 114
     Distance: 1.9
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 3400
     Details: 
   - ID: 13
     Name: 36DME
     RawDegrees: 113
     Distance: 4.8
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 1765
     Details: 
   - ID: 14
     Name: RW11
     RawDegrees: 113
     Distance: 3.5
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 624
     Details: 

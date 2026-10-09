@@ -73,20 +73,20 @@ MonoBehaviour:
     Name: CI10
     RawDegrees: 111
     Distance: 10.5
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 3200
     Details: 
   - ID: 9
     Name: MAK
     RawDegrees: 99
     Distance: 2.6
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 2390
     Details: 
   - ID: 10
     Name: RW10
     RawDegrees: 99
     Distance: 2.7
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 1556
     Details: 

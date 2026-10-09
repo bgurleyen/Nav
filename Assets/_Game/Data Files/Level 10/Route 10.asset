@@ -73,20 +73,20 @@ MonoBehaviour:
     Name: 93DME
     RawDegrees: 219
     Distance: 0.9
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 3000
     Details: 
   - ID: 9
     Name: 'FI22L '
     RawDegrees: 219
     Distance: 4.6
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 1600
     Details: 
   - ID: 10
     Name: 'RW22L '
     RawDegrees: 219
     Distance: 4.9
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 58
     Details: 

@@ -45,20 +45,20 @@ MonoBehaviour:
     Name: CI06
     RawDegrees: 55
     Distance: 4.9
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 7500
     Details: 
   - ID: 5
     Name: NONB
     RawDegrees: 54
     Distance: 2.8
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 6500
     Details: 
   - ID: 6
     Name: RW06
     RawDegrees: 54
     Distance: 4
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 5330
     Details: 

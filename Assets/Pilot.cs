@@ -16,6 +16,7 @@ namespace Navigation
         private bool _wholeTurnActive;
         private float _latchedTargetHeading;
         private float _remainingToTarget;
+        private float _latchedTurnSign;
 
         private const float WholeTurnStartDeg = 3f;
         private const float WholeTurnEndDeg = 3f;
@@ -69,8 +70,20 @@ namespace Navigation
 
         public void TickSteerToTargetHeading(float targetHeading)
         {
+            TickSteerToTargetHeading(targetHeading, false);
+        }
+
+        public void TickSteerToTargetHeading(float targetHeading, bool ignoreBorder)
+        {
             var difDegrees = -Geometry.AngleDelta(HeadingDegrees, targetHeading);
-            UpdateHeadingTowardsAngleDiff(difDegrees);
+            // Keep the latched turn direction so ~180° legs don't flip the other way.
+            if (_wholeTurnActive && !_isTracer && _latchedTurnSign != 0f && Mathf.Abs(difDegrees) > 0.5f)
+            {
+                if (Mathf.Sign(difDegrees) != _latchedTurnSign)
+                    difDegrees = _latchedTurnSign * (360f - Mathf.Abs(difDegrees));
+            }
+
+            UpdateHeadingTowardsAngleDiff(difDegrees, ignoreBorder);
         }
 
         /// <summary>
@@ -88,6 +101,8 @@ namespace Navigation
                     _wholeTurnActive = true;
                     _wholeTurn = _remainingToTarget;
                     _latchedTargetHeading = targetHeading;
+                    var startDiff = -Geometry.AngleDelta(HeadingDegrees, targetHeading);
+                    _latchedTurnSign = startDiff < 0f ? -1f : 1f;
                 }
                 return;
             }
@@ -96,6 +111,8 @@ namespace Navigation
             {
                 _wholeTurn = _remainingToTarget;
                 _latchedTargetHeading = targetHeading;
+                var startDiff = -Geometry.AngleDelta(HeadingDegrees, targetHeading);
+                _latchedTurnSign = startDiff < 0f ? -1f : 1f;
             }
             else
             {
@@ -106,6 +123,7 @@ namespace Navigation
             {
                 _wholeTurnActive = false;
                 _wholeTurn = 0f;
+                _latchedTurnSign = 0f;
             }
         }
 
@@ -114,12 +132,13 @@ namespace Navigation
             _wholeTurnActive = false;
             _wholeTurn = 0f;
             _remainingToTarget = 0f;
+            _latchedTurnSign = 0f;
         }
 
-        private void UpdateHeadingTowardsAngleDiff(float difDegrees)
+        private void UpdateHeadingTowardsAngleDiff(float difDegrees, bool ignoreBorder = false)
         {
             // Outside corridor: turn only in the XTE-reducing direction.
-            if (!_isTracer && Move.IsOutsideBorder && Move.XteReduceHeadingSign != 0f
+            if (!ignoreBorder && !_isTracer && Move.IsOutsideBorder && Move.XteReduceHeadingSign != 0f
                 && Mathf.Abs(difDegrees) > 0.5f)
             {
                 difDegrees = Move.XteReduceHeadingSign * Mathf.Abs(difDegrees);
@@ -131,7 +150,7 @@ namespace Navigation
                                             Mathf.Abs(difDegrees));
 
             HeadingDegrees += currentTurningDegrees;
-            HeadingDegrees %= 360;
+            HeadingDegrees = Geometry.AbsAngle(HeadingDegrees);
         }
     }
 }

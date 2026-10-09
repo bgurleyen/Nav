@@ -59,20 +59,20 @@ MonoBehaviour:
     Name: D1690
     RawDegrees: 171
     Distance: 5.3
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 1950
     Details: 
   - ID: 7
     Name: 89ITA
     RawDegrees: 190
     Distance: 2.1
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 1950
     Details: 
   - ID: 8
     Name: RW19
     RawDegrees: 193
     Distance: 4
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 686
     Details: 

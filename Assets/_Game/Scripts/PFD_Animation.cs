@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -39,12 +39,28 @@ public class PFD_Animation : MonoBehaviour
         RSpeed = (int)Calculator.RSpeed;
         CSpeed = Calculator.CSpeed;
     }
+    // Red speed-tape band Y while this flap index is set. Knots = 220 + (bandY - 190) / 2.
+    // 737-800 placard: UP 340, flaps 1/2/5 250, 10 210, 15 200, 25 190, 30 175, 40 162.
+    public static readonly int[] FlapMaxBandY = { 430, 250, 250, 250, 170, 150, 130, 100, 74 };
+
+    public static int FlapBandKnots(int bandY)
+    {
+        return 220 + (bandY - 190) / 2;
+    }
+
+    /// <summary>Max knots allowed when selecting this flap index. Same placard the speed tape draws for that flap.</summary>
+    public static int FlapSelectLimitKnots(int flapIdx)
+    {
+        if (flapIdx <= 0 || flapIdx >= FlapMaxBandY.Length)
+            return int.MaxValue;
+        return FlapBandKnots(FlapMaxBandY[flapIdx]);
+    }
+
     public void Flaps_Indexchange(int idx)
     {
 
         int[] F = new int[9] { 0, -20, -20, -40, -40, -50, 0, 0, 0 };
         string[] FDisplay = new string[9] { "", " 1", " 2", " 5", "10", "15", "", "", "" };
-        int[] max = new int[9] { 429, 250, 250, 250, 172, 145, 95, 85, 65 };
 
         if (F[idx] != 0)
         {
@@ -53,7 +69,7 @@ public class PFD_Animation : MonoBehaviour
             Fspeed.GetComponent<UnityEngine.UI.Text>().text = "─" + FDisplay[idx];
         }
         else Fspeed.GetComponent<UnityEngine.UI.Text>().text = "";
-        maxFlapSpeedPos = max[idx]; // red limit band
+        maxFlapSpeedPos = FlapMaxBandY[idx]; // red limit band
     }
     public void SpeedTapeUpdate()
     {

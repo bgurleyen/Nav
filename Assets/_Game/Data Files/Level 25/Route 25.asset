@@ -45,20 +45,20 @@ MonoBehaviour:
     Name: 97DME
     RawDegrees: 266
     Distance: 3.4
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 2000
     Details: 
   - ID: 5
     Name: 62DME
     RawDegrees: 266
     Distance: 3.5
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 2000
     Details: 
   - ID: 6
     Name: RW27
     RawDegrees: 266
     Distance: 6.1
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 62
     Details: 

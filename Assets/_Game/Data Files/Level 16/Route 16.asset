@@ -80,20 +80,20 @@ MonoBehaviour:
     Name: CI25R
     RawDegrees: 246
     Distance: 4.1
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 2300
     Details: 
   - ID: 10
     Name: FU25R
     RawDegrees: 246
     Distance: 2.9
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 1351
     Details: 
   - ID: 11
     Name: RW25R
     RawDegrees: 246
     Distance: 4.1
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 60
     Details: 

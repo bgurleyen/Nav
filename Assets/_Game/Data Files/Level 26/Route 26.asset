@@ -66,20 +66,20 @@ MonoBehaviour:
     Name: CF07R
     RawDegrees: 68
     Distance: 8.4
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 3000
     Details: 
   - ID: 0
     Name: OM07R
     RawDegrees: 64
     Distance: 4.2
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 1693
     Details: 
   - ID: 0
     Name: RW07R
     RawDegrees: 68
     Distance: 5.2
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 84
     Details: 

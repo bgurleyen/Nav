@@ -94,20 +94,20 @@ MonoBehaviour:
     Name: 'CI08L '
     RawDegrees: 84
     Distance: 5.5
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 4000
     Details: 
   - ID: 12
     Name: 'OM08L '
     RawDegrees: 86
     Distance: 6.5
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 1840
     Details: 
   - ID: 13
     Name: 'RW08L '
     RawDegrees: 86
     Distance: 4.6
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 388
     Details: 

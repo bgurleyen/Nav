@@ -80,20 +80,20 @@ MonoBehaviour:
     Name: CF02
     RawDegrees: 26
     Distance: 7.3
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 2000
     Details: 
   - ID: 10
     Name: OM02
     RawDegrees: 14
     Distance: 1.7
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 1430
     Details: 
   - ID: 11
     Name: RW02
     RawDegrees: 15
     Distance: 3.8
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 233
     Details: 

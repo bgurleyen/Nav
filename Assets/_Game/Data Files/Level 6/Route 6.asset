@@ -73,20 +73,20 @@ MonoBehaviour:
     Name: 'EH621 '
     RawDegrees: 184
     Distance: 3.7
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 2000
     Details: 
   - ID: 9
     Name: 'EH622 '
     RawDegrees: 183
     Distance: 2.2
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 1310
     Details: 
   - ID: 10
     Name: 'RW18R '
     RawDegrees: 183
     Distance: 4.1
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 49
     Details: 

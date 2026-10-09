@@ -57,6 +57,12 @@ public class LegsNodeLine : MonoBehaviour {
         var distance = linkedInfo.LinkedId == PositionVirtualNode.GetNodeToOnActive.ID
             ? Session.PlayerAircraft.ComputedDistanceLeftOnSegment
             : node.Distance;
+        var courseText = $"{node.RawDegrees:000}°";
+        if (node.IsLinearApproach)
+        {
+            courseText = $"{Mathf.RoundToInt(Mathf.Repeat(node.LinearApproachAngle, 360f)):000}°";
+            distance = InboundInterceptDistance(node);
+        }
 
         //Debug.Log("IsAddedDiscontinuity: " + linkedInfo.IsAddedDiscontinuity);
         if (linkedInfo.IsAddedDiscontinuity) {
@@ -74,7 +80,7 @@ public class LegsNodeLine : MonoBehaviour {
             hFull.text = node.IsAfterDiscontinuity ? "--- ROUTE DISCONTINUITY ---" : "";
             //Debug.Log(hFull.text);
 
-            hLeft.text = node.IsAfterDiscontinuity ? "" : $"{node.RawDegrees:000}°";
+            hLeft.text = node.IsAfterDiscontinuity ? "" : courseText;
             hMiddle.text = node.IsAfterDiscontinuity ? "" : $"{distance:F1}NM";
 
             if (node.IsModified) {
@@ -235,6 +241,20 @@ public class LegsNodeLine : MonoBehaviour {
         //Debug.Log("THEN  □□□□□");
 
         fRight.Clear();
+    }
+
+    static float InboundInterceptDistance(RoutePoint node)
+    {
+        var aircraft = Session.PlayerAircraft;
+        if (aircraft == null)
+            return node.Distance;
+
+        var from = aircraft.NMPosition;
+        var track = aircraft.HeadingDegrees;
+        if (!Geometry.TryInboundIntercept(from, node.CartesianPosition, node.LinearApproachAngle, track, out var intercept))
+            return Vector2.Distance(from, node.CartesianPosition);
+
+        return Vector2.Distance(from, intercept) + Vector2.Distance(intercept, node.CartesianPosition);
     }
 
     internal void ShowEmpty() {

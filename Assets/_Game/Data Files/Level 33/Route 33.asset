@@ -66,20 +66,20 @@ MonoBehaviour:
     Name: ARLON
     RawDegrees: 247
     Distance: 6.3
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 5000
     Details: 
   - ID: 8
     Name: APOLO
     RawDegrees: 337
     Distance: 15
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 5000
     Details: 
   - ID: 9
     Name: RW34L
     RawDegrees: 337
     Distance: 2.4
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 68
     Details: 

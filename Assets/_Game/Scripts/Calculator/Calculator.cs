@@ -18,8 +18,6 @@ public class Calculator : MonoBehaviour
 
     public static int Level = 11;             // ***  Level
 
-    public int prvIndex4Speed;
-
     private string result;
     public Text txtRSpeed, txtRAltitude, txtRVS, txtRHeading;
     public Text txtCSpeed, txtCAltitude, txtCVS;
@@ -47,6 +45,7 @@ public class Calculator : MonoBehaviour
     public static bool SBUp = false;
     public Button FUP_Button, FDown_Button;
     private int increasedSpeed, excessSpeedCo = 0;
+    int _captureLeadVs;
     public static int Flap_Idx = 0;
     private const int MaxFlapIdx = 8; // Mf[8]=f40, Fps[8]=86°
     private float SpeedTime;
@@ -56,6 +55,7 @@ public class Calculator : MonoBehaviour
     public Text FMA1, FMA2, FMA3, FMAarmed;
     public Image windArrow, VSline, SpeedTrend;
     public GameObject Progres, FlapNeedle, LGlever;
+    static readonly int[] FlapDetentZ = { -179, -145, -103, -64, -35, -3, 29, 57, 86 };
     private int N1, dispN1 = 77;
     public static int FF = 77;
     public static double dispFF = 270;
@@ -166,11 +166,15 @@ public class Calculator : MonoBehaviour
     {
         get
         {
-            float oneNM = -Session.Zoom;
-            if (CVS == 0)
+            // Level-off predictor only while descending toward a lower MCP altitude.
+            bool levelFlight = CVS == 0;
+            bool atOrBelowDescentAltitude = CAltitude <= RAltitude;
+            bool gsCaptured = Session.State != null && Session.State.GSCaptured;
+            if (levelFlight || atOrBelowDescentAltitude || gsCaptured)
                 return 0;
-            else
-                return (float)((CAltitude - RAltitude) / CVS * GS / 60 * oneNM);
+
+            float oneNM = -Session.Zoom;
+            return (float)((CAltitude - RAltitude) / CVS * GS / 60 * oneNM);
         }
     }
 
@@ -383,7 +387,7 @@ public class Calculator : MonoBehaviour
                 }
             }
             else
-            {  // Path/VS steeper than idle: raise speed target — path over deceleration
+            {  // Path/VS steeper than idle: raise speed on the chart line, continued linearly past the steep corner.
                 for (i = 1; i < 4; i++)
                 {
                     s1 = (M[F, 1, i] - M[F, 3, i]) / (M[F, 0, 0] - M[F, 2, 0]) * (RSpeed - M[F, 2, 0]) + M[F, 3, i];
@@ -412,6 +416,7 @@ public class Calculator : MonoBehaviour
 
         }
     }
+
     private void InterpolateLvlChg()
     {
         double Altitude = CAltitude > 39900 ? 39900 : CAltitude;
@@ -436,9 +441,54 @@ public class Calculator : MonoBehaviour
             if (SpeedTime > 1) excessSpeedCo += 100;
             if ((int)CSpeed == RSpeed) excessSpeedCo = 0;
             RVS = (int)CSpeed - RSpeed > 10 ? -300 :
-                RSpeed - (int)CSpeed > 0 ? (int)a[0] - excessSpeedCo : (int)a[0]; // surat yuksekse 
+                RSpeed - (int)CSpeed > 0 ? (int)a[0] - excessSpeedCo : (int)a[0]; // surat yuksekse
+            ApplyAltitudeCaptureFlare();
 
         }
+    }
+
+    /// <summary>
+    /// ALT ACQ: bleed VS at about 1.5 ft/s² (~90 fpm each second), same shape as a jet level-off.
+    /// 2000 fpm arrives in ~20 s. Stay at or above 200 fpm until the altitude is captured.
+    /// </summary>
+    const float CaptureAccelFtPerSec2 = 1.5f;
+    const int CaptureMinVs = 200;
+
+    static float CaptureLeadFeet(int vsFpm)
+    {
+        float v0 = vsFpm / 60f;
+        float vEnd = CaptureMinVs / 60f;
+        return Mathf.Max((v0 * v0 - vEnd * vEnd) / (2f * CaptureAccelFtPerSec2), 0f);
+    }
+
+    void ApplyAltitudeCaptureFlare()
+    {
+        if (Session.State == null || Session.State.GSCaptured || Session.State.VNAV)
+        {
+            _captureLeadVs = 0;
+            return;
+        }
+
+        int remaining = Mathf.Abs(RAltitude - (int)CAltitude);
+        int live = Mathf.Max(Mathf.Abs(RVS), Mathf.Abs(CVS));
+
+        if (_captureLeadVs == 0)
+        {
+            if (live <= CaptureMinVs || remaining >= CaptureLeadFeet(live))
+                return;
+            _captureLeadVs = live;
+        }
+
+        if (remaining >= CaptureLeadFeet(_captureLeadVs))
+        {
+            _captureLeadVs = 0;
+            return;
+        }
+
+        int sign = (int)CAltitude > RAltitude ? -1 : 1;
+        float vEnd = CaptureMinVs / 60f;
+        float v = Mathf.Sqrt(vEnd * vEnd + 2f * CaptureAccelFtPerSec2 * remaining);
+        RVS = sign * Mathf.Max(Mathf.RoundToInt(v * 60f), CaptureMinVs);
     }
 
     public void VS_Equalize()
@@ -468,13 +518,8 @@ public class Calculator : MonoBehaviour
                 if (CVS < RVS) CVS += step;
                 if (Mathf.Abs(RVS - CVS) < step) CVS = RVS;
 
-                // MCP altitude capture flare — must not fight GS commanded VS.
-                if (!Session.State.GSCaptured
-                    && (Mathf.Abs(RVS) > 1000)
-                    && (Mathf.Abs(RAltitude - (int)CAltitude) < Mathf.Abs(CVS / 2f) - 600))
-                {
-                    RVS = RVS / Mathf.Abs(RVS) * 1000;
-                }
+                // ALT ACQ flare. LVL CHG rewrites RVS once a second; this runs every pitch tick.
+                ApplyAltitudeCaptureFlare();
             }
         }
         txtCVS.text = (Mathf.Abs(CVS) > 300) ? "" + CVS / 100 * 100 : "";
@@ -509,6 +554,7 @@ public class Calculator : MonoBehaviour
                         txtRAltitude_overTape.text = txtRAltitude.text;
                         CVS = 0;
                         RVS = 0;
+                        _captureLeadVs = 0;
                         // VNAV: hold MCP as VNAV ALT (keep VNAV). Other modes → ALT HOLD.
                         if (!Session.State.VNAV)
                             Session.State.AutoSetAH(true);
@@ -534,9 +580,22 @@ public class Calculator : MonoBehaviour
         int RRSpeed;
 
         float speedbandspeed = 1f;// Session.Settings.SpeedMultiplier;
-        if (RSpeed > increasedSpeed) RRSpeed = RSpeed; else RRSpeed = increasedSpeed;
-
+        int previousRSpeed = RSpeed;
         RSpeed = ApplyVnavPointSpeedLimit(RSpeed);
+        if (RSpeed != previousRSpeed)
+        {
+            if (co != null && co.isOn)
+            {
+                RMach = Speed2Mach(RSpeed, CAltitude);
+                txtRSpeed.text = FormatMach(RMach);
+            }
+            else
+            {
+                txtRSpeed.text = "" + RSpeed;
+            }
+            txtRSpeed_overTape.text = txtRSpeed.text;
+        }
+        if (RSpeed > increasedSpeed) RRSpeed = RSpeed; else RRSpeed = increasedSpeed;
 
         PFD_Animation PFDScript = FindObjectOfType<PFD_Animation>();
 
@@ -886,7 +945,7 @@ public class Calculator : MonoBehaviour
         double DeltaAlt, Alt1, Alt0, d, D;
         float posY;
 
-        if (Session.State.LOCCaptured && Move.Instance != null)
+        if (Session.State.GSCaptured && Move.Instance != null)
         {
             DeltaAlt = Move.Instance.GsAltitudeDeviation(Session.CurrentLevel.levelInfo.GlideSlope);
             VDI_Text.text = (Mathf.Abs((float)DeltaAlt) >= 50) ? "" + (int)DeltaAlt : "";
@@ -936,21 +995,45 @@ public class Calculator : MonoBehaviour
         if (LevelTestMode.IsActive)
             return targetSpeed;
 
-        if (!Session.State.VNAV || Session.ActiveRoute?.Points == null || Session.ActiveRoute.Points.Length == 0)
+        var points = Session.ActiveRoute?.Points;
+        if (!Session.State.VNAV || points == null || points.Length == 0)
         {
             return targetSpeed;
         }
 
-        var pointIndex = Mathf.Clamp(PositionVirtualNode.NextNodeIndex, 0, Session.ActiveRoute.Points.Length - 1);
-        var pointSpeed = Session.ActiveRoute.Points[pointIndex].RawSpeed;
+        // Speed at the next waypoint is an AT restriction: cross that fix at RawSpeed.
+        // Start slowing only when close enough to arrive at that speed — not the whole inbound leg.
+        var pointIndex = Mathf.Clamp(PositionVirtualNode.NextNodeIndex, 0, points.Length - 1);
+        var pointSpeed = points[pointIndex].RawSpeed;
+        if (pointSpeed <= 0 || pointSpeed >= targetSpeed)
+        {
+            return targetSpeed;
+        }
 
-        pointSpeed = (prvIndex4Speed != pointIndex) ? pointSpeed : 0;
-        prvIndex4Speed = pointIndex;
+        var aircraft = Session.PlayerAircraft;
+        if (aircraft == null)
+        {
+            return targetSpeed;
+        }
 
-        return pointSpeed > 0 ? Mathf.Min(targetSpeed, pointSpeed) : targetSpeed;
+        float distLeftNm = aircraft.ComputedDistanceLeftOnSegment;
+        int deltaKts = Mathf.Max(0, (int)CSpeed - pointSpeed);
+        if (deltaKts < 5)
+            deltaKts = targetSpeed - pointSpeed;
 
+        float gsKts = Mathf.Max(GS, 120f);
+        float decelNm = deltaKts * gsKts / 3600f + 0.8f;
+        if (decelNm < 1.5f)
+            decelNm = 1.5f;
+        if (decelNm > 12f)
+            decelNm = 12f;
 
+        if (distLeftNm > decelNm)
+        {
+            return targetSpeed;
+        }
 
+        return pointSpeed;
     }
     public void FlyVerticalPath()
     {
@@ -1267,34 +1350,23 @@ public class Calculator : MonoBehaviour
             }
         }
 
-        // Approach modes own lateral/vertical FMA once armed or captured.
-        if (Session.State.AppArmed || Session.State.LOCCaptured)
+        else
         {
-            if (Session.State.LOCCaptured)
-            {
-                FMA2.text = "LOC";
-
-                if (Session.State.GSCaptured
-                    || (Move.Instance != null
-                        && Move.Instance.CanCaptureGs(Session.CurrentLevel.levelInfo.GlideSlope)))
-                {
-                    if (!Session.State.GSCaptured)
-                        Move.Instance?.NotifyGsCaptured();
-                    Session.State.GSCaptured = true;
-                    FMA1.text = "MCP SPD";
-                    FMA3.text = "GS";
-                    FMAarmed.text = "";
-                }
-                else
-                {
-                    FMAarmed.text = "                         GS";
-                }
-            }
-            else
-            {
-                FMAarmed.text = "LOC                 GS";
-            }
+            txtRVS.text = "";
+            FMA1.text = "MCP SPD";
+            FMA3.text = "GS";
         }
+
+        // Lateral capture does not replace the active vertical mode.
+        if (Session.State.LOCCaptured)
+            FMA2.text = "LOC";
+
+        if (Session.State.GSCaptured)
+            FMAarmed.text = "";
+        else if (Session.State.LOCCaptured)
+            FMAarmed.text = "                         GS";
+        else if (Session.State.AppArmed)
+            FMAarmed.text = "LOC                 GS";
 
     }
     private void MatchAltitudes()
@@ -1436,7 +1508,7 @@ public class Calculator : MonoBehaviour
     }
     public void FUP_Click()
     {
-        if (CAltitude < 20000 && Flap_Idx < MaxFlapIdx)
+        if (CAltitude < 20000 && Flap_Idx < MaxFlapIdx && CanSelectFlap(Flap_Idx + 1))
         {
             Flap_Idx += 1;
             SetFlaps();
@@ -1457,7 +1529,6 @@ public class Calculator : MonoBehaviour
     }
     public void SetFlaps()
     {
-        int[] Fps = new int[9] { -179, -145, -103, -64, -35, -3, 29, 57, 86 };
         int[] FlapMinSpeeds = new int[9] { 206, 187, 187, 167, 167, 157, 145, 145, 145 };
 
         int i, j, k;
@@ -1472,7 +1543,7 @@ public class Calculator : MonoBehaviour
 
         if (FlapNeedle != null)
         {
-            FlapNeedle.transform.localEulerAngles = new Vector3(-90, 180, Fps[Flap_Idx]);
+            FlapNeedle.transform.localEulerAngles = new Vector3(-90, 180, FlapDetentZ[Flap_Idx]);
         }
         else
         {
@@ -1483,8 +1554,20 @@ public class Calculator : MonoBehaviour
         PFDScript.Flaps_Indexchange(Flap_Idx);
         minimumSpeed = FlapMinSpeeds[Flap_Idx];
     }
+
+    bool CanSelectFlap(int flapIdx)
+    {
+        return CSpeed <= PFD_Animation.FlapSelectLimitKnots(flapIdx);
+    }
+    public static bool GearLeverLocked()
+    {
+        return CSpeed > 270 || Speed2Mach(CSpeed, CAltitude) > 0.82;
+    }
+
     public void SetLG(bool down, bool fromUI)
     {
+        if (fromUI && GearLeverLocked())
+            return;
 
         if (LGDown == down) return;
 
@@ -1607,17 +1690,26 @@ public class Calculator : MonoBehaviour
     }
     public void XFR3_Click()
     {
-        RSpeed = Move.XFRSpeed;
-        if (co.isOn)
+        // or less: leave MCP if it is already below the clearance.
+        // or greater: leave MCP if it is already above the clearance.
+        bool apply = Move.XFRSpeedNx != 2 && Move.XFRSpeedNx != 1
+            || (Move.XFRSpeedNx == 2 && RSpeed > Move.XFRSpeed)
+            || (Move.XFRSpeedNx == 1 && RSpeed < Move.XFRSpeed);
+
+        if (apply)
         {
-            RMach = Speed2Mach(RSpeed, CAltitude);
-            txtRSpeed.text = FormatMach(RMach);
+            RSpeed = Move.XFRSpeed;
+            if (co.isOn)
+            {
+                RMach = Speed2Mach(RSpeed, CAltitude);
+                txtRSpeed.text = FormatMach(RMach);
+            }
+            else
+            {
+                txtRSpeed.text = RSpeed.ToString();
+            }
+            txtRSpeed_overTape.text = txtRSpeed.text;
         }
-        else
-        {
-            txtRSpeed.text = RSpeed.ToString();
-        }
-        txtRSpeed_overTape.text = txtRSpeed.text;
         if (Move.Instance != null)
             Move.Instance.AcknowledgeAtc3();
     }
@@ -1767,6 +1859,10 @@ public class Calculator : MonoBehaviour
         {
             RVS = CVS / 100 * 100;
             txtRVS.text = "" + RVS;
+        }
+        else
+        {
+            txtRVS.text = "";
         }
         if (Session.State.AH)
         {
@@ -1930,12 +2026,12 @@ public class Calculator : MonoBehaviour
         bool localizerOk = Session.State.LOCCaptured || Mathf.Abs(locDev) <= 0.5f;
         // ~0.5° at typical short final ≈ 150 ft band already used for capture; use 150 ft here too.
         bool glideSlopeOk = Session.State.GSCaptured || Mathf.Abs(gsAltDev) <= Move.GsCaptureAltBandFt;
-        // Typical short-final ROD band
-        bool verticalSpeedOk = CVS <= -200 && CVS >= -1200;
-        bool speedOk = CSpeed >= minimumSpeed && CSpeed <= minimumSpeed + 20;
-        bool landingGearOk = LGDown;
+        // Short-final ROD: up to 1300 fpm stable, steeper is unstable.
+        bool verticalSpeedOk = CVS <= -200 && CVS >= -1300;
         int flapSetting = GetFlapSettingDegrees(Flap_Idx);
-        bool flapsOk = flapSetting >= 30;
+        bool flapsOk = flapSetting == 30 || flapSetting == 40;
+        bool speedOk = IsApproachSpeedStable(flapSetting, levelInfo);
+        bool landingGearOk = LGDown;
         // On approach before touchdown, speed brake should be
         // 
         bool speedBrakeOk = !SBUp;
@@ -1964,10 +2060,22 @@ public class Calculator : MonoBehaviour
         return $"<color={color}>{label}{dots}{value}</color>";
     }
 
+    static bool IsApproachSpeedStable(int flapSetting, LevelInfoScriptableObject levelInfo)
+    {
+        // Flaps 30/40: F30 Vref (and F40 = Vref+10) is the landing speed, not the flap min tape.
+        if (flapSetting == 30 || flapSetting == 40)
+        {
+            int vref = levelInfo != null && levelInfo.F30Speed > 0 ? levelInfo.F30Speed : 120;
+            return CSpeed >= vref - 5 && CSpeed <= vref + 20;
+        }
+
+        return CSpeed >= minimumSpeed && CSpeed <= minimumSpeed + 20;
+    }
+
     static int GetFlapSettingDegrees(int flapIdx)
     {
-        // UP, 1, 5, 10, 15, 25, 30, 40, 40 ..
-        int[] settings = { 0, 1, 5, 10, 15, 25, 30, 40, 40 };
+        // UP, 1, 2, 5, 10, 15, 25, 30, 40
+        int[] settings = { 0, 1, 2, 5, 10, 15, 25, 30, 40 };
         if (flapIdx < 0 || flapIdx >= settings.Length)
             return 0;
         return settings[flapIdx];

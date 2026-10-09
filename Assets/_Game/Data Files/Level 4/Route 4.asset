@@ -101,20 +101,20 @@ MonoBehaviour:
     Name: CI26L
     RawDegrees: 48
     Distance: 2.3
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 3000
     Details: 
   - ID: 13
     Name: FI26L
     RawDegrees: 266
     Distance: 5.9
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 2260
     Details: 
   - ID: 14
     Name: 'RW26L '
     RawDegrees: 266
     Distance: 9.1
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 366
     Details: 

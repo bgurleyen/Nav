@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using Navigation;
 using UnityEngine;
 using UnityEngine.UI;
@@ -94,9 +94,14 @@ public class McpUI : MonoBehaviour
             _cacheSilentSwitch_LG = false;
             return;
         }
-   
+
+        if (Calculator.GearLeverLocked())
+        {
+            _cacheSilentSwitch_LG = true;
+            _LGSlider.value = Calculator.LGDown ? 1f : 0f;
+            return;
+        }
+
         Calculator.Instance?.SetLG(newValue != 0, true);
-
-
     }
 }

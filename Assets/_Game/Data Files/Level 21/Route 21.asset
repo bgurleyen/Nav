@@ -122,20 +122,20 @@ MonoBehaviour:
     Name: CI06
     RawDegrees: 59
     Distance: 1.6
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 3000
     Details: 
   - ID: 16
     Name: FI06
     RawDegrees: 59
     Distance: 3
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 
     Details: 
   - ID: 17
     Name: RW06
     RawDegrees: 60
     Distance: 4.2
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 320
     Details: 

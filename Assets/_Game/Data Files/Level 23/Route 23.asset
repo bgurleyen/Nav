@@ -66,20 +66,20 @@ MonoBehaviour:
     Name: LEVIN
     RawDegrees: 15
     Distance: 1.7
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 2000
     Details: 
   - ID: 8
     Name: FI01L
     RawDegrees: 15
     Distance: 2.5
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 1290
     Details: 
   - ID: 9
     Name: RW01L
     RawDegrees: 15
     Distance: 3.9
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 5
     Details: 

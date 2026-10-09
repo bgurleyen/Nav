@@ -59,20 +59,20 @@ MonoBehaviour:
     Name: SANIS
     RawDegrees: 304
     Distance: 5.7
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 2000
     Details: 
   - ID: 7
     Name: DM06A
     RawDegrees: 19
     Distance: 5.3
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 2000
     Details: 
   - ID: 8
     Name: RW02
     RawDegrees: 19
     Distance: 6.1
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 57
     Details: 

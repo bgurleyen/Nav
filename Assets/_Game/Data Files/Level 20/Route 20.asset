@@ -73,20 +73,20 @@ MonoBehaviour:
     Name: CI34
     RawDegrees: 342
     Distance: 2.8
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 3000
     Details: 
   - ID: 9
     Name: OM34
     RawDegrees: 341
     Distance: 2.9
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 2004
     Details: 
   - ID: 10
     Name: RW34
     RawDegrees: 341
     Distance: 4.3
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 647
     Details: 

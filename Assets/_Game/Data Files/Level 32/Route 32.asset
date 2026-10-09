@@ -59,20 +59,20 @@ MonoBehaviour:
     Name: NEXUS
     RawDegrees: 252
     Distance: 4.9
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 5000
     Details: 
   - ID: 7
     Name: NITRO
     RawDegrees: 252
     Distance: 2
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 5000
     Details: 
   - ID: 8
     Name: 'RW22 '
     RawDegrees: 252
     Distance: 14.9
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 85
     Details: 

@@ -94,20 +94,20 @@ MonoBehaviour:
     Name: 'CF09L '
     RawDegrees: 92
     Distance: 2.5
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 
     Details: 
   - ID: 12
     Name: 'FF09L '
     RawDegrees: 92
     Distance: 3.5
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 
     Details: 
   - ID: 13
     Name: 'RW09L '
     RawDegrees: 92
     Distance: 4.1
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 
     Details: 

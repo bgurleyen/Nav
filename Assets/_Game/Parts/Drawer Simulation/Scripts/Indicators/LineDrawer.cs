@@ -1,4 +1,4 @@
-﻿using Gamelogic.Extensions;
+using Gamelogic.Extensions;
 using Navigation;
 using UnityEngine;
 
@@ -25,7 +25,9 @@ public class LineDrawer : MonoBehaviour
     public void Display(TracedLine line, RoutePoint routePoint, bool hiddenLabel, bool hiddenLine, int fromPoint)
     {
         //Debug.Log("Display");
-        if (!hiddenLine && !line.LinkedPoint.IsAfterDiscontinuity && !line.LinkedPoint.IsHiddenLine)
+        var courseRay = line.IsStraightRay && !line.LinkedPoint.IsHiddenLine;
+        if (!hiddenLine && !line.LinkedPoint.IsHiddenLine &&
+            (courseRay || !line.LinkedPoint.IsAfterDiscontinuity))
         {
             cacheLine = line;
             if (line.Vertexes == null || line.Vertexes.Length == 0)
@@ -45,7 +47,8 @@ public class LineDrawer : MonoBehaviour
             lineRenderer.positionCount = 0;
         }
 
-        if (!line.LinkedPoint.IsSkippable && !hiddenLabel)
+        if (!line.LinkedPoint.IsSkippable && !hiddenLabel && !routePoint.IsVector &&
+            !string.IsNullOrWhiteSpace(routePoint.Name))
         {
             markTransform.localPosition = line.EndNMPosition.ToDisplay();
             labelTransform.localPosition = line.EndNMPosition.ToDisplay();

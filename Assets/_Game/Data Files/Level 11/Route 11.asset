@@ -52,20 +52,20 @@ MonoBehaviour:
     Name: CI16C
     RawDegrees: 162
     Distance: 3.3
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 2500
     Details: 
   - ID: 6
     Name: FI16C
     RawDegrees: 161
     Distance: 4
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 1340
     Details: 
   - ID: 7
     Name: RW16C
     RawDegrees: 161
     Distance: 4.5
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 58
     Details: 

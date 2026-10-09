@@ -53,12 +53,10 @@ public class Aircraft : MovingActor
         DrawHeadingLine();
 
         TryCaptureLoc();
+        TryCaptureGs();
 
-        // Freeze ActiveRoute waypoint advance while on localizer.
-        if (!Session.State.LOCCaptured)
-            CheckAdvancePointOnHDGProximity(out DistanceToNextPoint);
-        else if (Move.Instance != null)
-            DistanceToNextPoint = Move.Instance.DME();
+        // Route progress feeds the vertical path. LOC only replaces lateral steering.
+        CheckAdvancePointOnHDGProximity(out DistanceToNextPoint);
 
         if (Session.State.LOCCaptured)
         {
@@ -68,6 +66,13 @@ public class Aircraft : MovingActor
 
         if (Session.State.LNAV)
         {
+            if (TrySteerTowardCourseIntercept(out var interceptWalked))
+            {
+                _pilot.TickAdvance();
+                NMWalkedOnCurrentSegment = interceptWalked;
+                return;
+            }
+
             var foundClosePathDestination = Session.ActiveRoute.TracedRoute.FindCloseToRouteSegmentDestination(
                 Session.Settings.PilotSeekDistancePathFollow,
                 out _lastFoundRoutePosition,
@@ -98,7 +103,7 @@ public class Aircraft : MovingActor
             }
 
             _pilot.NotifyTargetCourse(GetNextRealLegCourse());
-            _pilot.TickSteerToPathFoundVertex(_lastFoundRoutePosition.SegmentVertex, out _);
+            SteerLnavToSeekVertex(_lastFoundRoutePosition.SegmentVertex);
             _pilot.TickAdvance();
 
             CurrentSegmentIndex = _lastFoundRoutePosition.SegmentIndex;
@@ -137,6 +142,22 @@ public class Aircraft : MovingActor
 
         Move.Instance.CancelRerouteForLocCapture();
         Move.Instance.NotifyLocCaptured();
+    }
+
+    /// <summary>
+    /// Vertical capture is independent of LOC. GS locks VS/VNAV/ALT/FLCH;
+    /// LOC only locks HDG/LNAV.
+    /// </summary>
+    private void TryCaptureGs()
+    {
+        if (Session.State.GSCaptured || Move.Instance == null || Session.CurrentLevel?.levelInfo == null)
+            return;
+
+        if (!Move.Instance.CanCaptureGs(Session.CurrentLevel.levelInfo.GlideSlope))
+            return;
+
+        Session.State.GSCaptured = true;
+        Move.Instance.NotifyGsCaptured();
     }
 
     /// <summary>
@@ -205,9 +226,6 @@ public class Aircraft : MovingActor
     {
         get
         {
-            if (Session.State.LOCCaptured && Move.Instance != null)
-                return Move.Instance.DME();
-
             if (IsJoining)
             {
                 var points = Session.ActiveRoute?.Points;
@@ -304,6 +322,68 @@ public class Aircraft : MovingActor
             Session.State.AutoSetLNAV(false, true);
             return false;
         }
+    }
+
+    /// <summary>
+    /// On a course-intercept route, LNAV turns straight at the nearest drawn point
+    /// until the aircraft is close enough to follow the path forward.
+    /// </summary>
+    private bool TrySteerTowardCourseIntercept(out float walkedNm)
+    {
+        walkedNm = 0f;
+        var route = Session.ActiveRoute;
+        if (route == null || !route.IsCourseInterceptRoute)
+            return false;
+
+        route.FindClosestPointOnRoute(_pilot.NMPosition, out var segment, out var vertex);
+        var lines = route.TracedRoute?.ComputedLines;
+        if (lines == null || segment < 1 || segment >= lines.Length)
+            return false;
+
+        var vertices = lines[segment].SegmentVertices;
+        if (vertices == null || vertices.Length == 0)
+            return false;
+
+        vertex = Mathf.Clamp(vertex, 0, vertices.Length - 1);
+        var nearest = vertices[vertex];
+        var toNearest = nearest - _pilot.NMPosition;
+        if (toNearest.sqrMagnitude <= Session.Settings.PilotSeekDistancePathFollow * Session.Settings.PilotSeekDistancePathFollow)
+            return false;
+
+        var heading = Geometry.GetHeadingOfDirection(toNearest);
+        _pilot.NotifyTargetCourse(heading);
+        _pilot.TickSteerToTargetHeading(heading, true);
+        ResetSeekProgress(segment, vertex);
+        CurrentSegmentIndex = segment;
+        walkedNm = Mathf.Max(0, vertex - 1) * Session.Settings.SegmentGranularity;
+        return true;
+    }
+
+    /// <summary>
+    /// Follow the seek vertex unless it is behind or would reverse vs the inbound course.
+    /// In those cases steer the leg course so LNAV does not turn 180° the wrong way.
+    /// </summary>
+    private void SteerLnavToSeekVertex(Vector2 seekVertex)
+    {
+        var legCourse = GetNextRealLegCourse();
+        var toSeek = seekVertex - _pilot.NMPosition;
+        if (toSeek.sqrMagnitude < 0.0001f)
+        {
+            _pilot.TickSteerToTargetHeading(legCourse);
+            return;
+        }
+
+        var seekHeading = Geometry.GetHeadingOfDirection(toSeek);
+        var forward = Geometry.GetDirectionFromHeading(_pilot.HeadingDegrees);
+        var behind = Vector2.Dot(toSeek, forward) < 0f;
+        var reverseOfLeg = Mathf.Abs(Geometry.AngleDelta(seekHeading, legCourse)) > 90f;
+        if (behind || reverseOfLeg)
+        {
+            _pilot.TickSteerToTargetHeading(legCourse);
+            return;
+        }
+
+        _pilot.TickSteerToPathFoundVertex(seekVertex, out _);
     }
 
     /// <summary>

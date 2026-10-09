@@ -59,20 +59,20 @@ MonoBehaviour:
     Name: CI04L
     RawDegrees: 39
     Distance: 4.4
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 3000
     Details: 
   - ID: 7
     Name: FI04L
     RawDegrees: 38
     Distance: 4.3
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 1600
     Details: 
   - ID: 8
     Name: RW04L
     RawDegrees: 38
     Distance: 4.9
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 63
     Details: 

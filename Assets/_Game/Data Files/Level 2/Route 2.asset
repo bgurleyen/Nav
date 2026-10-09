@@ -108,20 +108,20 @@ MonoBehaviour:
     Name: DESIM
     RawDegrees: 84
     Distance: 3.1
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 3000
     Details: 
   - ID: 14
     Name: HWNB
     RawDegrees: 93
     Distance: 4.8
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 1460
     Details: 
   - ID: 15
     Name: RW09L
     RawDegrees: 89
     Distance: 4
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 219
     Details: 

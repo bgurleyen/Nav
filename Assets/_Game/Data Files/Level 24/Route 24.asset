@@ -59,20 +59,20 @@ MonoBehaviour:
     Name: LEMON
     RawDegrees: 195
     Distance: 2.7
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 2000
     Details: 
   - ID: 7
     Name: FI19L
     RawDegrees: 195
     Distance: 2.2
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 1300
     Details: 
   - ID: 8
     Name: RW19L
     RawDegrees: 195
     Distance: 4
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 55
     Details: 

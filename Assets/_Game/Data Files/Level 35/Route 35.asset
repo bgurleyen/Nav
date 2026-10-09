@@ -80,20 +80,20 @@ MonoBehaviour:
     Name: CI28
     RawDegrees: 294
     Distance: 6.5
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 2600
     Details: 
   - ID: 10
     Name: OM28
     RawDegrees: 294
     Distance: 2.9
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 2140
     Details: 
   - ID: 11
     Name: RW28
     RawDegrees: 283
     Distance: 4.2
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 827
     Details: 

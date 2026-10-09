@@ -82,6 +82,8 @@ public class Move : Singleton<Move>
     public Button XFR1, XFR2, XFR3;
     public TextMeshProUGUI XFR1Txt, XFR2Txt, XFR3Txt;
     public static int XFRSpeed = 0;
+    /// <summary>0 exact, 1 or greater, 2 or less. Values above 2 are an early-call distance, treated as exact.</summary>
+    public static int XFRSpeedNx = 0;
     public static long XFRAltitude = 0;
     public static int XFRHdg = 0;
 
@@ -150,6 +152,7 @@ public class Move : Singleton<Move>
         SetXfrGlow(3, false);
         XFRAltitude = 0;
         XFRSpeed = 0;
+        XFRSpeedNx = 0;
         XFRHdg = 0;
         ATCAltitude = 0;
         HideArmButton();
@@ -664,7 +667,7 @@ public class Move : Singleton<Move>
     {
         if (Atc2 == null)
             return;
-        Atc2.text = "LOC/GS Captured , set MA altitude 5000";
+        Atc2.text = "LOC/GS Captured , set MA altitude " + MissedApproachAltitudeFeet();
         Atc2.color = Color.white;
         _atc2GrayDone = true;
     }
@@ -801,6 +804,12 @@ public class Move : Singleton<Move>
         return alt < 0f ? 0f : alt;
     }
 
+    /// <summary>Missed-approach altitude: runway elevation + 3000 ft, floored to 1000 ft.</summary>
+    public int MissedApproachAltitudeFeet()
+    {
+        return Mathf.FloorToInt((RunwayAltitudeFeet() + 3000f) / 1000f) * 1000;
+    }
+
     // LOC/GS capture thresholds (simple, level-independent)
     public const float LocCaptureDegrees = 2.5f;
     public const float LocCaptureDmeMinNm = 3f;
@@ -932,7 +941,11 @@ public class Move : Singleton<Move>
             XFR2.interactable = Altitude > 0 || VS_nx == 3;
             XFR3.interactable = Speed > 0;
 
-            if (Speed > 0) XFRSpeed = Speed;
+            if (Speed > 0)
+            {
+                XFRSpeed = Speed;
+                XFRSpeedNx = Speed_nx;
+            }
             if (mode == 2) XFRHdg = TrackToPointFactored(point);
             if (Altitude > 0) XFRAltitude = Altitude;
 
@@ -1005,6 +1018,7 @@ public class Move : Singleton<Move>
         {
             _atc3IssuedSpeed = Speed;
             XFRSpeed = Speed;
+            XFRSpeedNx = Speed_nx;
             Atc3.color = Color.green;
             _atc3GrayDone = false;
             ATCSpeed = Speed;

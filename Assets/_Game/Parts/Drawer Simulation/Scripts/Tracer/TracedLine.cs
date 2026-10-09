@@ -11,21 +11,29 @@ namespace Navigation
         public RoutePoint LinkedPoint { get; private set; }
         public Vector2[] Vertexes;
         public float TracedNMLength { get; private set; }
+        public bool IsStraightRay { get; private set; }
         
         public readonly Vector2[] SegmentVertices;
         
 
-        public TracedLine( float seekDistance, Pilot pilot, Vector2 lastPointPosition, RoutePoint forPoint)
+        public TracedLine( float seekDistance, Pilot pilot, Vector2 lastPointPosition, RoutePoint forPoint, Vector2? straightEnd = null)
         {
             StartNMPosition = lastPointPosition;
             EndNMPosition = forPoint.CartesianPosition;
             LinkedPoint = forPoint;
-            var lineDirection = (EndNMPosition - StartNMPosition).normalized;
-            var lineLenght = (EndNMPosition - StartNMPosition).magnitude;
+            var geometryEnd = straightEnd ?? EndNMPosition;
+            var lineLenght = (geometryEnd - StartNMPosition).magnitude;
+            if (float.IsNaN(lineLenght) || float.IsInfinity(lineLenght) || lineLenght < 0f)
+                lineLenght = 0f;
+            var lineDirection = lineLenght > 0.0001f
+                ? (geometryEnd - StartNMPosition) / lineLenght
+                : Vector2.up;
 
             // compute granular intervals on the straight line to prevent calculations everytime
             // Zero-length legs (duplicate coords) must still expose at least one vertex.
-            var vertexCount = Mathf.Max(1, Mathf.CeilToInt(lineLenght / Session.Settings.SegmentGranularity));
+            // Cap the count so a broken direct-to distance cannot allocate millions of points and lock the frame.
+            var step = Mathf.Max(0.05f, Session.Settings.SegmentGranularity);
+            var vertexCount = Mathf.Clamp(Mathf.CeilToInt(lineLenght / step), 1, 4000);
             SegmentVertices = new Vector2[vertexCount];
             var straightTracerPosition = lastPointPosition;
             for (var i = 0; i < SegmentVertices.Length; i++)
@@ -34,6 +42,14 @@ namespace Navigation
 
                 if (lineLenght > 0f)
                     straightTracerPosition += lineDirection * Session.Settings.SegmentGranularity;
+            }
+
+            IsStraightRay = straightEnd.HasValue;
+            if (straightEnd.HasValue)
+            {
+                Vertexes = new[] { StartNMPosition, geometryEnd };
+                TracedNMLength = lineLenght;
+                return;
             }
 
             TraceFromPilot(pilot, seekDistance);
@@ -168,6 +184,76 @@ namespace Navigation
                 return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// Path that joins the inbound course and tracks it to the waypoint.
+        /// </summary>
+        public static TracedLine ForInterceptCourse(Vector2 from, RoutePoint waypoint)
+        {
+            var corners = new List<Vector2> { from };
+            if (TryResolveIntercept(from, waypoint, out var intercept)
+                && (intercept - from).sqrMagnitude > 0.01f
+                && (intercept - waypoint.CartesianPosition).sqrMagnitude > 0.01f)
+            {
+                corners.Add(intercept);
+            }
+
+            corners.Add(waypoint.CartesianPosition);
+            return new TracedLine(from, waypoint, corners);
+        }
+
+        static bool TryResolveIntercept(Vector2 from, RoutePoint waypoint, out Vector2 intercept)
+        {
+            if (waypoint.HasHeldIntercept)
+            {
+                intercept = waypoint.HeldInterceptPoint;
+                return true;
+            }
+
+            var track = Session.PlayerAircraft != null
+                ? Session.PlayerAircraft.HeadingDegrees
+                : waypoint.LinearApproachAngle;
+            if (!Geometry.TryInboundIntercept(from, waypoint.CartesianPosition, waypoint.LinearApproachAngle, track,
+                    out intercept))
+                return false;
+
+            // Freeze on the active route so a later heading change does not slide the intercept.
+            var active = Session.ActiveRoute?.Points;
+            if (active != null && System.Array.IndexOf(active, waypoint) >= 0)
+            {
+                waypoint.HasHeldIntercept = true;
+                waypoint.HeldInterceptPoint = intercept;
+            }
+
+            return true;
+        }
+
+        private TracedLine(Vector2 from, RoutePoint forPoint, List<Vector2> corners)
+        {
+            StartNMPosition = from;
+            EndNMPosition = forPoint.CartesianPosition;
+            LinkedPoint = forPoint;
+            IsStraightRay = false;
+
+            var granularity = Mathf.Max(0.05f, Session.Settings.SegmentGranularity);
+            var dense = new List<Vector2>();
+            var length = 0f;
+            for (var c = 0; c < corners.Count - 1; c++)
+            {
+                var a = corners[c];
+                var b = corners[c + 1];
+                var leg = Vector2.Distance(a, b);
+                length += leg;
+                var steps = Mathf.Max(1, Mathf.CeilToInt(leg / granularity));
+                for (var s = 0; s < steps; s++)
+                    dense.Add(Vector2.Lerp(a, b, s / (float)steps));
+            }
+
+            dense.Add(corners[corners.Count - 1]);
+            SegmentVertices = dense.ToArray();
+            Vertexes = corners.ToArray();
+            TracedNMLength = length;
         }
     }
 

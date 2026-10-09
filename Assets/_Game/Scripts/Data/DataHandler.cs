@@ -296,9 +296,12 @@ public class DataHandler
         {
             var totalDistance = 0f;
             var node = from;
-            while (node != to)
+            var guard = 0;
+            while (node != null && node != to)
             {
                 node = node.Next;
+                if (node == null || ++guard > regulations.Count + 1)
+                    break;
                 totalDistance += node.DistanceToPrevious;
             }
 

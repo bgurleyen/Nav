@@ -46,7 +46,11 @@ namespace Navigation
 
         public void ComputeCartesianPositions()
         {
-            var currentPosition = Vector2.zero;
+            // Point 0 is the route origin. A course intercept places it 200 NM before
+            // the fix, not at world zero, and the rest of the chain hangs off that point.
+            var currentPosition = Points != null && Points.Length > 0
+                ? Points[0].CartesianPosition
+                : Vector2.zero;
             for (var i = 0; i < Points.Length; i++)
             {
                 if (i > 0)
@@ -274,9 +278,13 @@ namespace Navigation
         public void ShortcutNodes(int firstIdNodeToDissolve, int toId,
             out RoutePoint reducedPoint) // $^% refactor for passed nodes ?
         {
-            Points.GetNodeIndex(firstIdNodeToDissolve, out var startIndex);
-
-            Points.GetNodeIndex(toId, out var endIndex);
+            if (!Points.GetNodeIndex(firstIdNodeToDissolve, out var startIndex) ||
+                !Points.GetNodeIndex(toId, out var endIndex) ||
+                startIndex < 0 || endIndex < startIndex || endIndex >= Points.Length)
+            {
+                reducedPoint = null;
+                return;
+            }
 
             var offset = endIndex - startIndex;
 
@@ -557,41 +565,92 @@ namespace Navigation
 
         }
 
+        public const float CourseInterceptLengthNm = 200f;
+
+        /// <summary>Route origin inserted 200 NM before the intercept fix. Not a position stub.</summary>
+        public const string CourseInterceptOriginDetails = "I";
+
+        public bool IsCourseInterceptRoute =>
+            Points != null && Points.Length > 0 && Points[0].Details == CourseInterceptOriginDetails;
+
+        /// <summary>
+        /// Nearest drawn vertex on the route. Used after a course intercept replaces the path ahead.
+        /// </summary>
+        public void FindClosestPointOnRoute(Vector2 position, out int segmentIndex, out int vertexIndex)
+        {
+            segmentIndex = 1;
+            vertexIndex = 0;
+            if (TracedRoute?.ComputedLines == null)
+                return;
+
+            var bestSqr = float.MaxValue;
+            for (var i = 1; i < TracedRoute.ComputedLines.Length; i++)
+            {
+                var line = TracedRoute.ComputedLines[i];
+                var vertices = line?.SegmentVertices;
+                if (vertices == null)
+                    continue;
+
+                for (var v = 0; v < vertices.Length; v++)
+                {
+                    var sqr = (vertices[v] - position).sqrMagnitude;
+                    if (sqr >= bestSqr)
+                        continue;
+
+                    bestSqr = sqr;
+                    segmentIndex = i;
+                    vertexIndex = v;
+                }
+            }
+
+            if (segmentIndex < 1)
+                segmentIndex = 1;
+            if (segmentIndex >= Points.Length)
+                segmentIndex = Mathf.Max(1, Points.Length - 1);
+        }
+
         public void CreateLinearApproach(int toNodeId, int angle)
         {
-            RoutePoint reducedPoint;
-            var firstNodeToDissolve = PositionVirtualNode.GetNodeToOnActive.ID;
-            // the TO point on active route can be already shortcuted on MOD
-            if (!Points.GetNodeIndex(firstNodeToDissolve, out _))
+            if (!Points.GetNodeIndex(toNodeId, out var toIndex) || toIndex < 0)
+                return;
+
+            // Refresh world positions while the chain still starts at its current origin.
+            ComputeCartesianPositions();
+
+            var course = Mathf.Repeat(angle, 360f);
+            var target = Points[toIndex];
+            var inbound = Geometry.GetDirectionFromHeading(course);
+            var startPosition = target.CartesianPosition - inbound * CourseInterceptLengthNm;
+
+            var start = new RoutePoint
             {
-                Points.GetNodeIndex(toNodeId, out var toNodeIndex);
-                reducedPoint = Points[toNodeIndex];
-            }
-            else
-            {
-                //execute shortcut node at [1] until toNode
-                ShortcutNodes(PositionVirtualNode.GetNodeToOnActive.ID, toNodeId, out reducedPoint);
-            }
+                Name = "INTC",
+                ID = GetNewId(),
+                Details = CourseInterceptOriginDetails,
+                Distance = 0f,
+                RawDegrees = course,
+                CartesianPosition = startPosition
+            };
 
-            reducedPoint.IndicateDirectApproach(angle);
+            // Drop everything before the selected fix. The tail of the old route stays.
+            var tailCount = Points.Length - toIndex;
+            var newSet = new RoutePoint[tailCount + 1];
+            newSet[0] = start;
+            for (var i = 0; i < tailCount; i++)
+                newSet[i + 1] = Points[toIndex + i];
 
+            target.ClearDetails();
+            target.HasHeldIntercept = false;
+            target.Distance = CourseInterceptLengthNm;
+            target.RawDegrees = course;
+            target.IsModified = true;
 
-            // insert fake node as linear approach beginning - very far
-            AddRelativeNodeBefore(toNodeId, angle, -300, toNodeId, out var _veryFarNode);
+            // Direct-to leaves a discontinuity on the next leg. The route now continues through it.
+            if (newSet.Length > 2 && newSet[2].IsAfterDiscontinuity)
+                newSet[2].ClearDetails();
 
-            // insert fake node as current destination : before very far,  in the place of original next node
-            // AddRelativeNodeBefore(_veryFarNode.ID, angle, 500, out var _);
-
-            // hide all lines until linear approach
-            for (var i = 0; i < Points.Length; i++)
-            {
-                if (Points[i].IsLinearApproach)
-                {
-                    break;
-                }
-
-                Points[i].IndicateHiddenLine();
-            }
+            Points = newSet;
+            ComputeCartesianPositions();
         }
 
         public void AddRejoinIntersectionNode(Vector2 segmentVertex, int segmentIndex)
@@ -643,7 +702,15 @@ namespace Navigation
 
         public void AddModPositionNodes()
         {
+            // Course intercept already replaced the route ahead of the aircraft.
+            // Do not splice a present-position stub in front of the 200 NM line.
+            if (IsCourseInterceptRoute)
+                return;
+
             var nodeBeforePlaneIndex = FindNodeBeforePlaneOnMode();
+            if (nodeBeforePlaneIndex < 0 || nodeBeforePlaneIndex >= Points.Length - 1)
+                return;
+
             var nodeBeforePosition = Points[nodeBeforePlaneIndex];
             int nodeAfterPlaneIndex = nodeBeforePlaneIndex + 1;
             var routeNextNode = Points[nodeAfterPlaneIndex];

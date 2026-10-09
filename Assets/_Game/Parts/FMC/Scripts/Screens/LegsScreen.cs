@@ -369,6 +369,33 @@ public class LegsScreen : ScreenBase {
     }
 
 
+    /// <summary>
+    /// Typed scratchpad course, or the course already shown opposite this key when nothing was typed.
+    /// </summary>
+    bool TryCourseForRightCorner(out int angle) {
+        if (!string.IsNullOrEmpty(_scratchPadBuffer) &&
+            _scratchPadInterpreter.IsLinearApproach(out angle))
+            return true;
+
+        angle = 0;
+        if (!string.IsNullOrEmpty(_scratchPadBuffer))
+            return false;
+
+        var shown = lastFRight != null ? lastFRight.GetText() : "";
+        if (string.IsNullOrEmpty(shown) && lastFRight != null)
+            shown = lastFRight.GetCurrentText();
+        if (string.IsNullOrEmpty(shown))
+            return false;
+
+        var digits = "";
+        foreach (var c in shown) {
+            if (char.IsDigit(c))
+                digits += c;
+        }
+
+        return digits.Length > 0 && int.TryParse(digits, out angle);
+    }
+
     public override void OnRightCornerPress() {
         if (Session.State.MapMode == MapMode.Plan) {
             _nodesController.DoPlanModeStep(false);
@@ -379,7 +406,7 @@ public class LegsScreen : ScreenBase {
             }
 
             if (_lastSelectionClicked.GetRouteNode() is { IsModified: true } &&
-                _scratchPadInterpreter.IsLinearApproach(out var angle)) {
+                TryCourseForRightCorner(out var angle)) {
                 Debug.Log("=linear approach= on " + _lastSelectionClicked.GetRouteNode().Name + " with: " + angle);
                 _simulation.ExecuteLinearApproachOnMod(new ExecuteAddLinearApproachCommand { ToNodeId = _lastSelectionClicked.LinkedId, Angle = angle });
                 Debug.Log("OnRightCornerPress");

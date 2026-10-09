@@ -101,20 +101,20 @@ MonoBehaviour:
     Name: CI24
     RawDegrees: 240
     Distance: 1.3
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 3500
     Details: 
   - ID: 0
     Name: FI24
     RawDegrees: 240
     Distance: 4.5
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 1800
     Details: 
   - ID: 0
     Name: RW24
     RawDegrees: 240
     Distance: 4
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 354
     Details: 

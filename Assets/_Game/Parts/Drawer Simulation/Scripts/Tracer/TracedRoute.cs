@@ -32,12 +32,34 @@ public class TracedRoute
         for (int i = 1; i < pointsArray.Length; i++)
         {
             var point = pointsArray[i];
-            var line = new TracedLine(
-                Session.Settings.PilotSeekDistancePathFollow,
-                pilot,
-                pointsArray[i - 1].CartesianPosition,
-                point);
+            var fromPoint = pointsArray[i - 1];
+            Vector2? vectorRayEnd = null;
+            if (fromPoint.IsVector)
+            {
+                // A waypoint named VECTOR keeps its own outbound track for 200 NM.
+                vectorRayEnd = Geometry.GetNextPosition(fromPoint.CartesianPosition, 200f, 360f - fromPoint.RawDegrees);
+            }
+
+            TracedLine line;
+            if (point.IsLinearApproach)
+            {
+                // Inbound intercept course ends at the fix. It does not continue past it.
+                line = TracedLine.ForInterceptCourse(fromPoint.CartesianPosition, point);
+            }
+            else
+            {
+                line = new TracedLine(
+                    Session.Settings.PilotSeekDistancePathFollow,
+                    pilot,
+                    fromPoint.CartesianPosition,
+                    point,
+                    vectorRayEnd);
+            }
+
             ComputedLines[i] = line;
+
+            if (vectorRayEnd.HasValue || point.IsLinearApproach)
+                SnapTracerToPoint(pilot, pointsArray, i);
 
             if (point.IsHiddenLine)
             {
@@ -187,6 +209,15 @@ public class TracedRoute
                 continue;
             }
 
+            if (computedLine.LinkedPoint.IsAfterDiscontinuity &&
+                i > 0 &&
+                Session.ActiveRoute.Points[i - 1].IsLinearApproach)
+            {
+                // 737 INTC CRS does not sequence through the discontinuity after the fix.
+                startFromVertexIndex = 0;
+                continue;
+            }
+
             if (!computedLine.FindFurthestSeekTargetOnSegment(
                     Session.PlayerAircraft.NMPosition,
                     seekDistance,
@@ -208,6 +239,10 @@ public class TracedRoute
             lastFoundRoutePosition.SegmentVertex = foundSegmentVertex;
             lastFoundRoutePosition.SegmentVertexIndex = foundSegmentVertexIndex;
 
+            var interceptEndsHere = computedLine.LinkedPoint.IsLinearApproach &&
+                                    (i + 1 >= Session.ActiveRoute.Points.Length ||
+                                     Session.ActiveRoute.Points[i + 1].IsAfterDiscontinuity);
+
             // another solution was found 
             if (!reachedSegmentEnd)
             {
@@ -217,6 +252,11 @@ public class TracedRoute
                 {
                     break;
                 }
+            }
+            else if (interceptEndsHere)
+            {
+                lastFoundRoutePosition.SegmentIndex = i;
+                break;
             }
 
             startFromVertexIndex = 0;

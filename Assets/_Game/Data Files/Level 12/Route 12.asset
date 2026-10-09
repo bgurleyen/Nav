@@ -66,20 +66,20 @@ MonoBehaviour:
     Name: CF25
     RawDegrees: 248
     Distance: 0.9
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 3000
     Details: 
   - ID: 8
     Name: FF25
     RawDegrees: 248
     Distance: 2
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 3000
     Details: 
   - ID: 9
     Name: RW25
     RawDegrees: 248
     Distance: 9.6
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 55
     Details: 

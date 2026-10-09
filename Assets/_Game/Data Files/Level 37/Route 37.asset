@@ -59,20 +59,20 @@ MonoBehaviour:
     Name: CF24
     RawDegrees: 247
     Distance: 7.3
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 2500
     Details: 
   - ID: 7
     Name: FF24
     RawDegrees: 242
     Distance: 3.3
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 1424
     Details: 
   - ID: 8
     Name: RW24
     RawDegrees: 242
     Distance: 4.1
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 125
     Details: 

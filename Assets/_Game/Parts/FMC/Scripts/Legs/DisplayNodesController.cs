@@ -73,9 +73,13 @@ public class DisplayNodesController
 
             var handled = false;
             var canIncrement = false;
+            var spinGuard = 0;
             while (!handled)
             {
-                while (pointIsValid && linkedPoint.IsSkippable)
+                if (++spinGuard > VisibleRoute.Points.Length + 2)
+                    break;
+
+                while (pointIsValid && linkedPoint != null && linkedPoint.IsSkippable)
                 {
                     pointIsValid = VisibleRoute.GetPointAt(++linkedIndex, out linkedPoint);
                 }

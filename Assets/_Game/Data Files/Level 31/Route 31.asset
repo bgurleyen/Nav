@@ -59,20 +59,20 @@ MonoBehaviour:
     Name: CI29
     RawDegrees: 247
     Distance: 2.6
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 2200
     Details: 
   - ID: 0
     Name: 'FI29 '
     RawDegrees: 291
     Distance: 3.5
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 2200
     Details: 
   - ID: 0
     Name: RW29
     RawDegrees: 291
     Distance: 6.8
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 61
     Details: 

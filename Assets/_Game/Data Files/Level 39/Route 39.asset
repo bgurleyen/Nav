@@ -55,13 +55,6 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 6
-    Name: WW523
-    RawDegrees: 172
-    Distance: 5.4
-    RawSpeed: 0
-    RawAltitude: 
-    Details: 
   - ID: 7
     Name: WW524
     RawDegrees: 172
@@ -96,6 +89,13 @@ MonoBehaviour:
     Distance: 5.4
     RawSpeed: 0
     RawAltitude: 5900
+    Details: 
+  - ID: 6
+    Name: WW523
+    RawDegrees: 172
+    Distance: 5.4
+    RawSpeed: 0
+    RawAltitude: 
     Details: 
   - ID: 12
     Name: WW502
@@ -136,20 +136,20 @@ MonoBehaviour:
     Name: CF24
     RawDegrees: 250
     Distance: 2.9
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 3000
     Details: 
   - ID: 18
     Name: FF24
     RawDegrees: 239
     Distance: 1.8
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 1991
     Details: 
   - ID: 19
     Name: RW24
     RawDegrees: 238
     Distance: 4
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 729
     Details: 

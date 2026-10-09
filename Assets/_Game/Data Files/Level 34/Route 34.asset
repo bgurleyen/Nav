@@ -66,20 +66,20 @@ MonoBehaviour:
     Name: CI11
     RawDegrees: 83
     Distance: 6.3
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 2600
     Details: 
   - ID: 8
     Name: 'FI11 '
     RawDegrees: 103
     Distance: 1.9
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 2000
     Details: 
   - ID: 9
     Name: RW11
     RawDegrees: 103
     Distance: 3.9
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 773
     Details: 

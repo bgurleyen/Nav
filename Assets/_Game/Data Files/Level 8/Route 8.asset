@@ -80,20 +80,20 @@ MonoBehaviour:
     Name: CF27L
     RawDegrees: 270
     Distance: 2.5
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 2500
     Details: 
   - ID: 10
     Name: FF27L
     RawDegrees: 270
     Distance: 3.5
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 1400
     Details: 
   - ID: 11
     Name: RW27L
     RawDegrees: 272
     Distance: 5.5
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 127
     Details: 

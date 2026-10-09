@@ -16,6 +16,9 @@ public class RoutePoint
 
     public Vector2 CartesianPosition { get; set; }
     public int LinearApproachAngle { get; set; }
+    /// <summary>Intercept point captured when the course becomes active. Preview keeps recomputing.</summary>
+    public bool HasHeldIntercept { get; set; }
+    public Vector2 HeldInterceptPoint { get; set; }
     public AltitudeData Altitude { get; private set; } = new AltitudeData();
     public SpeedData Speed { get; private set; } = new SpeedData();
 
@@ -32,6 +35,20 @@ public class RoutePoint
     public bool IsLinearApproach => Details.Contains("L");
     public bool IsHiddenLine => Details.Contains("H");
     public bool IsPositionNode => Details.Contains("P");
+    public bool IsVector
+    {
+        get
+        {
+            if (string.IsNullOrEmpty(Name))
+                return false;
+
+            var name = Name.Trim();
+            if (name.Length >= 2 && name[0] == '(' && name[name.Length - 1] == ')')
+                name = name.Substring(1, name.Length - 2).Trim();
+
+            return name.Equals("VECTOR", System.StringComparison.OrdinalIgnoreCase);
+        }
+    }
     public bool IsGate
     {
         get
@@ -108,26 +125,37 @@ public class RoutePoint
         return rp;
     }
 
-    public bool GetIsDisplayCurrent
-    {
-        get
+        public bool GetIsDisplayCurrent
         {
-            var nodeCursor = PositionVirtualNode.GetNodeToOnActive;
-            while (nodeCursor.IsPositionNode || nodeCursor.ID == ID)
+            get
             {
-                if (nodeCursor.ID == ID)
+                var route = Session.ActiveRoute;
+                var nodeCursor = PositionVirtualNode.GetNodeToOnActive;
+                if (route?.Points == null || nodeCursor == null)
+                    return false;
+
+                var guard = 0;
+                while (nodeCursor != null && (nodeCursor.IsPositionNode || nodeCursor.ID == ID))
                 {
-                    return true;
+                    if (nodeCursor.ID == ID)
+                        return true;
+
+                    if (++guard > route.Points.Length)
+                        return false;
+
+                    if (!route.Points.GetNodeIndex(nodeCursor.ID, out var nodeCursorIndex))
+                        return false;
+
+                    var next = nodeCursorIndex + 1;
+                    if (next < 0 || next >= route.Points.Length)
+                        return false;
+
+                    nodeCursor = route.Points[next];
                 }
 
-                Session.ActiveRoute.Points.GetNodeIndex(nodeCursor.ID, out var nodeCursorIndex);
-                nodeCursor = Session.ActiveRoute.Points[nodeCursorIndex + 1];
+                return false;
             }
-
-            return false;
-
         }
-    }
 
     public bool GetAltitudeIsRestricted(out string displayValue)
     {
@@ -152,6 +180,9 @@ public class RoutePoint
             Distance = Distance,
             RawSpeed = RawSpeed,
             RawAltitude = RawAltitude,
+            LinearApproachAngle = LinearApproachAngle,
+            HasHeldIntercept = HasHeldIntercept,
+            HeldInterceptPoint = HeldInterceptPoint,
             // IsCurrent = IsCurrent,
             IsSelected = IsSelected,
             IsModified = IsModified,

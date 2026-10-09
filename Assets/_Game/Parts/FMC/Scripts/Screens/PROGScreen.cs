@@ -63,9 +63,9 @@ public class PROGScreen : ScreenBase
     {
         var progRef = infoFMC.Instance.Fmc.Prog;
 
-        _fromNode.text = progRef.PrvName;
-        _nextNode.text = progRef.NxtName;
-        _secondNode.text = progRef.SecondName;
+        _fromNode.text = DisplayProgName(progRef.PrvName);
+        _nextNode.text = DisplayProgName(progRef.NxtName);
+        _secondNode.text = DisplayProgName(progRef.SecondName);
         _destinationNode.text = progRef.Destination;
 
         _alt.text = progRef.PrvCrossAltitude;
@@ -137,6 +137,23 @@ public class PROGScreen : ScreenBase
                 rt.anchoredPosition = pos;
             }
         }
+    }
+
+    private static string DisplayProgName(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+        {
+            return name;
+        }
+
+        if (name.Equals("_START_", System.StringComparison.OrdinalIgnoreCase)
+            || name.StartsWith("_Position", System.StringComparison.OrdinalIgnoreCase)
+            || name.Equals("_position_", System.StringComparison.OrdinalIgnoreCase))
+        {
+            return "START";
+        }
+
+        return name;
     }
 
     private void HideTrackLabels()

@@ -73,20 +73,20 @@ MonoBehaviour:
     Name: CF14
     RawDegrees: 136
     Distance: 2.8
-    RawSpeed: 0
+    RawSpeed: 179
     RawAltitude: 4000
     Details: 
   - ID: 9
     Name: OSNEM
     RawDegrees: 136
     Distance: 2
-    RawSpeed: 0
+    RawSpeed: 173
     RawAltitude: 4000
     Details: 
   - ID: 10
     Name: RW14
     RawDegrees: 136
     Distance: 8.1
-    RawSpeed: 0
+    RawSpeed: 145
     RawAltitude: 1452
     Details: 
