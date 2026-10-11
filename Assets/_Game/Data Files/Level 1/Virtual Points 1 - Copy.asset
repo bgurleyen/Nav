@@ -15,7 +15,7 @@ MonoBehaviour:
   VirtualPointsItems:
   - Number: 51
     x: 0
-    y: -30
+    y: -19.5
   - Number: 52
     x: 0
     y: -20
@@ -23,14 +23,14 @@ MonoBehaviour:
     x: 0
     y: -10
   - Number: 54
-    x: 0
-    y: 0
+    x: 11.356708
+    y: -7.655438
   - Number: 55
-    x: 0
-    y: 10
+    x: -5.368884
+    y: 2.370417
   - Number: 56
-    x: 12
-    y: -30
+    x: 9.950248
+    y: -9.502481
   - Number: -30
     x: 10
     y: -20
@@ -41,11 +41,11 @@ MonoBehaviour:
     x: 10
     y: 0
   - Number: 60
-    x: 10
-    y: 10
+    x: 4.204132
+    y: 2.370417
   - Number: 61
-    x: 20
-    y: -30
+    x: 18.342361
+    y: -27.364657
   - Number: 62
     x: 20
     y: -20
@@ -56,11 +56,11 @@ MonoBehaviour:
     x: 20
     y: 0
   - Number: 65
-    x: 20
-    y: 10
+    x: 23.350163
+    y: 2.370417
   - Number: 66
     x: 30
-    y: -30
+    y: -19.5
   - Number: 67
     x: 30
     y: -20
@@ -68,11 +68,11 @@ MonoBehaviour:
     x: 30
     y: -10
   - Number: 69
-    x: 30
-    y: 0
+    x: 33.482461
+    y: -11.038088
   - Number: 70
-    x: 30
-    y: 10
+    x: 13.777149
+    y: 2.370417
   - Number: 71
-    x: 0
-    y: 0
+    x: 11.50312
+    y: 0.73249

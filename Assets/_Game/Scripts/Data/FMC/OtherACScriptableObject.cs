@@ -5,6 +5,7 @@ using UnityEngine;
 [CreateAssetMenu(fileName = "Other AC Data", menuName = "ScriptableObjects/Other AC Data")]
 public class OtherACScriptableObject : ScriptableObject
 {
+    public float SpawnRemaining;
     public ACInfo[] ACItems;
 }
 

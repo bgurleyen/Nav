@@ -1,4 +1,4 @@
-﻿using UnityEditor;
+using UnityEditor;
 using UnityEngine;
 
 [CustomEditor(typeof(OtherACScriptableObject))]
@@ -6,6 +6,7 @@ public class OtherACTableCustomEditor : Editor
 {
     public override void OnInspectorGUI()
     {
+        EditorGUILayout.PropertyField(serializedObject.FindProperty("SpawnRemaining"));
         EditorGUILayout.PropertyField(serializedObject.FindProperty("ACItems"));
         
         serializedObject.ApplyModifiedProperties();

@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 686a3e082b8fa1242ad16fff883efb61, type: 3}
+  m_Name: Other AC 10 Level 11
+  m_EditorClassIdentifier: 
+  SpawnRemaining: 88.4
+  ACItems:
+  - Point: 65
+    Altitude: 30000
+    Speed: 250
+  - Point: 63
+    Altitude: 30000
+    Speed: 250
+  - Point: 2
+    Altitude: 10888
+    Speed: 250
+  - Point: 3
+    Altitude: 4978
+    Speed: 250
+  - Point: 4
+    Altitude: 3598
+    Speed: 250
+  - Point: 7
+    Altitude: 58
+    Speed: 145

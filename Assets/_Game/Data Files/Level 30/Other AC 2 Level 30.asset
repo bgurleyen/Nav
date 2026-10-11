@@ -12,22 +12,26 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 686a3e082b8fa1242ad16fff883efb61, type: 3}
   m_Name: Other AC 2 Level 30
   m_EditorClassIdentifier: 
+  SpawnRemaining: 13.2
   ACItems:
-  - Point: 62
-    Altitude: 14000
+  - Point: 54
+    Altitude: 30000
+    Speed: 250
+  - Point: 1
+    Altitude: 14432
+    Speed: 250
+  - Point: 2
+    Altitude: 11972
+    Speed: 250
+  - Point: 4
+    Altitude: 9253
     Speed: 250
   - Point: 6
-    Altitude: 7800
-    Speed: 180
-  - Point: 7
-    Altitude: 6000
-    Speed: 180
+    Altitude: 6476
+    Speed: 250
   - Point: 8
-    Altitude: 3200
-    Speed: 160
-  - Point: 9
-    Altitude: 2390
-    Speed: 140
+    Altitude: 3146
+    Speed: 179
   - Point: 10
     Altitude: 1556
-    Speed: 0
+    Speed: 145

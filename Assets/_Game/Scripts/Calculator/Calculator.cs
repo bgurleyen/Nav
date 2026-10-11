@@ -1571,7 +1571,11 @@ public class Calculator : MonoBehaviour
 
         if (LGDown == down) return;
 
-        double[,] MVS = new double[9, 2] { { -2100, -1500 }, { -2700, -1500 }, { -2700, -1400 }, { -2600, -1300 }, { -2500, -1300 }, { -2300, -1200 }, { -1800, -600 }, { -1600, -500 }, { -1500, -300 } };
+        // Extra idle VS, fpm, FL400 down to sea level. High corner 280 kt (240 at FL400), low 220 kt (200 at FL400).
+        // Gear drag CD +0.020 at GW 56.4 t, ISA.
+        double[,] MVS = new double[9, 2] {
+            { -2060, -1190 }, { -2920, -1420 }, { -2650, -1290 }, { -2430, -1180 }, { -2220, -1080 },
+            { -2050, -990 }, { -1890, -920 }, { -1750, -850 }, { -1620, -790 } };
         double[,,] Wlg = new double[4, 2, 2] {
                                              { { 4300, 110 }, { 4170, 113 } },
                                              { { 4150, 125 }, { 4120, 128 } },
@@ -1631,7 +1635,10 @@ public class Calculator : MonoBehaviour
     {
         if (SBUp == !Up) return;
 
-        double[,] Msb = new double[9, 2] { { -900, -600 }, { -900, -600 }, { -900, -500 }, { -900, -500 }, { -900, -400 }, { -900, -400 }, { -900, -400 }, { -900, -500 }, { -900, -400 } };
+        // Extra idle VS, fpm, FL400 down to sea level. 737 FCTM +900 fpm at 280 kt / 10,000 ft, scaled by dynamic pressure and TAS.
+        double[,] Msb = new double[9, 2] {
+            { -980, -570 }, { -1390, -670 }, { -1260, -610 }, { -1160, -560 }, { -1060, -510 },
+            { -980, -470 }, { -900, -440 }, { -830, -400 }, { -770, -380 } };
 
         int i;
         if (fromUI) SBUp = !Up;

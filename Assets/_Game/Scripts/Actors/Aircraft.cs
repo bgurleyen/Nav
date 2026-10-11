@@ -133,6 +133,7 @@ public class Aircraft : MovingActor
 
         Session.State.LOCCaptured = true;
         _pendingJoinRoutePosition = null;
+        _pilot.ClearWholeTurn();
         Session.State.AutoSetHDG(true);
 
         // Snap MCP track to inbound course so HDG mode starts on the localizer.
@@ -183,7 +184,10 @@ public class Aircraft : MovingActor
         if (desiredTrack >= 360f) desiredTrack -= 360f;
 
         TargetHeading = desiredTrack;
-        _pilot.TickSteerToTargetHeading(TargetHeading);
+        // Do not keep a pre-capture latched turn: a leftover left intercept
+        // would take the long way around instead of rolling out on the inbound course.
+        _pilot.ClearWholeTurn();
+        _pilot.TickSteerToTargetHeading(TargetHeading, true);
         _pilot.TickAdvance();
 
         if (Move.Instance != null && Move.Instance.DME() < 0.3f

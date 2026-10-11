@@ -23,4 +23,8 @@ MonoBehaviour:
   - {fileID: 11400000, guid: bb1a4a722442ff44fa54f74c299c59b1, type: 2}
   - {fileID: 11400000, guid: 599a1603145251448b11348b0e145997, type: 2}
   - {fileID: 11400000, guid: 79c81b690cc869148a8d58e1616d668f, type: 2}
+  - {fileID: 11400000, guid: d6cd0172b94d5f3134bf98e7ff3c74ed, type: 2}
+  - {fileID: 11400000, guid: 8a928af4ba76148b06039c654879a06e, type: 2}
+  - {fileID: 11400000, guid: d711d35e159706bfb6478aec1439dc76, type: 2}
+  - {fileID: 11400000, guid: 72ea3efdc327f60a41e2d14837e6178b, type: 2}
   WindTable: {fileID: 11400000, guid: ae3de460fddc74c4d842a571325ed81b, type: 2}

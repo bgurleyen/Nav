@@ -255,12 +255,21 @@ public class Drawer : MonoBehaviour
 
         foreach (var key in positions.Keys)
         {
-            // Debug.Log(_positions[_key]);
             var drawer = otherAircraftsPool.Spawn(Vector3.zero, Quaternion.identity, dynamicHolderOtheriarcrafts)
                 .GetComponent<OtherAircrafIndicator>();
             drawer.name = key;
-            drawer.Init(texts[key], Color.yellow);
+            string label = texts.ContainsKey(key) ? texts[key] : "";
+            drawer.Init(label, Color.black);
             drawer.transform.localPosition = positions[key].ToDisplay();
+        }
+
+        if (Session.PlayerAircraft != null)
+        {
+            var own = otherAircraftsPool.Spawn(Vector3.zero, Quaternion.identity, dynamicHolderOtheriarcrafts)
+                .GetComponent<OtherAircrafIndicator>();
+            own.name = "AC (0)";
+            own.Init("X", new Color(0f, 0.85f, 0.2f, 1f));
+            own.transform.localPosition = Session.PlayerAircraft.NMPosition.ToDisplay();
         }
 
         // demo - shows a debug star for seeing the distance

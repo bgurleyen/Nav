@@ -130,7 +130,12 @@ public class Move : Singleton<Move>
                 pt.transform.localPosition = VirtualPtsPos[j];
         }
 
-        myAC = GameObject.Find("AC (0)"); // Init my AC
+        myAC = FindNamed("AC (0)");
+        if (myAC != null)
+        {
+            myAC.SetActive(true);
+            ApplyOwnX(myAC);
+        }
 
         Atc1.text = "";
         Atc2.text = "";
@@ -157,16 +162,15 @@ public class Move : Singleton<Move>
         ATCAltitude = 0;
         HideArmButton();
 
-        var otherACsCount = _currentLevelData.otherACs.Length;
-        _otherACs = new OtherAC[otherACsCount];
+        _currentInstructionIndex = 0;
+        RW = Session.OriginalReferenceRoute.Points.Length - 1;
+        OwnAtcRemainingAtStart = AtcInstructionsRemaining();
+
+        _otherACs = new OtherAC[10];
         for (var i = 0; i < otherACsCount; i++)
         {
             _otherACs[i] = new OtherAC(i, _currentLevelData);
         }
-
-
-        _currentInstructionIndex = 0;
-        RW = Session.OriginalReferenceRoute.Points.Length - 1;
     }
 
 
@@ -177,9 +181,64 @@ public class Move : Singleton<Move>
             _otherACs[i].Tick(ACTexts, ACPositions);
         }
 
+        UpdateOwnMapMarker();
         CheckAirplaneMove();
+    }
 
+    private void UpdateOwnMapMarker()
+    {
+        if (myAC == null)
+            myAC = FindNamed("AC (0)");
+        if (myAC == null)
+            return;
+        if (!myAC.activeSelf)
+            myAC.SetActive(true);
+        if (Session.PlayerAircraft != null)
+            myAC.transform.localPosition = Session.PlayerAircraft.NMPosition;
+        ApplyOwnX(myAC);
+    }
 
+    private static void ApplyOwnX(GameObject go)
+    {
+        if (go == null)
+            return;
+        var green = new Color(0f, 0.85f, 0.2f, 1f);
+        var ui = go.GetComponent<UnityEngine.UI.Text>();
+        if (ui != null)
+        {
+            ui.enabled = true;
+            ui.text = "X";
+            ui.color = green;
+            ui.horizontalOverflow = HorizontalWrapMode.Overflow;
+            ui.verticalOverflow = VerticalWrapMode.Overflow;
+            ui.raycastTarget = false;
+        }
+        var tmps = go.GetComponentsInChildren<TMPro.TMP_Text>(true);
+        for (int i = 0; i < tmps.Length; i++)
+        {
+            var tmp = tmps[i];
+            tmp.gameObject.SetActive(true);
+            tmp.enabled = true;
+            tmp.text = "X";
+            tmp.color = green;
+            tmp.overflowMode = TMPro.TextOverflowModes.Overflow;
+            tmp.enableWordWrapping = false;
+        }
+    }
+
+    private static GameObject FindNamed(string name)
+    {
+        var live = GameObject.Find(name);
+        if (live != null)
+            return live;
+        var all = Resources.FindObjectsOfTypeAll<Transform>();
+        for (int i = 0; i < all.Length; i++)
+        {
+            var t = all[i];
+            if (t != null && t.name == name && t.gameObject.scene.IsValid())
+                return t.gameObject;
+        }
+        return null;
     }
     void SlowDown()
     {
@@ -718,6 +777,229 @@ public class Move : Singleton<Move>
         return pt < 50 ? Session.OriginalReferenceRoute.GetCartesianPosition(pt) : VirtualPtsPos[pt - 50];
     }
 
+    /// <summary>Direction of flight on the last STAR leg (toward the runway).</summary>
+    public Vector2 FinalInboundDir()
+    {
+        var route = Session.OriginalReferenceRoute;
+        if (route?.Points == null || route.Points.Length < 2)
+            return Vector2.up;
+        int last = route.Points.Length - 1;
+        Vector2 rw = route.GetCartesianPosition(last);
+        Vector2 prev = route.GetCartesianPosition(last - 1);
+        Vector2 d = rw - prev;
+        if (d.sqrMagnitude < 0.0001f)
+        {
+            float course = _currentLevelData != null && _currentLevelData.levelInfo != null
+                ? _currentLevelData.levelInfo.Course
+                : 0f;
+            d = Geometry.GetDirectionFromHeading(course);
+        }
+        return d.normalized;
+    }
+
+    /// <summary>NM still to run along the final-approach axis to the runway.</summary>
+    public float FinalRemaining(Vector2 p)
+    {
+        Vector2 rw = PointPos(RW);
+        return Vector2.Dot(rw - p, FinalInboundDir());
+    }
+
+    /// <summary>Own remaining NM at game start along ATC instruction points.</summary>
+    public float OwnAtcRemainingAtStart { get; private set; }
+
+    /// <summary>NM left along ATC instruction waypoints to the runway.</summary>
+    public float AtcInstructionsRemaining()
+    {
+        if (_currentLevelData?.ATCs == null || _currentLevelData.ATCs.Length == 0)
+            return OwnRouteRemaining();
+
+        Vector2 prev = Session.PlayerAircraft != null ? Session.PlayerAircraft.NMPosition : Vector2.zero;
+        float rem = 0f;
+        int lastPt = -1;
+        int start = Mathf.Max(0, _currentInstructionIndex);
+        for (int i = start; i < _currentLevelData.ATCs.Length; i++)
+        {
+            int pt = _currentLevelData.ATCs[i].point;
+            if (pt <= 0 || pt == lastPt)
+                continue;
+            Vector2 p = PointPos(pt);
+            rem += Vector2.Distance(prev, p);
+            prev = p;
+            lastPt = pt;
+        }
+        if (RW > 0 && lastPt != RW)
+            rem += Vector2.Distance(prev, PointPos(RW));
+        return rem;
+    }
+
+    /// <summary>NM left along the flown STAR/active route to the runway.</summary>
+    public float OwnRouteRemaining()
+    {
+        var route = Session.ActiveRoute ?? Session.OriginalReferenceRoute;
+        if (route?.Points == null || route.Points.Length < 2)
+            return 0f;
+
+        Vector2 pos = Session.PlayerAircraft != null ? Session.PlayerAircraft.NMPosition : Vector2.zero;
+        float bestSqr = float.MaxValue;
+        int bestSeg = 1;
+        float bestT = 0f;
+        for (int i = 1; i < route.Points.Length; i++)
+        {
+            Vector2 a = route.GetCartesianPosition(i - 1);
+            Vector2 b = route.GetCartesianPosition(i);
+            Vector2 ab = b - a;
+            float abLenSq = ab.sqrMagnitude;
+            float t = abLenSq < 1e-8f ? 0f : Mathf.Clamp01(Vector2.Dot(pos - a, ab) / abLenSq);
+            Vector2 proj = a + ab * t;
+            float sqr = (pos - proj).sqrMagnitude;
+            if (sqr < bestSqr)
+            {
+                bestSqr = sqr;
+                bestSeg = i;
+                bestT = t;
+            }
+        }
+
+        Vector2 segA = route.GetCartesianPosition(bestSeg - 1);
+        Vector2 segB = route.GetCartesianPosition(bestSeg);
+        Vector2 at = Vector2.Lerp(segA, segB, bestT);
+        float rem = Vector2.Distance(at, segB);
+        for (int i = bestSeg + 1; i < route.Points.Length; i++)
+            rem += Vector2.Distance(route.GetCartesianPosition(i - 1), route.GetCartesianPosition(i));
+        return rem;
+    }
+
+    /// <summary>
+    /// NM from route start to the runway along the path own is cleared to fly.
+    /// Ordinary ATC fixes keep the STAR between them. DCT and HDG go direct.
+    /// After CLEAR ILS the STAR is kept only while it still points at the runway;
+    /// a reversal goes straight to the runway instead.
+    /// </summary>
+    public float OwnFlownPathNm()
+    {
+        var route = Session.OriginalReferenceRoute;
+        if (route?.Points == null || route.Points.Length < 2)
+            return 0f;
+
+        var ids = BuildOwnPathIds(route);
+        if (ids.Count == 0)
+            return 0f;
+
+        Vector2 prev = route.GetCartesianPosition(0);
+        float len = 0f;
+        for (int i = 0; i < ids.Count; i++)
+        {
+            Vector2 p = PointPos(ids[i]);
+            float d = Vector2.Distance(prev, p);
+            if (d >= 0.08f)
+                len += d;
+            prev = p;
+        }
+        return len;
+    }
+
+    List<int> BuildOwnPathIds(RouteScriptableObject route)
+    {
+        var ids = new List<int>();
+        int rwId = route.Points.Length - 1;
+        var atc = _currentLevelData?.ATCs;
+        if (atc == null || atc.Length == 0)
+        {
+            for (int i = 1; i <= rwId; i++)
+                ids.Add(i);
+            return ids;
+        }
+
+        for (int ai = 0; ai < atc.Length; ai++)
+        {
+            var a = atc[ai];
+            bool shortcut = a.mode == 1 || a.mode == 2;
+            if (!shortcut && a.point < 50)
+            {
+                int cur = -1;
+                for (int k = ids.Count - 1; k >= 0; k--)
+                {
+                    if (ids[k] < 50)
+                    {
+                        cur = ids[k];
+                        break;
+                    }
+                }
+
+                int curIdx = StarIndex(route, cur);
+                int tgtIdx = StarIndex(route, a.point);
+                if (curIdx >= 0 && tgtIdx > curIdx)
+                {
+                    for (int i = curIdx + 1; i <= tgtIdx; i++)
+                        PushOwnId(ids, route.Points[i].ID);
+                }
+                else
+                    PushOwnId(ids, a.point);
+            }
+            else
+                PushOwnId(ids, a.point);
+
+            if (a.mode == 3 || a.VS_nx == 3)
+            {
+                int last = ids.Count > 0 ? ids[ids.Count - 1] : -1;
+                if (last >= 0 && last < 50)
+                {
+                    int from = StarIndex(route, last);
+                    if (from >= 0 && !RemainingHasReversal(route, from))
+                    {
+                        for (int i = from + 1; i < route.Points.Length; i++)
+                            PushOwnId(ids, route.Points[i].ID);
+                    }
+                    else
+                        PushOwnId(ids, rwId);
+                }
+                else
+                    PushOwnId(ids, rwId);
+                break;
+            }
+        }
+
+        if (ids.Count == 0 || ids[ids.Count - 1] != rwId)
+            PushOwnId(ids, rwId);
+        return ids;
+    }
+
+    static void PushOwnId(List<int> ids, int id)
+    {
+        if (id == 0)
+            return;
+        if (ids.Count == 0 || ids[ids.Count - 1] != id)
+            ids.Add(id);
+    }
+
+    static int StarIndex(RouteScriptableObject route, int id)
+    {
+        if (id < 0 || route?.Points == null)
+            return -1;
+        for (int i = 0; i < route.Points.Length; i++)
+        {
+            if (route.Points[i].ID == id)
+                return i;
+        }
+        return id < route.Points.Length ? id : -1;
+    }
+
+    bool RemainingHasReversal(RouteScriptableObject route, int fromIdx)
+    {
+        int last = route.Points.Length - 1;
+        Vector2 runway = route.GetCartesianPosition(last);
+        for (int i = fromIdx + 1; i < last; i++)
+        {
+            Vector2 prev = route.GetCartesianPosition(i - 1);
+            Vector2 cur = route.GetCartesianPosition(i);
+            float along = Bearing(prev, cur);
+            float toRunway = Bearing(cur, runway);
+            if (Mathf.Abs(Mathf.DeltaAngle(along, toRunway)) > 50f)
+                return true;
+        }
+        return false;
+    }
+
 
     private float TrackToPoint(int pt)
     {
@@ -1066,7 +1348,6 @@ public class Move : Singleton<Move>
 
             OncekiPos = Session.PlayerAircraft.NMPosition;
             OncekiAlt = (int)Calculator.CAltitude;
-            myAC.transform.localPosition = Session.PlayerAircraft.NMPosition; //move AC on EditMap
 
             DistanceToPoint = Vector2.Distance(Session.PlayerAircraft.NMPosition, PointPos(point));
 
@@ -1122,7 +1403,6 @@ public class Move : Singleton<Move>
         NewPoint = true;
         // Force altitude arming to re-evaluate on next ATCCall (do not store VS here).
         ATCAltitude = 0;
-        myAC.GetComponent<UnityEngine.UI.Text>().text = "#";
         prvWptIdx = point;
     }
     /// <summary>

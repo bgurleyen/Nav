@@ -1,0 +1,1345 @@
+[
+  {
+    "n": 1,
+    "dest": "EDDV",
+    "rwy": "27R",
+    "star": "ELNA2P",
+    "rwyAlt": 219,
+    "ownLen": 40.6,
+    "sLen": 28.9,
+    "ownPath": "ELNAT → V58 → DV582 → DV584 → DV573 → DV572 → XAVER → HANB → RW27R",
+    "S": "V58 → DV582 → DV584 → DV573 → DV572 → XAVER → HANB → RW27R",
+    "last3": "XAVER → HANB → RW27R",
+    "acs": [
+      {
+        "ac": 1,
+        "delta": -70,
+        "target": 10.1,
+        "actual": 20,
+        "err": 49.4,
+        "vsOwn": -20.6,
+        "startAlt": 6228,
+        "endAlt": 219,
+        "usesS": true,
+        "join": "DV573",
+        "path": "V64 → DV573 → DV572 → XAVER → HANB → RW27R",
+        "items": [
+          {
+            "Point": 64,
+            "wpt": "V64",
+            "Altitude": 6228,
+            "Speed": 250,
+            "remaining": 20
+          },
+          {
+            "Point": 10,
+            "wpt": "DV573",
+            "Altitude": 3819,
+            "Speed": 250,
+            "remaining": 12
+          },
+          {
+            "Point": 11,
+            "wpt": "DV572",
+            "Altitude": 2919,
+            "Speed": 250,
+            "remaining": 9
+          },
+          {
+            "Point": 12,
+            "wpt": "XAVER",
+            "Altitude": 2019,
+            "Speed": 250,
+            "remaining": 6
+          },
+          {
+            "Point": 13,
+            "wpt": "HANB",
+            "Altitude": 1119,
+            "Speed": 250,
+            "remaining": 3
+          },
+          {
+            "Point": 14,
+            "wpt": "RW27R",
+            "Altitude": 219,
+            "Speed": 250,
+            "remaining": 0
+          }
+        ]
+      },
+      {
+        "ac": 2,
+        "delta": -60,
+        "target": 10.1,
+        "actual": 24.5,
+        "err": 43.8,
+        "vsOwn": -16.2,
+        "startAlt": 7555,
+        "endAlt": 219,
+        "usesS": true,
+        "join": "DV573",
+        "path": "V63 → DV573 → DV572 → XAVER → HANB → RW27R",
+        "items": [
+          {
+            "Point": 63,
+            "wpt": "V63",
+            "Altitude": 7555,
+            "Speed": 250,
+            "remaining": 24.5
+          },
+          {
+            "Point": 10,
+            "wpt": "DV573",
+            "Altitude": 3819,
+            "Speed": 250,
+            "remaining": 12
+          },
+          {
+            "Point": 11,
+            "wpt": "DV572",
+            "Altitude": 2919,
+            "Speed": 250,
+            "remaining": 9
+          },
+          {
+            "Point": 12,
+            "wpt": "XAVER",
+            "Altitude": 2019,
+            "Speed": 250,
+            "remaining": 6
+          },
+          {
+            "Point": 13,
+            "wpt": "HANB",
+            "Altitude": 1119,
+            "Speed": 250,
+            "remaining": 3
+          },
+          {
+            "Point": 14,
+            "wpt": "RW27R",
+            "Altitude": 219,
+            "Speed": 250,
+            "remaining": 0
+          }
+        ]
+      },
+      {
+        "ac": 3,
+        "delta": -50,
+        "target": 10.1,
+        "actual": 25.2,
+        "err": 34.6,
+        "vsOwn": -15.4,
+        "startAlt": 7775,
+        "endAlt": 219,
+        "usesS": true,
+        "join": "DV573",
+        "path": "V65 → DV573 → DV572 → XAVER → HANB → RW27R",
+        "items": [
+          {
+            "Point": 65,
+            "wpt": "V65",
+            "Altitude": 7775,
+            "Speed": 250,
+            "remaining": 25.2
+          },
+          {
+            "Point": 10,
+            "wpt": "DV573",
+            "Altitude": 3819,
+            "Speed": 250,
+            "remaining": 12
+          },
+          {
+            "Point": 11,
+            "wpt": "DV572",
+            "Altitude": 2919,
+            "Speed": 250,
+            "remaining": 9
+          },
+          {
+            "Point": 12,
+            "wpt": "XAVER",
+            "Altitude": 2019,
+            "Speed": 250,
+            "remaining": 6
+          },
+          {
+            "Point": 13,
+            "wpt": "HANB",
+            "Altitude": 1119,
+            "Speed": 250,
+            "remaining": 3
+          },
+          {
+            "Point": 14,
+            "wpt": "RW27R",
+            "Altitude": 219,
+            "Speed": 250,
+            "remaining": 0
+          }
+        ]
+      },
+      {
+        "ac": 4,
+        "delta": -40,
+        "target": 10.1,
+        "actual": 27.3,
+        "err": 26.7,
+        "vsOwn": -13.3,
+        "startAlt": 8412,
+        "endAlt": 219,
+        "usesS": true,
+        "join": "DV573",
+        "path": "V53 → DV573 → DV572 → XAVER → HANB → RW27R",
+        "items": [
+          {
+            "Point": 53,
+            "wpt": "V53",
+            "Altitude": 8412,
+            "Speed": 250,
+            "remaining": 27.3
+          },
+          {
+            "Point": 10,
+            "wpt": "DV573",
+            "Altitude": 3819,
+            "Speed": 250,
+            "remaining": 12
+          },
+          {
+            "Point": 11,
+            "wpt": "DV572",
+            "Altitude": 2919,
+            "Speed": 250,
+            "remaining": 9
+          },
+          {
+            "Point": 12,
+            "wpt": "XAVER",
+            "Altitude": 2019,
+            "Speed": 250,
+            "remaining": 6
+          },
+          {
+            "Point": 13,
+            "wpt": "HANB",
+            "Altitude": 1119,
+            "Speed": 250,
+            "remaining": 3
+          },
+          {
+            "Point": 14,
+            "wpt": "RW27R",
+            "Altitude": 219,
+            "Speed": 250,
+            "remaining": 0
+          }
+        ]
+      },
+      {
+        "ac": 5,
+        "delta": -30,
+        "target": 10.6,
+        "actual": 27.9,
+        "err": 17.3,
+        "vsOwn": -12.7,
+        "startAlt": 8593,
+        "endAlt": 219,
+        "usesS": true,
+        "join": "DV573",
+        "path": "V55 → DV573 → DV572 → XAVER → HANB → RW27R",
+        "items": [
+          {
+            "Point": 55,
+            "wpt": "V55",
+            "Altitude": 8593,
+            "Speed": 250,
+            "remaining": 27.9
+          },
+          {
+            "Point": 10,
+            "wpt": "DV573",
+            "Altitude": 3819,
+            "Speed": 250,
+            "remaining": 12
+          },
+          {
+            "Point": 11,
+            "wpt": "DV572",
+            "Altitude": 2919,
+            "Speed": 250,
+            "remaining": 9
+          },
+          {
+            "Point": 12,
+            "wpt": "XAVER",
+            "Altitude": 2019,
+            "Speed": 250,
+            "remaining": 6
+          },
+          {
+            "Point": 13,
+            "wpt": "HANB",
+            "Altitude": 1119,
+            "Speed": 250,
+            "remaining": 3
+          },
+          {
+            "Point": 14,
+            "wpt": "RW27R",
+            "Altitude": 219,
+            "Speed": 250,
+            "remaining": 0
+          }
+        ]
+      },
+      {
+        "ac": 6,
+        "delta": -20,
+        "target": 20.6,
+        "actual": 22.2,
+        "err": 1.6,
+        "vsOwn": -18.4,
+        "startAlt": 6892,
+        "endAlt": 219,
+        "usesS": true,
+        "join": "DV582",
+        "path": "DV582 → DV584 → DV573 → DV572 → XAVER → HANB → RW27R",
+        "items": [
+          {
+            "Point": 4,
+            "wpt": "DV582",
+            "Altitude": 6892,
+            "Speed": 250,
+            "remaining": 22.2
+          },
+          {
+            "Point": 6,
+            "wpt": "DV584",
+            "Altitude": 5092,
+            "Speed": 250,
+            "remaining": 16.2
+          },
+          {
+            "Point": 10,
+            "wpt": "DV573",
+            "Altitude": 3819,
+            "Speed": 250,
+            "remaining": 12
+          },
+          {
+            "Point": 11,
+            "wpt": "DV572",
+            "Altitude": 2919,
+            "Speed": 250,
+            "remaining": 9
+          },
+          {
+            "Point": 12,
+            "wpt": "XAVER",
+            "Altitude": 2019,
+            "Speed": 250,
+            "remaining": 6
+          },
+          {
+            "Point": 13,
+            "wpt": "HANB",
+            "Altitude": 1119,
+            "Speed": 250,
+            "remaining": 3
+          },
+          {
+            "Point": 14,
+            "wpt": "RW27R",
+            "Altitude": 219,
+            "Speed": 250,
+            "remaining": 0
+          }
+        ]
+      },
+      {
+        "ac": 7,
+        "delta": -10,
+        "target": 30.6,
+        "actual": 28.9,
+        "err": -1.7,
+        "vsOwn": -11.7,
+        "startAlt": 8892,
+        "endAlt": 219,
+        "usesS": true,
+        "join": "V58",
+        "path": "V58 → DV582 → DV584 → DV573 → DV572 → XAVER → HANB → RW27R",
+        "items": [
+          {
+            "Point": 58,
+            "wpt": "V58",
+            "Altitude": 8892,
+            "Speed": 250,
+            "remaining": 28.9
+          },
+          {
+            "Point": 4,
+            "wpt": "DV582",
+            "Altitude": 6892,
+            "Speed": 250,
+            "remaining": 22.2
+          },
+          {
+            "Point": 6,
+            "wpt": "DV584",
+            "Altitude": 5092,
+            "Speed": 250,
+            "remaining": 16.2
+          },
+          {
+            "Point": 10,
+            "wpt": "DV573",
+            "Altitude": 3819,
+            "Speed": 250,
+            "remaining": 12
+          },
+          {
+            "Point": 11,
+            "wpt": "DV572",
+            "Altitude": 2919,
+            "Speed": 250,
+            "remaining": 9
+          },
+          {
+            "Point": 12,
+            "wpt": "XAVER",
+            "Altitude": 2019,
+            "Speed": 250,
+            "remaining": 6
+          },
+          {
+            "Point": 13,
+            "wpt": "HANB",
+            "Altitude": 1119,
+            "Speed": 250,
+            "remaining": 3
+          },
+          {
+            "Point": 14,
+            "wpt": "RW27R",
+            "Altitude": 219,
+            "Speed": 250,
+            "remaining": 0
+          }
+        ]
+      },
+      {
+        "ac": 8,
+        "delta": 10,
+        "target": 50.6,
+        "actual": 56.2,
+        "err": 5.6,
+        "vsOwn": 15.6,
+        "startAlt": 17091,
+        "endAlt": 219,
+        "usesS": true,
+        "join": "V58",
+        "path": "V62 → ELNAT → V58 → DV582 → DV584 → DV573 → DV572 → XAVER → HANB → RW27R",
+        "items": [
+          {
+            "Point": 62,
+            "wpt": "V62",
+            "Altitude": 17091,
+            "Speed": 250,
+            "remaining": 56.2
+          },
+          {
+            "Point": 1,
+            "wpt": "ELNAT",
+            "Altitude": 12409,
+            "Speed": 250,
+            "remaining": 40.6
+          },
+          {
+            "Point": 58,
+            "wpt": "V58",
+            "Altitude": 8892,
+            "Speed": 250,
+            "remaining": 28.9
+          },
+          {
+            "Point": 4,
+            "wpt": "DV582",
+            "Altitude": 6892,
+            "Speed": 250,
+            "remaining": 22.2
+          },
+          {
+            "Point": 6,
+            "wpt": "DV584",
+            "Altitude": 5092,
+            "Speed": 250,
+            "remaining": 16.2
+          },
+          {
+            "Point": 10,
+            "wpt": "DV573",
+            "Altitude": 3819,
+            "Speed": 250,
+            "remaining": 12
+          },
+          {
+            "Point": 11,
+            "wpt": "DV572",
+            "Altitude": 2919,
+            "Speed": 250,
+            "remaining": 9
+          },
+          {
+            "Point": 12,
+            "wpt": "XAVER",
+            "Altitude": 2019,
+            "Speed": 250,
+            "remaining": 6
+          },
+          {
+            "Point": 13,
+            "wpt": "HANB",
+            "Altitude": 1119,
+            "Speed": 250,
+            "remaining": 3
+          },
+          {
+            "Point": 14,
+            "wpt": "RW27R",
+            "Altitude": 219,
+            "Speed": 250,
+            "remaining": 0
+          }
+        ]
+      },
+      {
+        "ac": 9,
+        "delta": 20,
+        "target": 60.6,
+        "actual": 59,
+        "err": -1.6,
+        "vsOwn": 18.4,
+        "startAlt": 17921,
+        "endAlt": 219,
+        "usesS": true,
+        "join": "V58",
+        "path": "V61 → ELNAT → V58 → DV582 → DV584 → DV573 → DV572 → XAVER → HANB → RW27R",
+        "items": [
+          {
+            "Point": 61,
+            "wpt": "V61",
+            "Altitude": 17921,
+            "Speed": 250,
+            "remaining": 59
+          },
+          {
+            "Point": 1,
+            "wpt": "ELNAT",
+            "Altitude": 12409,
+            "Speed": 250,
+            "remaining": 40.6
+          },
+          {
+            "Point": 58,
+            "wpt": "V58",
+            "Altitude": 8892,
+            "Speed": 250,
+            "remaining": 28.9
+          },
+          {
+            "Point": 4,
+            "wpt": "DV582",
+            "Altitude": 6892,
+            "Speed": 250,
+            "remaining": 22.2
+          },
+          {
+            "Point": 6,
+            "wpt": "DV584",
+            "Altitude": 5092,
+            "Speed": 250,
+            "remaining": 16.2
+          },
+          {
+            "Point": 10,
+            "wpt": "DV573",
+            "Altitude": 3819,
+            "Speed": 250,
+            "remaining": 12
+          },
+          {
+            "Point": 11,
+            "wpt": "DV572",
+            "Altitude": 2919,
+            "Speed": 250,
+            "remaining": 9
+          },
+          {
+            "Point": 12,
+            "wpt": "XAVER",
+            "Altitude": 2019,
+            "Speed": 250,
+            "remaining": 6
+          },
+          {
+            "Point": 13,
+            "wpt": "HANB",
+            "Altitude": 1119,
+            "Speed": 250,
+            "remaining": 3
+          },
+          {
+            "Point": 14,
+            "wpt": "RW27R",
+            "Altitude": 219,
+            "Speed": 250,
+            "remaining": 0
+          }
+        ]
+      },
+      {
+        "ac": 10,
+        "delta": 30,
+        "target": 70.6,
+        "actual": 70.7,
+        "err": 0.1,
+        "vsOwn": 30.1,
+        "startAlt": 21424,
+        "endAlt": 219,
+        "usesS": true,
+        "join": "DV584",
+        "path": "V61 → V65 → DV584 → DV573 → DV572 → XAVER → HANB → RW27R",
+        "items": [
+          {
+            "Point": 61,
+            "wpt": "V61",
+            "Altitude": 21424,
+            "Speed": 250,
+            "remaining": 70.7
+          },
+          {
+            "Point": 65,
+            "wpt": "V65",
+            "Altitude": 9424,
+            "Speed": 250,
+            "remaining": 30.7
+          },
+          {
+            "Point": 6,
+            "wpt": "DV584",
+            "Altitude": 5092,
+            "Speed": 250,
+            "remaining": 16.2
+          },
+          {
+            "Point": 10,
+            "wpt": "DV573",
+            "Altitude": 3819,
+            "Speed": 250,
+            "remaining": 12
+          },
+          {
+            "Point": 11,
+            "wpt": "DV572",
+            "Altitude": 2919,
+            "Speed": 250,
+            "remaining": 9
+          },
+          {
+            "Point": 12,
+            "wpt": "XAVER",
+            "Altitude": 2019,
+            "Speed": 250,
+            "remaining": 6
+          },
+          {
+            "Point": 13,
+            "wpt": "HANB",
+            "Altitude": 1119,
+            "Speed": 250,
+            "remaining": 3
+          },
+          {
+            "Point": 14,
+            "wpt": "RW27R",
+            "Altitude": 219,
+            "Speed": 250,
+            "remaining": 0
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "n": 2,
+    "dest": "EDDV",
+    "rwy": "09L",
+    "star": "HLZ4R",
+    "rwyAlt": 219,
+    "ownLen": 88.9,
+    "sLen": 17.9,
+    "ownPath": "HLZ → CELNB → DV460 → DV461 → DV462 → DV463 → V51 → DESIM → HWNB → RW09L",
+    "S": "V51 → DESIM → HWNB → RW09L",
+    "last3": "DESIM → HWNB → RW09L",
+    "acs": [
+      {
+        "ac": 1,
+        "delta": -70,
+        "target": 18.9,
+        "actual": 35,
+        "err": 16.1,
+        "vsOwn": -53.9,
+        "startAlt": 10729,
+        "endAlt": 219,
+        "usesS": true,
+        "join": "V51",
+        "path": "V52 → V51 → DESIM → HWNB → RW09L",
+        "items": [
+          {
+            "Point": 52,
+            "wpt": "V52",
+            "Altitude": 10729,
+            "Speed": 250,
+            "remaining": 35
+          },
+          {
+            "Point": 51,
+            "wpt": "V51",
+            "Altitude": 5574,
+            "Speed": 250,
+            "remaining": 17.9
+          },
+          {
+            "Point": 13,
+            "wpt": "DESIM",
+            "Altitude": 2859,
+            "Speed": 250,
+            "remaining": 8.8
+          },
+          {
+            "Point": 14,
+            "wpt": "HWNB",
+            "Altitude": 1419,
+            "Speed": 250,
+            "remaining": 4
+          },
+          {
+            "Point": 15,
+            "wpt": "RW09L",
+            "Altitude": 219,
+            "Speed": 250,
+            "remaining": 0
+          }
+        ]
+      },
+      {
+        "ac": 2,
+        "delta": -60,
+        "target": 28.9,
+        "actual": 58.5,
+        "err": 29.5,
+        "vsOwn": -30.5,
+        "startAlt": 17754,
+        "endAlt": 219,
+        "usesS": true,
+        "join": "V51",
+        "path": "V65 → V51 → DESIM → HWNB → RW09L",
+        "items": [
+          {
+            "Point": 65,
+            "wpt": "V65",
+            "Altitude": 17754,
+            "Speed": 250,
+            "remaining": 58.5
+          },
+          {
+            "Point": 51,
+            "wpt": "V51",
+            "Altitude": 5574,
+            "Speed": 250,
+            "remaining": 17.9
+          },
+          {
+            "Point": 13,
+            "wpt": "DESIM",
+            "Altitude": 2859,
+            "Speed": 250,
+            "remaining": 8.8
+          },
+          {
+            "Point": 14,
+            "wpt": "HWNB",
+            "Altitude": 1419,
+            "Speed": 250,
+            "remaining": 4
+          },
+          {
+            "Point": 15,
+            "wpt": "RW09L",
+            "Altitude": 219,
+            "Speed": 250,
+            "remaining": 0
+          }
+        ]
+      },
+      {
+        "ac": 3,
+        "delta": -50,
+        "target": 38.9,
+        "actual": 66.3,
+        "err": 27.3,
+        "vsOwn": -22.7,
+        "startAlt": 20098,
+        "endAlt": 219,
+        "usesS": true,
+        "join": "V51",
+        "path": "V64 → V51 → DESIM → HWNB → RW09L",
+        "items": [
+          {
+            "Point": 64,
+            "wpt": "V64",
+            "Altitude": 20098,
+            "Speed": 250,
+            "remaining": 66.3
+          },
+          {
+            "Point": 51,
+            "wpt": "V51",
+            "Altitude": 5574,
+            "Speed": 250,
+            "remaining": 17.9
+          },
+          {
+            "Point": 13,
+            "wpt": "DESIM",
+            "Altitude": 2859,
+            "Speed": 250,
+            "remaining": 8.8
+          },
+          {
+            "Point": 14,
+            "wpt": "HWNB",
+            "Altitude": 1419,
+            "Speed": 250,
+            "remaining": 4
+          },
+          {
+            "Point": 15,
+            "wpt": "RW09L",
+            "Altitude": 219,
+            "Speed": 250,
+            "remaining": 0
+          }
+        ]
+      },
+      {
+        "ac": 4,
+        "delta": -40,
+        "target": 48.9,
+        "actual": 66.5,
+        "err": 17.6,
+        "vsOwn": -22.4,
+        "startAlt": 20182,
+        "endAlt": 219,
+        "usesS": true,
+        "join": "V51",
+        "path": "V63 → V51 → DESIM → HWNB → RW09L",
+        "items": [
+          {
+            "Point": 63,
+            "wpt": "V63",
+            "Altitude": 20182,
+            "Speed": 250,
+            "remaining": 66.5
+          },
+          {
+            "Point": 51,
+            "wpt": "V51",
+            "Altitude": 5574,
+            "Speed": 250,
+            "remaining": 17.9
+          },
+          {
+            "Point": 13,
+            "wpt": "DESIM",
+            "Altitude": 2859,
+            "Speed": 250,
+            "remaining": 8.8
+          },
+          {
+            "Point": 14,
+            "wpt": "HWNB",
+            "Altitude": 1419,
+            "Speed": 250,
+            "remaining": 4
+          },
+          {
+            "Point": 15,
+            "wpt": "RW09L",
+            "Altitude": 219,
+            "Speed": 250,
+            "remaining": 0
+          }
+        ]
+      },
+      {
+        "ac": 5,
+        "delta": -30,
+        "target": 58.9,
+        "actual": 69.9,
+        "err": 11,
+        "vsOwn": -19,
+        "startAlt": 21195,
+        "endAlt": 219,
+        "usesS": true,
+        "join": "V51",
+        "path": "V66 → V51 → DESIM → HWNB → RW09L",
+        "items": [
+          {
+            "Point": 66,
+            "wpt": "V66",
+            "Altitude": 21195,
+            "Speed": 250,
+            "remaining": 69.9
+          },
+          {
+            "Point": 51,
+            "wpt": "V51",
+            "Altitude": 5574,
+            "Speed": 250,
+            "remaining": 17.9
+          },
+          {
+            "Point": 13,
+            "wpt": "DESIM",
+            "Altitude": 2859,
+            "Speed": 250,
+            "remaining": 8.8
+          },
+          {
+            "Point": 14,
+            "wpt": "HWNB",
+            "Altitude": 1419,
+            "Speed": 250,
+            "remaining": 4
+          },
+          {
+            "Point": 15,
+            "wpt": "RW09L",
+            "Altitude": 219,
+            "Speed": 250,
+            "remaining": 0
+          }
+        ]
+      },
+      {
+        "ac": 6,
+        "delta": -20,
+        "target": 68.9,
+        "actual": 57.8,
+        "err": -11.1,
+        "vsOwn": -31.1,
+        "startAlt": 17571,
+        "endAlt": 219,
+        "usesS": true,
+        "join": "V51",
+        "path": "CELNB → DV460 → DV461 → DV462 → DV463 → V51 → DESIM → HWNB → RW09L",
+        "items": [
+          {
+            "Point": 2,
+            "wpt": "CELNB",
+            "Altitude": 17571,
+            "Speed": 250,
+            "remaining": 57.8
+          },
+          {
+            "Point": 3,
+            "wpt": "DV460",
+            "Altitude": 12321,
+            "Speed": 250,
+            "remaining": 40.3
+          },
+          {
+            "Point": 4,
+            "wpt": "DV461",
+            "Altitude": 11121,
+            "Speed": 250,
+            "remaining": 36.3
+          },
+          {
+            "Point": 5,
+            "wpt": "DV462",
+            "Altitude": 9921,
+            "Speed": 250,
+            "remaining": 32.3
+          },
+          {
+            "Point": 6,
+            "wpt": "DV463",
+            "Altitude": 8721,
+            "Speed": 250,
+            "remaining": 28.3
+          },
+          {
+            "Point": 51,
+            "wpt": "V51",
+            "Altitude": 5574,
+            "Speed": 250,
+            "remaining": 17.9
+          },
+          {
+            "Point": 13,
+            "wpt": "DESIM",
+            "Altitude": 2859,
+            "Speed": 250,
+            "remaining": 8.8
+          },
+          {
+            "Point": 14,
+            "wpt": "HWNB",
+            "Altitude": 1419,
+            "Speed": 250,
+            "remaining": 4
+          },
+          {
+            "Point": 15,
+            "wpt": "RW09L",
+            "Altitude": 219,
+            "Speed": 250,
+            "remaining": 0
+          }
+        ]
+      },
+      {
+        "ac": 7,
+        "delta": -10,
+        "target": 78.9,
+        "actual": 88.9,
+        "err": 10,
+        "vsOwn": 0,
+        "startAlt": 26901,
+        "endAlt": 219,
+        "usesS": true,
+        "join": "V51",
+        "path": "HLZ → CELNB → DV460 → DV461 → DV462 → DV463 → V51 → DESIM → HWNB → RW09L",
+        "items": [
+          {
+            "Point": 1,
+            "wpt": "HLZ",
+            "Altitude": 26901,
+            "Speed": 250,
+            "remaining": 88.9
+          },
+          {
+            "Point": 2,
+            "wpt": "CELNB",
+            "Altitude": 17571,
+            "Speed": 250,
+            "remaining": 57.8
+          },
+          {
+            "Point": 3,
+            "wpt": "DV460",
+            "Altitude": 12321,
+            "Speed": 250,
+            "remaining": 40.3
+          },
+          {
+            "Point": 4,
+            "wpt": "DV461",
+            "Altitude": 11121,
+            "Speed": 250,
+            "remaining": 36.3
+          },
+          {
+            "Point": 5,
+            "wpt": "DV462",
+            "Altitude": 9921,
+            "Speed": 250,
+            "remaining": 32.3
+          },
+          {
+            "Point": 6,
+            "wpt": "DV463",
+            "Altitude": 8721,
+            "Speed": 250,
+            "remaining": 28.3
+          },
+          {
+            "Point": 51,
+            "wpt": "V51",
+            "Altitude": 5574,
+            "Speed": 250,
+            "remaining": 17.9
+          },
+          {
+            "Point": 13,
+            "wpt": "DESIM",
+            "Altitude": 2859,
+            "Speed": 250,
+            "remaining": 8.8
+          },
+          {
+            "Point": 14,
+            "wpt": "HWNB",
+            "Altitude": 1419,
+            "Speed": 250,
+            "remaining": 4
+          },
+          {
+            "Point": 15,
+            "wpt": "RW09L",
+            "Altitude": 219,
+            "Speed": 250,
+            "remaining": 0
+          }
+        ]
+      },
+      {
+        "ac": 8,
+        "delta": 10,
+        "target": 98.9,
+        "actual": 120.3,
+        "err": 21.4,
+        "vsOwn": 31.4,
+        "startAlt": 30000,
+        "endAlt": 219,
+        "usesS": true,
+        "join": "V51",
+        "path": "V61 → HLZ → CELNB → DV460 → DV461 → DV462 → DV463 → V51 → DESIM → HWNB → RW09L",
+        "items": [
+          {
+            "Point": 61,
+            "wpt": "V61",
+            "Altitude": 30000,
+            "Speed": 250,
+            "remaining": 120.3
+          },
+          {
+            "Point": 1,
+            "wpt": "HLZ",
+            "Altitude": 26901,
+            "Speed": 250,
+            "remaining": 88.9
+          },
+          {
+            "Point": 2,
+            "wpt": "CELNB",
+            "Altitude": 17571,
+            "Speed": 250,
+            "remaining": 57.8
+          },
+          {
+            "Point": 3,
+            "wpt": "DV460",
+            "Altitude": 12321,
+            "Speed": 250,
+            "remaining": 40.3
+          },
+          {
+            "Point": 4,
+            "wpt": "DV461",
+            "Altitude": 11121,
+            "Speed": 250,
+            "remaining": 36.3
+          },
+          {
+            "Point": 5,
+            "wpt": "DV462",
+            "Altitude": 9921,
+            "Speed": 250,
+            "remaining": 32.3
+          },
+          {
+            "Point": 6,
+            "wpt": "DV463",
+            "Altitude": 8721,
+            "Speed": 250,
+            "remaining": 28.3
+          },
+          {
+            "Point": 51,
+            "wpt": "V51",
+            "Altitude": 5574,
+            "Speed": 250,
+            "remaining": 17.9
+          },
+          {
+            "Point": 13,
+            "wpt": "DESIM",
+            "Altitude": 2859,
+            "Speed": 250,
+            "remaining": 8.8
+          },
+          {
+            "Point": 14,
+            "wpt": "HWNB",
+            "Altitude": 1419,
+            "Speed": 250,
+            "remaining": 4
+          },
+          {
+            "Point": 15,
+            "wpt": "RW09L",
+            "Altitude": 219,
+            "Speed": 250,
+            "remaining": 0
+          }
+        ]
+      },
+      {
+        "ac": 9,
+        "delta": 20,
+        "target": 108.9,
+        "actual": 129,
+        "err": 20.1,
+        "vsOwn": 40.1,
+        "startAlt": 30000,
+        "endAlt": 219,
+        "usesS": true,
+        "join": "V51",
+        "path": "V62 → HLZ → CELNB → DV460 → DV461 → DV462 → DV463 → V51 → DESIM → HWNB → RW09L",
+        "items": [
+          {
+            "Point": 62,
+            "wpt": "V62",
+            "Altitude": 30000,
+            "Speed": 250,
+            "remaining": 129
+          },
+          {
+            "Point": 1,
+            "wpt": "HLZ",
+            "Altitude": 26901,
+            "Speed": 250,
+            "remaining": 88.9
+          },
+          {
+            "Point": 2,
+            "wpt": "CELNB",
+            "Altitude": 17571,
+            "Speed": 250,
+            "remaining": 57.8
+          },
+          {
+            "Point": 3,
+            "wpt": "DV460",
+            "Altitude": 12321,
+            "Speed": 250,
+            "remaining": 40.3
+          },
+          {
+            "Point": 4,
+            "wpt": "DV461",
+            "Altitude": 11121,
+            "Speed": 250,
+            "remaining": 36.3
+          },
+          {
+            "Point": 5,
+            "wpt": "DV462",
+            "Altitude": 9921,
+            "Speed": 250,
+            "remaining": 32.3
+          },
+          {
+            "Point": 6,
+            "wpt": "DV463",
+            "Altitude": 8721,
+            "Speed": 250,
+            "remaining": 28.3
+          },
+          {
+            "Point": 51,
+            "wpt": "V51",
+            "Altitude": 5574,
+            "Speed": 250,
+            "remaining": 17.9
+          },
+          {
+            "Point": 13,
+            "wpt": "DESIM",
+            "Altitude": 2859,
+            "Speed": 250,
+            "remaining": 8.8
+          },
+          {
+            "Point": 14,
+            "wpt": "HWNB",
+            "Altitude": 1419,
+            "Speed": 250,
+            "remaining": 4
+          },
+          {
+            "Point": 15,
+            "wpt": "RW09L",
+            "Altitude": 219,
+            "Speed": 250,
+            "remaining": 0
+          }
+        ]
+      },
+      {
+        "ac": 10,
+        "delta": 30,
+        "target": 118.9,
+        "actual": 110.9,
+        "err": -8,
+        "vsOwn": 22,
+        "startAlt": 30000,
+        "endAlt": 219,
+        "usesS": true,
+        "join": "V51",
+        "path": "V65 → V66 → V51 → DESIM → HWNB → RW09L",
+        "items": [
+          {
+            "Point": 65,
+            "wpt": "V65",
+            "Altitude": 30000,
+            "Speed": 250,
+            "remaining": 110.9
+          },
+          {
+            "Point": 66,
+            "wpt": "V66",
+            "Altitude": 21195,
+            "Speed": 250,
+            "remaining": 69.9
+          },
+          {
+            "Point": 51,
+            "wpt": "V51",
+            "Altitude": 5574,
+            "Speed": 250,
+            "remaining": 17.9
+          },
+          {
+            "Point": 13,
+            "wpt": "DESIM",
+            "Altitude": 2859,
+            "Speed": 250,
+            "remaining": 8.8
+          },
+          {
+            "Point": 14,
+            "wpt": "HWNB",
+            "Altitude": 1419,
+            "Speed": 250,
+            "remaining": 4
+          },
+          {
+            "Point": 15,
+            "wpt": "RW09L",
+            "Altitude": 219,
+            "Speed": 250,
+            "remaining": 0
+          }
+        ]
+      }
+    ]
+  }
+]
