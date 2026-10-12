@@ -130,6 +130,14 @@ namespace AcRouteEditor
         public Vec(double x, double y) { X = x; Y = y; }
     }
 
+    public class LiveSnapshot
+    {
+        public int Level;
+        public Vec Own;
+        public bool HasOwn;
+        public Dictionary<int, Vec> Others = new Dictionary<int, Vec>();
+    }
+
     public class RoutePt
     {
         public int Id;
@@ -320,6 +328,63 @@ namespace AcRouteEditor
                 }
             }
             return null;
+        }
+
+        public static string LiveTrafficPath()
+        {
+            string dataRoot = FindDataRoot();
+            if (string.IsNullOrEmpty(dataRoot)) return null;
+            return Path.Combine(dataRoot, "General", "live_traffic.txt");
+        }
+
+        public static LiveSnapshot ReadLiveTraffic()
+        {
+            string path = LiveTrafficPath();
+            if (string.IsNullOrEmpty(path) || !File.Exists(path)) return null;
+            try
+            {
+                string text;
+                using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite))
+                using (StreamReader sr = new StreamReader(fs))
+                    text = sr.ReadToEnd();
+                if (string.IsNullOrEmpty(text)) return null;
+                LiveSnapshot snap = new LiveSnapshot();
+                string[] lines = text.Replace("\r\n", "\n").Replace("\r", "\n").Split('\n');
+                for (int i = 0; i < lines.Length; i++)
+                {
+                    string line = lines[i].Trim();
+                    if (line.Length == 0) continue;
+                    string[] parts = line.Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length < 2) continue;
+                    if (string.Equals(parts[0], "LEVEL", StringComparison.OrdinalIgnoreCase))
+                    {
+                        int lv;
+                        int.TryParse(parts[1], out lv);
+                        snap.Level = lv;
+                        continue;
+                    }
+                    if (parts.Length < 3) continue;
+                    double x, y;
+                    if (!double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out x)) continue;
+                    if (!double.TryParse(parts[2], NumberStyles.Float, CultureInfo.InvariantCulture, out y)) continue;
+                    if (string.Equals(parts[0], "X", StringComparison.OrdinalIgnoreCase))
+                    {
+                        snap.Own = new Vec(x, y);
+                        snap.HasOwn = true;
+                    }
+                    else
+                    {
+                        int ac;
+                        if (int.TryParse(parts[0], out ac) && ac >= 1 && ac <= 10)
+                            snap.Others[ac] = new Vec(x, y);
+                    }
+                }
+                return snap;
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         public static List<LevelData> Load()
@@ -739,6 +804,7 @@ namespace AcRouteEditor
         public List<int> CurrentRoute = new List<int>();
         public HashSet<int> UsedPointIds = new HashSet<int>();
         public int CurrentAc = 1;
+        public LiveSnapshot Live;
         public event Action<int> PointClicked;
 
         public readonly List<HitPt> Hits = new List<HitPt>();
@@ -1224,6 +1290,46 @@ namespace AcRouteEditor
                         g.DrawEllipse(new Pen(acCol, 2f), hp.X - hp.R - 2, hp.Y - hp.R - 2, (hp.R + 2) * 2, (hp.R + 2) * 2);
                 }
             }
+
+            DrawLiveTraffic(g, plotX, plotY, plotW, plotH, cx, cy, scale);
+        }
+
+        private void DrawLiveTraffic(Graphics g, float plotX, float plotY, float plotW, float plotH, double cx, double cy, double scale)
+        {
+            if (Live == null || Level == null) return;
+            int n = Level.Info != null && Level.Info.LevelNumber != 0 ? Level.Info.LevelNumber : Level.Index;
+            if (Live.Level != n) return;
+
+            using (Font fLive = new Font("Segoe UI", 14f, FontStyle.Bold, GraphicsUnit.Point))
+            {
+                if (Live.HasOwn && Live.Own != null)
+                {
+                    Vec m = Map(Live.Own.X, Live.Own.Y, plotX, plotY, plotW, plotH, cx, cy, scale);
+                    DrawLiveGlyph(g, fLive, "X", (float)m.X, (float)m.Y, Color.FromArgb(0, 200, 55));
+                }
+                if (Live.Others != null)
+                {
+                    List<int> keys = new List<int>(Live.Others.Keys);
+                    keys.Sort();
+                    for (int i = 0; i < keys.Count; i++)
+                    {
+                        Vec w = Live.Others[keys[i]];
+                        if (w == null) continue;
+                        Vec m = Map(w.X, w.Y, plotX, plotY, plotW, plotH, cx, cy, scale);
+                        DrawLiveGlyph(g, fLive, keys[i].ToString(CultureInfo.InvariantCulture), (float)m.X, (float)m.Y, Color.Black);
+                    }
+                }
+            }
+        }
+
+        private static void DrawLiveGlyph(Graphics g, Font font, string text, float x, float y, Color color)
+        {
+            SizeF sz = g.MeasureString(text, font);
+            float px = x - sz.Width / 2f;
+            float py = y - sz.Height / 2f;
+            g.DrawString(text, font, Brushes.White, px + 1, py + 1);
+            using (SolidBrush br = new SolidBrush(color))
+                g.DrawString(text, font, br, px, py);
         }
 
         private HitPt FindHit(int id)
@@ -1305,6 +1411,8 @@ namespace AcRouteEditor
             {
                 Vp v = Level.VirtualPts[i];
                 bool used = UsedPointIds != null && UsedPointIds.Contains(v.Number);
+                if (used)
+                    continue;
                 if (v.IsRawZero && !used)
                 {
                     unusedZero.Add(v);
@@ -1666,7 +1774,9 @@ namespace AcRouteEditor
         private Button _btnNext;
         private Button _btnPrevLevel;
         private Button _btnNextLevel;
+        private Button _btnRescale;
         private bool _loading;
+        private Timer _liveTimer;
 
         public MainForm()
         {
@@ -1686,18 +1796,22 @@ namespace AcRouteEditor
             _btnNextLevel = MakeBtn("Next Level", 148, 8, 110);
             _btnNext = MakeBtn("Next", 270, 8, 90);
             _btnNext.BackColor = Color.FromArgb(230, 140, 40);
+            _btnRescale = MakeBtn("RESCALE", 368, 8, 110);
+            _btnRescale.BackColor = Color.FromArgb(20, 120, 72);
             _status = new Label();
             _status.ForeColor = Color.FromArgb(240, 220, 120);
             _status.Font = new Font("Segoe UI", 11f, FontStyle.Bold);
             _status.AutoSize = false;
-            _status.SetBounds(380, 12, 980, 24);
+            _status.SetBounds(490, 12, 860, 24);
 
             _btnPrevLevel.Click += delegate { ChangeLevel(-1); };
             _btnNextLevel.Click += delegate { ChangeLevel(1); };
             _btnNext.Click += delegate { NextAc(); };
+            _btnRescale.Click += delegate { RescaleCurrentLevel(); };
             top.Controls.Add(_btnPrevLevel);
             top.Controls.Add(_btnNextLevel);
             top.Controls.Add(_btnNext);
+            top.Controls.Add(_btnRescale);
             top.Controls.Add(_status);
 
             Panel bottom = new Panel();
@@ -1718,7 +1832,7 @@ namespace AcRouteEditor
             Label hint = new Label();
             hint.Dock = DockStyle.Top;
             hint.Height = 20;
-            hint.Text = "Click points on the chart. Saves to Assets/_Game/Data Files/General/ac_routes.txt";
+            hint.Text = "Unity Play: live X / 1-10 overlay when this level is selected. Saves to Data Files/General/ac_routes.txt";
             hint.ForeColor = Color.FromArgb(80, 90, 100);
             bottom.Controls.Add(_box);
             bottom.Controls.Add(hint);
@@ -1747,6 +1861,20 @@ namespace AcRouteEditor
             SnapAllLevels();
             _levelIdx = 0;
             LoadLevelUi();
+
+            _liveTimer = new Timer();
+            _liveTimer.Interval = 250;
+            _liveTimer.Tick += delegate { PollLiveTraffic(); };
+            _liveTimer.Start();
+            FormClosed += delegate { if (_liveTimer != null) _liveTimer.Stop(); };
+        }
+
+        private void PollLiveTraffic()
+        {
+            LiveSnapshot snap = AssetLoader.ReadLiveTraffic();
+            _chart.Live = snap;
+            _chart.Invalidate();
+            UpdateStatus();
         }
 
         private static Button MakeBtn(string text, int x, int y, int w)
@@ -2026,6 +2154,330 @@ namespace AcRouteEditor
             _chart.UsedPointIds = UsedIdsFor(Cur);
         }
 
+        private const double SpacingNm = 10.0;
+
+        private void RescaleCurrentLevel()
+        {
+            LevelData lv = Cur;
+            if (lv == null) return;
+            PersistCurrent();
+            EnsureAcLines();
+            int rw = lv.RoutePts.Count > 0 ? lv.RoutePts[lv.RoutePts.Count - 1].Id : 0;
+
+            HashSet<int> used = new HashSet<int>();
+            List<int>[] routes = new List<int>[11];
+            int slotCount = 0;
+            int[] slotOf = new int[11];
+            int paceSlot = -1;
+            for (int ac = 1; ac <= 10; ac++)
+            {
+                slotOf[ac] = -1;
+                routes[ac] = ParseAcPoints(ac);
+                if (rw > 0 && routes[ac].Count > 0 && routes[ac][routes[ac].Count - 1] != rw)
+                    routes[ac].Add(rw);
+                for (int k = 0; k < routes[ac].Count; k++)
+                    used.Add(routes[ac][k]);
+            }
+            for (int i = 0; i < lv.Atc.Count; i++)
+                used.Add(lv.Atc[i].Point);
+            for (int ac = 1; ac <= 10; ac++)
+            {
+                double[] xs, ys, rem;
+                if (routes[ac].Count < 2 || !BuildRem(lv, routes[ac], out xs, out ys, out rem))
+                    continue;
+                slotOf[ac] = slotCount;
+                if (ac == 7)
+                    paceSlot = slotCount;
+                slotCount++;
+            }
+            double own = OwnFlownNm(lv);
+            if (paceSlot < 0 || own < 1.0)
+            {
+                _status.Text = paceSlot < 0 ? "RESCALE: AC7 route missing" : "RESCALE: own path is empty";
+                return;
+            }
+
+            int moved = 0;
+            int skipped = 0;
+            for (int ac = 1; ac <= 10; ac++)
+            {
+                List<int> ids = routes[ac];
+                if (slotOf[ac] < 0) { skipped++; continue; }
+                double[] xs, ys, rem;
+                if (!BuildRem(lv, ids, out xs, out ys, out rem)) { skipped++; continue; }
+                double desired = own + SpacingNm * (slotOf[ac] - paceSlot);
+                if (desired < 0.5) desired = 0.5;
+                if (Math.Abs(desired - rem[0]) <= 0.05)
+                    continue;
+                double nx, ny;
+                int keepFrom;
+                if (desired > rem[0] + 0.05)
+                {
+                    double legx = xs[1] - xs[0];
+                    double legy = ys[1] - ys[0];
+                    double leg = Math.Sqrt(legx * legx + legy * legy);
+                    double ux = leg > 0.0001 ? legx / leg : 0;
+                    double uy = leg > 0.0001 ? legy / leg : 1;
+                    double extra = desired - rem[0];
+                    nx = xs[0] - ux * extra;
+                    ny = ys[0] - uy * extra;
+                    keepFrom = 1;
+                }
+                else
+                {
+                    int seg = SegmentFor(rem, desired);
+                    if (seg < 0) { skipped++; continue; }
+                    double span = rem[seg] - rem[seg + 1];
+                    double t = span < 0.0001 ? 0 : (rem[seg] - desired) / span;
+                    if (t < 0) t = 0;
+                    if (t > 1) t = 1;
+                    nx = xs[seg] + (xs[seg + 1] - xs[seg]) * t;
+                    ny = ys[seg] + (ys[seg + 1] - ys[seg]) * t;
+                    keepFrom = seg + 1;
+                }
+                Vp start = ClaimStartVp(lv, ids, used);
+                if (start == null) { skipped++; continue; }
+                if (desired > rem[0] + 0.05)
+                    keepFrom = start.Number == ids[0] ? 1 : 0;
+                SetVpWorld(lv, start, nx, ny);
+                List<int> next = new List<int>();
+                next.Add(start.Number);
+                for (int i = keepFrom; i < ids.Count; i++)
+                {
+                    if (next[next.Count - 1] != ids[i])
+                        next.Add(ids[i]);
+                }
+                if (next.Count < 2) { skipped++; continue; }
+                routes[ac] = next;
+                used.Add(start.Number);
+                moved++;
+            }
+
+            string[] lines = SplitLines(_box.Text);
+            for (int ac = 1; ac <= 10; ac++)
+            {
+                int idx = FindAcLine(lines, ac);
+                if (idx < 0 || routes[ac] == null || routes[ac].Count == 0) continue;
+                lines[idx] = "AC" + ac + ": " + string.Join(" ", Ints(routes[ac]));
+            }
+            _loading = true;
+            _box.Text = string.Join(Environment.NewLine, lines);
+            _loading = false;
+            try { AssetLoader.WriteVirtualPoints(lv); }
+            catch (Exception ex) { Program.Log("RESCALE write: " + ex.Message); }
+            PersistCurrent();
+            _chart.CurrentRoute = ParseAcPoints(_ac);
+            SyncChartUsed();
+            _chart.Invalidate();
+            _status.Text = string.Format("RESCALE  own {0:0.0} NM   AC7 same finish   spacing {1:0}   moved {2}   skipped {3}", own, SpacingNm, moved, skipped);
+        }
+
+        private static string[] Ints(List<int> ids)
+        {
+            string[] s = new string[ids.Count];
+            for (int i = 0; i < ids.Count; i++) s[i] = ids[i].ToString(CultureInfo.InvariantCulture);
+            return s;
+        }
+
+        private Vp ClaimStartVp(LevelData lv, List<int> ids, HashSet<int> used)
+        {
+            if (ids[0] >= 51 && CountId(ids[0]) == 1)
+            {
+                Vp own = AssetLoader.ResolveVp(lv, ids[0]);
+                if (own != null) return own;
+            }
+            for (int i = 0; i < lv.VirtualPts.Count; i++)
+            {
+                Vp v = lv.VirtualPts[i];
+                if (!used.Contains(v.Number))
+                    return v;
+            }
+            return null;
+        }
+
+        private int CountId(int id)
+        {
+            int n = 0;
+            for (int ac = 1; ac <= 10; ac++)
+            {
+                List<int> pts = ParseAcPoints(ac);
+                for (int i = 0; i < pts.Count; i++)
+                    if (pts[i] == id) n++;
+            }
+            return n;
+        }
+
+        private static int SegmentFor(double[] rem, double desired)
+        {
+            for (int i = 0; i < rem.Length - 1; i++)
+            {
+                if (desired <= rem[i] + 0.05 && desired >= rem[i + 1] - 0.05)
+                    return i;
+            }
+            if (desired > rem[0]) return 0;
+            return -1;
+        }
+
+        private static bool BuildRem(LevelData lv, List<int> ids, out double[] xs, out double[] ys, out double[] rem)
+        {
+            xs = new double[ids.Count];
+            ys = new double[ids.Count];
+            rem = new double[ids.Count];
+            for (int i = 0; i < ids.Count; i++)
+            {
+                if (!TryWorld(lv, ids[i], out xs[i], out ys[i]))
+                    return false;
+            }
+            rem[ids.Count - 1] = 0;
+            for (int i = ids.Count - 2; i >= 0; i--)
+                rem[i] = rem[i + 1] + Math.Sqrt((xs[i + 1] - xs[i]) * (xs[i + 1] - xs[i]) + (ys[i + 1] - ys[i]) * (ys[i + 1] - ys[i]));
+            return true;
+        }
+
+        private static bool TryWorld(LevelData lv, int id, out double x, out double y)
+        {
+            x = 0;
+            y = 0;
+            if (id < 51)
+            {
+                RoutePt p = AssetLoader.ResolveRoute(lv, id);
+                if (p == null) return false;
+                x = p.X;
+                y = p.Y;
+                return true;
+            }
+            Vp v = AssetLoader.ResolveVp(lv, id);
+            if (v == null) return false;
+            x = v.X;
+            y = v.Y;
+            return true;
+        }
+
+        private static void SetVpWorld(LevelData lv, Vp v, double x, double y)
+        {
+            v.X = x;
+            v.Y = y;
+            Vec origin = lv.OriginRaw ?? new Vec();
+            Vec rwy = lv.Runway ?? new Vec();
+            v.RawX = x - rwy.X + origin.X;
+            v.RawY = y - rwy.Y + origin.Y;
+        }
+
+        private static double OwnFlownNm(LevelData lv)
+        {
+            List<int> ids = OwnPathIds(lv);
+            if (ids.Count == 0 || lv.RoutePts.Count == 0) return 0;
+            double x = lv.RoutePts[0].X;
+            double y = lv.RoutePts[0].Y;
+            double len = 0;
+            for (int i = 0; i < ids.Count; i++)
+            {
+                double px, py;
+                if (!TryWorld(lv, ids[i], out px, out py)) continue;
+                double d = Math.Sqrt((px - x) * (px - x) + (py - y) * (py - y));
+                if (d >= 0.08) len += d;
+                x = px;
+                y = py;
+            }
+            return len;
+        }
+
+        private static List<int> OwnPathIds(LevelData lv)
+        {
+            List<int> ids = new List<int>();
+            int rwId = lv.RoutePts.Count - 1;
+            if (lv.Atc == null || lv.Atc.Count == 0)
+            {
+                for (int i = 1; i <= rwId; i++) ids.Add(lv.RoutePts[i].Id);
+                return ids;
+            }
+            for (int ai = 0; ai < lv.Atc.Count; ai++)
+            {
+                AtcItem a = lv.Atc[ai];
+                bool shortcut = a.Mode == 1 || a.Mode == 2;
+                if (!shortcut && a.Point < 50)
+                {
+                    int cur = -1;
+                    for (int k = ids.Count - 1; k >= 0; k--)
+                    {
+                        if (ids[k] < 50) { cur = ids[k]; break; }
+                    }
+                    int curIdx = StarIndex(lv, cur);
+                    int tgtIdx = StarIndex(lv, a.Point);
+                    if (curIdx >= 0 && tgtIdx > curIdx)
+                    {
+                        for (int i = curIdx + 1; i <= tgtIdx; i++)
+                            PushId(ids, lv.RoutePts[i].Id);
+                    }
+                    else PushId(ids, a.Point);
+                }
+                else PushId(ids, a.Point);
+
+                if (a.Mode == 3 || a.VsNx == 3)
+                {
+                    int last = ids.Count > 0 ? ids[ids.Count - 1] : -1;
+                    if (last >= 0 && last < 50)
+                    {
+                        int from = StarIndex(lv, last);
+                        if (from >= 0 && !RemainingHasReversal(lv, from))
+                        {
+                            for (int i = from + 1; i < lv.RoutePts.Count; i++)
+                                PushId(ids, lv.RoutePts[i].Id);
+                        }
+                        else PushId(ids, rwId);
+                    }
+                    else PushId(ids, rwId);
+                    break;
+                }
+            }
+            if (ids.Count == 0 || ids[ids.Count - 1] != rwId)
+                PushId(ids, rwId);
+            return ids;
+        }
+
+        private static void PushId(List<int> ids, int id)
+        {
+            if (id == 0) return;
+            if (ids.Count == 0 || ids[ids.Count - 1] != id) ids.Add(id);
+        }
+
+        private static int StarIndex(LevelData lv, int id)
+        {
+            if (id < 0) return -1;
+            for (int i = 0; i < lv.RoutePts.Count; i++)
+                if (lv.RoutePts[i].Id == id) return i;
+            return id < lv.RoutePts.Count ? id : -1;
+        }
+
+        private static bool RemainingHasReversal(LevelData lv, int fromIdx)
+        {
+            int last = lv.RoutePts.Count - 1;
+            double rwx = lv.RoutePts[last].X;
+            double rwy = lv.RoutePts[last].Y;
+            for (int i = fromIdx + 1; i < last; i++)
+            {
+                double along = Bearing(lv.RoutePts[i - 1].X, lv.RoutePts[i - 1].Y, lv.RoutePts[i].X, lv.RoutePts[i].Y);
+                double toRw = Bearing(lv.RoutePts[i].X, lv.RoutePts[i].Y, rwx, rwy);
+                if (AngleDelta(along, toRw) > 50) return true;
+            }
+            return false;
+        }
+
+        private static double Bearing(double x1, double y1, double x2, double y2)
+        {
+            double ang = Math.Atan2(x2 - x1, y2 - y1) * 180.0 / Math.PI;
+            if (ang < 0) ang += 360;
+            return ang;
+        }
+
+        private static double AngleDelta(double a, double b)
+        {
+            double d = a - b;
+            while (d > 180) d -= 360;
+            while (d < -180) d += 360;
+            return Math.Abs(d);
+        }
+
         private void UpdateStatus()
         {
             LevelData lv = Cur;
@@ -2035,8 +2487,11 @@ namespace AcRouteEditor
                 return;
             }
             int n = LevelNo();
-            _status.Text = string.Format("Level {0} / {1}   {2}  RWY {3}     editing AC{4} / 10     {5}",
-                _levelIdx + 1, _levels.Count, lv.Info.Destination, lv.Info.Runway, _ac, _store.FilePath);
+            string live = "";
+            if (_chart != null && _chart.Live != null && _chart.Live.Level == n)
+                live = "   LIVE";
+            _status.Text = string.Format("Level {0} / {1}   {2}  RWY {3}     editing AC{4} / 10{5}     {6}",
+                _levelIdx + 1, _levels.Count, lv.Info.Destination, lv.Info.Runway, _ac, live, _store.FilePath);
             _btnPrevLevel.Enabled = _levelIdx > 0;
             _btnNextLevel.Enabled = _levelIdx < _levels.Count - 1;
             _btnNext.Enabled = _ac < 10;

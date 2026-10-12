@@ -7,6 +7,7 @@ public static class PlayerPrefsHolder
     public const int MinLevel = TestLevel;
     public const int FirstRankedLevel = 1;
     public const int MaxLevel = LevelsLayoutSpec.LevelCount;
+    public const int FreeFlightLevel = 40;
 
     const string LevelIndexMigrationKey = "LevelIndex_v2";
 
@@ -55,6 +56,8 @@ public static class PlayerPrefsHolder
 
     public static int ClampLevel(int level)
     {
+        if (level == FreeFlightLevel)
+            return level;
         return Mathf.Clamp(level, MinLevel, MaxLevel);
     }
 

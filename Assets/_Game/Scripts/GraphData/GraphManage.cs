@@ -336,11 +336,14 @@ public class GraphManage : MonoBehaviour
         for (int i = 0; i < levelsPanel.transform.childCount; i++)
         {
             Button button = levelsPanel.transform.GetChild(i).GetComponent<Button>();
-            if (button != null)
+            if (button != null && button.name != "FreeFlightButton")
                 return button;
         }
 
-        return levelsPanel.GetComponentInChildren<Button>(true);
+        Button nested = levelsPanel.GetComponentInChildren<Button>(true);
+        if (nested != null && nested.name != "FreeFlightButton")
+            return nested;
+        return null;
     }
 
     void ReparentLevelsContinueButton(Button button, Transform overlayParent)

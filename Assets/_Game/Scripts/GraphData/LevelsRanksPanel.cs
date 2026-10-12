@@ -7,6 +7,7 @@ public class LevelsRanksPanel : MonoBehaviour
 {
     const string LayoutRootName = "Layout Root";
     const string ContinueButtonName = "Continue Button";
+    const string FreeFlightButtonName = "FreeFlightButton";
     const string TitleText = "L  E  V  E  L  S";
 
     static readonly int[] DefaultRanks =
@@ -54,7 +55,9 @@ public class LevelsRanksPanel : MonoBehaviour
         bool needsRebuild = layoutRoot == null
             || !HasMinimumBindings()
             || layoutRoot.Find("SideLabel") != null
-            || layoutRoot.Find("TitleLabel") == null;
+            || layoutRoot.Find("TitleLabel") == null
+            || layoutRoot.Find(FreeFlightButtonName) == null
+            || !CellsMatchSpec(layoutRoot);
 
         if (needsRebuild)
         {
@@ -246,6 +249,13 @@ public class LevelsRanksPanel : MonoBehaviour
 
     public bool HasValidBindings() => HasMinimumBindings();
 
+    bool CellsMatchSpec(Transform layoutRoot)
+    {
+        Transform cell = layoutRoot.Find("LevelCell1");
+        RectTransform rect = cell as RectTransform;
+        return rect != null && Mathf.Abs(rect.sizeDelta.y - LevelsLayoutSpec.CellHeight) < 0.5f;
+    }
+
     bool HasMinimumBindings()
     {
         return _cells != null
@@ -330,6 +340,48 @@ public class LevelsRanksPanel : MonoBehaviour
                     image.raycastTarget = false;
             }
         }
+
+        WireFreeFlightButton();
+    }
+
+    void WireFreeFlightButton()
+    {
+        Transform root = transform.Find(LayoutRootName);
+        if (root == null)
+            return;
+
+        Transform cell = root.Find(FreeFlightButtonName);
+        if (cell == null)
+            return;
+
+        Image image = cell.GetComponent<Image>();
+        Button button = cell.GetComponent<Button>();
+        if (_selectable)
+        {
+            if (image != null)
+                image.raycastTarget = true;
+
+            if (button == null)
+                button = cell.gameObject.AddComponent<Button>();
+
+            button.targetGraphic = image;
+            button.transition = Selectable.Transition.ColorTint;
+            button.onClick.RemoveAllListeners();
+            button.onClick.AddListener(() => CellClicked?.Invoke(PlayerPrefsHolder.FreeFlightLevel));
+            button.interactable = true;
+            button.enabled = true;
+        }
+        else
+        {
+            if (button != null)
+            {
+                button.onClick.RemoveAllListeners();
+                button.enabled = false;
+            }
+
+            if (image != null)
+                image.raycastTarget = false;
+        }
     }
 
     public void BindRanks(int[] ranks)
@@ -403,6 +455,36 @@ public class LevelsRanksPanel : MonoBehaviour
                 BuildCell(layoutRoot, level, left, top, gridCellWidth, cellHeight, alt);
             }
         }
+
+        BuildFreeFlightButton(layoutRoot, gridTop, cellHeight, gridCellWidth);
+    }
+
+    void BuildFreeFlightButton(Transform layoutRoot, float gridTop, float cellHeight, float gridCellWidth)
+    {
+        float height = cellHeight * 0.5f;
+        float width = gridCellWidth * 3f;
+        float left = LevelsLayoutSpec.ContentLeft + (LevelsLayoutSpec.ContentWidth - width) * 0.5f;
+        float top = gridTop + LevelsLayoutSpec.GridRows * (cellHeight + LevelsLayoutSpec.CellGap);
+
+        Transform cell = CreatePanel(
+            layoutRoot,
+            FreeFlightButtonName,
+            LevelsLayoutSpec.CellBg,
+            left,
+            top,
+            width,
+            height,
+            false);
+
+        TMP_Text value = CreateText(
+            cell,
+            "Value",
+            "LEVEL 40 - Free Flight",
+            LevelsLayoutSpec.CellFont,
+            LevelsLayoutSpec.TextMuted,
+            FontStyles.Normal,
+            TextAlignmentOptions.Center);
+        StretchFill(value.rectTransform, 6f, 2f, 6f, 2f);
     }
 
     void CreateTitleLabel(Transform layoutRoot, float bodyTop)

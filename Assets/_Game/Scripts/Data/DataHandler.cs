@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
 using Navigation;
@@ -120,6 +120,9 @@ public class DataHandler
                 }
             }
         }
+
+        FillMissingAltitudes(set);
+
         set.FirstAltRegulationNodeId = -1;
         for (var i = 1; i < set.Points.Length; i++)
         {
@@ -130,6 +133,119 @@ public class DataHandler
                 set.FirstAltRegulationNodeId = point.ID;
                 return;
             }
+        }
+    }
+
+    /// <summary>
+    /// Fill INIT holes after the last exact, A/B skips, and the last waypoint.
+    /// Empty RW uses field elevation + 50 ft (TCH). Unknown elevation → 50.
+    /// </summary>
+    private static void FillMissingAltitudes(RouteScriptableObject set)
+    {
+        var pts = set.Points;
+        if (pts == null || pts.Length == 0)
+            return;
+
+        for (var i = 0; i < pts.Length; i++)
+            pts[i].Altitude.GetFlag(pts[i].RawAltitude);
+
+        var last = pts[pts.Length - 1];
+        var rw = RunwayTargetAltitude(last);
+        if (last.Altitude.ComputedValue <= 0)
+            last.Altitude.SetComputedValue(rw, true);
+
+        ClampAbRestrictions(pts);
+
+        var anchors = new List<int>();
+        for (var i = 0; i < pts.Length; i++)
+        {
+            if (pts[i].Altitude.ComputedValue > 0)
+                anchors.Add(i);
+        }
+
+        if (anchors.Count == 0)
+            return;
+
+        if (anchors[anchors.Count - 1] != pts.Length - 1)
+            anchors.Add(pts.Length - 1);
+
+        for (var a = 0; a < anchors.Count - 1; a++)
+        {
+            var from = anchors[a];
+            var to = anchors[a + 1];
+            if (to <= from + 1)
+                continue;
+
+            var total = 0f;
+            for (var i = from + 1; i <= to; i++)
+                total += pts[i].Distance;
+
+            if (total < 1e-4f)
+            {
+                var hold = pts[from].Altitude.ComputedValue;
+                for (var i = from + 1; i < to; i++)
+                {
+                    if (pts[i].Altitude.ComputedValue <= 0)
+                        pts[i].Altitude.SetComputedValue(hold, false);
+                }
+                continue;
+            }
+
+            var alt0 = pts[from].Altitude.ComputedValue;
+            var alt1 = pts[to].Altitude.ComputedValue;
+            var cum = 0f;
+            for (var i = from + 1; i < to; i++)
+            {
+                cum += pts[i].Distance;
+                if (pts[i].Altitude.ComputedValue > 0)
+                    continue;
+                pts[i].Altitude.SetComputedValue(alt0 + (alt1 - alt0) * (cum / total), false);
+            }
+        }
+
+        ClampAbRestrictions(pts);
+    }
+
+    private static float RunwayTargetAltitude(RoutePoint rw)
+    {
+        if (rw == null)
+            return 50f;
+
+        rw.Altitude.GetFlag(rw.RawAltitude);
+        if (rw.Altitude.RestrictionExact > 0)
+            return rw.Altitude.RestrictionExact;
+        if (rw.Altitude.ComputedValue > 0)
+            return rw.Altitude.ComputedValue;
+        if (!string.IsNullOrEmpty(rw.RawAltitude)
+            && float.TryParse(rw.RawAltitude, out var raw)
+            && raw > 0)
+            return raw;
+
+        return FieldElevationFeet(rw) + 50f;
+    }
+
+    private static float FieldElevationFeet(RoutePoint rw)
+    {
+        if (rw != null && rw.Altitude.RestrictionExact > 0)
+            return rw.Altitude.RestrictionExact;
+        return 0f;
+    }
+
+    private static void ClampAbRestrictions(RoutePoint[] pts)
+    {
+        for (var i = 0; i < pts.Length; i++)
+        {
+            var p = pts[i];
+            var fl = p.AltitudeRegulation;
+            var v = p.Altitude.ComputedValue;
+            if (v <= 0)
+                continue;
+            if ((fl == RoutePoint.AltitudeFlags.Below || fl == RoutePoint.AltitudeFlags.AboveBelow)
+                && p.Altitude.RestrictionBelow > 0 && v > p.Altitude.RestrictionBelow)
+                p.Altitude.SetComputedValue(p.Altitude.RestrictionBelow, true);
+            if ((fl == RoutePoint.AltitudeFlags.Above || fl == RoutePoint.AltitudeFlags.AboveBelow)
+                && p.Altitude.RestrictionAbove > 0 && v < p.Altitude.RestrictionAbove)
+                p.Altitude.SetComputedValue(p.Altitude.RestrictionAbove, true);
         }
     }
 

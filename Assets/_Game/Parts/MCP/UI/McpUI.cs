@@ -72,7 +72,7 @@ public class McpUI : MonoBehaviour
     public void LGLeverInteract(bool down, bool isSilent = false)
     {
         _cacheSilentSwitch_LG = isSilent;
-        _LGSlider.value = down ? 0 : 1;
+        _LGSlider.value = Calculator.SliderValueForGear(down);
     }
 
 
@@ -98,10 +98,10 @@ public class McpUI : MonoBehaviour
         if (Calculator.GearLeverLocked())
         {
             _cacheSilentSwitch_LG = true;
-            _LGSlider.value = Calculator.LGDown ? 1f : 0f;
+            _LGSlider.value = Calculator.SliderValueForGear(Calculator.LGDown);
             return;
         }
 
-        Calculator.Instance?.SetLG(newValue != 0, true);
+        Calculator.Instance?.SetLG(Calculator.GearExtendedFromSlider(newValue), true);
     }
 }

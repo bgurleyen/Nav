@@ -52,7 +52,14 @@ public class GameManager : MonoBehaviour
 
     private void InitForLevel(int index)
     {
+        Session.IsRunning = false;
         index = PlayerPrefsHolder.ClampLevel(index);
+        if (_gameConfig.LevelsData == null || index < 0 || index >= _gameConfig.LevelsData.Length
+            || _gameConfig.LevelsData[index] == null)
+        {
+            Debug.LogError($"[GameManager] No level data for level {index}.");
+            return;
+        }
 
         var levelData = _gameConfig.LevelsData[index];
         

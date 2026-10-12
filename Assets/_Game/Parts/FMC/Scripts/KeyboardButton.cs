@@ -114,6 +114,9 @@ public class KeyboardButton : MonoBehaviour
 
     public void OnPAUSEButtonClick()
     {
+        if (LevelStartInformation.IsAwaitingRequestDescent)
+            return;
+
         Time.timeScale = Time.timeScale == 0 ? 1 : 0;
     }
 }

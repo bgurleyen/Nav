@@ -1,12 +1,18 @@
-# Launches AcRouteEditor.exe (rebuilds if missing).
+# Hosts the editor inside Windows PowerShell (Microsoft-signed).
+# Smart App Control blocks the unsigned AcRouteEditor.exe process.
 $ErrorActionPreference = "Stop"
 $here = Split-Path -Parent $MyInvocation.MyCommand.Path
-$exe = Join-Path $here "AcRouteEditor.exe"
 Set-Location $here
+$src = Join-Path $here "AcRouteEditor.cs"
+if (-not (Test-Path $src)) { throw "AcRouteEditor.cs missing: $src" }
 
-if (-not (Test-Path $exe)) {
-  & (Join-Path $here "build.ps1")
+Add-Type -AssemblyName System.Windows.Forms
+try {
+  if (-not ([System.Management.Automation.PSTypeName]"AcRouteEditor.Program").Type) {
+    Add-Type -Path $src -ReferencedAssemblies System.dll, System.Core.dll, System.Drawing.dll, System.Windows.Forms.dll
+  }
+  [AcRouteEditor.Program]::Main()
+} catch {
+  [System.Windows.Forms.MessageBox]::Show($_.Exception.ToString(), "AC Route Editor")
+  exit 1
 }
-
-if (-not (Test-Path $exe)) { throw "AcRouteEditor.exe missing" }
-Start-Process -FilePath $exe -WorkingDirectory $here

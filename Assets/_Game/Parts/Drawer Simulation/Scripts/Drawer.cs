@@ -45,13 +45,15 @@ public class Drawer : MonoBehaviour
     [SerializeField] private GameObject[] centerHolder;
     [SerializeField] private GameObject[] planHolder;
 
-
-    [SerializeField] private float _debugStarDistance = 1.3f;
-
     private void Awake()
     {
         Session.ZoomMultiplier = _gameConfig.Settings.StartingZoom;
         UYServiceLocator.Register(this);
+
+        var pauseOverlay = GetComponent<NdPauseOverlay>();
+        if (pauseOverlay == null)
+            pauseOverlay = gameObject.AddComponent<NdPauseOverlay>();
+        pauseOverlay.Initialize(pivot, _reference40);
     }
 
     private void Start()
@@ -259,29 +261,11 @@ public class Drawer : MonoBehaviour
                 .GetComponent<OtherAircrafIndicator>();
             drawer.name = key;
             string label = texts.ContainsKey(key) ? texts[key] : "";
-            drawer.Init(label, Color.black);
+            drawer.Init(label, Color.white, 0f, 45f);
             drawer.transform.localPosition = positions[key].ToDisplay();
         }
 
-        if (Session.PlayerAircraft != null)
-        {
-            var own = otherAircraftsPool.Spawn(Vector3.zero, Quaternion.identity, dynamicHolderOtheriarcrafts)
-                .GetComponent<OtherAircrafIndicator>();
-            own.name = "AC (0)";
-            own.Init("X", new Color(0f, 0.85f, 0.2f, 1f));
-            own.transform.localPosition = Session.PlayerAircraft.NMPosition.ToDisplay();
-        }
-
-        // demo - shows a debug star for seeing the distance
         var objective = otherAircraftsPool.Spawn(Vector3.zero, Quaternion.identity, dynamicHolderOtheriarcrafts)
-            .GetComponent<OtherAircrafIndicator>();
-        objective.name = "My objective";
-        objective.Init("|", Color.yellow);
-        objective.transform.localPosition = (Session.PlayerAircraft.NMPosition +
-                                             Vector2.right * _debugStarDistance).ToDisplay();
-
-        // demo - shows a debug star for seeing the distance
-        objective = otherAircraftsPool.Spawn(Vector3.zero, Quaternion.identity, dynamicHolderOtheriarcrafts)
             .GetComponent<OtherAircrafIndicator>();
         objective.name = "origin";
         objective.Init("o", Color.blue);

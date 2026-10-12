@@ -26,6 +26,8 @@ public class LevelStartInformation : MonoBehaviour
     Color _buttonLabelColor;
     bool _buttonLabelColorCached;
 
+    public static bool IsAwaitingRequestDescent { get; private set; }
+
     void Awake()
     {
         if (LevelStartInfo != null)
@@ -40,6 +42,9 @@ public class LevelStartInformation : MonoBehaviour
             return;
         }
 
+        IsAwaitingRequestDescent = true;
+        Time.timeScale = 0f;
+
         if (_showRoutine != null)
             StopCoroutine(_showRoutine);
         _showRoutine = StartCoroutine(ShowInfoWhenFmcReady());
@@ -47,7 +52,7 @@ public class LevelStartInformation : MonoBehaviour
 
     IEnumerator ShowInfoWhenFmcReady()
     {
-        Time.timeScale = 1f;
+        Time.timeScale = 0f;
         if (LevelStartInfo != null)
             LevelStartInfo.gameObject.SetActive(false);
 
@@ -55,9 +60,9 @@ public class LevelStartInformation : MonoBehaviour
         var elapsed = 0f;
         while (!IsFmcReady() && elapsed < timeoutSeconds)
         {
-            Time.timeScale = 1f;
+            Time.timeScale = 0f;
             infoFMC.Instance?.TryPopulate();
-            elapsed += Time.deltaTime;
+            elapsed += Time.unscaledDeltaTime;
             yield return null;
         }
 
@@ -185,6 +190,7 @@ public class LevelStartInformation : MonoBehaviour
 
         StopButtonTextGlow();
 
+        IsAwaitingRequestDescent = false;
         Time.timeScale = 1f;
 
         if (LevelStartInfo != null)
@@ -200,5 +206,6 @@ public class LevelStartInformation : MonoBehaviour
         }
 
         StopButtonTextGlow();
+        IsAwaitingRequestDescent = false;
     }
 }

@@ -41,7 +41,11 @@ public class Calculator : MonoBehaviour
     private bool _fmcCruiseClearedOnVnavDescent;
     public static float TAS, GS;
     public Toggle co;//Landing Gear ,Speed Brake;
+    // Single gear state. True = extended. Lever, drag, speed tape and stable check all read this.
+    // Top-to-bottom slider: 0 is the raised detent (gear up), 1 is the lowered detent (gear down).
     public static bool LGDown = false;
+    public static bool GearExtendedFromSlider(float value) => value >= 0.5f;
+    public static float SliderValueForGear(bool extended) => extended ? 1f : 0f;
     public static bool SBUp = false;
     public Button FUP_Button, FDown_Button;
     private int increasedSpeed, excessSpeedCo = 0;
@@ -1553,6 +1557,10 @@ public class Calculator : MonoBehaviour
         PFD_Animation PFDScript = FindObjectOfType<PFD_Animation>();
         PFDScript.Flaps_Indexchange(Flap_Idx);
         minimumSpeed = FlapMinSpeeds[Flap_Idx];
+
+        // Flap copy wipes FL200-and-below. Put the current gear state back on those rows.
+        if (LGDown)
+            ApplyGearModel(true, 4, 8);
     }
 
     bool CanSelectFlap(int flapIdx)
@@ -1564,6 +1572,21 @@ public class Calculator : MonoBehaviour
         return CSpeed > 270 || Speed2Mach(CSpeed, CAltitude) > 0.82;
     }
 
+    // Extra idle VS, fpm, FL400 down to sea level. Gear drag CD +0.020 at GW 56.4 t, ISA.
+    static readonly double[,] GearIdleVs = {
+        { -2060, -1190 }, { -2920, -1420 }, { -2650, -1290 }, { -2430, -1180 }, { -2220, -1080 },
+        { -2050, -990 }, { -1890, -920 }, { -1750, -850 }, { -1620, -790 } };
+    static readonly double[,,] GearOnIdle = {
+        { { 4300, 110 }, { 4170, 113 } },
+        { { 4150, 125 }, { 4120, 128 } },
+        { { 4100, 142 }, { 4070, 145 } },
+        { { 4070, 158 }, { 4050, 165 } } };
+    static readonly double[,,] GearOffIdle = {
+        { { 3700, 95 }, { 3420, 95 } },
+        { { 3370, 95 }, { 3300, 95 } },
+        { { 3460, 95 }, { 3200, 95 } },
+        { { 3340, 95 }, { 3120, 95 } } };
+
     public void SetLG(bool down, bool fromUI)
     {
         if (fromUI && GearLeverLocked())
@@ -1571,64 +1594,31 @@ public class Calculator : MonoBehaviour
 
         if (LGDown == down) return;
 
-        // Extra idle VS, fpm, FL400 down to sea level. High corner 280 kt (240 at FL400), low 220 kt (200 at FL400).
-        // Gear drag CD +0.020 at GW 56.4 t, ISA.
-        double[,] MVS = new double[9, 2] {
-            { -2060, -1190 }, { -2920, -1420 }, { -2650, -1290 }, { -2430, -1180 }, { -2220, -1080 },
-            { -2050, -990 }, { -1890, -920 }, { -1750, -850 }, { -1620, -790 } };
-        double[,,] Wlg = new double[4, 2, 2] {
-                                             { { 4300, 110 }, { 4170, 113 } },
-                                             { { 4150, 125 }, { 4120, 128 } },
-                                             { { 4100, 142 }, { 4070, 145 } },
-                                             { { 4070, 158 }, { 4050, 165 } } };
-        double[,,] WOlg = new double[4, 2, 2] {                                                 //IDLE
-                                             { { 3700, 95 }, { 3420, 95 } },
-                                             { { 3370, 95 }, { 3300, 95 } },
-                                             { { 3460, 95 }, { 3200, 95 } },
-                                             { { 3340, 95 }, { 3120, 95 } }};
-        int i;
-        if (fromUI) LGDown = down;
+        LGDown = down;
+        ApplyGearModel(down, 0, 8);
+    }
 
-        if (down)
-
+    static void ApplyGearModel(bool down, int fromRow, int toRow)
+    {
+        double sign = down ? 1d : -1d;
+        for (int i = fromRow; i <= toRow && i < GearIdleVs.GetLength(0); i++)
         {
+            M[i, 1, 0] += sign * GearIdleVs[i, 0];
+            M[i, 3, 0] += sign * GearIdleVs[i, 1];
+            M[i, 0, 2] += sign * 1500;
+            M[i, 2, 2] += sign * 1350;
+            M[i, 0, 3] += sign * 320;
+            M[i, 2, 3] += sign * 200;
 
+            if (i < 5)
+                continue;
 
-            for (i = 0; i < 9; i++)
-            {
-                M[i, 1, 0] += MVS[i, 0];
-                M[i, 3, 0] += MVS[i, 1];
-                M[i, 0, 2] += 1500;  //Duz ucus 
-                M[i, 2, 2] += 1350;
-                M[i, 0, 3] += 320;
-                M[i, 2, 3] += 200;
-            }
-            for (i = 5; i < 9; i++)  //With LG
-            {
-                M[i, 1, 2] = Wlg[i - 5, 0, 0];//LVLCG N1 approach mode 
-                M[i, 3, 2] = Wlg[i - 5, 1, 0];
-                M[i, 1, 3] = Wlg[i - 5, 0, 1];//LVLCG ff approach mode 
-                M[i, 3, 3] = Wlg[i - 5, 1, 1];
-            }
-        }
-        else
-        {
-            for (i = 0; i < 9; i++)
-            {
-                M[i, 1, 0] -= MVS[i, 0];
-                M[i, 3, 0] -= MVS[i, 1];
-                M[i, 0, 2] -= 1500; //Duz ucus 
-                M[i, 2, 2] -= 1350;
-                M[i, 0, 3] -= 320;
-                M[i, 2, 3] -= 200;
-            }
-            for (i = 5; i < 9; i++)   //Without LG
-            {
-                M[i, 1, 2] = WOlg[i - 5, 0, 0];//LVLCG N1 not in approach mode 
-                M[i, 3, 2] = WOlg[i - 5, 1, 0];
-                M[i, 1, 3] = WOlg[i - 5, 0, 1];//LVLCG ff not in approach mode 
-                M[i, 3, 3] = WOlg[i - 5, 1, 1];
-            }
+            int w = i - 5;
+            var idle = down ? GearOnIdle : GearOffIdle;
+            M[i, 1, 2] = idle[w, 0, 0];
+            M[i, 3, 2] = idle[w, 1, 0];
+            M[i, 1, 3] = idle[w, 0, 1];
+            M[i, 3, 3] = idle[w, 1, 1];
         }
     }
     public void SetSB(bool Up, bool fromUI)
@@ -2069,11 +2059,15 @@ public class Calculator : MonoBehaviour
 
     static bool IsApproachSpeedStable(int flapSetting, LevelInfoScriptableObject levelInfo)
     {
-        // Flaps 30/40: F30 Vref (and F40 = Vref+10) is the landing speed, not the flap min tape.
+        // Flaps 30/40: Vref is F30 (F40 = Vref+10), but MCP/tape cannot go below flap min (145).
+        // Use the speed you can actually fly, otherwise Vref+20 (141) is below min and Speed is always "no".
         if (flapSetting == 30 || flapSetting == 40)
         {
             int vref = levelInfo != null && levelInfo.F30Speed > 0 ? levelInfo.F30Speed : 120;
-            return CSpeed >= vref - 5 && CSpeed <= vref + 20;
+            if (flapSetting == 40)
+                vref += 10;
+            int target = Mathf.Max(vref, minimumSpeed);
+            return CSpeed >= target - 5 && CSpeed <= target + 20;
         }
 
         return CSpeed >= minimumSpeed && CSpeed <= minimumSpeed + 20;

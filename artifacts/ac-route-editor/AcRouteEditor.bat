@@ -1,14 +1,5 @@
 @echo off
 cd /d "%~dp0"
-if exist "%~dp0AcRouteEditor.exe" (
-  start "" "%~dp0AcRouteEditor.exe"
-  exit /b 0
-)
-echo AcRouteEditor.exe not found, building...
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0build.ps1"
-if exist "%~dp0AcRouteEditor.exe" (
-  start "" "%~dp0AcRouteEditor.exe"
-  exit /b 0
-)
-echo Build failed.
-pause
+REM Smart App Control blocks unsigned AcRouteEditor.exe. Run via signed powershell.exe instead.
+start "" powershell -STA -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File "%~dp0Run-AcRouteEditor.ps1"
+exit /b 0

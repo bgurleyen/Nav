@@ -8,6 +8,7 @@ using UnityEngine;
 public static class AcRoutesLoader
 {
     const string RelativePath = "_Game/Data Files/General/ac_routes.txt";
+    const string LiveRelativePath = "_Game/Data Files/General/live_traffic.txt";
     static string _cachedText;
     static string _cachedPath;
     static DateTime _cachedWrite;
@@ -15,6 +16,11 @@ public static class AcRoutesLoader
     public static string FilePath()
     {
         return Path.Combine(Application.dataPath, RelativePath);
+    }
+
+    public static string LiveFilePath()
+    {
+        return Path.Combine(Application.dataPath, LiveRelativePath);
     }
 
     public static List<int> GetPoints(int levelNumber, int acNumber)
