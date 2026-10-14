@@ -42,8 +42,14 @@ public class Aircraft : MovingActor
         debugHelper = GetComponent<AircraftDebugHelper>();
     }
 
+    bool _gameFinished;
+
     public void FinishGame(bool isStable = false)
     {
+        if (_gameFinished)
+            return;
+
+        _gameFinished = true;
         Debug.Log(isStable ? "Finish GAME (stable)" : "Finish GAME (unstable)");
         GraphManage.OnGameFinish?.Invoke(isStable);
         Session.State.AutoSetHDG(true);
@@ -70,6 +76,12 @@ public class Aircraft : MovingActor
             {
                 _pilot.TickAdvance();
                 NMWalkedOnCurrentSegment = interceptWalked;
+                return;
+            }
+
+            if (TrySteerPendingHeadingFix())
+            {
+                _pilot.TickAdvance();
                 return;
             }
 
@@ -134,9 +146,7 @@ public class Aircraft : MovingActor
         Session.State.LOCCaptured = true;
         _pendingJoinRoutePosition = null;
         _pilot.ClearWholeTurn();
-        Session.State.AutoSetHDG(true);
 
-        // Snap MCP track to inbound course so HDG mode starts on the localizer.
         int courseHdg = Calculator.NormalizeHeading360(Mathf.RoundToInt(course));
         Calculator.RHeading = courseHdg;
         Calculator.Instance?.AddWindEffectToRHeading();
@@ -146,8 +156,7 @@ public class Aircraft : MovingActor
     }
 
     /// <summary>
-    /// Vertical capture is independent of LOC. GS locks VS/VNAV/ALT/FLCH;
-    /// LOC only locks HDG/LNAV.
+    /// GS capture disengages VS/VNAV/ALT/FLCH. LOC capture disengages HDG/LNAV.
     /// </summary>
     private void TryCaptureGs()
     {
@@ -285,6 +294,9 @@ public class Aircraft : MovingActor
         _pendingJoinRoutePosition = null;
         _pilot.ClearWholeTurn();
         Session.State.AutoSetLNAV(true, true);
+        if (Session.CurrentLevel != null && Session.CurrentLevel.levelInfo != null
+            && Session.CurrentLevel.levelInfo.LevelNumber == PlayerPrefsHolder.FreeFlightLevel)
+            Session.State.AutoSetHDG(true);
         ResetSeekProgress(1, 0);
     }
 
@@ -360,6 +372,25 @@ public class Aircraft : MovingActor
         ResetSeekProgress(segment, vertex);
         CurrentSegmentIndex = segment;
         walkedNm = Mathf.Max(0, vertex - 1) * Session.Settings.SegmentGranularity;
+        return true;
+    }
+
+    /// <summary>
+    /// Hold inbound to the ATC heading fix so LNAV does not fly-by before the heading is XFRd.
+    /// </summary>
+    private bool TrySteerPendingHeadingFix()
+    {
+        if (Move.Instance == null || !Move.Instance.HasPendingHeadingClearance)
+            return false;
+
+        var toFix = Move.Instance.PendingHeadingFixNm - _pilot.NMPosition;
+        if (toFix.sqrMagnitude < 0.0001f)
+            return false;
+
+        var heading = Geometry.GetHeadingOfDirection(toFix);
+        TargetHeading = heading;
+        _pilot.NotifyTargetCourse(heading);
+        _pilot.TickSteerToTargetHeading(heading);
         return true;
     }
 

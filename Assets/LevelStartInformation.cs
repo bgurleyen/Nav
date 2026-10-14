@@ -168,7 +168,7 @@ public class LevelStartInformation : MonoBehaviour
         builder.AppendLine(
             $"Cruise: {Calculator.FormatFmcAltitude(Session.CurrentLevel.levelInfo.CrzAltitude)} / {Session.CurrentLevel.levelInfo.CrzSpeed} KT");
         builder.AppendLine(
-            $"ZFW/Fuel: {Session.CurrentLevel.levelInfo.ZFW:0.#} / {Session.CurrentLevel.levelInfo.Fuel:0.#}");
+            $"ZFW/Fuel: {Session.CurrentLevel.levelInfo.ZFW:0.#} / {Calculator.totalFuel / 100:0.#}");
         builder.AppendLine();
         builder.Append("Validate FMC, call when Ready for Descent");
         return builder.ToString();

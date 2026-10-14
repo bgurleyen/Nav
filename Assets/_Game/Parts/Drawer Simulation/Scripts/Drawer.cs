@@ -344,7 +344,7 @@ public class Drawer : MonoBehaviour
 
     private void DisplayTopOfDescentMarker()
     {
-        var route = Session.ActiveRoute;
+        var route = TodDisplayRoute();
         if (route == null || route.Points == null || route.Points.Length < 2)
         {
             return;
@@ -369,6 +369,27 @@ public class Drawer : MonoBehaviour
         todMarker.name = "Top Of Descent";
         todMarker.Init("●TOD", Color.green, 0f);
         todMarker.transform.localPosition = topOfDescentPosition.ToDisplay();
+    }
+
+    /// <summary>
+    /// TOD sits on the drawn magenta path: MOD preview while pending EXEC, else active.
+    /// </summary>
+    private static RouteScriptableObject TodDisplayRoute()
+    {
+        if (Session.IsMod)
+        {
+            if (Session.ModeSetWithPosition?.Points != null && Session.ModeSetWithPosition.Points.Length >= 2)
+            {
+                return Session.ModeSetWithPosition;
+            }
+
+            if (Session.ModRoute?.Points != null && Session.ModRoute.Points.Length >= 2)
+            {
+                return Session.ModRoute;
+            }
+        }
+
+        return Session.VisibleRoute ?? Session.ActiveRoute;
     }
 
     private static double ResolveCruiseAltitude(RouteScriptableObject route)

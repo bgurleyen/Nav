@@ -8,6 +8,7 @@ using Navigation;
 using Navigation.Data;
 using TMPro;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Unyawn.Utils;
 
@@ -35,10 +36,15 @@ public class Calculator : MonoBehaviour
     //                            
     private int RVS;
     public static int RSpeed = (int)CSpeed, minimumSpeed = 110, RHeading, RAltitude, CVS, CHeading;
+    // FMC target while VNAV speed window is closed. Pilot/ATC speed lives in RSpeed once the window is open.
+    int _fmcScheduleSpeed;
+    bool _speedWindowSynced;
+    public bool SpeedWindowOpen { get; private set; }
 
     public static int CTrack, Track, RTrack;
     private double CMach, RMach, VNAV_VS;
     private bool _fmcCruiseClearedOnVnavDescent;
+    private bool _resetMcpAltitudePosted;
     public static float TAS, GS;
     public Toggle co;//Landing Gear ,Speed Brake;
     // Single gear state. True = extended. Lever, drag, speed tape and stable check all read this.
@@ -63,6 +69,11 @@ public class Calculator : MonoBehaviour
     private int N1, dispN1 = 77;
     public static int FF = 77;
     public static double dispFF = 270;
+    // Chart reference is GW 56.4 t, ISA, packs on, anti-ice off, two engines.
+    public static float IsaDeviationC;
+    public static bool EngineAntiIce;
+    public static bool PacksOn = true;
+    public static int EnginesRunning = 2;
     public static double totalFuel = 1000; // 10 tons *100 
     public RouteScriptableObject routeMain;
 
@@ -82,87 +93,15 @@ public class Calculator : MonoBehaviour
 
     private static WindTableScriptableObject CurrentWindTable => Session.CurrentLevel.WindTable;
 
-    private static double[,,] M = new double[9, 4, 4] { //speed,pitch,n1,ff
-        { {240, 300,9090,240 } , { -2000, 100, 4780,95 } , { 200, 600,8690,212 } , { -1700, 300, 4620,95 } },
-        { { 280, 200,9200,306 } , { -2500, -100, 4640,95 } , { 220, 400,8060,220 } , { -1600, 300, 4320,95 } },
-        { { 280, 200,8340,282 } , { -2400, -100, 4540,95 } , { 220, 400,7770,222 } , { -1500, 300, 4060,95 } },
-        { { 280, 200,8010,282 } , { -2200, -100, 4000,95 } , { 220, 400,7520,221 } , { -1500, 300, 3710,95 } },
-        //Mf noflaps identical
-        { { 280, 200,7820,282 } , { -2000, -100, 3850,95 } , { 220, 400,7180,224 } , { -1300, 200, 3530,95 } },
-        { { 280, 200,7510,279 } , { -1900, -100, 3700,95 } , { 220, 400,6710,221 } , { -1200, 300, 3420,95 } },
-        { { 280, 300,7100,276 } , { -1800, -100, 3570,95 } , { 220, 400,6440,222 } , {-1200, 300, 3300,95 } },
-        { { 280, 200,6800,275 } , { -1700, 0, 3460,95 } , { 220, 500,6080,221 } , { -1200, 200, 3200,95 } },
-        { { 280, 200,6530,274 } , { -1500, 0, 3340,95 } , { 220, 450,5550,220 } , { -1300, 100, 3120,95 } },
-    };// Main Matrix
-
-    private double[,,,] Mf = new double[9, 5, 4, 4] {{
-        //noflaps
-        { { 280, 200,7820,282 } , { -2000, -100, 3850,95 } , { 220, 400,7180,224 } , { -1300, 200, 3530,95 } },
-        { { 280, 200,7510,279 } , { -1900, -100, 3700,95 } , { 220, 400,6710,221 } , { -1200, 300, 3420,95 } },
-        { { 280, 300,7100,276 } , { -1800, -100, 3570,95 } , { 220, 400,6440,222 } , {-1200, 300, 3300,95 } },
-        { { 280, 200,6800,275 } , { -1700, 0, 3460,95 } , { 220, 500,6080,221 } , { -1200, 200, 3200,95 } },
-        { { 280, 200,6530,274 } , { -1500, 0, 3340,95 } , { 220, 450,5550,220 } , { -1300, 100, 3120,95 } },},
-        //f1
-        {
-        { { 240, 200,7110,251 }, { -1400, 100, 3670,95 } , { 180, 600,6600,236 }, { -1200, 400, 3370,95 } },
-        { { 240, 200,7110,251 }, { -1400, 100, 3670,95 } , { 180, 600,6600,236 }, { -1200, 400, 3370,95 } },
-        { { 240, 200,6700,247 }, { -1400, 100, 3350,95 } , { 180, 500,6220,227 }, {-1200, 400, 3250,95 } },
-        { { 240, 200,6420,244 }, { -1400, 0, 3240,95 } , { 180, 600,5990,231 }, { -1200, 400, 3150,95 } },
-        { { 240, 200,6150,244 }, { -1400, 0, 3140,95 } , { 180, 400,5640,236 }, { -1200, 400, 3060,95 } }},
-        //f2
-        {
-        { { 240, 100,7250,268 }, { -1600, 0, 3670,95 } , { 180, 500,6580,234 }, { -1300, 300, 3370,95 } },
-        { { 240, 100,7250,268 }, { -1600, 0, 3670,95 } , { 180, 500,6580,234 }, { -1300, 300, 3370,95 } },
-        { { 240, 100,6800,266 }, { -1600, 0, 3350,95 } , { 180, 400,6340,242 }, {-1300, 300, 3250,95 } },
-        { { 240, 100,6540,268 }, { -1600, 0, 3240,95 } , { 180, 400,5970,229 }, { -1300,300, 3150,95 } },
-        { { 240, 100,6270,265 }, { -1600, 0, 3140,95 } , { 180, 150,5630,233 }, { -1300, 300, 3060,95 } } },
-        //f5
-        {
-        { { 240, 0,7610,319 }, { -1800, 0, 3670,95 } , { 180, 400,6850,267 }, { -1400, 300, 3370,95 } },
-        { { 240, 0,7610,319 }, { -1800, 0, 3670,95 } , { 180, 400,6850,267 }, { -1400, 300, 3370,95 } },
-        { { 240, 0,7140,311 }, { -1800, -100, 3350,95 } , { 180, 400,6480,264 }, {-1400, 250, 3250,95 }},
-        { { 240, 0,6760,310 }, { -1800, -100, 3240,95 } , { 180, 400,6190,260 }, { -1400,250, 3150,95 }},
-        { { 240, 0,6600,314 }, { -1800, -100, 3140,95 } , { 180, 400,5920,255 }, { -1400, 250, 3060,95 } } },
-        //f10
-        {
-        { { 200, 200,7500,329 }, { -1800, 0, 3670,95 } , { 160, 500,7210,315 }, { -1500, 400, 3370,95 } },
-        { { 200, 200,7500,329 }, { -1800, 0, 3670,95 } , { 160, 500,7210,315 }, { -1500, 400, 3370,95 } },
-        { { 200, 200,7010,327 }, { -1800, 0, 3350,95 } , { 160, 500,6480,312 }, {-1500, 250, 3250,95 }},
-        { { 200, 200,6650,326 }, { -1800, 0, 3240,95 } , { 160, 500,6190,334 }, { -1500,250, 3150,95 }},
-        { { 200, 200,6510,334 }, { -1800, 0, 3140,95 } , { 160, 600,5920,318 }, { -1500, 250, 3060,95 }}},
-        //f15
-        {
-        { { 190, 200,7780,374 }, { -1300, 0, 3670,95 } , { 150, 600,7700,351 }, { -1000, 500, 3370,95 } },
-        { { 190, 200,7780,374 }, { -1300, 0, 3670,95 } , { 150, 600,7700,351 }, { -1000, 500, 3370,95 } },
-        { { 190, 200,7260,362 }, { -1300, 0, 3350,95 } , { 150, 600,7000,348 }, {-1000, 500, 3250,95 }},
-        { { 190, 200,6850,373 }, { -1300, 0, 3240,95 } , { 150, 700,6600,355 }, { -1000,500, 3150,95 }},
-        { { 190, 200,6600,358 }, { -1300, 0, 3140,95 } , { 150, 700,6380,356 }, { -1000, 500, 3060,95 }}},
-        //f25
-        {
-        { { 180, 100,8070,446 }, { -1600, -100, 3670,95 } , { 140, 600,7870,413 }, { -1300, 500, 3370,95 } },
-        { { 180, 100,8070,446 }, { -1600, -100, 3670,95 } , { 140, 600,7870,413 }, { -1300, 500, 3370,95 } },
-        { { 180, 100,7810,446 }, { -1600, -100, 3350,95 } , { 140, 600,7580,412 }, {-1300, 500, 3250,95 }},
-        { { 180, 100,7460,438 }, { -1600, -100, 3240,95 } , { 140, 600,6790,403 }, { -1300,400, 3150,95 }},
-        { { 180, 100,6950,441 }, { -1600, -100, 3140,95 } , { 140, 600,6580,405 }, { -1300, 400, 3060,95 }}},
-        //f30
-        {
-        { { 170, -100,8150,469 }, { -1800, -200, 3670,95 } , { 130, 600,7940,447 }, { -1200, 500, 3370,95 } },
-        { { 170, -100,8150,469 }, { -1800, -200, 3670,95 } , { 130, 600,7940,447 }, { -1200, 500, 3370,95 } },
-        { { 170, -100,7950,476 }, { -1800, -200, 3350,95 } , { 130, 600,7800,455 }, {-1200, 400, 3250,95 }},
-        { { 170, -100,7660,475 }, { -1800, -200, 3240,95 } , { 130, 600,7170,464 }, { -1200,400, 3150,95 }},
-        { { 170, -100,6950,453 }, { -1800, -200, 3140,95 } , { 130, 600,6760,455 }, { -1200, 400, 3060,95 }}},
-        //f40
-        {
-        { { 160, -0,8410,520 }, { -1900, -200, 3670,95 } , { 130, 500,8110,497 }, { -1400, 300, 3370,95 } },
-        { { 160, -0,8410,520 }, { -1900, -200, 3670,95 } , { 130, 500,8110,497 }, { -1400, 300, 3370,95 } },
-        { { 160, -0,8050,509 }, { -1900, -200, 3350,95 } , { 130, 500,7920,497 }, {-1400, 300, 3250,95 }},
-        { { 160, -0,7940,530 }, { -1900, -200, 3240,95 } , { 130, 500,7510,496 }, { -1400,300, 3150,95 }},
-        { { 160, -100,7300,508 }, { -1900, -200, 3140,95 } , { 130, 500,6920,488 }, { -1400, 300, 3060,95 }}}
-    };
-
+   
+    static double[,,] M => PerformanceChart.M;
+    static double[,,,] Mf => PerformanceChart.Flaps;
 
     private static float[] Pressure = new float[9]
     { 0.1852f, 0.2352f, 0.2968f, 0.3709f, 0.4594f, 0.5642f, 0.6856f, 0.8320f, 1f }; //40000 to 0
+
+    // Engine anti-ice add, same altitude order. Larger in dense air.
+    static readonly int[] AntiIceFf = { 12, 14, 16, 18, 22, 26, 30, 35, 40 };
 
     public static Calculator Instance;
 
@@ -207,6 +146,10 @@ public class Calculator : MonoBehaviour
 
     private void Start()
     {
+        totalFuel = 1000;
+        if (txtTotalFuel != null)
+            txtTotalFuel.text = "10";
+
         // Force-parse route altitude tokens; RestrictionExact stays -1 until GetFlag runs.
         var startPoint = Session.ActiveRoute.Points[0];
         _ = startPoint.AltitudeRegulation;
@@ -223,8 +166,10 @@ public class Calculator : MonoBehaviour
         CAltitude = StartAltitude;
         RAltitude = (int)CAltitude;
         RSpeed = (int)CSpeed;
+        _fmcScheduleSpeed = RSpeed;
         RVS = CVS;
         _approachEndTriggered = false;
+        _resetMcpAltitudePosted = false;
         txtRAltitude.text = "" + RAltitude;
         txtRAltitude_overTape.text = txtRAltitude.text;
         txtCAltitude.text = "" + (int)CAltitude;
@@ -234,6 +179,8 @@ public class Calculator : MonoBehaviour
         FMAarmed.text = "";
 
         ApplyInitialSpeedDisplayForAltitude();
+        BindSpeedWindowClick(txtRSpeed);
+        BindSpeedWindowClick(txtRSpeed_overTape);
 
         Invoke(nameof(VS_Equalize), 1f);
         Invoke(nameof(Speed_Equalize), 0.1f);
@@ -318,10 +265,116 @@ public class Calculator : MonoBehaviour
             }
             else
             {
-                txtRSpeed.text = "" + RSpeed;
-                txtRSpeed_overTape.text = txtRSpeed.text;
+                RefreshSpeedWindow();
             }
         }
+
+        SyncSpeedWindowToMode();
+    }
+
+    bool FmcOwnsSpeed()
+    {
+        return !LevelTestMode.IsActive
+            && Session.State != null
+            && Session.State.VNAV
+            && !SpeedWindowOpen;
+    }
+
+    void SyncSpeedWindowToMode()
+    {
+        if (Session.State == null)
+            return;
+
+        _speedWindowSynced = true;
+        if (LevelTestMode.IsActive || !Session.State.VNAV)
+            ShowSpeedWindow();
+        else
+            CloseSpeedWindow();
+    }
+
+    void EnsureSpeedWindowSynced()
+    {
+        if (_speedWindowSynced)
+            return;
+
+        SyncSpeedWindowToMode();
+    }
+
+    public void OnVerticalModeSelected()
+    {
+        SyncSpeedWindowToMode();
+    }
+
+    public void ShowSpeedWindow()
+    {
+        SpeedWindowOpen = true;
+        _speedWindowSynced = true;
+        RefreshSpeedWindow();
+        if (FMA1 != null)
+            SetFMA();
+    }
+
+    void CloseSpeedWindow()
+    {
+        SpeedWindowOpen = false;
+        _speedWindowSynced = true;
+        ApplyFmcSpeed();
+        RefreshSpeedWindow();
+        if (FMA1 != null)
+            SetFMA();
+    }
+
+    public void OnSpeedWindowClicked()
+    {
+        if (LevelTestMode.IsActive)
+            return;
+        if (Session.State == null || !Session.State.VNAV || !SpeedWindowOpen)
+            return;
+
+        CloseSpeedWindow();
+    }
+
+    void ApplyFmcSpeed()
+    {
+        if (LevelTestMode.IsActive || Session.State == null || !Session.State.VNAV)
+            return;
+
+        _fmcScheduleSpeed = ApplyVnavPointSpeedLimit(_fmcScheduleSpeed);
+        int commanded = _fmcScheduleSpeed;
+        if (commanded < minimumSpeed)
+            commanded = minimumSpeed;
+        if (PFD_Animation.LimitSpeed > 0 && commanded > PFD_Animation.LimitSpeed)
+            commanded = PFD_Animation.LimitSpeed;
+
+        RSpeed = commanded;
+        if (co != null && co.isOn)
+            RMach = Speed2Mach(RSpeed, CAltitude);
+    }
+
+    void RefreshSpeedWindow()
+    {
+        string text = "";
+        if (!FmcOwnsSpeed())
+        {
+            if (co != null && co.isOn)
+                text = FormatMach(RMach);
+            else
+                text = RSpeed.ToString();
+        }
+
+        if (txtRSpeed != null)
+            txtRSpeed.text = text;
+        if (txtRSpeed_overTape != null)
+            txtRSpeed_overTape.text = text;
+    }
+
+    static void BindSpeedWindowClick(Text label)
+    {
+        if (label == null || label.GetComponent<SpeedWindowClickRelay>() != null)
+            return;
+
+        label.raycastTarget = true;
+        label.gameObject.AddComponent<SpeedWindowClickRelay>();
     }
 
     private IEnumerator ExecuteEachFrameSecond()
@@ -344,8 +397,10 @@ public class Calculator : MonoBehaviour
         while (true)
         {
             FlyVerticalPath();
+            CheckResetMcpAltitudeScratchpad();
             InterpolateVS();
             InterpolateLvlChg();
+            EnsureSpeedWindowSynced();
             SetFMA();
             FuelandMach();
             DrawVDI();
@@ -414,6 +469,9 @@ public class Calculator : MonoBehaviour
                 a[1] = 9650;
                 a[2] = 621;
             }
+            bool idleFuel = !pathWithinIdle || (RSpeed < CSpeed - 5 && pathWithinIdle);
+            if (!idleFuel)
+                a[2] = ApplyOperationalFf((int)a[2], Altitude);
             N1 = (int)a[1];
             FF = (int)a[2];
             SetAttPitch((int)a[0]);
@@ -584,21 +642,11 @@ public class Calculator : MonoBehaviour
         int RRSpeed;
 
         float speedbandspeed = 1f;// Session.Settings.SpeedMultiplier;
-        int previousRSpeed = RSpeed;
-        RSpeed = ApplyVnavPointSpeedLimit(RSpeed);
-        if (RSpeed != previousRSpeed)
-        {
-            if (co != null && co.isOn)
-            {
-                RMach = Speed2Mach(RSpeed, CAltitude);
-                txtRSpeed.text = FormatMach(RMach);
-            }
-            else
-            {
-                txtRSpeed.text = "" + RSpeed;
-            }
-            txtRSpeed_overTape.text = txtRSpeed.text;
-        }
+        EnsureSpeedWindowSynced();
+        if (FmcOwnsSpeed())
+            ApplyFmcSpeed();
+        else if (!LevelTestMode.IsActive && Session.State != null && Session.State.VNAV)
+            _fmcScheduleSpeed = ApplyVnavPointSpeedLimit(_fmcScheduleSpeed);
         if (RSpeed > increasedSpeed) RRSpeed = RSpeed; else RRSpeed = increasedSpeed;
 
         PFD_Animation PFDScript = FindObjectOfType<PFD_Animation>();
@@ -630,10 +678,15 @@ public class Calculator : MonoBehaviour
     }
 
 
-    /// <summary>Geometric vertical path slope used by VDI / TOD (~3° ⇒ 318 ft/NM).</summary>
-    public const double VdiPathFtPerNm = 318.0;
+    /// <summary>NM → ft (same factor as ILS GS path).</summary>
+    public const double NmToFeet = 6076.12;
 
-    /// <summary>Altitude a VDI geometric path aims at for a regulated waypoint.</summary>
+    /// <summary>Geometric 3° path (tan(3°) × NM). ~318.4 ft/NM, matches GsAltitudeDeviation.</summary>
+    public static readonly double VdiPathFtPerNm = Math.Tan(3.0 * Math.PI / 180.0) * NmToFeet;
+
+    /// <summary>
+    /// Ceiling used as a descent path target. ABOVE-only is a floor, not a TOD/VDI aim.
+    /// </summary>
     public static double GetVdiConstraintAltitude(RoutePoint point)
     {
         if (point == null)
@@ -649,16 +702,16 @@ public class Calculator : MonoBehaviour
             case RoutePoint.AltitudeFlags.Below:
                 return alt.RestrictionBelow;
             case RoutePoint.AltitudeFlags.Above:
-                return alt.RestrictionAbove > 0 ? alt.RestrictionAbove : alt.ComputedValue;
+                return -1;
             case RoutePoint.AltitudeFlags.AboveBelow:
                 if (alt.RestrictionBelow > 0)
                 {
                     return alt.RestrictionBelow;
                 }
 
-                if (alt.RestrictionAbove > 0)
+                if (alt.RestrictionExact > 0)
                 {
-                    return alt.RestrictionAbove;
+                    return alt.RestrictionExact;
                 }
 
                 return alt.ComputedValue;
@@ -667,65 +720,145 @@ public class Calculator : MonoBehaviour
         }
     }
 
+    /// <summary>Along-track NM of the drawn magenta leg that ends at destIndex.</summary>
+    public static double AlongTrackDistanceOnSegment(RouteScriptableObject route, int destIndex)
+    {
+        var lines = route?.TracedRoute?.ComputedLines;
+        if (lines != null && destIndex >= 1 && destIndex < lines.Length)
+        {
+            var line = lines[destIndex];
+            if (line != null && line.TracedNMLength > 0.05f)
+            {
+                return line.TracedNMLength;
+            }
+        }
+
+        if (route?.Points != null && destIndex >= 0 && destIndex < route.Points.Length)
+        {
+            return Math.Max(0, route.Points[destIndex].Distance);
+        }
+
+        return 0;
+    }
+
     /// <summary>
-    /// Next altitude anchor ahead of the aircraft and along-track distance to it (NM).
-    /// Prefers real altitude restrictions; falls back to first ComputedValue &gt;= 0.
+    /// Remaining NM on the current magenta leg. Prefer LNAV walk on the traced line;
+    /// otherwise scale published remaining by traced/published so turns are counted.
+    /// </summary>
+    public static double RemainingAlongCurrentSegmentNm(RouteScriptableObject route, int passedNodeIndex,
+        double cartesianLeft)
+    {
+        var dest = passedNodeIndex + 1;
+        var alongSeg = AlongTrackDistanceOnSegment(route, dest);
+        var aircraft = Session.PlayerAircraft;
+        if (aircraft != null && aircraft.IsOnRoute && aircraft.CurrentSegmentIndex == dest)
+        {
+            return Math.Max(0, alongSeg - aircraft.NMWalkedOnCurrentSegment);
+        }
+
+        if (cartesianLeft <= 0)
+        {
+            return 0;
+        }
+
+        var published = route?.Points != null && dest >= 0 && dest < route.Points.Length
+            ? Math.Max(1e-4, route.Points[dest].Distance)
+            : alongSeg;
+        if (published < 1e-4)
+        {
+            return cartesianLeft;
+        }
+
+        return Math.Max(0, cartesianLeft) * (alongSeg / published);
+    }
+
+    /// <summary>
+    /// Extra NM before the 3° intercept so energy can bleed (speed drop). Uses GS so
+    /// headwind shortens the pad and tailwind lengthens it. Does not change the 3° FPA.
+    /// </summary>
+    public static double EnergyPadNm(RouteScriptableObject route, int constraintIndex)
+    {
+        if (route?.Points == null || constraintIndex < 0 || constraintIndex >= route.Points.Length)
+        {
+            return 0;
+        }
+
+        var cruiseIas = Session.CurrentLevel?.levelInfo != null
+            ? Session.CurrentLevel.levelInfo.CrzSpeed
+            : 0;
+        if (cruiseIas <= 0)
+        {
+            cruiseIas = (int)CSpeed;
+        }
+
+        var restrict = route.Points[constraintIndex].RawSpeed;
+        if (restrict <= 0)
+        {
+            restrict = cruiseIas;
+        }
+
+        var delta = Mathf.Max(0, cruiseIas - restrict);
+        if (delta < 10)
+        {
+            return 0;
+        }
+
+        var gs = GS > 1 ? GS : Mathf.Max(cruiseIas, 120);
+        var pad = delta * gs / 3600f + 0.8f;
+        return Mathf.Clamp(pad, 0f, 12f);
+    }
+
+    static bool IsDescentConstraintAltitude(double constraintAlt, double cruiseAltitude)
+    {
+        return constraintAlt >= 0 && constraintAlt < cruiseAltitude - 50.0;
+    }
+
+    /// <summary>INIT calculated altitude at a waypoint (ComputedValue, else accepted/restriction).</summary>
+    public static double GetPointCalculatedAltitude(RoutePoint point)
+    {
+        if (point == null)
+            return -1;
+        if (point.Altitude != null && point.Altitude.ComputedValue > 0)
+            return point.Altitude.ComputedValue;
+        var accepted = point.GetAcceptedAltitude;
+        if (accepted > 0)
+            return accepted;
+        return GetVdiConstraintAltitude(point);
+    }
+
+    /// <summary>
+    /// Next waypoint calculated altitude and remaining NM to it (current magenta leg).
     /// </summary>
     public static bool TryGetNextVdiAnchor(RouteScriptableObject route, int passedNodeIndex,
         double distanceLeftOnSegment, out double constraintAltitude, out double distanceToConstraintNm)
     {
+        return TryGetNextVdiAnchor(route, passedNodeIndex, distanceLeftOnSegment,
+            out constraintAltitude, out distanceToConstraintNm, out _);
+    }
+
+    public static bool TryGetNextVdiAnchor(RouteScriptableObject route, int passedNodeIndex,
+        double distanceLeftOnSegment, out double constraintAltitude, out double distanceToConstraintNm,
+        out int anchorIndex)
+    {
         constraintAltitude = -1;
         distanceToConstraintNm = 0;
+        anchorIndex = -1;
         if (route?.Points == null || passedNodeIndex < 0 || passedNodeIndex >= route.Points.Length - 1)
         {
             return false;
         }
 
-        if (TryFindAnchor(route, passedNodeIndex, distanceLeftOnSegment, requireRegulation: true,
-                out constraintAltitude, out distanceToConstraintNm))
+        var dest = passedNodeIndex + 1;
+        var alt = GetPointCalculatedAltitude(route.Points[dest]);
+        if (alt < 0)
         {
-            return true;
+            return false;
         }
 
-        return TryFindAnchor(route, passedNodeIndex, distanceLeftOnSegment, requireRegulation: false,
-            out constraintAltitude, out distanceToConstraintNm);
-    }
-
-    private static bool TryFindAnchor(RouteScriptableObject route, int passedNodeIndex,
-        double distanceLeftOnSegment, bool requireRegulation,
-        out double constraintAltitude, out double distanceToConstraintNm)
-    {
-        constraintAltitude = -1;
-        distanceToConstraintNm = 0;
-        var dist = distanceLeftOnSegment;
-
-        for (var i = passedNodeIndex + 1; i < route.Points.Length; i++)
-        {
-            if (i > passedNodeIndex + 1)
-            {
-                dist += route.Points[i].Distance;
-            }
-
-            var point = route.Points[i];
-            if (requireRegulation && point.AltitudeRegulation == RoutePoint.AltitudeFlags.NotSet)
-            {
-                continue;
-            }
-
-            var cAlt = requireRegulation
-                ? GetVdiConstraintAltitude(point)
-                : point.Altitude.ComputedValue;
-            if (cAlt < 0)
-            {
-                continue;
-            }
-
-            constraintAltitude = cAlt;
-            distanceToConstraintNm = dist;
-            return true;
-        }
-
-        return false;
+        constraintAltitude = alt;
+        distanceToConstraintNm = RemainingAlongCurrentSegmentNm(route, passedNodeIndex, distanceLeftOnSegment);
+        anchorIndex = dest;
+        return true;
     }
 
     /// <summary>
@@ -743,14 +876,15 @@ public class Calculator : MonoBehaviour
             return false;
         }
 
-        var walked = Math.Max(0.0, segmentLength - distanceLeftOnSegment);
-        distFromPrevToAircraftNm = walked;
+        var alongSeg = AlongTrackDistanceOnSegment(route, passedNodeIndex + 1);
+        var alongLeft = RemainingAlongCurrentSegmentNm(route, passedNodeIndex, distanceLeftOnSegment);
+        distFromPrevToAircraftNm = Math.Max(0.0, alongSeg - alongLeft);
 
         for (var i = passedNodeIndex; i >= 0; i--)
         {
             if (i < passedNodeIndex)
             {
-                distFromPrevToAircraftNm += route.Points[i + 1].Distance;
+                distFromPrevToAircraftNm += AlongTrackDistanceOnSegment(route, i + 1);
             }
 
             if (route.Points[i].AltitudeRegulation == RoutePoint.AltitudeFlags.NotSet)
@@ -772,9 +906,8 @@ public class Calculator : MonoBehaviour
     }
 
     /// <summary>
-    /// VNAV/VDI path at aircraft: geometric 3° into the next constraint from cruise (TOD),
-    /// or a continuous connecting slope after a lower constraint was passed
-    /// (avoids pathTarget jumping above the aircraft and killing descent).
+    /// Path at the aircraft: next waypoint calculated altitude plus a 3° rise back
+    /// to the current along-track position (ft = alt_next + 318 × NM_to_next).
     /// </summary>
     public static bool TryComputeVnavPath(RouteScriptableObject route, int passedNodeIndex,
         double distanceLeftOnSegment, double segmentLength, double startAltitude,
@@ -790,36 +923,13 @@ public class Calculator : MonoBehaviour
             return false;
         }
 
-        var useConnecting = TryGetPreviousVdiAnchor(route, passedNodeIndex, distanceLeftOnSegment, segmentLength,
-                                  out var prevAlt, out var distFromPrev)
-                              && prevAlt < startAltitude - 100.0
-                              && prevAlt > nextConstraintAlt;
-
-        if (useConnecting)
-        {
-            var totalPrevToNext = distFromPrev + distToNext;
-            if (totalPrevToNext < 1e-4)
-            {
-                pathTarget = nextConstraintAlt;
-                slopeFtPerNm = 0;
-                return true;
-            }
-
-            slopeFtPerNm = Math.Min(VdiPathFtPerNm, (prevAlt - nextConstraintAlt) / totalPrevToNext);
-            pathTarget = nextConstraintAlt + slopeFtPerNm * distToNext;
-            return true;
-        }
-
-        // Cruise → first descent constraint: fixed ~3° geometric path (TOD / early hold).
         slopeFtPerNm = VdiPathFtPerNm;
-        pathTarget = nextConstraintAlt + VdiPathFtPerNm * distToNext;
+        pathTarget = nextConstraintAlt + VdiPathFtPerNm * Math.Max(0.0, distToNext);
         return true;
     }
 
     /// <summary>
-    /// VDI path target: geometric 3° into next constraint from cruise, or continuous
-    /// constraint-to-constraint slope after a descent constraint was passed.
-    /// Falls back to segment linear.
+    /// VDI / VNAV path: 3° back from the next point's calculated altitude.
     /// </summary>
     public static double ComputeVdiTarget(RouteScriptableObject route, int passedNodeIndex,
         double distanceLeftOnSegment, double alt0, double alt1, double segmentLength, double startAltitude)
@@ -830,29 +940,17 @@ public class Calculator : MonoBehaviour
             return pathTarget;
         }
 
-        if (alt0 == -1)
-        {
-            alt0 = startAltitude;
-        }
-
-        if (alt1 == -1)
-        {
-            alt1 = alt0;
-        }
-
-        if (segmentLength <= 0)
-        {
-            return alt1;
-        }
-
-        return alt1 + (distanceLeftOnSegment * (alt0 - alt1)) / segmentLength;
+        if (alt1 <= 0)
+            alt1 = alt0 > 0 ? alt0 : startAltitude;
+        var dist = RemainingAlongCurrentSegmentNm(route, passedNodeIndex, distanceLeftOnSegment);
+        return alt1 + VdiPathFtPerNm * Math.Max(0.0, dist);
     }
 
     /// <summary>
-    /// First along-route distance/position where VDI is centered at cruise on the geometric path:
-    /// before = below path, after = above path when staying level.
-    /// d_to_constraint = (cruise - constraintAlt) / 318.
-    /// segmentIndex is the destination node index (Points[i+1] / ComputedLines[i+1]).
+    /// First along-route TOD: cruise ∩ 3° path into the first AT/below that is below cruise,
+    /// plus an energy pad. ABOVE-only is skipped. If 3° needs more NM than the route has,
+    /// TOD is clamped to the start of the route (already late) instead of hidden.
+    /// Distances follow the magenta curve. segmentIndex is the destination node index.
     /// </summary>
     public static bool TryFindVdiCenterCrossing(RouteScriptableObject route, double cruiseAltitude,
         out Vector2 onTrackPosition, out int segmentIndex, out float segmentT)
@@ -865,65 +963,69 @@ public class Calculator : MonoBehaviour
             return false;
         }
 
-        double distFromStart = 0;
-        var anchorIndex = -1;
-        double constraintAlt = -1;
-
-        for (var i = 1; i < route.Points.Length; i++)
-        {
-            distFromStart += route.Points[i].Distance;
-            if (route.Points[i].AltitudeRegulation == RoutePoint.AltitudeFlags.NotSet)
-            {
-                continue;
-            }
-
-            constraintAlt = GetVdiConstraintAltitude(route.Points[i]);
-            if (constraintAlt < 0)
-            {
-                continue;
-            }
-
-            anchorIndex = i;
-            break;
-        }
-
-        if (anchorIndex < 0)
-        {
-            distFromStart = 0;
-            for (var i = 1; i < route.Points.Length; i++)
-            {
-                distFromStart += route.Points[i].Distance;
-                if (route.Points[i].Altitude.ComputedValue < 0)
-                {
-                    continue;
-                }
-
-                constraintAlt = route.Points[i].Altitude.ComputedValue;
-                anchorIndex = i;
-                break;
-            }
-        }
-
-        if (anchorIndex < 0 || constraintAlt < 0 || distFromStart <= 0.0001)
+        if (!TryPickTodConstraint(route, cruiseAltitude, out var anchorIndex, out var constraintAlt,
+                out var distFromStart))
         {
             return false;
         }
 
-        var dToConstraintAtTod = (cruiseAltitude - constraintAlt) / VdiPathFtPerNm;
-        if (dToConstraintAtTod < -0.05 || dToConstraintAtTod > distFromStart + 0.05)
+        var dToConstraintAtTod = (cruiseAltitude - constraintAlt) / VdiPathFtPerNm
+                                 + EnergyPadNm(route, anchorIndex);
+        if (dToConstraintAtTod < 0)
         {
             return false;
         }
 
         dToConstraintAtTod = Math.Clamp(dToConstraintAtTod, 0, distFromStart);
         var distAlongFromStart = distFromStart - dToConstraintAtTod;
+        return TryGetAlongTrackPosition(route, distAlongFromStart, out onTrackPosition, out segmentIndex,
+            out segmentT);
+    }
 
+    static bool TryPickTodConstraint(RouteScriptableObject route, double cruiseAltitude,
+        out int anchorIndex, out double constraintAlt, out double distFromStart)
+    {
+        anchorIndex = -1;
+        constraintAlt = -1;
+        distFromStart = 0;
+
+        double walked = 0;
+        for (var i = 1; i < route.Points.Length; i++)
+        {
+            walked += AlongTrackDistanceOnSegment(route, i);
+            var alt = GetPointCalculatedAltitude(route.Points[i]);
+            if (!IsDescentConstraintAltitude(alt, cruiseAltitude))
+            {
+                continue;
+            }
+
+            anchorIndex = i;
+            constraintAlt = alt;
+            distFromStart = walked;
+            return true;
+        }
+
+        return false;
+    }
+
+    public static bool TryGetAlongTrackPosition(RouteScriptableObject route, double distAlongFromStart,
+        out Vector2 onTrackPosition, out int segmentIndex, out float segmentT)
+    {
+        onTrackPosition = default;
+        segmentIndex = -1;
+        segmentT = 0f;
+        if (route?.Points == null || route.Points.Length < 2)
+        {
+            return false;
+        }
+
+        distAlongFromStart = Math.Max(0, distAlongFromStart);
         double walked = 0;
         for (var i = 0; i < route.Points.Length - 1; i++)
         {
             var node0 = route.Points[i];
             var node1 = route.Points[i + 1];
-            var segmentLength = node1.Distance;
+            var segmentLength = AlongTrackDistanceOnSegment(route, i + 1);
             if (segmentLength <= 0.0001)
             {
                 continue;
@@ -937,51 +1039,100 @@ public class Calculator : MonoBehaviour
 
             segmentT = Mathf.Clamp01((float)((distAlongFromStart - walked) / segmentLength));
             segmentIndex = i + 1;
-            onTrackPosition = Vector2.Lerp(node0.CartesianPosition, node1.CartesianPosition, segmentT);
+            if (route.TracedRoute != null &&
+                route.TracedRoute.TryGetPositionOnLine(segmentIndex, segmentT, out var onDrawn))
+            {
+                onTrackPosition = onDrawn;
+            }
+            else
+            {
+                onTrackPosition = Vector2.Lerp(node0.CartesianPosition, node1.CartesianPosition, segmentT);
+            }
+
             return true;
         }
 
         return false;
     }
 
+    /// <summary>
+    /// 0 = VNAV path, 1 = ILS GS. Blends in after LOC capture as GS error shrinks,
+    /// so VDI does not jump at GS capture.
+    /// </summary>
+    public static float GsPathBlend()
+    {
+        if (Session.State == null)
+        {
+            return 0f;
+        }
+
+        if (Session.State.GSCaptured)
+        {
+            return 1f;
+        }
+
+        if (!Session.State.LOCCaptured || Move.Instance == null || Session.CurrentLevel?.levelInfo == null)
+        {
+            return 0f;
+        }
+
+        var gsDev = Move.Instance.GsAltitudeDeviation(Session.CurrentLevel.levelInfo.GlideSlope);
+        return Mathf.Clamp01(Mathf.InverseLerp(800f, 150f, Mathf.Abs(gsDev)));
+    }
+
+    public static bool TryGetIlsGsPathAltitude(out double gsPathAlt)
+    {
+        gsPathAlt = 0;
+        if (Move.Instance == null || Session.CurrentLevel?.levelInfo == null)
+        {
+            return false;
+        }
+
+        var gsDev = Move.Instance.GsAltitudeDeviation(Session.CurrentLevel.levelInfo.GlideSlope);
+        gsPathAlt = CAltitude - gsDev;
+        return true;
+    }
+
     public void DrawVDI()
     {
-        double DeltaAlt, Alt1, Alt0, d, D;
+        double DeltaAlt;
         float posY;
-
-        if (Session.State.GSCaptured && Move.Instance != null)
-        {
-            DeltaAlt = Move.Instance.GsAltitudeDeviation(Session.CurrentLevel.levelInfo.GlideSlope);
-            VDI_Text.text = (Mathf.Abs((float)DeltaAlt) >= 50) ? "" + (int)DeltaAlt : "";
-            posY = -((float)DeltaAlt / 5);
-            if (posY > 100) posY = 100;
-            if (posY < -100) posY = -100;
-            VDI_Index.transform.localPosition = new Vector2(0.3f, posY / 125);
-            if (DeltaAlt < 0) VDI_Text.transform.localPosition = new Vector2(0.1f, -1);
-            else VDI_Text.transform.localPosition = new Vector2(0.1f, 1);
-            return;
-        }
+        var haveVnav = false;
+        double Target = CAltitude;
 
         RouteScriptableObject activePoints = Session.ActiveRoute;
         RouteScriptableObject modPoints = Session.ModRoute;
-
-        bool isMod = Session.IsMod;
-        RouteScriptableObject _route = isMod ? modPoints : activePoints;
+        RouteScriptableObject _route = Session.IsMod ? modPoints : activePoints;
         if (_route == null) _route = activePoints;
-        if (PositionVirtualNode.PassedNodeIndex < 0) return;
-        if (PositionVirtualNode.PassedNodeIndex >= _route.Points.Length - 1) return;
-        var node0 = _route.Points[PositionVirtualNode.PassedNodeIndex];
-        var node1 = _route.Points[PositionVirtualNode.PassedNodeIndex + 1];
 
-        Alt1 = (double)(node1.Altitude.ComputedValue);
-        d = Session.PlayerAircraft.ComputedDistanceLeftOnSegment;
-        D = node1.Distance;
+        if (_route?.Points != null && PositionVirtualNode.PassedNodeIndex >= 0 &&
+            PositionVirtualNode.PassedNodeIndex < _route.Points.Length - 1)
+        {
+            var node0 = _route.Points[PositionVirtualNode.PassedNodeIndex];
+            var node1 = _route.Points[PositionVirtualNode.PassedNodeIndex + 1];
+            var d = Session.PlayerAircraft.ComputedDistanceLeftOnSegment;
+            var D = node1.Distance;
+            var alt0 = (double)node0.Altitude.ComputedValue;
+            var alt1 = (double)node1.Altitude.ComputedValue;
+            Target = ComputeVdiTarget(_route, PositionVirtualNode.PassedNodeIndex, d, alt0, alt1, D, StartAltitude);
+            haveVnav = true;
+            if (D == 0)
+            {
+                Target = CAltitude;
+            }
+        }
 
-        Alt0 = (double)(node0.Altitude.ComputedValue);
-        double Target = ComputeVdiTarget(_route, PositionVirtualNode.PassedNodeIndex, d, Alt0, Alt1, D, StartAltitude);
+        var blend = GsPathBlend();
+        if (blend > 0f && TryGetIlsGsPathAltitude(out var gsAlt))
+        {
+            Target = haveVnav ? Target * (1.0 - blend) + gsAlt * blend : gsAlt;
+        }
+        else if (!haveVnav)
+        {
+            return;
+        }
 
-        if (D == 0) DeltaAlt = 0;
-        else DeltaAlt = CAltitude - Target;
+        DeltaAlt = CAltitude - Target;
 
         VDI_Text.text = (Mathf.Abs((float)DeltaAlt) >= 50) ? "" + (int)DeltaAlt : "";
 
@@ -1077,12 +1228,29 @@ public class Calculator : MonoBehaviour
             pathTarget = ComputeVdiTarget(route, PositionVirtualNode.PassedNodeIndex, d, alt0, alt1, D, StartAltitude);
         }
 
+        TryGetNextVdiAnchor(route, PositionVirtualNode.PassedNodeIndex, d,
+            out _, out var distToNext, out var nextAnchorIndex);
+
+        var gsBlend = GsPathBlend();
+        if (gsBlend > 0f && TryGetIlsGsPathAltitude(out var gsAlt) && Session.CurrentLevel?.levelInfo != null)
+        {
+            pathTarget = pathTarget * (1.0 - gsBlend) + gsAlt * gsBlend;
+            var glide = Session.CurrentLevel.levelInfo.GlideSlope;
+            var gsSlope = Math.Tan(glide * Math.PI / 180.0) * NmToFeet;
+            slopeFtPerNm = slopeFtPerNm * (1.0 - gsBlend) + gsSlope * gsBlend;
+        }
+
         bool mcpDescentWindow = RAltitude < (int)CAltitude;
         double deviation = CAltitude - pathTarget; // + above path, - below
 
-        // Early TOD hold only when well below path. Near-path undershoot uses VS correction instead.
+        // Hold below the 3° path until the energy TOD. After that, descend to intercept.
         const double belowPathHoldBand = 300;
-        if (mcpDescentWindow && deviation < -belowPathHoldBand)
+        var energyTodNm = (nextConstraintAlt > 0)
+            ? Math.Max(0.0, (StartAltitude - nextConstraintAlt) / VdiPathFtPerNm)
+              + EnergyPadNm(route, nextAnchorIndex)
+            : 0;
+        var pastEnergyTod = nextConstraintAlt <= 0 || distToNext <= energyTodNm;
+        if (mcpDescentWindow && deviation < -belowPathHoldBand && !pastEnergyTod && gsBlend < 0.25f)
         {
             VNAV_VS = 0;
             RVS = 0;
@@ -1136,6 +1304,56 @@ public class Calculator : MonoBehaviour
 
         if (RVS < 0)
             ClearFmcCruiseAltitudeOnVnavDescentStart();
+    }
+
+    /// <summary>
+    /// Item 6 stays in force: VNAV will not descend until MCP is below cruise.
+    /// If TOD is passed with MCP still at cruise, remind on the CDU scratchpad.
+    /// </summary>
+    void CheckResetMcpAltitudeScratchpad()
+    {
+        const string msg = MainScreen.Keywords.ResetMcpAltitude;
+        var pastTod = false;
+        var shouldShow = false;
+
+        var route = Session.ActiveRoute;
+        if (route?.Points != null
+            && PositionVirtualNode.PassedNodeIndex >= 0
+            && PositionVirtualNode.PassedNodeIndex < route.Points.Length - 1
+            && Session.PlayerAircraft != null)
+        {
+            var d = Session.PlayerAircraft.ComputedDistanceLeftOnSegment;
+            if (TryGetNextVdiAnchor(route, PositionVirtualNode.PassedNodeIndex, d,
+                    out var nextAlt, out var distToNext, out var nextAnchor)
+                && nextAlt > 0)
+            {
+                var todNm = Math.Max(0.0, (StartAltitude - nextAlt) / VdiPathFtPerNm)
+                            + EnergyPadNm(route, nextAnchor);
+                pastTod = distToNext <= todNm;
+                var stillAtCruise = CAltitude >= StartAltitude - 300.0;
+                var mcpUnchanged = RAltitude >= (int)StartAltitude - 100;
+                shouldShow = pastTod && stillAtCruise && mcpUnchanged
+                             && Session.State != null && Session.State.VNAV && !Session.State.GSCaptured;
+            }
+        }
+
+        if (!pastTod)
+            _resetMcpAltitudePosted = false;
+
+        var pad = MainScreen.Instance != null ? MainScreen.Instance.scratchPadText : null;
+        if (pad == null)
+            return;
+
+        var showingOurs = string.Equals(pad.GetText() ?? "", msg, StringComparison.Ordinal);
+        if (shouldShow && !_resetMcpAltitudePosted)
+        {
+            pad.SetAsDefault(msg);
+            _resetMcpAltitudePosted = true;
+            return;
+        }
+
+        if (!shouldShow && showingOurs)
+            pad.Clear();
     }
 
     /// <summary>
@@ -1201,6 +1419,7 @@ public class Calculator : MonoBehaviour
         altitudeFeet = Mathf.Clamp(altitudeFeet, 0, 41000);
         StartAltitude = altitudeFeet;
         _fmcCruiseClearedOnVnavDescent = altitudeFeet <= 0;
+        _resetMcpAltitudePosted = false;
 
         if (Session.CurrentLevel?.levelInfo != null)
             Session.CurrentLevel.levelInfo.CrzAltitude = altitudeFeet;
@@ -1349,7 +1568,7 @@ public class Calculator : MonoBehaviour
             if (Session.State.VNAV)
             {
                 txtRVS.text = "";
-                FMA1.text = "FMC SPD";
+                FMA1.text = FmcOwnsSpeed() ? "FMC SPD" : "MCP SPD";
                 FMA3.text = "VNAV";
             }
         }
@@ -1395,7 +1614,57 @@ public class Calculator : MonoBehaviour
         double vv4 = (M[F - 1, 2, i] - M[F - 1, 3, i]) / -M[F - 1, 3, 0] * (VS - M[F - 1, 3, 0]) + M[F - 1, 3, i];
         double s1 = (vv1 - vv2) / (M[F, 0, 0] - M[F, 2, 0]) * (Speed - M[F, 2, 0]) + vv2;
         double s2 = (vv3 - vv4) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (Speed - M[F - 1, 2, 0]) + vv4;
-        return (int)((s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2);
+        int ff = (int)((s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2);
+        return ApplyOperationalFf(ff, Altitude);
+    }
+
+    static int GearOrBrakeFf(int seaLevelAdd, int altRow)
+    {
+        altRow = Mathf.Clamp(altRow, 0, Pressure.Length - 1);
+        return (int)Math.Round(seaLevelAdd * Pressure[altRow]);
+    }
+
+    static double AltBandLerp(double atBand, double atBandAbove, int band, double altitude)
+    {
+        return (atBand - atBandAbove) / -5000.0 * (altitude - (8 - band + 1) * 5000) + atBandAbove;
+    }
+
+    static int ApplyOperationalFf(int ff, double altitude)
+    {
+        if (ff <= 210)
+            return ff;
+
+        double factor = WeightFactor() * (1.0 + 0.03 * (IsaDeviationC / 10.0));
+        if (EnginesRunning <= 1)
+            factor *= 1.15;
+
+        int add = 0;
+        if (!PacksOn)
+            add -= 15;
+        if (EngineAntiIce)
+            add += AntiIceAt(altitude);
+
+        int result = (int)Math.Round(ff * factor) + add;
+        return result < 211 ? 211 : result;
+    }
+
+    static double WeightFactor()
+    {
+        var info = Session.CurrentLevel != null ? Session.CurrentLevel.levelInfo : null;
+        if (info == null || info.ZFW < 35f || info.ZFW > 70f)
+            return 1;
+        double gw = info.ZFW + totalFuel / 100.0;
+        double factor = gw / 56.4;
+        if (factor < 0.85) factor = 0.85;
+        if (factor > 1.15) factor = 1.15;
+        return factor;
+    }
+
+    static int AntiIceAt(double altitude)
+    {
+        int F = 8 - Mathf.FloorToInt((float)altitude / 5000);
+        F = Mathf.Clamp(F, 1, 8);
+        return (int)Math.Round(AltBandLerp(AntiIceFf[F], AntiIceFf[F - 1], F, altitude));
     }
     public int N1For(double Altitude, double VS, double Speed)
     {
@@ -1495,7 +1764,8 @@ public class Calculator : MonoBehaviour
 
     private void FuelandMach()
     {
-        totalFuel -= (double)FF * 2 / 3600 * Session.Settings.SpeedMultiplier;                                                     //Fuel
+        int engines = EnginesRunning <= 1 ? 1 : 2;
+        totalFuel -= (double)FF * engines / 3600 * Session.Settings.SpeedMultiplier;                                                     //Fuel
         txtTotalFuel.text = "" + System.Math.Round(totalFuel / 100, 2);
 
         CMach = Speed2Mach(CSpeed, CAltitude);
@@ -1504,7 +1774,10 @@ public class Calculator : MonoBehaviour
         double coAlt = GetCoAltitudeFeet();
         if (co.isOn)
         {
-            RSpeed = (int)Mach2Speed(RMach, CAltitude);
+            if (FmcOwnsSpeed())
+                RMach = Speed2Mach(RSpeed, CAltitude);
+            else
+                RSpeed = (int)Mach2Speed(RMach, CAltitude);
             if (CAltitude < coAlt) co.isOn = false;
         }
         if (CAltitude < coAlt) co.enabled = false; else co.enabled = true;
@@ -1512,13 +1785,19 @@ public class Calculator : MonoBehaviour
     }
     public void FUP_Click()
     {
-        if (CAltitude < 20000 && Flap_Idx < MaxFlapIdx && CanSelectFlap(Flap_Idx + 1))
+        if (Flap_Idx >= MaxFlapIdx)
+            return;
+
+        if (CAltitude < 20000 && CanSelectFlap(Flap_Idx + 1))
         {
             Flap_Idx += 1;
             SetFlaps();
 
             MMVibrationManager.Haptic(HapticTypes.MediumImpact);
+            return;
         }
+
+        NdPauseOverlay.NotifyCheckSpeed();
     }
     public void FDown_Click()
     {
@@ -1557,6 +1836,11 @@ public class Calculator : MonoBehaviour
         PFD_Animation PFDScript = FindObjectOfType<PFD_Animation>();
         PFDScript.Flaps_Indexchange(Flap_Idx);
         minimumSpeed = FlapMinSpeeds[Flap_Idx];
+        if (FmcOwnsSpeed())
+        {
+            ApplyFmcSpeed();
+            RefreshSpeedWindow();
+        }
 
         // Flap copy wipes FL200-and-below. Put the current gear state back on those rows.
         if (LGDown)
@@ -1577,20 +1861,25 @@ public class Calculator : MonoBehaviour
         { -2060, -1190 }, { -2920, -1420 }, { -2650, -1290 }, { -2430, -1180 }, { -2220, -1080 },
         { -2050, -990 }, { -1890, -920 }, { -1750, -850 }, { -1620, -790 } };
     static readonly double[,,] GearOnIdle = {
-        { { 4300, 110 }, { 4170, 113 } },
-        { { 4150, 125 }, { 4120, 128 } },
-        { { 4100, 142 }, { 4070, 145 } },
-        { { 4070, 158 }, { 4050, 165 } } };
+        { { 4300, 140 }, { 4170, 144 } },
+        { { 4150, 160 }, { 4120, 164 } },
+        { { 4100, 176 }, { 4070, 180 } },
+        { { 4070, 190 }, { 4050, 196 } } };
     static readonly double[,,] GearOffIdle = {
-        { { 3700, 95 }, { 3420, 95 } },
-        { { 3370, 95 }, { 3300, 95 } },
-        { { 3460, 95 }, { 3200, 95 } },
-        { { 3340, 95 }, { 3120, 95 } } };
+        { { 3700, 114 }, { 3420, 114 } },
+        { { 3370, 126 }, { 3300, 126 } },
+        { { 3460, 136 }, { 3200, 136 } },
+        { { 3340, 146 }, { 3120, 146 } } };
 
     public void SetLG(bool down, bool fromUI)
     {
-        if (fromUI && GearLeverLocked())
+        if (fromUI && down && GearLeverLocked())
+        {
+            if (UYServiceLocator.Has<McpUI>())
+                UYServiceLocator.Get<McpUI>().LGLeverInteract(false, true);
+            NdPauseOverlay.NotifyCheckSpeed();
             return;
+        }
 
         if (LGDown == down) return;
 
@@ -1607,8 +1896,8 @@ public class Calculator : MonoBehaviour
             M[i, 3, 0] += sign * GearIdleVs[i, 1];
             M[i, 0, 2] += sign * 1500;
             M[i, 2, 2] += sign * 1350;
-            M[i, 0, 3] += sign * 320;
-            M[i, 2, 3] += sign * 200;
+            M[i, 0, 3] += sign * GearOrBrakeFf(320, i);
+            M[i, 2, 3] += sign * GearOrBrakeFf(200, i);
 
             if (i < 5)
                 continue;
@@ -1617,8 +1906,25 @@ public class Calculator : MonoBehaviour
             var idle = down ? GearOnIdle : GearOffIdle;
             M[i, 1, 2] = idle[w, 0, 0];
             M[i, 3, 2] = idle[w, 1, 0];
-            M[i, 1, 3] = idle[w, 0, 1];
-            M[i, 3, 3] = idle[w, 1, 1];
+            int flapRow = i - 4;
+            double flapIdleHi = idle[w, 0, 1];
+            double flapIdleLo = idle[w, 1, 1];
+            if (Instance != null && flapRow >= 0 && flapRow < 5
+                && Flap_Idx >= 0 && Flap_Idx < Instance.Mf.GetLength(0))
+            {
+                flapIdleHi = Instance.Mf[Flap_Idx, flapRow, 1, 3];
+                flapIdleLo = Instance.Mf[Flap_Idx, flapRow, 3, 3];
+            }
+            if (down)
+            {
+                M[i, 1, 3] = Math.Max(flapIdleHi, idle[w, 0, 1]);
+                M[i, 3, 3] = Math.Max(flapIdleLo, idle[w, 1, 1]);
+            }
+            else
+            {
+                M[i, 1, 3] = flapIdleHi;
+                M[i, 3, 3] = flapIdleLo;
+            }
         }
     }
     public void SetSB(bool Up, bool fromUI)
@@ -1640,8 +1946,8 @@ public class Calculator : MonoBehaviour
                 M[i, 3, 0] += Msb[i, 1];
                 M[i, 0, 2] += 750; //Duz ucus
                 M[i, 2, 2] += 450;
-                M[i, 0, 3] += 115;
-                M[i, 2, 3] += 80;
+                M[i, 0, 3] += GearOrBrakeFf(115, i);
+                M[i, 2, 3] += GearOrBrakeFf(80, i);
 
             }
         }
@@ -1653,8 +1959,8 @@ public class Calculator : MonoBehaviour
                 M[i, 3, 0] -= Msb[i, 1];
                 M[i, 0, 2] -= 750; //Duz ucus
                 M[i, 2, 2] -= 450;
-                M[i, 0, 3] -= 115;
-                M[i, 2, 3] -= 80;
+                M[i, 0, 3] -= GearOrBrakeFf(115, i);
+                M[i, 2, 3] -= GearOrBrakeFf(80, i);
             }
         }
     }
@@ -1697,15 +2003,10 @@ public class Calculator : MonoBehaviour
         {
             RSpeed = Move.XFRSpeed;
             if (co.isOn)
-            {
                 RMach = Speed2Mach(RSpeed, CAltitude);
-                txtRSpeed.text = FormatMach(RMach);
-            }
-            else
-            {
-                txtRSpeed.text = RSpeed.ToString();
-            }
-            txtRSpeed_overTape.text = txtRSpeed.text;
+            SpeedWindowOpen = true;
+            RefreshSpeedWindow();
+            SetFMA();
         }
         if (Move.Instance != null)
             Move.Instance.AcknowledgeAtc3();
@@ -1713,20 +2014,25 @@ public class Calculator : MonoBehaviour
 
     public static void Check_LimitSpeed()
     {
+        if (Instance != null && Instance.FmcOwnsSpeed())
+        {
+            Instance.ApplyFmcSpeed();
+            Instance.RefreshSpeedWindow();
+            return;
+        }
+
         if (Calculator.Instance.co.isOn)                                    //Mach
         {
             if (Calculator.Instance.RMach < 0.6) Calculator.Instance.RMach = 0.6;
             if (Calculator.Instance.RMach > Speed2Mach(PFD_Animation.LimitSpeed, CAltitude)) Calculator.Instance.RMach = Speed2Mach(PFD_Animation.LimitSpeed, CAltitude);
             RSpeed = (int)Mach2Speed(Calculator.Instance.RMach, CAltitude);
-            Calculator.Instance.txtRSpeed.text = FormatMach(Calculator.Instance.RMach);
         }
         else
         {                                               //IAS 
             if (RSpeed < minimumSpeed) RSpeed = minimumSpeed;
-            if (RSpeed > PFD_Animation.LimitSpeed) RSpeed = PFD_Animation.LimitSpeed;
-            Calculator.Instance.txtRSpeed.text = "" + RSpeed;
+            if (PFD_Animation.LimitSpeed > 0 && RSpeed > PFD_Animation.LimitSpeed) RSpeed = PFD_Animation.LimitSpeed;
         }
-        Calculator.Instance.txtRSpeed_overTape.text = Calculator.Instance.txtRSpeed.text;
+        Calculator.Instance.RefreshSpeedWindow();
     }
 
     public void UpdatePFD()
@@ -1802,6 +2108,9 @@ public class Calculator : MonoBehaviour
 
     public void OnClick_S(bool positive)
     {
+        if (FmcOwnsSpeed())
+            SpeedWindowOpen = true;
+
         if (co.isOn) //Mach
         {
             if (positive) RMach += 0.01;
@@ -1815,8 +2124,7 @@ public class Calculator : MonoBehaviour
         }
 
         Check_LimitSpeed();
-        txtRSpeed_overTape.text = txtRSpeed.text;
-
+        SetFMA();
         UpdatePFD();
     }
 
@@ -1875,8 +2183,6 @@ public class Calculator : MonoBehaviour
         if (co.isOn) // on mach
         {
             RMach = Speed2Mach(RSpeed, CAltitude);
-            txtRSpeed.text = FormatMach(RMach);
-            txtRSpeed_overTape.text = txtRSpeed.text;
             for (int i = 0; i < 4; i++)
             {
                 M[i, 1, 0] += MVS[i, 0];
@@ -1887,8 +2193,6 @@ public class Calculator : MonoBehaviour
         else
         {
             RSpeed = (int)Mach2Speed(RMach, CAltitude);
-            txtRSpeed.text = "" + RSpeed;
-            txtRSpeed_overTape.text = txtRSpeed.text;
             for (int i = 0; i < 4; i++)
             {
                 M[i, 1, 0] -= MVS[i, 0];
@@ -1897,6 +2201,10 @@ public class Calculator : MonoBehaviour
             }
 
         }
+
+        if (FmcOwnsSpeed())
+            ApplyFmcSpeed();
+        RefreshSpeedWindow();
     }
 
     public void DisplayWindElements()
@@ -2087,5 +2395,14 @@ public class Calculator : MonoBehaviour
 #if UNITY_EDITOR
         UnityEditor.EditorApplication.isPlaying = false;
 #endif
+    }
+}
+
+public class SpeedWindowClickRelay : MonoBehaviour, IPointerClickHandler
+{
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        if (Calculator.Instance != null)
+            Calculator.Instance.OnSpeedWindowClicked();
     }
 }

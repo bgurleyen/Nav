@@ -112,10 +112,7 @@ public static class LevelTestMode
         {
             if (Calculator.Instance.txtCSpeed != null)
                 Calculator.Instance.txtCSpeed.text = InitialSpeedKnots.ToString();
-            if (Calculator.Instance.txtRSpeed != null)
-                Calculator.Instance.txtRSpeed.text = InitialSpeedKnots.ToString();
-            if (Calculator.Instance.txtRSpeed_overTape != null)
-                Calculator.Instance.txtRSpeed_overTape.text = InitialSpeedKnots.ToString();
+            Calculator.Instance.ShowSpeedWindow();
         }
 
         Session.State.Speed10X.Set(true);

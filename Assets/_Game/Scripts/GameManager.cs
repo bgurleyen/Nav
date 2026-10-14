@@ -17,6 +17,7 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
+        Calculator.totalFuel = 1000;
 
         UYServiceLocator.Register(this);
 

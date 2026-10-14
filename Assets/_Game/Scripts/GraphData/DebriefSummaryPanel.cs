@@ -60,7 +60,7 @@ public class DebriefSummaryPanel : MonoBehaviour
     public void PrepareForDebrief()
     {
         gameObject.SetActive(true);
-        transform.SetAsFirstSibling();
+        transform.SetAsLastSibling();
         CleanupOrphanChildren(immediate: true);
         ClearGeneratedLayout(immediate: true);
         BuildFixedLayout();

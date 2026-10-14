@@ -41,11 +41,10 @@ public class FIXScreen : ScreenBase
     {
         base.Show();
 
-        Main.UpdatePageInfo(secondInfo: "FIX INFO", currentPage: 0, totalPages: 1);
-
         _scratchPadBuffer = MainScreen.Instance.scratchPadText.GetText();
 
-        InvokeRepeating(nameof(DisplayCurrentPage), 0, 0.2f);
+        DisplayCurrentPage();
+        InvokeRepeating(nameof(DisplayCurrentPage), 0.2f, 0.2f);
     }
 
     public override void Hide()
@@ -58,11 +57,24 @@ public class FIXScreen : ScreenBase
     public override void DisplayNextPage()
     {
         _currentPage = Mathf.Min(TotalPages - 1, _currentPage + 1);
+        DisplayCurrentPage();
     }
 
     public override void DisplayPrevPage()
     {
         _currentPage = Mathf.Max(0, _currentPage - 1);
+        DisplayCurrentPage();
+    }
+
+    void RefreshHeader()
+    {
+        Main.UpdatePageInfo(
+            isMod: false,
+            firstInfo: "",
+            pageTitle: "",
+            secondInfo: "FIX INFO",
+            currentPage: _currentPage,
+            totalPages: TotalPages);
     }
 
     public override void OnLineSelectLeft(int index)
@@ -150,17 +162,10 @@ public class FIXScreen : ScreenBase
 
     public void DisplayCurrentPage()
     {
-        Main.UpdatePageInfo(
-            isMod: false,
-            firstInfo: "",
-            pageTitle: "",
-            secondInfo: "",
-            _currentPage,
-            TotalPages);
+        RefreshHeader();
 
-
-        var fixPoints = Session.Routes.FixedPoints;
-        var wayPoint = fixPoints.GetWaypointAt(_currentPage);
+        var fixPoints = Session.Routes?.FixedPoints;
+        var wayPoint = fixPoints != null ? fixPoints.GetWaypointAt(_currentPage) : null;
 
         if (wayPoint == null)
         {

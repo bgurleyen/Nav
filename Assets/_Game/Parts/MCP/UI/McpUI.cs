@@ -71,8 +71,29 @@ public class McpUI : MonoBehaviour
 
     public void LGLeverInteract(bool down, bool isSilent = false)
     {
+        if (_LGSlider == null) return;
+        float target = Calculator.SliderValueForGear(down);
+        if (Mathf.Approximately(_LGSlider.value, target))
+            return;
         _cacheSilentSwitch_LG = isSilent;
-        _LGSlider.value = Calculator.SliderValueForGear(down);
+        _LGSlider.value = target;
+    }
+
+    private void LateUpdate()
+    {
+        RefreshGearLeverLock();
+    }
+
+    /// <summary>
+    /// Over 270 kt or M0.82 the gear lever must stay up. Retract is still allowed.
+    /// </summary>
+    void RefreshGearLeverLock()
+    {
+        if (_LGSlider == null) return;
+
+        bool locked = Calculator.GearLeverLocked();
+        if (!Calculator.LGDown && locked && Calculator.GearExtendedFromSlider(_LGSlider.value))
+            LGLeverInteract(false, true);
     }
 
 
@@ -95,13 +116,14 @@ public class McpUI : MonoBehaviour
             return;
         }
 
-        if (Calculator.GearLeverLocked())
+        bool wantDown = Calculator.GearExtendedFromSlider(newValue);
+        if (wantDown && Calculator.GearLeverLocked())
         {
-            _cacheSilentSwitch_LG = true;
-            _LGSlider.value = Calculator.SliderValueForGear(Calculator.LGDown);
+            LGLeverInteract(false, true);
+            NdPauseOverlay.NotifyCheckSpeed();
             return;
         }
 
-        Calculator.Instance?.SetLG(Calculator.GearExtendedFromSlider(newValue), true);
+        Calculator.Instance?.SetLG(wantDown, true);
     }
 }

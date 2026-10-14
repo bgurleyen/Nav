@@ -71,6 +71,7 @@ public class State
         LC = new ToggleLinkedBool(mcpUI._LCToggle, UIOnLCAttemptToggle);
         VNAV = new ToggleLinkedBool(mcpUI._VNAVToggle, UIOnVNAVAttemptToggle);
         VNAV.Set(true);
+        SyncSpeedWindow();
         AH = new ToggleLinkedBool(mcpUI._AHToggle, UIOnAHAttemptToggle);
         VS = new ToggleLinkedBool(mcpUI._VSToggle, UIOnVSAttemptToggle);
 
@@ -81,7 +82,8 @@ public class State
 
     private void LockLateralModes()
     {
-        // Leave HDG/LNAV visual state alone so AutoSetHDG during LOC capture still works.
+        HDG.Set(false);
+        LNAV.Set(false);
         HDG.SetInteractable(false);
         LNAV.SetInteractable(false);
     }
@@ -99,6 +101,7 @@ public class State
         LC.SetInteractable(false);
 
         NotifyVerticalModeChanged();
+        SyncSpeedWindow();
     }
 
     private void UIOnSpeed10XToggle()
@@ -146,6 +149,8 @@ public class State
             LC.Set(false);
             VS.Set(false);
         }
+
+        SyncSpeedWindow();
     }
 
     private void UIOnLCAttemptToggle()
@@ -166,6 +171,8 @@ public class State
             AH.Set(false);
             VS.Set(false);
         }
+
+        SyncSpeedWindow();
     }
 
     private void UIOnVNAVAttemptToggle()
@@ -181,6 +188,8 @@ public class State
             AH.Set(false);
             VS.Set(false);
         }
+
+        SyncSpeedWindow();
     }
 
     private void UIOnVSAttemptToggle()
@@ -202,10 +211,15 @@ public class State
             AH.Set(false);
             LC.Set(false);
         }
+
+        SyncSpeedWindow();
     }
 
     public void AutoSetAH(bool state)
     {
+        if (GSCaptured && state)
+            return;
+
         AH.Set(state);
         NotifyVerticalModeChanged();
 
@@ -215,6 +229,13 @@ public class State
             VS.Set(false);
             LC.Set(false);
         }
+
+        SyncSpeedWindow();
+    }
+
+    static void SyncSpeedWindow()
+    {
+        Calculator.Instance?.OnVerticalModeSelected();
     }
 private static void NotifyVerticalModeChanged()
 {
@@ -238,6 +259,9 @@ private void UIOnHDGAttemptToggle()
 
     public void AutoSetLNAV(bool state, bool silent)
     {
+        if (LOCCaptured && state)
+            return;
+
         if (LNAV == state)
         {
             return;
@@ -258,6 +282,9 @@ private void UIOnHDGAttemptToggle()
 
     public void AutoSetHDG(bool state)
     {
+        if (LOCCaptured && state)
+            return;
+
         HDG.Set(state);
         if (state)
         {

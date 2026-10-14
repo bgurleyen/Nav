@@ -41,7 +41,7 @@ public class Move : Singleton<Move>
     public double FuelPenalty = 0;
 
     private LevelDataScriptableObject _currentLevelData;
-    private OtherAC[] _otherACs = new OtherAC[0];
+    private OtherAC[] _otherACs;
     float DistanceToPoint, PrvDistanceToPoint;
     int PrvPoint;
     public static int PrvHdg;
@@ -72,7 +72,6 @@ public class Move : Singleton<Move>
     bool _atc2GrayDone;
     bool _atc3GrayDone;
     bool _clearIlsAwaitingXfr;
-    bool _starJoinAfterLastVirtual;
     Coroutine _armPulse;
 
     /// <summary>1 normal; 20 during hard catch-up toward B.</summary>
@@ -115,24 +114,21 @@ public class Move : Singleton<Move>
             TempPtsPos[j] = Pos;
         }
 
-        var vps = _currentLevelData.VirtualPoints;
-        if (vps != null && vps.Length > 0)
+        for (int j = 1; j < 21; j++) //Locate Virtual points on EditMap
         {
-            int originIdx = vps.Length - 1;
-            float ox = vps[originIdx].x;
-            float oy = vps[originIdx].y;
-            for (int i = 0; i < vps.Length; i++)
+            var pt = GameObject.Find("pt (" + (j + 50) + ")");
+            if (_currentLevelData.VirtualPoints == null || j - 1 >= _currentLevelData.VirtualPoints.Length || 20 >= _currentLevelData.VirtualPoints.Length)
             {
-                int number = vps[i].Number;
-                int slot = number - 50;
-                if (slot < 0 || slot >= VirtualPtsPos.Length)
-                    continue;
-                VirtualPtsPos[slot].x = Pos.x + vps[i].x - ox;
-                VirtualPtsPos[slot].y = Pos.y + vps[i].y - oy;
-                var pt = GameObject.Find("pt (" + number + ")");
-                if (pt != null)
-                    pt.transform.localPosition = VirtualPtsPos[slot];
+                Debug.LogWarning($"[Move.Init] VirtualPoints incomplete for index {j} — skipping.");
+                continue;
             }
+
+            VirtualPtsPos[j].x = Pos.x + _currentLevelData.VirtualPoints[j - 1].x -
+                                 _currentLevelData.VirtualPoints[20].x;
+            VirtualPtsPos[j].y = Pos.y + _currentLevelData.VirtualPoints[j - 1].y -
+                                 _currentLevelData.VirtualPoints[20].y;
+            if (pt != null)
+                pt.transform.localPosition = VirtualPtsPos[j];
         }
 
         myAC = FindNamed("AC (0)");
@@ -168,7 +164,6 @@ public class Move : Singleton<Move>
         HideArmButton();
 
         _currentInstructionIndex = 0;
-        _starJoinAfterLastVirtual = false;
         RW = Session.OriginalReferenceRoute.Points.Length - 1;
         OwnAtcRemainingAtStart = AtcInstructionsRemaining();
 
@@ -183,13 +178,8 @@ public class Move : Singleton<Move>
 
     public void Tick()
     {
-        if (_otherACs == null)
-            return;
-
         for (int i = 0; i < _otherACs.Length; i++)
         {
-            if (_otherACs[i] == null)
-                continue;
             _otherACs[i].Tick(ACTexts, ACPositions);
         }
 
@@ -544,6 +534,12 @@ public class Move : Singleton<Move>
     /// <summary>True while ATC1 shows a new uncleared instruction (DCT/HDG, still green).</summary>
     public bool HasNewAtc1Instruction =>
         !_atc1GrayDone && Atc1 != null && !string.IsNullOrEmpty(Atc1.text);
+
+    /// <summary>Uncleared heading clearance — LNAV must not start the fly-by until XFR/HDG.</summary>
+    public bool HasPendingHeadingClearance =>
+        mode == 2 && HasNewAtc1Instruction;
+
+    public Vector2 PendingHeadingFixNm => PointPos(point);
 
     /// <summary>ATC text gray + XFR matte — XFR click, or DCT already first on LEGS.</summary>
     public void AcknowledgeAtc1()
@@ -1197,19 +1193,17 @@ public class Move : Singleton<Move>
 
     {
 
+        var currentInstruction = _currentLevelData.ATCs[_currentInstructionIndex];
+
         int oncemode = mode;
 
-        if (!_starJoinAfterLastVirtual)
-        {
-            var currentInstruction = _currentLevelData.ATCs[_currentInstructionIndex];
-            point = currentInstruction.point;
-            mode = (mode == 11) ? 1 : currentInstruction.mode;
-            Altitude = currentInstruction.Altitude;
-            VS = currentInstruction.VS;
-            VS_nx = currentInstruction.VS_nx;
-            Speed = currentInstruction.Speed;
-            Speed_nx = currentInstruction.Speed_nx;
-        }
+        point = currentInstruction.point;
+        mode = (mode == 11) ? 1 : currentInstruction.mode;
+        Altitude = currentInstruction.Altitude;
+        VS = currentInstruction.VS;
+        VS_nx = currentInstruction.VS_nx;
+        Speed = currentInstruction.Speed;
+        Speed_nx = currentInstruction.Speed_nx;
 
         hyp = Vector2.Distance(Session.PlayerAircraft.NMPosition, PointPos(point));
         PrvDistanceToPoint = Vector2.Distance(Session.PlayerAircraft.NMPosition, PointPos(PrvPoint));
@@ -1231,7 +1225,7 @@ public class Move : Singleton<Move>
         {
 
 
-            Atc1.text = mode == 1 ? "Proceed direct to  " + InstructionPointName(point) :
+            Atc1.text = mode == 1 ? "Proceed direct to  " + Session.OriginalReferenceRoute.Points[point].Name :
                 mode == 2 ? "Turn " + TurnDirection(TrackToPoint(point))
                           + "Heading " + Calculator.NormalizeHeading360(TrackToPointFactored(point)) : "";
 
@@ -1375,94 +1369,25 @@ public class Move : Singleton<Move>
         ATCCall();
 
 
-        ElapsedTime += Session.Settings.FlyingTickDuration;
-        TimerText.text = "" + ElapsedTime;
-        OncekiPos = Session.PlayerAircraft.NMPosition;
-        OncekiAlt = (int)Calculator.CAltitude;
-        DistanceToPoint = Vector2.Distance(Session.PlayerAircraft.NMPosition, PointPos(point));
-
-        if ((point != prvWptIdx) && (DistanceToPoint < NextInstructionDistance))
+        if ((_currentInstructionIndex < _currentLevelData.ATCs.Length - 1))
         {
-            if (_currentInstructionIndex < _currentLevelData.ATCs.Length - 1)
+
+
+            ElapsedTime += Session.Settings.FlyingTickDuration;
+            TimerText.text = "" + ElapsedTime;
+
+            OncekiPos = Session.PlayerAircraft.NMPosition;
+            OncekiAlt = (int)Calculator.CAltitude;
+
+            DistanceToPoint = Vector2.Distance(Session.PlayerAircraft.NMPosition, PointPos(point));
+
+            // Heading calls must arrive before LNAV's 1.2 NM seek walks onto the next-leg curve.
+            if ((point != prvWptIdx) && (DistanceToPoint < DistanceToIssueNextCall()))
             {
                 MoveOnNextInstruction();
                 PrvPoint = point;
             }
-            else if (!_starJoinAfterLastVirtual && point >= 50)
-            {
-                TryStarJoinAfterLastVirtual();
-            }
         }
-    }
-
-    /// <summary>
-    /// Last ATC row is a virtual point: arriving there used to issue nothing
-    /// (index already at Length-1). DCT to the ILS/STAR join and CLEAR ILS if needed.
-    /// </summary>
-    void TryStarJoinAfterLastVirtual()
-    {
-        int join = FindStarJoinPoint();
-        if (join < 1)
-            return;
-
-        _starJoinAfterLastVirtual = true;
-        prvWptIdx = point;
-        PrvPoint = point;
-        point = join;
-        mode = 1;
-        if (VS_nx != 3)
-            VS_nx = 3;
-        if (Altitude <= 0)
-            Altitude = 3000;
-        Speed = 0;
-        NewPoint = true;
-    }
-
-    int FindStarJoinPoint()
-    {
-        var route = Session.OriginalReferenceRoute;
-        if (route?.Points == null || route.Points.Length < 3)
-            return -1;
-
-        int maxStar = 0;
-        var atc = _currentLevelData.ATCs;
-        if (atc != null)
-        {
-            for (int i = 0; i < atc.Length; i++)
-            {
-                int p = atc[i].point;
-                if (p > 0 && p < 50 && p > maxStar)
-                    maxStar = p;
-            }
-        }
-
-        for (int i = Mathf.Max(1, maxStar + 1); i < route.Points.Length - 1; i++)
-        {
-            var rp = route.Points[i];
-            if (rp == null)
-                continue;
-            if (rp.RawSpeed == 179)
-                return i;
-            string n = rp.Name ?? "";
-            if (n.IndexOf("FI", StringComparison.OrdinalIgnoreCase) >= 0
-                || n.IndexOf("FF", StringComparison.OrdinalIgnoreCase) >= 0
-                || n.IndexOf("93DME", StringComparison.OrdinalIgnoreCase) >= 0
-                || n.IndexOf("OM", StringComparison.OrdinalIgnoreCase) >= 0)
-                return i;
-        }
-
-        int fallback = route.Points.Length - 2;
-        return fallback > maxStar ? fallback : -1;
-    }
-
-    string InstructionPointName(int pt)
-    {
-        if (pt >= 50)
-            return "V" + pt;
-        var points = Session.OriginalReferenceRoute?.Points;
-        if (points == null || pt < 0 || pt >= points.Length)
-            return "pt " + pt;
-        return points[pt].Name ?? ("pt " + pt);
     }
 
     /// <summary>
@@ -1491,17 +1416,41 @@ public class Move : Singleton<Move>
             NewPoint = false;
         }
 
+        if (_currentInstructionIndex >= _currentLevelData.ATCs.Length - 1)
+            return;
+
         DistanceToPoint = Vector2.Distance(Session.PlayerAircraft.NMPosition, PointPos(point));
-        if ((point != prvWptIdx) && (DistanceToPoint < NextInstructionDistance))
+        if ((point != prvWptIdx) && (DistanceToPoint < DistanceToIssueNextCall()))
         {
-            if (_currentInstructionIndex < _currentLevelData.ATCs.Length - 1)
-            {
-                MoveOnNextInstruction();
-                PrvPoint = point;
-            }
-            else if (point >= 50)
-                Session.State.AppArmed = true;
+            MoveOnNextInstruction();
+            PrvPoint = point;
         }
+    }
+
+    int PeekNextInstructionMode()
+    {
+        if (_currentLevelData?.ATCs == null)
+            return 0;
+        int next = _currentInstructionIndex + 1;
+        if (next < 0 || next >= _currentLevelData.ATCs.Length)
+            return 0;
+        return _currentLevelData.ATCs[next].mode;
+    }
+
+    float DistanceToIssueNextCall()
+    {
+        float dist = NextInstructionDistance;
+        if (PeekNextInstructionMode() == 2)
+            dist = Mathf.Max(dist, HeadingClearanceLeadNm());
+        return dist;
+    }
+
+    static float HeadingClearanceLeadNm()
+    {
+        float seek = Session.Settings != null ? Session.Settings.PilotSeekDistancePathFollow : 1.2f;
+        float gs = Calculator.GS > 1f ? Calculator.GS : 280f;
+        float turnNm = 1.6f * gs / 280f;
+        return Mathf.Max(2.5f, seek + turnNm + 0.5f);
     }
 
     void MoveOnNextInstruction()

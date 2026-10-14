@@ -10,12 +10,12 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 48b17ce8bcdb4cb98567e15496e10fd8, type: 3}
-  m_Name: _ _ Level Data 1
+  m_Name: _ _ Level Data 40
   m_EditorClassIdentifier: 
-  MainRoute: {fileID: 11400000, guid: 9e99b02a575510948ba6c9ca7ff3ee92, type: 2}
-  virtualPoints: {fileID: 11400000, guid: 53d7fcc5cea286a478a4f159b71defec, type: 2}
-  aTCs: {fileID: 11400000, guid: 78b094a902dd84046bbc2c0825b01df3, type: 2}
-  levelInfo: {fileID: 11400000, guid: 8bcadc473985b844f9bff865594d1b48, type: 2}
+  MainRoute: {fileID: 11400000, guid: 0ba182988182a264e996ef9de45af452, type: 2}
+  virtualPoints: {fileID: 11400000, guid: cecee4ff70b68ed459f690f0409e0f34, type: 2}
+  aTCs: {fileID: 11400000, guid: c5b4136350a7e1d458f3dcaf8a28df2f, type: 2}
+  levelInfo: {fileID: 11400000, guid: d612b04524ec4634cb3ebd6e5e441480, type: 2}
   otherACs:
   - {fileID: 11400000, guid: ede64e1bbad9e9e4e8adbbc7dfa1efd0, type: 2}
   - {fileID: 11400000, guid: 4ad2aace26b8bcf44bf8ec297368e23b, type: 2}
@@ -27,4 +27,4 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 9fe43f7ed6dbd29e7b3ac61e5a0213d9, type: 2}
   - {fileID: 11400000, guid: 5c2b62de14d7413650a2d10e9cde4c8c, type: 2}
   - {fileID: 11400000, guid: c7ea1359b382980583557a323722d289, type: 2}
-  WindTable: {fileID: 11400000, guid: 51844491466a6234599459eebf9c4282, type: 2}
+  WindTable: {fileID: 11400000, guid: f5dd7229d461ef146beec26e3aaf5cfc, type: 2}

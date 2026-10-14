@@ -37,6 +37,9 @@ public class GraphManage : MonoBehaviour
     int _totalPlayers;
     bool _debriefLogged;
     bool _showingLevelsPanel;
+    bool _finishHandled;
+
+    public static bool IsEndScreenVisible { get; private set; }
 
     void Awake()
     {
@@ -48,7 +51,11 @@ public class GraphManage : MonoBehaviour
 
     void OnEnable() => OnGameFinish += OnGameFinished;
 
-    void OnDisable() => OnGameFinish -= OnGameFinished;
+    void OnDisable()
+    {
+        OnGameFinish -= OnGameFinished;
+        IsEndScreenVisible = false;
+    }
 
     IEnumerator Start()
     {
@@ -205,6 +212,7 @@ public class GraphManage : MonoBehaviour
         {
             debriefPanel.gameObject.SetActive(true);
             debriefPanel.PrepareForDebrief();
+            debriefPanel.transform.SetAsLastSibling();
             continueButton = debriefPanel.EnsureContinueButton();
             WireDebriefContinueButton();
         }
@@ -524,16 +532,21 @@ public class GraphManage : MonoBehaviour
 
     void OnGameFinished(bool isStable)
     {
+        if (_finishHandled)
+            return;
+
         // Level Test: skip debrief/cloud/UI and auto-advance to the next level.
         if (LevelTestMode.TryHandleGameFinished())
             return;
 
+        _finishHandled = true;
+        IsEndScreenVisible = true;
+        Time.timeScale = 0f;
         SwitchToGraphUi();
 
         // Unstable approach: no debrief, no cloud save — go straight to level select.
         if (!isStable)
         {
-            Time.timeScale = 0f;
             ShowLevelSelect();
             return;
         }
@@ -555,6 +568,8 @@ public class GraphManage : MonoBehaviour
     /// </summary>
     public void PresentTestDebrief(LevelStat flightResult)
     {
+        _finishHandled = true;
+        IsEndScreenVisible = true;
         SwitchToGraphUi();
         Time.timeScale = 0f;
 
@@ -569,7 +584,11 @@ public class GraphManage : MonoBehaviour
     void SwitchToGraphUi()
     {
         if (mainGroup != null)
+        {
             mainGroup.alpha = 0;
+            mainGroup.blocksRaycasts = false;
+            mainGroup.interactable = false;
+        }
 
         if (graphGroup != null)
         {
