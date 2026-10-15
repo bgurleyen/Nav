@@ -12,7 +12,7 @@ using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Unyawn.Utils;
 
-// GW :56.4,ZFW:45,Fuel:12,CI:0,CG:23.3
+// Performance weight is fixed at 75 t. CI:0, CG:23.3
 
 public class Calculator : MonoBehaviour
 {
@@ -69,7 +69,7 @@ public class Calculator : MonoBehaviour
     private int N1, dispN1 = 77;
     public static int FF = 77;
     public static double dispFF = 270;
-    // Chart reference is GW 56.4 t, ISA, packs on, anti-ice off, two engines.
+    // PerformanceChart is the 75 t table. Fuel burn does not change that weight. ISA, packs on, anti-ice off, two engines.
     public static float IsaDeviationC;
     public static bool EngineAntiIce;
     public static bool PacksOn = true;
@@ -84,8 +84,8 @@ public class Calculator : MonoBehaviour
     //N1:(Engine Rotation percentage, divide by 100 )--> Show in N1 Guage ,no other effect
     //FF:(libres per hour per engine  X10, Sample: 230 means 2300 lb/hr per engine, total 4600 lb/hr )--> Show in FF Guage ,decrease the total fuel by this number
     //Pitch:(degrees, divide by 100)--> Show in PFD ,no other effect
-    //LG:(on-off)--> Illustrate Landing Gear movement - Changes approach idle
-    //SB:(on-off)--> Illustrate Speed Brake movement - no other effect
+    //LG:(on-off)--> Illustrate Landing Gear movement
+    //SB:(on-off)--> Illustrate Speed Brake movement
     //Flaps: (1-5-10-15-25-30-40)
 
     //**************************************************************
@@ -430,16 +430,16 @@ public class Calculator : MonoBehaviour
             int i = 0;//Calculate limit VS
             double s1 = (M[F, 1, i] - M[F, 3, i]) / (M[F, 0, 0] - M[F, 2, 0]) * (RSpeed - M[F, 2, 0]) + M[F, 3, i];
             double s2 = (M[F - 1, 1, i] - M[F - 1, 3, i]) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (RSpeed - M[F - 1, 2, 0]) + M[F - 1, 3, i];
-            double limitVS = (s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2;
+            double limitVS = (s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2 + ConfigVsDelta();
             bool pathWithinIdle = vsRef > limitVS;
             if (pathWithinIdle)
             {    // Normal VS mode
                 for (i = 1; i < 4; i++)
                 {
-                    vv1 = (M[F, 0, i] - M[F, 1, i]) / -M[F, 1, 0] * (vsRef - M[F, 1, 0]) + M[F, 1, i];
-                    vv2 = (M[F, 2, i] - M[F, 3, i]) / -M[F, 3, 0] * (vsRef - M[F, 3, 0]) + M[F, 3, i];
-                    vv3 = (M[F - 1, 0, i] - M[F - 1, 1, i]) / -M[F - 1, 1, 0] * (vsRef - M[F - 1, 1, 0]) + M[F - 1, 1, i];
-                    vv4 = (M[F - 1, 2, i] - M[F - 1, 3, i]) / -M[F - 1, 3, 0] * (vsRef - M[F - 1, 3, 0]) + M[F - 1, 3, i];
+                    vv1 = (M[F, 0, i] - M[F, 1, i]) / -IdleVs(F, 1) * (vsRef - IdleVs(F, 1)) + M[F, 1, i];
+                    vv2 = (M[F, 2, i] - M[F, 3, i]) / -IdleVs(F, 3) * (vsRef - IdleVs(F, 3)) + M[F, 3, i];
+                    vv3 = (M[F - 1, 0, i] - M[F - 1, 1, i]) / -IdleVs(F - 1, 1) * (vsRef - IdleVs(F - 1, 1)) + M[F - 1, 1, i];
+                    vv4 = (M[F - 1, 2, i] - M[F - 1, 3, i]) / -IdleVs(F - 1, 3) * (vsRef - IdleVs(F - 1, 3)) + M[F - 1, 3, i];
                     s1 = (vv1 - vv2) / (M[F, 0, 0] - M[F, 2, 0]) * (CSpeed - M[F, 2, 0]) + vv2;
                     s2 = (vv3 - vv4) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (CSpeed - M[F - 1, 2, 0]) + vv4;
                     a[i - 1] = (s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2;
@@ -454,8 +454,8 @@ public class Calculator : MonoBehaviour
                     a[i - 1] = (s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2;
                 }
                 i = 0; // Find speed for Current VS on idle
-                vv1 = (M[F, 0, i] - M[F, 2, i]) / (M[F, 1, 0] - M[F, 3, 0]) * (vsRef - M[F, 3, 0]) + M[F, 2, i];
-                vv2 = (M[F - 1, 0, i] - M[F - 1, 2, i]) / (M[F - 1, 1, 0] - M[F - 1, 3, 0]) * (vsRef - M[F - 1, 3, 0]) + M[F - 1, 2, i];
+                vv1 = (M[F, 0, i] - M[F, 2, i]) / (IdleVs(F, 1) - IdleVs(F, 3)) * (vsRef - IdleVs(F, 3)) + M[F, 2, i];
+                vv2 = (M[F - 1, 0, i] - M[F - 1, 2, i]) / (IdleVs(F - 1, 1) - IdleVs(F - 1, 3)) * (vsRef - IdleVs(F - 1, 3)) + M[F - 1, 2, i];
                 increasedSpeed = (int)((vv1 - vv2) / -5000f * (Altitude - (8 - F + 1) * 5000) + vv2);
             }
             // Idle only when decelerating AND path still within idle capability (path first).
@@ -469,6 +469,7 @@ public class Calculator : MonoBehaviour
                 a[1] = 9650;
                 a[2] = 621;
             }
+            ApplyConfig(ref a[0], ref a[1], ref a[2]);
             bool idleFuel = !pathWithinIdle || (RSpeed < CSpeed - 5 && pathWithinIdle);
             if (!idleFuel)
                 a[2] = ApplyOperationalFf((int)a[2], Altitude);
@@ -496,6 +497,9 @@ public class Calculator : MonoBehaviour
                 s2 = (M[F - 1, 1, i] - M[F - 1, 3, i]) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (CSpeed - M[F - 1, 2, 0]) + M[F - 1, 3, i];
                 a[i] = (s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2;
             }
+
+            ApplyConfig(ref a[1], ref a[2], ref a[3]);
+            a[0] += ConfigVsDelta();
 
             N1 = (int)a[2];
             FF = (int)a[3];
@@ -628,6 +632,52 @@ public class Calculator : MonoBehaviour
             yield return new WaitForSeconds(1f);
         }
     }
+    static double IdleVsOnRow(int row, double speed)
+    {
+        double span = M[row, 0, 0] - M[row, 2, 0];
+        if (Math.Abs(span) < 1.0)
+            return M[row, 1, 0];
+        double t = (speed - M[row, 2, 0]) / span;
+        return (M[row, 1, 0] - M[row, 3, 0]) * t + M[row, 3, 0];
+    }
+
+    static double CleanIdleVsFpm()
+    {
+        double altitude = CAltitude > 39900 ? 39900 : (CAltitude < 0 ? 0 : CAltitude);
+        int row = 8 - (int)(altitude / 5000.0);
+        if (row < 1) row = 1;
+        if (row > 8) row = 8;
+        double at = IdleVsOnRow(row, CSpeed);
+        double above = IdleVsOnRow(row - 1, CSpeed);
+        return (at - above) / -5000.0 * (altitude - (8 - row + 1) * 5000.0) + above;
+    }
+
+    /// <summary>
+    /// Gear and speedbrake drag in kt/min. Level flight keeps the full amount
+    /// (about +8 and +9 kt/NM). It fades once the path steepens past clean idle
+    /// and is gone on the config idle path, where that drag is already in the VS.
+    /// </summary>
+    static float SpeedbrakeGearDragKtPerMin(double vsFpm)
+    {
+        float perNm = 0f;
+        if (SBUp) perNm += 9f;
+        if (LGDown) perNm += 8f;
+        if (perNm <= 0f)
+            return 0f;
+
+        double altitude = CAltitude > 39900 ? 39900 : (CAltitude < 0 ? 0 : CAltitude);
+        float gs = GS > 80f ? GS : (float)(Math.Max(CSpeed, 120.0) * (1.0 + 0.02 * altitude / 1000.0));
+        float full = perNm * gs / 60f;
+
+        double depth = -ConfigVsDelta();
+        if (depth < 50.0 || vsFpm >= CleanIdleVsFpm())
+            return full;
+
+        float left = 1f - (float)((CleanIdleVsFpm() - vsFpm) / depth);
+        if (left < 0f) left = 0f;
+        return full * left;
+    }
+
     private void Speed_Equalize()
     {
         if (LevelTestMode.IsActive)
@@ -664,9 +714,25 @@ public class Calculator : MonoBehaviour
         PFDScript.SpeedIndexUpdate_Click();
 
         int DeltaN1 = N1 - N1For(CAltitude, CVS, CSpeed);
-        SpeedTime = (DeltaN1 == 0) ? 1 : (DeltaN1 > 0) ? 2000 / Mathf.Abs((float)DeltaN1) : 5380 / Mathf.Abs((float)DeltaN1);
-        if (SpeedTime > 5) SpeedTime = 5;
-        if (SpeedTime < 0.3) SpeedTime = 0.3f;
+        float baseTime = (DeltaN1 == 0) ? 1f : (DeltaN1 > 0) ? 2000f / Mathf.Abs(DeltaN1) : 5380f / Mathf.Abs((float)DeltaN1);
+        if (baseTime > 5f) baseTime = 5f;
+        if (baseTime < 0.3f) baseTime = 0.3f;
+
+        float drag = SpeedbrakeGearDragKtPerMin(CVS);
+        bool idleThrust = RRSpeed < CSpeed && RSpeed < CSpeed - 5;
+        bool climbThrust = RRSpeed > CSpeed && RSpeed > CSpeed + 5;
+        if (drag > 0f && (idleThrust || climbThrust))
+        {
+            float rate = 60f / baseTime;
+            if (idleThrust)
+                rate += drag;
+            else
+                rate = Mathf.Max(rate * 0.4f, rate - drag * 0.55f);
+            SpeedTime = 60f / Mathf.Clamp(rate, 4f, 140f);
+        }
+        else
+            SpeedTime = baseTime;
+
         DrawSpeedTrend(SpeedTime);
 
         Invoke("Speed_Equalize", SpeedTime / Session.Settings.SpeedMultiplier);
@@ -1600,6 +1666,37 @@ public class Calculator : MonoBehaviour
         if (CAltitude >= TransitionAltitudeFeet) Qnh.text = "STD";
         else Qnh.text = "1013";
     }
+
+    static bool SpeedbrakeFull => SBUp;
+
+    static (double n1Pct, double ffMul, double vsFpm, double pitchDeg) ConfigCorrection()
+    {
+        bool landingFlap = GetFlapSettingDegrees(Flap_Idx) == 30 || GetFlapSettingDegrees(Flap_Idx) == 40;
+        if (landingFlap && SpeedbrakeFull)
+        {
+            var sb = B738_75T_Corrections.ApplyFlapSB(0, 1, 0, 0);
+            if (!LGDown)
+                return (sb.N1, sb.FF, sb.VS, sb.Pitch);
+            var withGear = B738_75T_Corrections.Apply(sb.N1, sb.FF, sb.VS, sb.Pitch, true, false);
+            return (withGear.N1, withGear.FF, withGear.VS, withGear.Pitch);
+        }
+
+        var clean = B738_75T_Corrections.Apply(0, 1, 0, 0, LGDown, SpeedbrakeFull);
+        return (clean.N1, clean.FF, clean.VS, clean.Pitch);
+    }
+
+    static double ConfigVsDelta() => ConfigCorrection().vsFpm;
+
+    static double IdleVs(int row, int corner) => M[row, corner, 0] + ConfigVsDelta();
+
+    static void ApplyConfig(ref double pitchHundredths, ref double n1Hundredths, ref double ff)
+    {
+        var c = ConfigCorrection();
+        pitchHundredths += c.pitchDeg * 100.0;
+        n1Hundredths += c.n1Pct * 100.0;
+        ff *= c.ffMul;
+    }
+
     public static int FuelFlowFor(double Altitude, double VS, double Speed)
     {
         if (Altitude > 39900) Altitude = 39900;
@@ -1608,20 +1705,16 @@ public class Calculator : MonoBehaviour
         int F = 8 - Mathf.FloorToInt((float)Altitude / 5000);
         int i = 3;// for fuel flow only
 
-        double vv1 = (M[F, 0, i] - M[F, 1, i]) / -M[F, 1, 0] * (VS - M[F, 1, 0]) + M[F, 1, i];
-        double vv2 = (M[F, 2, i] - M[F, 3, i]) / -M[F, 3, 0] * (VS - M[F, 3, 0]) + M[F, 3, i];
-        double vv3 = (M[F - 1, 0, i] - M[F - 1, 1, i]) / -M[F - 1, 1, 0] * (VS - M[F - 1, 1, 0]) + M[F - 1, 1, i];
-        double vv4 = (M[F - 1, 2, i] - M[F - 1, 3, i]) / -M[F - 1, 3, 0] * (VS - M[F - 1, 3, 0]) + M[F - 1, 3, i];
+        double vv1 = (M[F, 0, i] - M[F, 1, i]) / -IdleVs(F, 1) * (VS - IdleVs(F, 1)) + M[F, 1, i];
+        double vv2 = (M[F, 2, i] - M[F, 3, i]) / -IdleVs(F, 3) * (VS - IdleVs(F, 3)) + M[F, 3, i];
+        double vv3 = (M[F - 1, 0, i] - M[F - 1, 1, i]) / -IdleVs(F - 1, 1) * (VS - IdleVs(F - 1, 1)) + M[F - 1, 1, i];
+        double vv4 = (M[F - 1, 2, i] - M[F - 1, 3, i]) / -IdleVs(F - 1, 3) * (VS - IdleVs(F - 1, 3)) + M[F - 1, 3, i];
         double s1 = (vv1 - vv2) / (M[F, 0, 0] - M[F, 2, 0]) * (Speed - M[F, 2, 0]) + vv2;
         double s2 = (vv3 - vv4) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (Speed - M[F - 1, 2, 0]) + vv4;
         int ff = (int)((s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2);
-        return ApplyOperationalFf(ff, Altitude);
-    }
-
-    static int GearOrBrakeFf(int seaLevelAdd, int altRow)
-    {
-        altRow = Mathf.Clamp(altRow, 0, Pressure.Length - 1);
-        return (int)Math.Round(seaLevelAdd * Pressure[altRow]);
+        double pitch = 0, n1 = 0, ffOut = ff;
+        ApplyConfig(ref pitch, ref n1, ref ffOut);
+        return ApplyOperationalFf((int)ffOut, Altitude);
     }
 
     static double AltBandLerp(double atBand, double atBandAbove, int band, double altitude)
@@ -1634,7 +1727,7 @@ public class Calculator : MonoBehaviour
         if (ff <= 210)
             return ff;
 
-        double factor = WeightFactor() * (1.0 + 0.03 * (IsaDeviationC / 10.0));
+        double factor = 1.0 + 0.03 * (IsaDeviationC / 10.0);
         if (EnginesRunning <= 1)
             factor *= 1.15;
 
@@ -1646,18 +1739,6 @@ public class Calculator : MonoBehaviour
 
         int result = (int)Math.Round(ff * factor) + add;
         return result < 211 ? 211 : result;
-    }
-
-    static double WeightFactor()
-    {
-        var info = Session.CurrentLevel != null ? Session.CurrentLevel.levelInfo : null;
-        if (info == null || info.ZFW < 35f || info.ZFW > 70f)
-            return 1;
-        double gw = info.ZFW + totalFuel / 100.0;
-        double factor = gw / 56.4;
-        if (factor < 0.85) factor = 0.85;
-        if (factor > 1.15) factor = 1.15;
-        return factor;
     }
 
     static int AntiIceAt(double altitude)
@@ -1674,13 +1755,16 @@ public class Calculator : MonoBehaviour
         int F = 8 - Mathf.FloorToInt((float)Altitude / 5000);
         int i = 2;// for N1 only
 
-        double vv1 = (M[F, 0, i] - M[F, 1, i]) / -M[F, 1, 0] * (VS - M[F, 1, 0]) + M[F, 1, i];
-        double vv2 = (M[F, 2, i] - M[F, 3, i]) / -M[F, 3, 0] * (VS - M[F, 3, 0]) + M[F, 3, i];
-        double vv3 = (M[F - 1, 0, i] - M[F - 1, 1, i]) / -M[F - 1, 1, 0] * (VS - M[F - 1, 1, 0]) + M[F - 1, 1, i];
-        double vv4 = (M[F - 1, 2, i] - M[F - 1, 3, i]) / -M[F - 1, 3, 0] * (VS - M[F - 1, 3, 0]) + M[F - 1, 3, i];
+        double vv1 = (M[F, 0, i] - M[F, 1, i]) / -IdleVs(F, 1) * (VS - IdleVs(F, 1)) + M[F, 1, i];
+        double vv2 = (M[F, 2, i] - M[F, 3, i]) / -IdleVs(F, 3) * (VS - IdleVs(F, 3)) + M[F, 3, i];
+        double vv3 = (M[F - 1, 0, i] - M[F - 1, 1, i]) / -IdleVs(F - 1, 1) * (VS - IdleVs(F - 1, 1)) + M[F - 1, 1, i];
+        double vv4 = (M[F - 1, 2, i] - M[F - 1, 3, i]) / -IdleVs(F - 1, 3) * (VS - IdleVs(F - 1, 3)) + M[F - 1, 3, i];
         double s1 = (vv1 - vv2) / (M[F, 0, 0] - M[F, 2, 0]) * (Speed - M[F, 2, 0]) + vv2;
         double s2 = (vv3 - vv4) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (Speed - M[F - 1, 2, 0]) + vv4;
-        return (int)((s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2);
+        double n1 = (s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2;
+        double pitch = 0, ff = 1;
+        ApplyConfig(ref pitch, ref n1, ref ff);
+        return (int)n1;
     }
     private void SetN1FF()
     {
@@ -1841,10 +1925,6 @@ public class Calculator : MonoBehaviour
             ApplyFmcSpeed();
             RefreshSpeedWindow();
         }
-
-        // Flap copy wipes FL200-and-below. Put the current gear state back on those rows.
-        if (LGDown)
-            ApplyGearModel(true, 4, 8);
     }
 
     bool CanSelectFlap(int flapIdx)
@@ -1855,21 +1935,6 @@ public class Calculator : MonoBehaviour
     {
         return CSpeed > 270 || Speed2Mach(CSpeed, CAltitude) > 0.82;
     }
-
-    // Extra idle VS, fpm, FL400 down to sea level. Gear drag CD +0.020 at GW 56.4 t, ISA.
-    static readonly double[,] GearIdleVs = {
-        { -2060, -1190 }, { -2920, -1420 }, { -2650, -1290 }, { -2430, -1180 }, { -2220, -1080 },
-        { -2050, -990 }, { -1890, -920 }, { -1750, -850 }, { -1620, -790 } };
-    static readonly double[,,] GearOnIdle = {
-        { { 4300, 140 }, { 4170, 144 } },
-        { { 4150, 160 }, { 4120, 164 } },
-        { { 4100, 176 }, { 4070, 180 } },
-        { { 4070, 190 }, { 4050, 196 } } };
-    static readonly double[,,] GearOffIdle = {
-        { { 3700, 114 }, { 3420, 114 } },
-        { { 3370, 126 }, { 3300, 126 } },
-        { { 3460, 136 }, { 3200, 136 } },
-        { { 3340, 146 }, { 3120, 146 } } };
 
     public void SetLG(bool down, bool fromUI)
     {
@@ -1884,85 +1949,12 @@ public class Calculator : MonoBehaviour
         if (LGDown == down) return;
 
         LGDown = down;
-        ApplyGearModel(down, 0, 8);
     }
 
-    static void ApplyGearModel(bool down, int fromRow, int toRow)
-    {
-        double sign = down ? 1d : -1d;
-        for (int i = fromRow; i <= toRow && i < GearIdleVs.GetLength(0); i++)
-        {
-            M[i, 1, 0] += sign * GearIdleVs[i, 0];
-            M[i, 3, 0] += sign * GearIdleVs[i, 1];
-            M[i, 0, 2] += sign * 1500;
-            M[i, 2, 2] += sign * 1350;
-            M[i, 0, 3] += sign * GearOrBrakeFf(320, i);
-            M[i, 2, 3] += sign * GearOrBrakeFf(200, i);
-
-            if (i < 5)
-                continue;
-
-            int w = i - 5;
-            var idle = down ? GearOnIdle : GearOffIdle;
-            M[i, 1, 2] = idle[w, 0, 0];
-            M[i, 3, 2] = idle[w, 1, 0];
-            int flapRow = i - 4;
-            double flapIdleHi = idle[w, 0, 1];
-            double flapIdleLo = idle[w, 1, 1];
-            if (Instance != null && flapRow >= 0 && flapRow < 5
-                && Flap_Idx >= 0 && Flap_Idx < Instance.Mf.GetLength(0))
-            {
-                flapIdleHi = Instance.Mf[Flap_Idx, flapRow, 1, 3];
-                flapIdleLo = Instance.Mf[Flap_Idx, flapRow, 3, 3];
-            }
-            if (down)
-            {
-                M[i, 1, 3] = Math.Max(flapIdleHi, idle[w, 0, 1]);
-                M[i, 3, 3] = Math.Max(flapIdleLo, idle[w, 1, 1]);
-            }
-            else
-            {
-                M[i, 1, 3] = flapIdleHi;
-                M[i, 3, 3] = flapIdleLo;
-            }
-        }
-    }
     public void SetSB(bool Up, bool fromUI)
     {
         if (SBUp == !Up) return;
-
-        // Extra idle VS, fpm, FL400 down to sea level. 737 FCTM +900 fpm at 280 kt / 10,000 ft, scaled by dynamic pressure and TAS.
-        double[,] Msb = new double[9, 2] {
-            { -980, -570 }, { -1390, -670 }, { -1260, -610 }, { -1160, -560 }, { -1060, -510 },
-            { -980, -470 }, { -900, -440 }, { -830, -400 }, { -770, -380 } };
-
-        int i;
         if (fromUI) SBUp = !Up;
-        if (!Up)
-        {
-            for (i = 0; i < 9; i++)
-            {
-                M[i, 1, 0] += Msb[i, 0];
-                M[i, 3, 0] += Msb[i, 1];
-                M[i, 0, 2] += 750; //Duz ucus
-                M[i, 2, 2] += 450;
-                M[i, 0, 3] += GearOrBrakeFf(115, i);
-                M[i, 2, 3] += GearOrBrakeFf(80, i);
-
-            }
-        }
-        else
-        {
-            for (i = 0; i < 9; i++)
-            {
-                M[i, 1, 0] -= Msb[i, 0];
-                M[i, 3, 0] -= Msb[i, 1];
-                M[i, 0, 2] -= 750; //Duz ucus
-                M[i, 2, 2] -= 450;
-                M[i, 0, 3] -= GearOrBrakeFf(115, i);
-                M[i, 2, 3] -= GearOrBrakeFf(80, i);
-            }
-        }
     }
     public static int NormalizeHeading360(int heading)
     {
