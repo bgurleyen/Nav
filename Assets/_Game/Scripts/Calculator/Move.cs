@@ -72,6 +72,9 @@ public class Move : Singleton<Move>
     bool _atc2GrayDone;
     bool _atc3GrayDone;
     bool _clearIlsAwaitingXfr;
+    bool _ilsArmOutstanding;
+    /// <summary>CLEAR ILS has been issued. Stays set after ARM is pressed.</summary>
+    public bool IlsArmCommandIssued { get; private set; }
     Coroutine _armPulse;
 
     /// <summary>1 normal; 20 during hard catch-up toward B.</summary>
@@ -145,6 +148,8 @@ public class Move : Singleton<Move>
         _atc2GrayDone = false;
         _atc3GrayDone = false;
         _clearIlsAwaitingXfr = false;
+        _ilsArmOutstanding = false;
+        IlsArmCommandIssued = false;
         _atc3IssuedSpeed = 0;
         ResetBorderState();
         _routeValid = false;
@@ -161,7 +166,7 @@ public class Move : Singleton<Move>
         XFRSpeedNx = 0;
         XFRHdg = 0;
         ATCAltitude = 0;
-        HideArmButton();
+        HideArmButton(true);
 
         _currentInstructionIndex = 0;
         RW = Session.OriginalReferenceRoute.Points.Length - 1;
@@ -531,16 +536,6 @@ public class Move : Singleton<Move>
             txt.fontMaterial.SetFloat(ShaderUtilities.ID_GlowPower, glow ? 1f : 0f);
     }
 
-    /// <summary>True while ATC1 shows a new uncleared instruction (DCT/HDG, still green).</summary>
-    public bool HasNewAtc1Instruction =>
-        !_atc1GrayDone && Atc1 != null && !string.IsNullOrEmpty(Atc1.text);
-
-    /// <summary>Uncleared heading clearance — LNAV must not start the fly-by until XFR/HDG.</summary>
-    public bool HasPendingHeadingClearance =>
-        mode == 2 && HasNewAtc1Instruction;
-
-    public Vector2 PendingHeadingFixNm => PointPos(point);
-
     /// <summary>ATC text gray + XFR matte — XFR click, or DCT already first on LEGS.</summary>
     public void AcknowledgeAtc1()
     {
@@ -728,8 +723,11 @@ public class Move : Singleton<Move>
         SlowDown();
     }
 
-    void HideArmButton()
+    void HideArmButton(bool force = false)
     {
+        if (!force && _armButton != null && _armButton.gameObject.activeSelf && (Session.State == null || !Session.State.AppArmed))
+            return;
+
         if (_armPulse != null)
         {
             StopCoroutine(_armPulse);
@@ -764,7 +762,9 @@ public class Move : Singleton<Move>
             return;
 
         Session.State.AppArmed = true;
-        HideArmButton();
+        _ilsArmOutstanding = false;
+        CancelInvoke(nameof(DescentCheck));
+        HideArmButton(true);
 
         if (Atc2 != null)
         {
@@ -1087,6 +1087,17 @@ public class Move : Singleton<Move>
         return Vector2.Distance(Session.PlayerAircraft.NMPosition, PointPos(RW));
     } // Distance from RW
 
+    /// <summary>Lateral distance from the final approach course, NM.</summary>
+    public float FinalApproachCrossTrackNm()
+    {
+        var levelInfo = Session.CurrentLevel?.levelInfo;
+        if (levelInfo == null || Session.PlayerAircraft == null)
+            return 0f;
+
+        ComputeLocTrackErrors(levelInfo.Course, out _, out float crossTrackNm);
+        return Mathf.Abs(crossTrackNm);
+    }
+
     /// <summary>
     /// True when aircraft heading is within ±tolerance of inbound final (levelInfo.Course).
     /// Overflying the runway off-axis must not end the level.
@@ -1138,9 +1149,8 @@ public class Move : Singleton<Move>
         if (dme < LocCaptureDmeMinNm || dme > LocCaptureDmeMaxNm)
             return false;
 
-        // Must be flying generally toward the runway (not outbound).
         float hdgToCourse = Mathf.Abs(Mathf.DeltaAngle(course, Session.PlayerAircraft.HeadingDegrees));
-        if (hdgToCourse > 90f)
+        if (hdgToCourse > 135f)
             return false;
 
         return Mathf.Abs(ComputeLocDeviationDegrees(course)) <= LocCaptureDegrees;
@@ -1232,15 +1242,20 @@ public class Move : Singleton<Move>
 
             string s = VS < 0 ? ", ROD " + (-VS) + " fpm" + NxToString(VS_nx) : "";
 
-            if (Altitude > 0) Atc2.text = "Descent altitude " + Altitude + " feet" + s;
-
-            if (VS_nx == 3)
+            if (!_ilsArmOutstanding)
             {
-                Atc2.text += " CLEAR ILS APPROACH ";
-                _clearIlsAwaitingXfr = true;
-                _atc2GrayDone = false;
-                Atc2.color = Color.green;
-                HideArmButton();
+                if (Altitude > 0) Atc2.text = "Descent altitude " + Altitude + " feet" + s;
+
+                if (VS_nx == 3)
+                {
+                    Atc2.text += " CLEAR ILS APPROACH ";
+                    _clearIlsAwaitingXfr = true;
+                    _ilsArmOutstanding = true;
+                    IlsArmCommandIssued = true;
+                    _atc2GrayDone = false;
+                    Atc2.color = Color.green;
+                    HideArmButton();
+                }
             }
         
 
@@ -1250,7 +1265,13 @@ public class Move : Singleton<Move>
             NextInstructionDistance = Speed_nx > 2 ? Speed_nx : 1.3f;
 
             XFR1.interactable = mode == 2 ? true : false;
-            XFR2.interactable = Altitude > 0 || VS_nx == 3;
+            if (_ilsArmOutstanding)
+            {
+                if (!_atc2GrayDone)
+                    XFR2.interactable = true;
+            }
+            else
+                XFR2.interactable = Altitude > 0 || VS_nx == 3;
             XFR3.interactable = Speed > 0;
 
             if (Speed > 0)
@@ -1263,7 +1284,13 @@ public class Move : Singleton<Move>
 
             // Keep glow in sync with arming (do not leave glow on a disabled button).
             SetXfrGlow(1, XFR1.interactable);
-            SetXfrGlow(2, XFR2.interactable);
+            if (_ilsArmOutstanding)
+            {
+                if (!_atc2GrayDone)
+                    SetXfrGlow(2, true);
+            }
+            else
+                SetXfrGlow(2, XFR2.interactable);
             SetXfrGlow(3, XFR3.interactable);
 
             PrvTrackToPoint = TrackToPoint(point);
@@ -1314,11 +1341,14 @@ public class Move : Singleton<Move>
 
         if ((Altitude > 0) && (Altitude != ATCAltitude)) //Descent clr changed
         {
-            Atc2.color = Color.green;
+            if (!_ilsArmOutstanding)
+            {
+                Atc2.color = Color.green;
+                XFR2.interactable = true;
+                SetXfrGlow(2, true);
+                _atc2GrayDone = false;
+            }
             XFRAltitude = Altitude;
-            XFR2.interactable = true;
-            SetXfrGlow(2, true);
-            _atc2GrayDone = false;
             ATCAltitude = Altitude;
             ATCVS = VS;
             modD = VS == 0 ? -1 : VS_nx;
@@ -1573,7 +1603,8 @@ public class Move : Singleton<Move>
             Mathf.Abs((int)Calculator.CAltitude - AltRef) <= 300)
         {
             CancelInvoke(nameof(DescentCheck));
-            Atc2.text = "";
+            if (!_ilsArmOutstanding)
+                Atc2.text = "";
         }
 
     }

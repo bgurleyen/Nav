@@ -26,7 +26,7 @@ public class LineDrawer : MonoBehaviour
     {
         //Debug.Log("Display");
         var courseRay = line.IsStraightRay && !line.LinkedPoint.IsHiddenLine;
-        if (!hiddenLine && !line.LinkedPoint.IsHiddenLine &&
+        if (!hiddenLine && !line.LinkedPoint.IsHiddenLine && !line.StartsAfterGap &&
             (courseRay || !line.LinkedPoint.IsAfterDiscontinuity))
         {
             cacheLine = line;
@@ -47,7 +47,8 @@ public class LineDrawer : MonoBehaviour
             lineRenderer.positionCount = 0;
         }
 
-        if (!line.LinkedPoint.IsSkippable && !hiddenLabel && !routePoint.IsVector &&
+        var discMarker = string.Equals(routePoint.Name != null ? routePoint.Name.Trim() : "", "DISC", System.StringComparison.OrdinalIgnoreCase);
+        if (!line.LinkedPoint.IsSkippable && !hiddenLabel && !routePoint.IsVector && !discMarker &&
             !string.IsNullOrWhiteSpace(routePoint.Name))
         {
             markTransform.localPosition = line.EndNMPosition.ToDisplay();

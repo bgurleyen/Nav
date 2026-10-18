@@ -79,12 +79,6 @@ public class Aircraft : MovingActor
                 return;
             }
 
-            if (TrySteerPendingHeadingFix())
-            {
-                _pilot.TickAdvance();
-                return;
-            }
-
             var foundClosePathDestination = Session.ActiveRoute.TracedRoute.FindCloseToRouteSegmentDestination(
                 Session.Settings.PilotSeekDistancePathFollow,
                 out _lastFoundRoutePosition,
@@ -376,25 +370,6 @@ public class Aircraft : MovingActor
     }
 
     /// <summary>
-    /// Hold inbound to the ATC heading fix so LNAV does not fly-by before the heading is XFRd.
-    /// </summary>
-    private bool TrySteerPendingHeadingFix()
-    {
-        if (Move.Instance == null || !Move.Instance.HasPendingHeadingClearance)
-            return false;
-
-        var toFix = Move.Instance.PendingHeadingFixNm - _pilot.NMPosition;
-        if (toFix.sqrMagnitude < 0.0001f)
-            return false;
-
-        var heading = Geometry.GetHeadingOfDirection(toFix);
-        TargetHeading = heading;
-        _pilot.NotifyTargetCourse(heading);
-        _pilot.TickSteerToTargetHeading(heading);
-        return true;
-    }
-
-    /// <summary>
     /// Follow the seek vertex unless it is behind or would reverse vs the inbound course.
     /// In those cases steer the leg course so LNAV does not turn 180° the wrong way.
     /// </summary>
@@ -463,7 +438,14 @@ public class Aircraft : MovingActor
         proximityDistance = Vector2.Distance(nodePosition, _pilot.NMPosition);
         if (proximityDistance <= Session.Settings.HDGProximityAdvanceDistance)
         {
-            CurrentSegmentIndex = firstNextPoint + 1;
+            var nextIndex = firstNextPoint + 1;
+            if (nextIndex < Session.ActiveRoute.Points.Length)
+            {
+                var next = Session.ActiveRoute.Points[nextIndex];
+                if (next != null && next.IsAfterDiscontinuity)
+                    return;
+            }
+            CurrentSegmentIndex = nextIndex;
         }
     }
 

@@ -20,6 +20,10 @@ namespace Navigation {
 
         // if we detect that during MOD the current node has passed we reExecute all the commands until that point
         private int _modReExecutedForIndex = -1;
+        // Intercept replaces point 0. Replaying that id mismatch calls EraseMod,
+        // which clears the passed-index guard and can re-enter this replay.
+        private bool _reExecutingCommands;
+        private bool _insideCheckMod;
 
         private void Awake() {
             UYServiceLocator.Register(this);
@@ -158,7 +162,10 @@ namespace Navigation {
                         && passedNodeIndex < activePoints.Length;
                     // A shorter MOD (direct-to removed waypoints) is not a reason to rebuild.
                     // Rebuilding here used to throw or restart every frame and lock the game.
+                    // Course intercept always puts a new INTC id at index 0. Replaying that
+                    // wipes the mod and runs the command again; a nested call overflows the stack.
                     var diverged = bothInRange
+                        && !Session.ModRoute.IsCourseInterceptRoute
                         && activePoints[passedNodeIndex].ID != modPoints[passedNodeIndex].ID;
                     // Commit first, and again after replay: EraseMod clears this index,
                     // which otherwise restarts the replay on every following frame.
@@ -196,29 +203,40 @@ namespace Navigation {
         }
 
         public void ReExecuteCachedCommands() {
+            // Nested replay is the intercept stack overflow: EraseMod clears the
+            // passed-index guard while this call is still on the stack.
+            if (_reExecutingCommands)
+                return;
+
             // CheckMod replaces _cachedCommands. Iterating that list grows forever
             // when a join shortcut is inserted, and the frame never returns.
             var commands = _cachedCommands == null
                 ? new List<ICommand>()
                 : new List<ICommand>(_cachedCommands);
-            EraseMod();
+            _reExecutingCommands = true;
+            try {
+                EraseMod();
 
-            for (var i = 0; i < commands.Count; i++) {
-                var command = commands[i];
-                switch (command) {
-                    case InsertRelativeCommand relativeCommand:
-                        ExecuteInsertRelativeOnMod(relativeCommand);
-                        break;
-                    case ExecuteShortcutOnModeCommand modeCommand:
-                        ExecuteShortcutOnMod(modeCommand);
-                        break;
-                    case ExecuteAddLinearApproachCommand approachCommand:
-                        ExecuteLinearApproachOnMod(approachCommand);
-                        break;
-                    case ExecuteOriginalInsertOnModCommand approachCommand:
-                        ExecuteInsertOriginalOnMod(approachCommand);
-                        break;
+                for (var i = 0; i < commands.Count; i++) {
+                    var command = commands[i];
+                    switch (command) {
+                        case InsertRelativeCommand relativeCommand:
+                            ExecuteInsertRelativeOnMod(relativeCommand);
+                            break;
+                        case ExecuteShortcutOnModeCommand modeCommand:
+                            ExecuteShortcutOnMod(modeCommand);
+                            break;
+                        case ExecuteAddLinearApproachCommand approachCommand:
+                            ExecuteLinearApproachOnMod(approachCommand);
+                            break;
+                        case ExecuteOriginalInsertOnModCommand approachCommand:
+                            ExecuteInsertOriginalOnMod(approachCommand);
+                            break;
+                    }
                 }
+            }
+            finally {
+                _reExecutingCommands = false;
             }
         }
 
@@ -346,33 +364,35 @@ namespace Navigation {
         }
 
         private void CheckModForOperation() {
-            //Debug.Log("CheckModForOperation");
-            if (Session.IsMod) return;
+            // IsMod is set below before the join shortcut. If that shortcut clears it,
+            // this flag still stops CheckMod → shortcut → CheckMod.
+            if (Session.IsMod || _insideCheckMod) return;
 
-            if (Session.ModRoute != null) {
-                Destroy(Session.ModRoute);
+            _insideCheckMod = true;
+            try {
+                if (Session.ModRoute != null) {
+                    Destroy(Session.ModRoute);
+                }
+
+                // if this is the first modification generate a new mod from current active
+                Session.ModRoute = Session.ActiveRoute.CloneAndInit();
+
+                _cachedCommands = new List<ICommand>();
+                Session.IsMod = true;
+
+                // in case the aircraft was in free flight with intersection valid, shortcut mod until the node after intersection
+                var segment = Session.PlayerAircraft.CurrentSegmentIndex;
+                if (Session.PlayerAircraft.IsJoining &&
+                    segment > 0 &&
+                    segment < Session.ModRoute.Points.Length) {
+                    ExecuteShortcutOnMod(new ExecuteShortcutOnModeCommand {
+                        FromNodeId = Session.ModRoute.Points[1].ID,
+                        ToNodeId = Session.ModRoute.Points[segment].ID
+                    });
+                }
             }
-
-            //Debug.Log("Check Mode For Operaiton 555555");
-            // if this is the first modification generate a new mod from current active
-            Session.ModRoute = Session.ActiveRoute.CloneAndInit();
-            //Debug.Log("Session.modeRoute: "+Session.ModRoute);
-            //for (int i = 0; i < Session.ModRoute.Points.Length; i++) {
-            //    Debug.Log("Session.ModeRount[" + i + "]: " + Session.ModRoute.Points[i].ID + "||" + Session.ModRoute.Points[i].Name);
-            //}
-
-            _cachedCommands = new List<ICommand>();
-            Session.IsMod = true;
-
-            // in case the aircraft was in free flight with intersection valid, shortcut mod until the node after intersection
-            var segment = Session.PlayerAircraft.CurrentSegmentIndex;
-            if (Session.PlayerAircraft.IsJoining &&
-                segment > 0 &&
-                segment < Session.ModRoute.Points.Length) {
-                ExecuteShortcutOnMod(new ExecuteShortcutOnModeCommand {
-                    FromNodeId = Session.ModRoute.Points[1].ID,
-                    ToNodeId = Session.ModRoute.Points[segment].ID
-                });
+            finally {
+                _insideCheckMod = false;
             }
         }
     }

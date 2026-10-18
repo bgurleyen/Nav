@@ -41,13 +41,6 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 4
-    Name: DISC
-    RawDegrees: 0
-    Distance: 0
-    RawSpeed: 0
-    RawAltitude: 
-    Details: 
   - ID: 5
     Name: CI25L
     RawDegrees: 0

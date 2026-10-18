@@ -506,8 +506,22 @@ public class Calculator : MonoBehaviour
 
             if (SpeedTime > 1) excessSpeedCo += 100;
             if ((int)CSpeed == RSpeed) excessSpeedCo = 0;
-            RVS = (int)CSpeed - RSpeed > 10 ? -300 :
-                RSpeed - (int)CSpeed > 0 ? (int)a[0] - excessSpeedCo : (int)a[0]; // surat yuksekse
+            int idleVs = (int)a[0];
+            // Below the MCP altitude, LVL CHG climbs. Above it, idle descent.
+            if ((int)CAltitude < RAltitude)
+            {
+                int climbVs = Math.Abs(idleVs);
+                RVS = (int)CSpeed - RSpeed > 10 ? climbVs + excessSpeedCo :
+                    RSpeed - (int)CSpeed > 0 ? 300 : climbVs;
+                if (RVS > 4000) RVS = 4000;
+                N1 = N1For(Altitude, RVS, CSpeed);
+                FF = FuelFlowFor(Altitude, RVS, CSpeed);
+            }
+            else
+            {
+                RVS = (int)CSpeed - RSpeed > 10 ? -300 :
+                    RSpeed - (int)CSpeed > 0 ? idleVs - excessSpeedCo : idleVs;
+            }
             ApplyAltitudeCaptureFlare();
 
         }
@@ -1366,6 +1380,11 @@ public class Calculator : MonoBehaviour
         // Allow brief positive VS only to recapture from a shallow undershoot; otherwise descent-only.
         double maxVs = deviation < 0 ? 500.0 : 0.0;
         VNAV_VS = Mathf.Clamp((float)VNAV_VS, -4000, (float)maxVs);
+        // Overspeed: raise VS only until idle-path speed equals 360 kt.
+        double holdVs = VsHoldingKnots(360);
+        if (VNAV_VS < holdVs)
+            VNAV_VS = holdVs;
+        VNAV_VS = Mathf.Clamp((float)VNAV_VS, -4000, (float)maxVs);
         RVS = (int)VNAV_VS;
 
         if (RVS < 0)
@@ -1688,6 +1707,43 @@ public class Calculator : MonoBehaviour
     static double ConfigVsDelta() => ConfigCorrection().vsFpm;
 
     static double IdleVs(int row, int corner) => M[row, corner, 0] + ConfigVsDelta();
+
+    /// <summary>Same idle-path speed InterpolateVS stores in increasedSpeed for this VS.</summary>
+    static int IdleChartSpeed(double vsRef)
+    {
+        double altitude = CAltitude > 39900 ? 39900 : (CAltitude < 0 ? 0 : CAltitude);
+        int F = 8 - Mathf.FloorToInt((float)altitude / 5000f);
+        if (F < 1) F = 1;
+        if (F > 8) F = 8;
+
+        double SpeedOnRow(int row)
+        {
+            double span = IdleVs(row, 1) - IdleVs(row, 3);
+            if (Math.Abs(span) < 1.0)
+                return M[row, 0, 0];
+            return (M[row, 0, 0] - M[row, 2, 0]) / span * (vsRef - IdleVs(row, 3)) + M[row, 2, 0];
+        }
+
+        double lower = SpeedOnRow(F);
+        double upper = SpeedOnRow(F - 1);
+        return (int)((lower - upper) / -5000.0 * (altitude - (8 - F + 1) * 5000.0) + upper);
+    }
+
+    /// <summary>Shallowest search result whose idle-path speed is still at or below the cap.</summary>
+    static double VsHoldingKnots(int knots)
+    {
+        double steep = -12000.0;
+        double shallow = 4000.0;
+        for (int n = 0; n < 30; n++)
+        {
+            double mid = (steep + shallow) * 0.5;
+            if (IdleChartSpeed(mid) > knots)
+                steep = mid;
+            else
+                shallow = mid;
+        }
+        return shallow;
+    }
 
     static void ApplyConfig(ref double pitchHundredths, ref double n1Hundredths, ref double ff)
     {
@@ -2288,6 +2344,25 @@ public class Calculator : MonoBehaviour
         // Level test finishes at RW (DME), not via the normal short-final dialog.
         if (LevelTestMode.IsActive)
             return;
+
+        // CLEAR ILS is already out. Leaving the final course by 10 NM ends the level.
+        // Once LOC is captured, the airplane is established and may turn back onto the line.
+        if (Move.Instance.IlsArmCommandIssued
+            && (Session.State == null || !Session.State.LOCCaptured)
+            && Move.Instance.FinalApproachCrossTrackNm() >= 10f)
+        {
+            _approachEndTriggered = true;
+            ApproachStatusDialog.Show("APP NOT ARMED", "", "Exit", () =>
+            {
+                Aircraft aircraft = FindAnyObjectByType<Aircraft>();
+                if (aircraft != null)
+                {
+                    aircraft.FinishGame(isStable: false);
+                    CAltitude = 10000;
+                }
+            });
+            return;
+        }
 
         float dme = Move.Instance.DME();
         if (dme >= 3f && CAltitude > 1000)

@@ -276,7 +276,7 @@ namespace Navigation
         }
 
         public void ShortcutNodes(int firstIdNodeToDissolve, int toId,
-            out RoutePoint reducedPoint) // $^% refactor for passed nodes ?
+            out RoutePoint reducedPoint)
         {
             if (!Points.GetNodeIndex(firstIdNodeToDissolve, out var startIndex) ||
                 !Points.GetNodeIndex(toId, out var endIndex) ||
@@ -287,23 +287,16 @@ namespace Navigation
             }
 
             var offset = endIndex - startIndex;
-
             var newSet = new RoutePoint[Points.Length - offset];
 
             for (var i = 0; i < startIndex; i++)
-            {
                 newSet[i] = Points[i];
-            }
 
-            // compute new distance
             var endPosition =
                 Geometry.GetNextPosition(Vector2.zero, Points[startIndex].Distance, Points[startIndex].Degrees);
             for (var i = startIndex; i < endIndex; i++)
-            {
                 endPosition = Geometry.GetNextPosition(endPosition, Points[i + 1].Distance, Points[i + 1].Degrees);
-            }
 
-            //compute new angle
             var angle = Geometry.PositiveAngleBetween(endPosition, Vector2.up);
 
             reducedPoint = Points[endIndex].Clone();
@@ -315,10 +308,7 @@ namespace Navigation
             newSet[startIndex] = reducedPoint;
 
             for (var i = endIndex + 1; i < Points.Length; i++)
-            {
-                var newIndex = i - offset;
-                newSet[newIndex] = Points[i];
-            }
+                newSet[i - offset] = Points[i];
 
             Points = newSet;
         }

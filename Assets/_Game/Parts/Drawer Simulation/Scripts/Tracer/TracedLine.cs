@@ -12,6 +12,8 @@ namespace Navigation
         public Vector2[] Vertexes;
         public float TracedNMLength { get; private set; }
         public bool IsStraightRay { get; private set; }
+        /// <summary>Leg that leaves a zero-length discontinuity marker. It is not drawn or flown.</summary>
+        public bool StartsAfterGap { get; set; }
         
         public readonly Vector2[] SegmentVertices;
         
@@ -69,8 +71,12 @@ namespace Navigation
             int lastFoundVertexIndex = 0;
 
             float cachedLastHeading = 999;
-            
-            while (tracePositions.Count < SAFE_MAX_POSITIONS && FindFurthestSeekTargetOnSegment(
+            // A straight leg drops the previous sample, so the list never hits the cap.
+            // The 200 NM intercept still has to stop if the seek never reports the end.
+            var traceSteps = 0;
+            const int SAFE_MAX_STEPS = 8000;
+
+            while (traceSteps < SAFE_MAX_STEPS && tracePositions.Count < SAFE_MAX_POSITIONS && FindFurthestSeekTargetOnSegment(
                        pilot.NMPosition,
                        seekDistance,
                        out var foundVertex,
@@ -79,6 +85,7 @@ namespace Navigation
                        lastFoundVertexIndex,
                        breakOnFirstSolution:true))
             {
+                traceSteps++;
                 var segmentDir = EndNMPosition - StartNMPosition;
                 if (segmentDir.sqrMagnitude > 0.0001f)
                     pilot.NotifyTargetCourse(Geometry.GetHeadingOfDirection(segmentDir));
@@ -245,7 +252,7 @@ namespace Navigation
                 var b = corners[c + 1];
                 var leg = Vector2.Distance(a, b);
                 length += leg;
-                var steps = Mathf.Max(1, Mathf.CeilToInt(leg / granularity));
+                var steps = Mathf.Clamp(Mathf.CeilToInt(leg / granularity), 1, 4000);
                 for (var s = 0; s < steps; s++)
                     dense.Add(Vector2.Lerp(a, b, s / (float)steps));
             }

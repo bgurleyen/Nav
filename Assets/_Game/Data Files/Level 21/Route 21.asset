@@ -107,14 +107,14 @@ MonoBehaviour:
   - ID: 13
     Name: DISC
     RawDegrees: 0
-    Distance: 4
+    Distance: 0
     RawSpeed: 0
     RawAltitude: 
-    Details: 
+    Details: D
   - ID: 14
     Name: ASDEV
     RawDegrees: 59
-    Distance: 0
+    Distance: 4
     RawSpeed: 0
     RawAltitude: 
     Details: 

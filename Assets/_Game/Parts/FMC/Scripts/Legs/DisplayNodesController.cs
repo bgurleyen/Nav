@@ -101,7 +101,7 @@ public class DisplayNodesController
                         thisIsDiscontinuity = true;
                         handled = true;
                     }
-                    else if (!thisIsAfterDiscontinuity)
+                    else if (!thisIsAfterDiscontinuity && linkedPoint.Distance > 0.05f)
                     {
                         thisIsAfterDiscontinuity = true;
                         handled = true;

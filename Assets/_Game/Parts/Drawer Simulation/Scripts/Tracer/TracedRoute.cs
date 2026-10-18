@@ -57,6 +57,8 @@ public class TracedRoute
             }
 
             ComputedLines[i] = line;
+            if (fromPoint.IsAfterDiscontinuity && fromPoint.Distance <= 0.05f)
+                line.StartsAfterGap = true;
 
             if (vectorRayEnd.HasValue || point.IsLinearApproach)
                 SnapTracerToPoint(pilot, pointsArray, i);
@@ -216,6 +218,38 @@ public class TracedRoute
                 // 737 INTC CRS does not sequence through the discontinuity after the fix.
                 startFromVertexIndex = 0;
                 continue;
+            }
+
+            if (computedLine.LinkedPoint.IsAfterDiscontinuity || computedLine.StartsAfterGap)
+            {
+                // After the last fix, keep LNAV on that leg's track. Do not cross the gap.
+                int legIndex = i - 1;
+                var points = Session.ActiveRoute.Points;
+                while (legIndex > 0 && points != null && legIndex < points.Length)
+                {
+                    var legPoint = points[legIndex];
+                    if (legPoint != null && !legPoint.IsAfterDiscontinuity && legPoint.Distance > 0.05f)
+                        break;
+                    legIndex--;
+                }
+
+                if (legIndex > 0)
+                {
+                    var legLine = ComputedLines[legIndex];
+                    var coursePoint = points[legIndex];
+                    var dir = Geometry.GetNextPosition(Vector2.zero, 1f, coursePoint.Degrees);
+                    if (dir.sqrMagnitude < 0.0001f)
+                        dir = Vector2.up;
+                    dir.Normalize();
+
+                    var ahead = Session.PlayerAircraft.NMPosition + dir * 20f;
+                    lastFoundRoutePosition.SegmentIndex = legIndex;
+                    lastFoundRoutePosition.SegmentVertex = ahead;
+                    lastFoundRoutePosition.SegmentVertexIndex = legLine != null && legLine.Vertexes != null && legLine.Vertexes.Length > 0
+                        ? legLine.Vertexes.Length - 1
+                        : 0;
+                }
+                break;
             }
 
             if (!computedLine.FindFurthestSeekTargetOnSegment(
