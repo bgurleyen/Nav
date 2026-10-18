@@ -1,5 +1,5 @@
 /// <summary>
-/// Eski 56.4 t chart. Rows run FL400 down to sea level.
+/// Eski 75 t chart. Rows run FL400 down to sea level.
 /// Corners: high-speed level, high-speed idle, low-speed level, low-speed idle.
 /// Each corner is speed (kt), pitch times 100, N1 times 100, fuel flow lb/hr per engine divided by 10.
 /// Flaps index: 0, 1, 2, 5, 10, 15, 25, 30, 40. Each flap has FL200 down to sea level.

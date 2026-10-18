@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Zflite — a 737 descent trainer</title>
+  <meta name="description" content="Zflite is a 737 navigation trainer. Set the FMC, fly the vertical path, and read a debrief of altitude, configuration, and fuel.">
+  <meta property="og:title" content="Zflite — a 737 descent trainer">
+  <meta property="og:description" content="Set the FMC, fly the descent, and read how you flew it.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://zflite.com">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Instrument+Sans:wght@420;520;600&family=Instrument+Serif&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="top">
+    <a class="mark" href="#top">Zflite</a>
+    <p class="top-note">39 levels · descent trainer</p>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <div class="hero-copy">
+        <p class="kicker">Navigation trainer</p>
+        <h1>Train the descent, not the scenery.</h1>
+        <p class="lede">Zflite is a 737 procedure trainer. Each level is a descent: a STAR, a runway, a cruise altitude, and a fuel load. You set the FMC, fly the vertical path, and see where the airplane actually was.</p>
+      </div>
+
+      <figure class="plate">
+        <figcaption>
+          <span>Vertical path</span>
+          <span>Sample level</span>
+        </figcaption>
+        <svg viewBox="0 0 520 280" role="img" aria-label="A cruise segment, top of descent, and a descending path to the runway.">
+          <line x1="36" y1="28" x2="36" y2="236" />
+          <line x1="36" y1="236" x2="492" y2="236" />
+          <path class="path" d="M52 78 H250 L470 214" />
+          <circle cx="250" cy="78" r="4" />
+          <g class="ticks">
+            <line x1="318" y1="122" x2="318" y2="236" />
+            <line x1="378" y1="160" x2="378" y2="236" />
+            <line x1="438" y1="198" x2="438" y2="236" />
+          </g>
+          <g class="labels">
+            <text x="48" y="68">CRZ</text>
+            <text x="258" y="68">TOD</text>
+            <text x="318" y="258" text-anchor="middle">FLAPS</text>
+            <text x="378" y="258" text-anchor="middle">GEAR</text>
+            <text x="438" y="258" text-anchor="middle">S/B</text>
+            <text x="468" y="204" text-anchor="end">RWY</text>
+          </g>
+        </svg>
+      </figure>
+    </section>
+
+    <section class="checklist" aria-label="What a level asks you to do">
+      <ol>
+        <li>
+          <span>01</span>
+          <div>
+            <h2>Set the FMC</h2>
+            <p>Destination, STAR, transition, runway, cruise altitude, and the descent speeds. The page already knows the plan. The box has to match it.</p>
+          </div>
+        </li>
+        <li>
+          <span>02</span>
+          <div>
+            <h2>Fly the path</h2>
+            <p>Hold altitude and speed through the descent while the clearance changes. Gear, flaps, and speedbrake are part of the grade, not decoration.</p>
+          </div>
+        </li>
+        <li>
+          <span>03</span>
+          <div>
+            <h2>Read the debrief</h2>
+            <p>Your numbers sit next to the average and the best on that level. Altitude, configuration, and the fuel you still have.</p>
+          </div>
+        </li>
+      </ol>
+    </section>
+
+    <section class="debrief" aria-labelledby="debrief-title">
+      <div class="section-head">
+        <h2 id="debrief-title">After the level</h2>
+        <p>Five rows, three columns. These figures are a sample of the layout, not a saved flight.</p>
+      </div>
+      <div class="sheet" role="table" aria-label="Sample debrief with you, the average, and the best">
+        <div class="sheet-head" role="row">
+          <span role="columnheader">Metric</span>
+          <span role="columnheader">You</span>
+          <span role="columnheader">Average</span>
+          <span role="columnheader">Best</span>
+        </div>
+        <div class="sheet-row" role="row">
+          <span role="rowheader">Average Altitude</span>
+          <span>4,820 FT</span>
+          <span>5,140 FT</span>
+          <span>4,610 FT</span>
+        </div>
+        <div class="sheet-row" role="row">
+          <span role="rowheader">LG Altitude</span>
+          <span>1,480 FT</span>
+          <span>1,520 FT</span>
+          <span>1,450 FT</span>
+        </div>
+        <div class="sheet-row" role="row">
+          <span role="rowheader">Average Flaps Altitude</span>
+          <span>2,240 FT</span>
+          <span>2,180 FT</span>
+          <span>2,090 FT</span>
+        </div>
+        <div class="sheet-row" role="row">
+          <span role="rowheader">Total S/B Usage</span>
+          <span>0:42</span>
+          <span>0:36</span>
+          <span>0:28</span>
+        </div>
+        <div class="sheet-row" role="row">
+          <span role="rowheader">Fuel Remaining</span>
+          <span>4,800 KG</span>
+          <span>4,600 KG</span>
+          <span>5,100 KG</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="box" aria-labelledby="box-title">
+      <div class="section-head">
+        <h2 id="box-title">The box</h2>
+        <p>The same pages a descent actually uses.</p>
+      </div>
+      <ul class="pages">
+        <li>INIT</li>
+        <li>RTE</li>
+        <li>LEGS</li>
+        <li>CRZ</li>
+        <li class="on">DES</li>
+        <li>ARR</li>
+        <li>FIX</li>
+        <li>PROG</li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <p>Zflite is a training simulation. It is not for real-world navigation.</p>
+    <p>zflite.com</p>
+  </footer>
+</body>
+</html>

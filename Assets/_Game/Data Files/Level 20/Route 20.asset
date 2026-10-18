@@ -23,7 +23,7 @@ MonoBehaviour:
   - ID: 1
     Name: LANUX
     RawDegrees: 136
-    Distance: 45
+    Distance: 76.5
     RawSpeed: 0
     RawAltitude: 15000B
     Details: 

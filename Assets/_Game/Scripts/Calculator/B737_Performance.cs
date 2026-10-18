@@ -4,6 +4,7 @@ using UnityEngine;
 /// 75 t 737-800 enerji modeli. İniş hızı sabit süratteki yol açısıdır.
 /// Düz uçuş ivmesi ayrı sorudur; ikisi aynı fazla kuvvetten birden alınmaz.
 /// Gear ve speedbrake yalnızca Cd ile girer. N1 ve yakıt, 75 t idle tablosundan başlar.
+/// Idle itiş, N1–itiş, yakıt ve flap Cd değerleri PerformanceChart'a en küçük kareler ile kalibredir.
 /// </summary>
 public class B737_Performance
 {
@@ -19,7 +20,8 @@ public class B737_Performance
     // Lock: ΔCd = 20 (M − Mcrit)^4. Mdd 0.80 → Mcrit ≈ 0.69.
     const float MachCrit = 0.692f;
 
-    public float Weight_kg = 75000f;
+    public const float ChartWeight_kg = 75000f;
+    public float Weight_kg = ChartWeight_kg;
     public float WingArea_m2 = 125f;
     const float Cd0_clean = 0.020f;
     const float K_induced = 0.045f;
@@ -27,17 +29,23 @@ public class B737_Performance
     // SL, 280 kt, sabit sürat: gear yaklaşık −800 ft/dk, full speedbrake yaklaşık −1000 ft/dk.
     const float Cd_speedbrake = 0.016f;
     const float Cd_gear = 0.013f;
-    const float Cd_flap1 = 0.008f;
-    const float Cd_flap5 = 0.020f;
-    const float Cd_flap15 = 0.035f;
-    const float Cd_flap30 = 0.055f;
-    const float Cd_flap40 = 0.070f;
+    const float Cd_flap1 = 0.0043f;
+    const float Cd_flap2 = 0.0055f;
+    const float Cd_flap5 = 0.0064f;
+    const float Cd_flap10 = 0.0082f;
+    const float Cd_flap15 = 0.0115f;
+    const float Cd_flap25 = 0.0216f;
+    const float Cd_flap30 = 0.0268f;
+    const float Cd_flap40 = 0.0565f;
+
+    // Uçuşta flap 15 ve üstü approach idle seçer.
+    const int ApproachIdleFlap = 15;
 
     // İki CFM56-7B26. Deniz seviyesi statik itiş, motor başına yaklaşık 117 kN.
     const float MaxThrust_sl = 234000f;
-    // Temiz 280 kt idle, deniz seviyesinde yaklaşık 3°.
-    const float IdleThrustFactor = 0.0368f;
     const float ThrustLapseExponent = 0.6f;
+    // Yakıt = idle + span · x^p, x = (N1 − idleN1) / (100 − idleN1).
+    const float FfExponent = 1.45f;
 
     public bool SpeedbrakeDeployed = false;
     public bool SpeedbrakeFull = false;
@@ -55,7 +63,18 @@ public class B737_Performance
         float tas_ms = mach * SoundSpeed(tempK);
         float q = 0.5f * rho * tas_ms * tas_ms;
         float weightN = Weight_kg * G;
-        float thrust = GetThrust(rho, mach);
+        float idleN1 = IdleN1(alt_ft);
+        float idleT = LerpBands(alt_ft, IdleThrustN);
+        float idleFf = IdleFuelKgH(alt_ft);
+        float n1K = LerpBands(alt_ft, N1ThrustK);
+        if (ApproachIdle)
+        {
+            float apprN1 = Mathf.Max(idleN1, LerpBands(alt_ft, ApprIdleN1Table));
+            idleT += n1K * (apprN1 * apprN1 * apprN1 - idleN1 * idleN1 * idleN1);
+            idleN1 = apprN1;
+            idleFf = Mathf.Max(idleFf, LerpBands(alt_ft, ApprIdleFfKgH));
+        }
+        float thrust = GetThrust(idleT, rho, mach);
 
         float drag = DragN(q, weightN, mach);
         float sinG = Mathf.Clamp((thrust - drag) / weightN, -0.3f, 0.3f);
@@ -66,17 +85,58 @@ public class B737_Performance
         vs_fpm = tas_ms * sinG / FT_TO_M * 60f;
         accel_ms2 = (thrust - DragN(q, weightN, mach)) / Weight_kg;
 
-        float idleN1 = IdleN1(alt_ft);
-        float maxN1 = Mathf.Lerp(100f, 94f, Mathf.Clamp01(alt_ft / 40000f));
         float throttle = Mathf.Clamp01(Throttle);
-        n1_pct = Mathf.Lerp(idleN1, maxN1, throttle) + GetN1Correction() * (1f - throttle);
-        n1_pct = Mathf.Clamp(n1_pct, 0f, 104f);
+        float n1Cube = idleN1 * idleN1 * idleN1 + Mathf.Max(0f, thrust - idleT) / n1K;
+        float engineN1 = Mathf.Min(Mathf.Pow(n1Cube, 1f / 3f), 104f);
+        n1_pct = Mathf.Clamp(engineN1 + GetN1Correction() * (1f - throttle), 0f, 104f);
 
-        float idleFf = IdleFuelKgH(alt_ft);
-        float takeoffFf = Mathf.Lerp(3400f, 1500f, Mathf.Clamp01(alt_ft / 40000f));
-        float u = Mathf.InverseLerp(idleN1, maxN1, Mathf.Lerp(idleN1, maxN1, throttle));
+        float x = Mathf.Max(0f, (engineN1 - idleN1) / (100f - idleN1));
         float ffFactor = Mathf.Lerp(GetFFCorrection(), 1f, throttle);
-        ff_kgh = Mathf.Lerp(idleFf, takeoffFf, u * u) * ffFactor;
+        ff_kgh = (idleFf + LerpBands(alt_ft, FfSpanKgH) * Mathf.Pow(x, FfExponent)) * ffFactor;
+    }
+
+    /// <summary>
+    /// IAS change in kt/min when the path is vsGapFpm steeper (positive, accelerates) or shallower (negative)
+    /// than the constant-IAS path for the same thrust. Energy balance: dV/dt = g · gap · f / TAS.
+    /// f = 1 + (TAS/g)·dTAS/dh at constant IAS: on a constant-IAS descent part of the drag is paid by the falling TAS.
+    /// </summary>
+    public static float IasRateFromVsGap(float alt_ft, float ias_kt, float vsGapFpm)
+    {
+        float tas = TasMs(alt_ft, ias_kt);
+        float dTasDh = (TasMs(alt_ft + 500f, ias_kt) - TasMs(alt_ft - 500f, ias_kt)) / (1000f * FT_TO_M);
+        float energyShare = 1f + tas * dTasDh / G;
+        float accelTas = G * vsGapFpm * FT_TO_M / 60f / tas * energyShare;
+        return accelTas * ias_kt / tas * 60f;
+    }
+
+    /// <summary>
+    /// IAS gain in kt/min with the engines at n1Cmd while n1Req holds the current path. N1 in percent.
+    /// n1Cmd is capped at the N1 of maximum thrust.
+    /// </summary>
+    public static float IasRateFromN1(float alt_ft, float ias_kt, float n1Req, float n1Cmd)
+    {
+        Atmosphere(alt_ft * FT_TO_M, out float tempK, out float pressure, out float rho);
+        float mach = MachFromCas(ias_kt, pressure);
+        float tas = mach * SoundSpeed(tempK);
+        float idleN1 = IdleN1(alt_ft);
+        float idleT = LerpBands(alt_ft, IdleThrustN);
+        float k = LerpBands(alt_ft, N1ThrustK);
+
+        float sigma = Mathf.Clamp(rho / RhoSl, 0.12f, 1f);
+        float speedFactor = Mathf.Clamp(1f - 0.55f * mach, 0.4f, 1f);
+        float maxT = Mathf.Max(idleT, MaxThrust_sl * Mathf.Pow(sigma, ThrustLapseExponent) * speedFactor);
+        float maxN1 = Mathf.Pow(idleN1 * idleN1 * idleN1 + (maxT - idleT) / k, 1f / 3f);
+
+        float cmd = Mathf.Min(n1Cmd, maxN1);
+        float req = Mathf.Max(n1Req, idleN1);
+        float accelTas = k * (cmd * cmd * cmd - req * req * req) / ChartWeight_kg;
+        return accelTas * ias_kt / tas * 60f;
+    }
+
+    static float TasMs(float alt_ft, float ias_kt)
+    {
+        Atmosphere(alt_ft * FT_TO_M, out float tempK, out float pressure, out _);
+        return MachFromCas(ias_kt, pressure) * SoundSpeed(tempK);
     }
 
     public float GetVarioFor3Deg(float alt_ft, float ias_kt)
@@ -95,6 +155,8 @@ public class B737_Performance
 
     bool SpeedbrakeOn => SpeedbrakeFull || SpeedbrakeDeployed;
 
+    bool ApproachIdle => FlapSetting >= ApproachIdleFlap;
+
     static float SoundSpeed(float tempK) => Mathf.Sqrt(GammaAir * RSpecific * tempK);
 
     /// <summary>Subsonic pitot relation. Same impact pressure at sea level and at altitude.</summary>
@@ -105,11 +167,10 @@ public class B737_Performance
         return Mathf.Sqrt(5f * (Mathf.Pow(impact / pressure + 1f, 2f / 7f) - 1f));
     }
 
-    float GetThrust(float rho, float mach)
+    float GetThrust(float idleT, float rho, float mach)
     {
         float sigma = Mathf.Clamp(rho / RhoSl, 0.12f, 1f);
         float lapse = Mathf.Pow(sigma, ThrustLapseExponent);
-        float idleT = MaxThrust_sl * IdleThrustFactor * lapse;
 
         float speedFactor = Mathf.Clamp(1f - 0.55f * mach, 0.4f, 1f);
         float maxT = Mathf.Max(idleT, MaxThrust_sl * lapse * speedFactor);
@@ -137,9 +198,11 @@ public class B737_Performance
         switch (FlapSetting)
         {
             case 1: return Cd_flap1;
+            case 2: return Cd_flap2;
             case 5: return Cd_flap5;
-            case 10: return Cd_flap5 + 0.005f;
+            case 10: return Cd_flap10;
             case 15: return Cd_flap15;
+            case 25: return Cd_flap25;
             case 30: return Cd_flap30;
             case 40: return Cd_flap40;
             default: return 0f;
@@ -155,7 +218,6 @@ public class B737_Performance
         if (GearDown && SpeedbrakeOn) return 14f;
         if (GearDown) return 8f;
         if (SpeedbrakeOn) return 6f;
-        if (FlapSetting >= 30) return 3f;
         return 0f;
     }
 
@@ -163,13 +225,20 @@ public class B737_Performance
     {
         if (GearDown && SpeedbrakeOn) return 1.50f;
         if (GearDown || SpeedbrakeOn) return 1.25f;
-        if (FlapSetting >= 30) return 1.12f;
         return 1f;
     }
 
     static readonly float[] AltFt = { 40000f, 35000f, 30000f, 25000f, 20000f, 15000f, 10000f, 5000f, 0f };
-    static readonly float[] IdleN1Table = { 38.5f, 38.5f, 37.5f, 36.5f, 35.5f, 34.5f, 33.5f, 32.5f, 31.5f };
-    static readonly float[] IdleFfKgH = { 218f, 236f, 263f, 290f, 327f, 381f, 436f, 508f, 599f };
+    static readonly float[] IdleN1Table = { 38.5f, 38.5f, 38.0f, 37.2f, 36.0f, 34.9f, 33.8f, 32.8f, 31.8f };
+    static readonly float[] IdleFfKgH = { 218f, 236f, 259f, 281f, 295f, 313f, 336f, 354f, 376f };
+    // Net idle itişi. FL400'deki negatif değer, yüksek Mach'ta poların eksik kalan sürüklenmesini taşır.
+    static readonly float[] IdleThrustN = { -5514f, 13464f, 15762f, 14450f, 13748f, 13633f, 13069f, 12644f, 13388f };
+    // T − Tidle = K · (N1³ − idleN1³), N1 yüzde.
+    static readonly float[] N1ThrustK = { 0.06393f, 0.05240f, 0.05102f, 0.06648f, 0.08652f, 0.10298f, 0.12398f, 0.14558f, 0.17432f };
+    static readonly float[] FfSpanKgH = { 996f, 1325f, 1479f, 1709f, 2015f, 2269f, 2505f, 2821f, 3281f };
+    // FL200 üstünde flap verisi yok; FL200 değeri taşınır.
+    static readonly float[] ApprIdleN1Table = { 38.5f, 38.5f, 38.0f, 37.8f, 37.8f, 36.8f, 35.5f, 34.5f, 33.5f };
+    static readonly float[] ApprIdleFfKgH = { 381f, 381f, 381f, 381f, 381f, 403f, 429f, 435f, 447f };
 
     static float IdleN1(float alt_ft) => LerpBands(alt_ft, IdleN1Table);
 

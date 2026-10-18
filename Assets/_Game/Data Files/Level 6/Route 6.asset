@@ -23,7 +23,7 @@ MonoBehaviour:
   - ID: 1
     Name: PESER
     RawDegrees: 366
-    Distance: 9
+    Distance: 40.2
     RawSpeed: 280
     RawAltitude: 7000A
     Details: 

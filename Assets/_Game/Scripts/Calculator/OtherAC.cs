@@ -79,10 +79,9 @@ public class OtherAC
             return;
 
         if (_currentPointIndex >= _acItems.Length)
-        {
-            Hide(acTexts, acPositions);
+            RestartRoute();
+        if (_hidden)
             return;
-        }
 
         float stepLeft = Session.Settings.AircraftTickDistance(OwnGroundSpeedKt());
 
@@ -92,8 +91,10 @@ public class OtherAC
             acTexts.Add(_aircraftKey, "");
         }
 
-        while (stepLeft > 0.0001f && !_hidden && _currentPointIndex < _acItems.Length)
+        int hops = 0;
+        while (stepLeft > 0.0001f && !_hidden && _currentPointIndex < _acItems.Length && hops < 200)
         {
+            hops++;
             PointIndex = _acItems[_currentPointIndex].Point;
             AltitudeR = _acItems[_currentPointIndex].Altitude;
             PtPos = Move.Instance.PointPos(PointIndex);
@@ -108,8 +109,8 @@ public class OtherAC
             {
                 if (_currentPointIndex >= _acItems.Length - 1)
                 {
-                    Hide(acTexts, acPositions);
-                    return;
+                    RestartRoute();
+                    continue;
                 }
                 _currentPointIndex += 1;
                 continue;
@@ -123,8 +124,8 @@ public class OtherAC
                 stepLeft -= toCheck;
                 if (_currentPointIndex >= _acItems.Length - 1)
                 {
-                    Hide(acTexts, acPositions);
-                    return;
+                    RestartRoute();
+                    continue;
                 }
                 _currentPointIndex += 1;
                 continue;
@@ -363,6 +364,21 @@ public class OtherAC
                 return i;
         }
         return rem.Length - 2;
+    }
+
+    private void RestartRoute()
+    {
+        if (_pts == null || _pts.Length < 2 || _acItems == null || _acItems.Length < 2 || _rem == null)
+        {
+            Hide();
+            return;
+        }
+
+        finalPosition = _pts[0];
+        _currentPointIndex = 1;
+        _initialRemaining = _rem[0];
+        AltitudeC = _rwyAlt + _initialRemaining * 300f;
+        _hidden = false;
     }
 
     private void Hide(Dictionary<string, string> acTexts = null, Dictionary<string, Vector2> acPositions = null)

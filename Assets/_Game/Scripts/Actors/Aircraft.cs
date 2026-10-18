@@ -24,6 +24,12 @@ public class Aircraft : MovingActor
     private Pilot _pilot;
 
     private Vector3 _upwardsHeaderLineTop = new(0, 1.2f, 0);
+    private float _trendAngle;
+    /// <summary>
+    /// Held while cross-track is still large so capture does not fall back
+    /// onto the short seek point that swings across the nose.
+    /// </summary>
+    private bool _routeCapture;
 
     private RoutePosition _lastFoundRoutePosition = new() { SegmentIndex = 1 };
     private RoutePosition? _pendingJoinRoutePosition = new() { SegmentIndex = 1 };
@@ -211,7 +217,13 @@ public class Aircraft : MovingActor
         var lerp = (float)1 / _turningHeaderLine.positionCount;
         var vectorStep = Vector2.Lerp(Vector2.zero, _upwardsHeaderLineTop, lerp);
 
-        var clampedAngleDiff = Mathf.Clamp(_pilot.CachedDisplayLastAngleDiff, -20, 20);
+        var targetAngle = Mathf.Clamp(_pilot.CachedDisplayLastAngleDiff, -20f, 20f);
+        // Sub-degree lag is a straight vector. Filtering keeps a one-tick
+        // heading blip from flipping the polyline left and right.
+        if (Mathf.Abs(targetAngle) < 0.75f)
+            targetAngle = 0f;
+        _trendAngle = Mathf.Lerp(_trendAngle, targetAngle, 0.2f);
+        var clampedAngleDiff = _trendAngle;
 
         for (int i = 0; i < _turningHeaderLine.positionCount; i++)
         {
@@ -286,6 +298,8 @@ public class Aircraft : MovingActor
 
         NMWalkedOnCurrentSegment = 0;
         _pendingJoinRoutePosition = null;
+        _routeCapture = false;
+        _trendAngle = 0f;
         _pilot.ClearWholeTurn();
         Session.State.AutoSetLNAV(true, true);
         if (Session.CurrentLevel != null && Session.CurrentLevel.levelInfo != null
@@ -304,6 +318,7 @@ public class Aircraft : MovingActor
     public void StartHeadingMode()
     {
         _pendingJoinRoutePosition = null;
+        _routeCapture = false;
     }
 
     public bool TryRejoinRoute()
@@ -335,7 +350,7 @@ public class Aircraft : MovingActor
     }
 
     /// <summary>
-    /// On a course-intercept route, LNAV turns straight at the nearest drawn point
+    /// On a course-intercept route, LNAV holds one intercept onto the nearest leg
     /// until the aircraft is close enough to follow the path forward.
     /// </summary>
     private bool TrySteerTowardCourseIntercept(out float walkedNm)
@@ -360,8 +375,16 @@ public class Aircraft : MovingActor
         if (toNearest.sqrMagnitude <= Session.Settings.PilotSeekDistancePathFollow * Session.Settings.PilotSeekDistancePathFollow)
             return false;
 
-        var heading = Geometry.GetHeadingOfDirection(toNearest);
-        _pilot.NotifyTargetCourse(heading);
+        // Aiming at the nearest vertex swings as that point passes under the nose.
+        // Hold a single intercept that shrinks with cross-track instead.
+        var legFrom = vertices[0];
+        var legTo = vertices[vertices.Length - 1];
+        if ((legTo - legFrom).sqrMagnitude < 0.0001f)
+            return false;
+
+        var course = Geometry.GetHeadingOfDirection(legTo - legFrom);
+        var heading = CaptureHeading(legFrom, legTo, course);
+        _pilot.NotifyTargetCourse(course);
         _pilot.TickSteerToTargetHeading(heading, true);
         ResetSeekProgress(segment, vertex);
         CurrentSegmentIndex = segment;
@@ -370,30 +393,67 @@ public class Aircraft : MovingActor
     }
 
     /// <summary>
-    /// Follow the seek vertex unless it is behind or would reverse vs the inbound course.
-    /// In those cases steer the leg course so LNAV does not turn 180° the wrong way.
+    /// On the leg, follow the seek vertex. While still offset, a 1.2 NM seek point
+    /// sits near the beam and its bearing flips across the nose, so the trend
+    /// vector wags until cross-track collapses. Capture uses one intercept that
+    /// only gets shallower as the aircraft settles.
     /// </summary>
     private void SteerLnavToSeekVertex(Vector2 seekVertex)
     {
-        var legCourse = GetNextRealLegCourse();
+        if (!TryGetActiveLeg(out var legFrom, out var legTo, out var legCourse))
+        {
+            _pilot.TickSteerToPathFoundVertex(seekVertex, out _);
+            return;
+        }
+
+        var absXte = Mathf.Abs(SignedCrossTrack(legFrom, legTo, _pilot.NMPosition));
+        if (absXte > 0.35f)
+            _routeCapture = true;
+        else if (absXte < 0.12f)
+            _routeCapture = false;
+
         var toSeek = seekVertex - _pilot.NMPosition;
-        if (toSeek.sqrMagnitude < 0.0001f)
+        var seekUnreliable = toSeek.sqrMagnitude < 0.0001f;
+        if (!seekUnreliable)
         {
-            _pilot.TickSteerToTargetHeading(legCourse);
+            var seekHeading = Geometry.GetHeadingOfDirection(toSeek);
+            var forward = Geometry.GetDirectionFromHeading(_pilot.HeadingDegrees);
+            var behind = Vector2.Dot(toSeek, forward) < 0f;
+            var reverseOfLeg = Mathf.Abs(Geometry.AngleDelta(seekHeading, legCourse)) > 90f;
+            seekUnreliable = behind || reverseOfLeg;
+        }
+
+        if (!_routeCapture && !seekUnreliable)
+        {
+            _pilot.TickSteerToPathFoundVertex(seekVertex, out _);
             return;
         }
 
-        var seekHeading = Geometry.GetHeadingOfDirection(toSeek);
-        var forward = Geometry.GetDirectionFromHeading(_pilot.HeadingDegrees);
-        var behind = Vector2.Dot(toSeek, forward) < 0f;
-        var reverseOfLeg = Mathf.Abs(Geometry.AngleDelta(seekHeading, legCourse)) > 90f;
-        if (behind || reverseOfLeg)
-        {
-            _pilot.TickSteerToTargetHeading(legCourse);
-            return;
-        }
+        _pilot.TickSteerToTargetHeading(CaptureHeading(legFrom, legTo, legCourse));
+    }
 
-        _pilot.TickSteerToPathFoundVertex(seekVertex, out _);
+    /// <summary>
+    /// Leg course plus a cross-track intercept, capped so the nose holds one side.
+    /// </summary>
+    private float CaptureHeading(Vector2 legFrom, Vector2 legTo, float legCourse)
+    {
+        const float lookAheadNm = 4f;
+        var xte = SignedCrossTrack(legFrom, legTo, _pilot.NMPosition);
+        var intercept = Mathf.Clamp(Mathf.Rad2Deg * Mathf.Atan2(-xte, lookAheadNm), -30f, 30f);
+        return Mathf.Repeat(legCourse + intercept, 360f);
+    }
+
+    /// <summary>Positive when <paramref name="position"/> is right of the from→to track.</summary>
+    private static float SignedCrossTrack(Vector2 from, Vector2 to, Vector2 position)
+    {
+        var ab = to - from;
+        var len = ab.magnitude;
+        if (len < 0.0001f)
+            return 0f;
+
+        var dir = ab / len;
+        var ac = position - from;
+        return ac.x * dir.y - ac.y * dir.x;
     }
 
     /// <summary>
@@ -402,27 +462,42 @@ public class Aircraft : MovingActor
     /// </summary>
     private float GetNextRealLegCourse()
     {
+        if (TryGetActiveLeg(out _, out _, out var course))
+            return course;
+        return _pilot.HeadingDegrees;
+    }
+
+    private bool TryGetActiveLeg(out Vector2 from, out Vector2 to, out float course)
+    {
+        course = _pilot.HeadingDegrees;
+        from = to = _pilot.NMPosition;
+
         var points = Session.ActiveRoute?.Points;
         if (points == null || points.Length < 2)
-            return _pilot.HeadingDegrees;
+            return false;
 
         var dest = Mathf.Max(CurrentSegmentIndex, 1);
         while (dest < points.Length && (points[dest] == null || points[dest].IsSkippable))
             dest++;
         if (dest >= points.Length)
             dest = Mathf.Clamp(CurrentSegmentIndex, 1, points.Length - 1);
+        if (dest < 0 || dest >= points.Length || points[dest] == null)
+            return false;
 
-        var from = dest - 1;
-        if (from < 0)
-            from = 0;
+        var fromIndex = Mathf.Clamp(dest - 1, 0, points.Length - 1);
+        if (points[fromIndex] == null)
+            return false;
 
-        var delta = points[dest].CartesianPosition - points[from].CartesianPosition;
+        from = points[fromIndex].CartesianPosition;
+        to = points[dest].CartesianPosition;
+        var delta = to - from;
         if (delta.sqrMagnitude < 0.0001f)
-            delta = points[dest].CartesianPosition - _pilot.NMPosition;
+            delta = to - _pilot.NMPosition;
         if (delta.sqrMagnitude < 0.0001f)
-            return _pilot.HeadingDegrees;
+            return false;
 
-        return Geometry.GetHeadingOfDirection(delta);
+        course = Geometry.GetHeadingOfDirection(delta);
+        return true;
     }
 
     private void CheckAdvancePointOnHDGProximity(out float proximityDistance)

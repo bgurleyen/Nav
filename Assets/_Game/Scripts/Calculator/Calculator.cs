@@ -432,14 +432,26 @@ public class Calculator : MonoBehaviour
             double s2 = (M[F - 1, 1, i] - M[F - 1, 3, i]) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (RSpeed - M[F - 1, 2, 0]) + M[F - 1, 3, i];
             double limitVS = (s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2 + ConfigVsDelta();
             bool pathWithinIdle = vsRef > limitVS;
+            double power = 0.0;
             if (pathWithinIdle)
             {    // Normal VS mode
+                power = PowerFraction(vsRef, limitVS);
                 for (i = 1; i < 4; i++)
                 {
-                    vv1 = (M[F, 0, i] - M[F, 1, i]) / -IdleVs(F, 1) * (vsRef - IdleVs(F, 1)) + M[F, 1, i];
-                    vv2 = (M[F, 2, i] - M[F, 3, i]) / -IdleVs(F, 3) * (vsRef - IdleVs(F, 3)) + M[F, 3, i];
-                    vv3 = (M[F - 1, 0, i] - M[F - 1, 1, i]) / -IdleVs(F - 1, 1) * (vsRef - IdleVs(F - 1, 1)) + M[F - 1, 1, i];
-                    vv4 = (M[F - 1, 2, i] - M[F - 1, 3, i]) / -IdleVs(F - 1, 3) * (vsRef - IdleVs(F - 1, 3)) + M[F - 1, 3, i];
+                    if (i == 1)
+                    {
+                        vv1 = PitchOnVs(F, 0, vsRef);
+                        vv2 = PitchOnVs(F, 2, vsRef);
+                        vv3 = PitchOnVs(F - 1, 0, vsRef);
+                        vv4 = PitchOnVs(F - 1, 2, vsRef);
+                    }
+                    else
+                    {
+                        vv1 = (M[F, 0, i] - M[F, 1, i]) / -IdleVs(F, 1) * (vsRef - IdleVs(F, 1)) + M[F, 1, i];
+                        vv2 = (M[F, 2, i] - M[F, 3, i]) / -IdleVs(F, 3) * (vsRef - IdleVs(F, 3)) + M[F, 3, i];
+                        vv3 = (M[F - 1, 0, i] - M[F - 1, 1, i]) / -IdleVs(F - 1, 1) * (vsRef - IdleVs(F - 1, 1)) + M[F - 1, 1, i];
+                        vv4 = (M[F - 1, 2, i] - M[F - 1, 3, i]) / -IdleVs(F - 1, 3) * (vsRef - IdleVs(F - 1, 3)) + M[F - 1, 3, i];
+                    }
                     s1 = (vv1 - vv2) / (M[F, 0, 0] - M[F, 2, 0]) * (CSpeed - M[F, 2, 0]) + vv2;
                     s2 = (vv3 - vv4) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (CSpeed - M[F - 1, 2, 0]) + vv4;
                     a[i - 1] = (s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2;
@@ -449,8 +461,8 @@ public class Calculator : MonoBehaviour
             {  // Path/VS steeper than idle: raise speed on the chart line, continued linearly past the steep corner.
                 for (i = 1; i < 4; i++)
                 {
-                    s1 = (M[F, 1, i] - M[F, 3, i]) / (M[F, 0, 0] - M[F, 2, 0]) * (RSpeed - M[F, 2, 0]) + M[F, 3, i];
-                    s2 = (M[F - 1, 1, i] - M[F - 1, 3, i]) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (RSpeed - M[F - 1, 2, 0]) + M[F - 1, 3, i];
+                    s1 = (IdleCornerValue(F, 1, i) - IdleCornerValue(F, 3, i)) / (M[F, 0, 0] - M[F, 2, 0]) * (RSpeed - M[F, 2, 0]) + IdleCornerValue(F, 3, i);
+                    s2 = (IdleCornerValue(F - 1, 1, i) - IdleCornerValue(F - 1, 3, i)) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (RSpeed - M[F - 1, 2, 0]) + IdleCornerValue(F - 1, 3, i);
                     a[i - 1] = (s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2;
                 }
                 i = 0; // Find speed for Current VS on idle
@@ -463,13 +475,15 @@ public class Calculator : MonoBehaviour
             {
                 a[1] = M[8 - (int)(Altitude / 5000), 1, 2];
                 a[2] = M[8 - (int)(Altitude / 5000), 1, 3];
+                power = 0.0;
             }
             if (RSpeed > CSpeed + 5)
             {
-                a[1] = 9650;
+                a[1] = AccelN1;
                 a[2] = 621;
+                power = 0.0;
             }
-            ApplyConfig(ref a[0], ref a[1], ref a[2]);
+            ApplyConfig(ref a[0], ref a[1], ref a[2], power, Altitude, CSpeed);
             bool idleFuel = !pathWithinIdle || (RSpeed < CSpeed - 5 && pathWithinIdle);
             if (!idleFuel)
                 a[2] = ApplyOperationalFf((int)a[2], Altitude);
@@ -493,12 +507,12 @@ public class Calculator : MonoBehaviour
             {
 
 
-                s1 = (M[F, 1, i] - M[F, 3, i]) / (M[F, 0, 0] - M[F, 2, 0]) * (CSpeed - M[F, 2, 0]) + M[F, 3, i];
-                s2 = (M[F - 1, 1, i] - M[F - 1, 3, i]) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (CSpeed - M[F - 1, 2, 0]) + M[F - 1, 3, i];
+                s1 = (IdleCornerValue(F, 1, i) - IdleCornerValue(F, 3, i)) / (M[F, 0, 0] - M[F, 2, 0]) * (CSpeed - M[F, 2, 0]) + IdleCornerValue(F, 3, i);
+                s2 = (IdleCornerValue(F - 1, 1, i) - IdleCornerValue(F - 1, 3, i)) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (CSpeed - M[F - 1, 2, 0]) + IdleCornerValue(F - 1, 3, i);
                 a[i] = (s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2;
             }
 
-            ApplyConfig(ref a[1], ref a[2], ref a[3]);
+            ApplyConfig(ref a[1], ref a[2], ref a[3], 0.0, Altitude, CSpeed);
             a[0] += ConfigVsDelta();
 
             N1 = (int)a[2];
@@ -655,41 +669,48 @@ public class Calculator : MonoBehaviour
         return (M[row, 1, 0] - M[row, 3, 0]) * t + M[row, 3, 0];
     }
 
-    static double CleanIdleVsFpm()
+    /// <summary>N1 (hundredths) the autothrottle sets to accelerate.</summary>
+    const int AccelN1 = 9650;
+    /// <summary>Inside 5 kt of the target the autothrottle trims with part power.</summary>
+    const float TrimMaxKtPerMin = 60f;
+    const float MinSpeedChangeKtPerMin = 2f;
+    const float MaxSpeedChangeKtPerMin = 140f;
+
+    /// <summary>
+    /// IAS change rate. Energy balance against the config idle path (flap, gear and speedbrake drag come in
+    /// through its VS) at idle thrust. Accelerating outside LVL CHG descent: AccelN1 against the N1 the path needs.
+    /// </summary>
+    float SpeedChangeKtPerMin(bool accelerating, bool fullThrustRange)
     {
         double altitude = CAltitude > 39900 ? 39900 : (CAltitude < 0 ? 0 : CAltitude);
-        int row = 8 - (int)(altitude / 5000.0);
-        if (row < 1) row = 1;
-        if (row > 8) row = 8;
-        double at = IdleVsOnRow(row, CSpeed);
-        double above = IdleVsOnRow(row - 1, CSpeed);
-        return (at - above) / -5000.0 * (altitude - (8 - row + 1) * 5000.0) + above;
+        double idleVs = ConfigIdleVsAt(altitude, CSpeed) + SpeedbrakeLevelDragVs(altitude);
+        float idlePathRate = B737_Performance.IasRateFromVsGap((float)altitude, (float)CSpeed, (float)(idleVs - CVS));
+        float rate = -idlePathRate;
+        if (accelerating)
+        {
+            bool idleDescent = Session.State.LC && (int)CAltitude >= RAltitude;
+            float thrustRate = idleDescent ? 0f
+                : B737_Performance.IasRateFromN1((float)altitude, (float)CSpeed, N1For(altitude, CVS, CSpeed) / 100f, AccelN1 / 100f);
+            rate = Mathf.Max(thrustRate, idlePathRate);
+        }
+        if (!fullThrustRange)
+            rate = Mathf.Min(rate, TrimMaxKtPerMin);
+        return Mathf.Clamp(rate, MinSpeedChangeKtPerMin, MaxSpeedChangeKtPerMin);
     }
 
     /// <summary>
-    /// Gear and speedbrake drag in kt/min. Level flight keeps the full amount
-    /// (about +8 and +9 kt/NM). It fades once the path steepens past clean idle
-    /// and is gone on the config idle path, where that drag is already in the VS.
+    /// Extra speedbrake drag (as idle VS) beyond its VS delta, flaps up only. FCTM: speedbrakes halve level-flight
+    /// deceleration time, so in level flight the speedbrake is worth the clean idle path. Fades to 0 on the config idle path.
     /// </summary>
-    static float SpeedbrakeGearDragKtPerMin(double vsFpm)
+    static double SpeedbrakeLevelDragVs(double altitude)
     {
-        float perNm = 0f;
-        if (SBUp) perNm += 9f;
-        if (LGDown) perNm += 8f;
-        if (perNm <= 0f)
-            return 0f;
-
-        double altitude = CAltitude > 39900 ? 39900 : (CAltitude < 0 ? 0 : CAltitude);
-        float gs = GS > 80f ? GS : (float)(Math.Max(CSpeed, 120.0) * (1.0 + 0.02 * altitude / 1000.0));
-        float full = perNm * gs / 60f;
-
-        double depth = -ConfigVsDelta();
-        if (depth < 50.0 || vsFpm >= CleanIdleVsFpm())
-            return full;
-
-        float left = 1f - (float)((CleanIdleVsFpm() - vsFpm) / depth);
-        if (left < 0f) left = 0f;
-        return full * left;
+        if (!SpeedbrakeFull || Flap_Idx != 0)
+            return 0.0;
+        double configIdle = ConfigIdleVsAt(altitude, CSpeed);
+        double sbDelta = ConfigVsDelta() - GearVsDelta();
+        double cleanIdle = configIdle - ConfigVsDelta();
+        double extra = Math.Min(0.0, cleanIdle - sbDelta);
+        return extra * PowerFraction(CVS, configIdle);
     }
 
     private void Speed_Equalize()
@@ -727,25 +748,10 @@ public class Calculator : MonoBehaviour
         PFDScript.SpeedTapeUpdate();
         PFDScript.SpeedIndexUpdate_Click();
 
-        int DeltaN1 = N1 - N1For(CAltitude, CVS, CSpeed);
-        float baseTime = (DeltaN1 == 0) ? 1f : (DeltaN1 > 0) ? 2000f / Mathf.Abs(DeltaN1) : 5380f / Mathf.Abs((float)DeltaN1);
-        if (baseTime > 5f) baseTime = 5f;
-        if (baseTime < 0.3f) baseTime = 0.3f;
-
-        float drag = SpeedbrakeGearDragKtPerMin(CVS);
-        bool idleThrust = RRSpeed < CSpeed && RSpeed < CSpeed - 5;
-        bool climbThrust = RRSpeed > CSpeed && RSpeed > CSpeed + 5;
-        if (drag > 0f && (idleThrust || climbThrust))
-        {
-            float rate = 60f / baseTime;
-            if (idleThrust)
-                rate += drag;
-            else
-                rate = Mathf.Max(rate * 0.4f, rate - drag * 0.55f);
-            SpeedTime = 60f / Mathf.Clamp(rate, 4f, 140f);
-        }
+        if (RRSpeed == CSpeed)
+            SpeedTime = 1f;
         else
-            SpeedTime = baseTime;
+            SpeedTime = 60f / SpeedChangeKtPerMin(RRSpeed > CSpeed, RSpeed > CSpeed + 5 || RSpeed < CSpeed - 5);
 
         DrawSpeedTrend(SpeedTime);
 
@@ -800,56 +806,54 @@ public class Calculator : MonoBehaviour
         }
     }
 
-    /// <summary>Along-track NM of the drawn magenta leg that ends at destIndex.</summary>
+    /// <summary>Along-track NM of the leg that ends at destIndex.</summary>
     public static double AlongTrackDistanceOnSegment(RouteScriptableObject route, int destIndex)
     {
+        double published = 0;
+        if (route?.Points != null && destIndex >= 0 && destIndex < route.Points.Length)
+            published = Math.Max(0, route.Points[destIndex].Distance);
+
         var lines = route?.TracedRoute?.ComputedLines;
         if (lines != null && destIndex >= 1 && destIndex < lines.Length)
         {
             var line = lines[destIndex];
-            if (line != null && line.TracedNMLength > 0.05f)
-            {
+            // A straight leg drops repeated samples, so TracedNMLength collapses to one
+            // tick (~0.3 NM) while the vertices still span the whole leg. TOD then
+            // sits on the aircraft no matter what Distance says. Use the leg distance.
+            if (line != null && line.TracedNMLength > 0.05f &&
+                (published < 0.05 || line.TracedNMLength >= published * 0.5))
                 return line.TracedNMLength;
-            }
         }
 
-        if (route?.Points != null && destIndex >= 0 && destIndex < route.Points.Length)
-        {
-            return Math.Max(0, route.Points[destIndex].Distance);
-        }
-
-        return 0;
+        return published;
     }
 
     /// <summary>
-    /// Remaining NM on the current magenta leg. Prefer LNAV walk on the traced line;
-    /// otherwise scale published remaining by traced/published so turns are counted.
+    /// Remaining NM on the current leg. The live distance (the number LEGS counts down)
+    /// moves the path. The traced walk is only a fallback: it can stay put while that
+    /// distance is still decreasing, which freezes VDI.
     /// </summary>
     public static double RemainingAlongCurrentSegmentNm(RouteScriptableObject route, int passedNodeIndex,
         double cartesianLeft)
     {
         var dest = passedNodeIndex + 1;
         var alongSeg = AlongTrackDistanceOnSegment(route, dest);
+
+        if (cartesianLeft > 0.05)
+        {
+            var published = route?.Points != null && dest >= 0 && dest < route.Points.Length
+                ? Math.Max(1e-4, route.Points[dest].Distance)
+                : alongSeg;
+            if (published < 1e-4 || alongSeg < 1e-4)
+                return cartesianLeft;
+            return Math.Max(0, cartesianLeft) * (alongSeg / published);
+        }
+
         var aircraft = Session.PlayerAircraft;
         if (aircraft != null && aircraft.IsOnRoute && aircraft.CurrentSegmentIndex == dest)
-        {
             return Math.Max(0, alongSeg - aircraft.NMWalkedOnCurrentSegment);
-        }
 
-        if (cartesianLeft <= 0)
-        {
-            return 0;
-        }
-
-        var published = route?.Points != null && dest >= 0 && dest < route.Points.Length
-            ? Math.Max(1e-4, route.Points[dest].Distance)
-            : alongSeg;
-        if (published < 1e-4)
-        {
-            return cartesianLeft;
-        }
-
-        return Math.Max(0, cartesianLeft) * (alongSeg / published);
+        return 0;
     }
 
     /// <summary>
@@ -907,7 +911,217 @@ public class Calculator : MonoBehaviour
     }
 
     /// <summary>
-    /// Next waypoint calculated altitude and remaining NM to it (current magenta leg).
+    /// Top LEGS line: first waypoint the FMS shows at or after the active TO index.
+    /// </summary>
+    public static bool TryGetFmsTopPoint(RouteScriptableObject route, int searchFromIndex,
+        out int pointIndex, out double calculatedAltitude)
+    {
+        pointIndex = -1;
+        calculatedAltitude = -1;
+        if (route?.Points == null || route.Points.Length == 0)
+            return false;
+
+        var start = Mathf.Clamp(searchFromIndex, 0, route.Points.Length - 1);
+        for (var i = start; i < route.Points.Length; i++)
+        {
+            if (!IsFmsLegsWaypoint(route.Points[i]))
+                continue;
+
+            var alt = GetPointCalculatedAltitude(route.Points[i]);
+            if (alt < 0)
+                continue;
+
+            pointIndex = i;
+            calculatedAltitude = alt;
+            return true;
+        }
+
+        return false;
+    }
+
+    static bool IsFmsLegsWaypoint(RoutePoint point)
+    {
+        if (point == null || point.IsSkippable || string.IsNullOrEmpty(point.Name))
+            return false;
+        if (point.Name == "_START_" || point.Name == "_Position_")
+            return false;
+        return true;
+    }
+
+    /// <summary>
+    /// Along-track NM from the aircraft to a waypoint at or beyond the active TO index.
+    /// </summary>
+    static double AlongTrackNmToPoint(RouteScriptableObject route, int passedNodeIndex,
+        double distanceLeftOnSegment, int pointIndex)
+    {
+        if (pointIndex <= passedNodeIndex)
+            return 0;
+
+        var dist = RemainingAlongCurrentSegmentNm(route, passedNodeIndex, distanceLeftOnSegment);
+        for (var i = passedNodeIndex + 2; i <= pointIndex; i++)
+            dist += AlongTrackDistanceOnSegment(route, i);
+        return Math.Max(0.0, dist);
+    }
+
+    static double AlongTrackNmFromStart(RouteScriptableObject route, int pointIndex)
+    {
+        double walked = 0;
+        var last = Mathf.Min(pointIndex, route.Points.Length - 1);
+        for (var i = 1; i <= last; i++)
+            walked += AlongTrackDistanceOnSegment(route, i);
+        return walked;
+    }
+
+    /// <summary>
+    /// Magenta waypoint on the top LEGS line. Falls back to the first shown waypoint.
+    /// </summary>
+    static bool TryGetActiveFmsPoint(RouteScriptableObject route, out int pointIndex)
+    {
+        pointIndex = -1;
+        if (route?.Points == null || route.Points.Length == 0)
+            return false;
+
+        for (var i = 0; i < route.Points.Length; i++)
+        {
+            if (route.Points[i] != null && route.Points[i].GetIsDisplayCurrent)
+            {
+                pointIndex = i;
+                return true;
+            }
+        }
+
+        var start = Session.PlayerAircraft != null
+            ? Mathf.Clamp(PositionVirtualNode.NextNodeIndex, 0, route.Points.Length - 1)
+            : 0;
+        return TryGetFmsTopPoint(route, start, out pointIndex, out _);
+    }
+
+    /// <summary>NM still to fly to the FMS active point. Matches the LEGS distance when that point is TO.</summary>
+    static double RemainingNmToFmsPoint(RouteScriptableObject route, int pointIndex)
+    {
+        var aircraft = Session.PlayerAircraft;
+        if (aircraft == null || route?.Points == null || pointIndex < 0 || pointIndex >= route.Points.Length)
+            return 0;
+
+        var activeTo = PositionVirtualNode.GetNodeToOnActive;
+        if (activeTo != null && route.Points[pointIndex].ID == activeTo.ID)
+            return Math.Max(0, aircraft.ComputedDistanceLeftOnSegment);
+
+        return Math.Max(0, Vector2.Distance(aircraft.NMPosition, route.GetCartesianPosition(pointIndex)));
+    }
+
+    /// <summary>First shown waypoint. The leg that arrives there is the 3° leg.</summary>
+    static bool TryGetFirstLegWaypoint(RouteScriptableObject route, out int pointIndex, out double calculatedAltitude)
+    {
+        return TryGetFmsTopPoint(route, 0, out pointIndex, out calculatedAltitude);
+    }
+
+    /// <summary>Published NM of the leg that ends at destIndex. Same unit as the LEGS distance.</summary>
+    static double PublishedLegNm(RouteScriptableObject route, int destIndex)
+    {
+        if (route?.Points != null && destIndex >= 0 && destIndex < route.Points.Length
+            && route.Points[destIndex].Distance > 0.05f)
+            return route.Points[destIndex].Distance;
+        return AlongTrackDistanceOnSegment(route, destIndex);
+    }
+
+    /// <summary>
+    /// NM still to fly on this leg. Uses the live LEGS distance directly.
+    /// Scaling it by the traced line shrinks a 1 NM move to a fraction, so the 3° path barely moves.
+    /// </summary>
+    static double LiveLegRemainingNm(RouteScriptableObject route, int passedNodeIndex, double distanceLeftOnSegment)
+    {
+        if (distanceLeftOnSegment > 0.05)
+            return distanceLeftOnSegment;
+        return RemainingAlongCurrentSegmentNm(route, passedNodeIndex, distanceLeftOnSegment);
+    }
+
+    /// <summary>
+    /// Feet per NM on this leg. The first leg is 3°. Later legs use the calculated-altitude slope.
+    /// Positive means the path descends toward the waypoint.
+    /// </summary>
+    static double LegSlopeFtPerNm(RouteScriptableObject route, int fromIndex, int toIndex)
+    {
+        if (route?.Points == null || toIndex <= 0 || toIndex >= route.Points.Length)
+            return VdiPathFtPerNm;
+
+        if (TryGetFirstLegWaypoint(route, out var firstIndex, out _) && toIndex <= firstIndex)
+            return VdiPathFtPerNm;
+
+        var altFrom = GetPointCalculatedAltitude(route.Points[fromIndex]);
+        var altTo = GetPointCalculatedAltitude(route.Points[toIndex]);
+        var legNm = PublishedLegNm(route, toIndex);
+        if (altFrom < 0 || altTo < 0 || legNm < 0.05)
+            return 0;
+        return (altFrom - altTo) / legNm;
+    }
+
+    /// <summary>
+    /// Path altitude at the aircraft. First leg: 3° to that waypoint's calculated altitude.
+    /// Later legs: that leg's calculated-altitude angle over the distance still on the leg.
+    /// </summary>
+    static bool TryLegReference(RouteScriptableObject route, int passedNodeIndex, double distanceLeftOnSegment,
+        out double referenceAltitude, out double calculatedAltitude, out double distanceNm, out int pointIndex,
+        out double slopeFtPerNm)
+    {
+        referenceAltitude = -1;
+        calculatedAltitude = -1;
+        distanceNm = 0;
+        pointIndex = -1;
+        slopeFtPerNm = VdiPathFtPerNm;
+        if (route?.Points == null || route.Points.Length < 2)
+            return false;
+
+        passedNodeIndex = Mathf.Clamp(passedNodeIndex, 0, route.Points.Length - 2);
+        var toIndex = passedNodeIndex + 1;
+        var onFirstLeg = TryGetFirstLegWaypoint(route, out var firstIndex, out var firstAlt) && toIndex <= firstIndex;
+
+        if (onFirstLeg)
+        {
+            pointIndex = firstIndex;
+            calculatedAltitude = firstAlt;
+            distanceNm = LiveLegRemainingNm(route, passedNodeIndex, distanceLeftOnSegment);
+            for (var i = toIndex + 1; i <= firstIndex; i++)
+                distanceNm += PublishedLegNm(route, i);
+            slopeFtPerNm = VdiPathFtPerNm;
+        }
+        else
+        {
+            pointIndex = toIndex;
+            calculatedAltitude = GetPointCalculatedAltitude(route.Points[toIndex]);
+            distanceNm = LiveLegRemainingNm(route, passedNodeIndex, distanceLeftOnSegment);
+            slopeFtPerNm = LegSlopeFtPerNm(route, passedNodeIndex, toIndex);
+        }
+
+        if (calculatedAltitude < 0)
+            return false;
+
+        referenceAltitude = calculatedAltitude + slopeFtPerNm * Math.Max(0.0, distanceNm);
+        return true;
+    }
+
+    /// <summary>
+    /// reference = waypoint calculated altitude + this leg's slope × remaining NM.
+    /// </summary>
+    public static bool TryGetReferenceAltitude(RouteScriptableObject route, out double referenceAltitude,
+        out double calculatedAltitude, out double distanceNm, out int pointIndex)
+    {
+        var passed = 0;
+        double left = 0;
+        if (Session.PlayerAircraft != null && route?.Points != null && route.Points.Length > 1)
+        {
+            passed = Mathf.Clamp(PositionVirtualNode.PassedNodeIndex, 0, route.Points.Length - 2);
+            left = Session.PlayerAircraft.ComputedDistanceLeftOnSegment;
+            if (left < 0)
+                left = Session.PlayerAircraft.DistanceToNextPoint;
+        }
+
+        return TryLegReference(route, passed, left, out referenceAltitude, out calculatedAltitude, out distanceNm,
+            out pointIndex, out _);
+    }
+
+    /// <summary>
+    /// FMS active point calculated altitude and remaining NM to it.
     /// </summary>
     public static bool TryGetNextVdiAnchor(RouteScriptableObject route, int passedNodeIndex,
         double distanceLeftOnSegment, out double constraintAltitude, out double distanceToConstraintNm)
@@ -924,21 +1138,10 @@ public class Calculator : MonoBehaviour
         distanceToConstraintNm = 0;
         anchorIndex = -1;
         if (route?.Points == null || passedNodeIndex < 0 || passedNodeIndex >= route.Points.Length - 1)
-        {
             return false;
-        }
 
-        var dest = passedNodeIndex + 1;
-        var alt = GetPointCalculatedAltitude(route.Points[dest]);
-        if (alt < 0)
-        {
-            return false;
-        }
-
-        constraintAltitude = alt;
-        distanceToConstraintNm = RemainingAlongCurrentSegmentNm(route, passedNodeIndex, distanceLeftOnSegment);
-        anchorIndex = dest;
-        return true;
+        return TryLegReference(route, passedNodeIndex, distanceLeftOnSegment,
+            out _, out constraintAltitude, out distanceToConstraintNm, out anchorIndex, out _);
     }
 
     /// <summary>
@@ -986,8 +1189,8 @@ public class Calculator : MonoBehaviour
     }
 
     /// <summary>
-    /// Path at the aircraft: next waypoint calculated altitude plus a 3° rise back
-    /// to the current along-track position (ft = alt_next + 318 × NM_to_next).
+    /// Path at the aircraft: FMS top-point calculated altitude plus a 3° rise back
+    /// over the remaining distance (ft = alt + 318 × NM).
     /// </summary>
     public static bool TryComputeVnavPath(RouteScriptableObject route, int passedNodeIndex,
         double distanceLeftOnSegment, double segmentLength, double startAltitude,
@@ -997,19 +1200,17 @@ public class Calculator : MonoBehaviour
         slopeFtPerNm = VdiPathFtPerNm;
         nextConstraintAlt = -1;
 
-        if (!TryGetNextVdiAnchor(route, passedNodeIndex, distanceLeftOnSegment,
-                out nextConstraintAlt, out var distToNext))
+        if (!TryLegReference(route, passedNodeIndex, distanceLeftOnSegment,
+                out pathTarget, out nextConstraintAlt, out _, out _, out slopeFtPerNm))
         {
             return false;
         }
 
-        slopeFtPerNm = VdiPathFtPerNm;
-        pathTarget = nextConstraintAlt + VdiPathFtPerNm * Math.Max(0.0, distToNext);
         return true;
     }
 
     /// <summary>
-    /// VDI / VNAV path: 3° back from the next point's calculated altitude.
+    /// VDI / VNAV path: 3° back from the FMS top point's calculated altitude.
     /// </summary>
     public static double ComputeVdiTarget(RouteScriptableObject route, int passedNodeIndex,
         double distanceLeftOnSegment, double alt0, double alt1, double segmentLength, double startAltitude)
@@ -1027,10 +1228,10 @@ public class Calculator : MonoBehaviour
     }
 
     /// <summary>
-    /// First along-route TOD: cruise ∩ 3° path into the first AT/below that is below cruise,
-    /// plus an energy pad. ABOVE-only is skipped. If 3° needs more NM than the route has,
-    /// TOD is clamped to the start of the route (already late) instead of hidden.
-    /// Distances follow the magenta curve. segmentIndex is the destination node index.
+    /// TOD: cruise intersects the 3° path on the first leg, aimed at that leg's
+    /// calculated altitude. If 3° needs more NM than the route has, TOD is
+    /// clamped to the start of the route. Distances follow the magenta curve.
+    /// segmentIndex is the destination node index.
     /// </summary>
     public static bool TryFindVdiCenterCrossing(RouteScriptableObject route, double cruiseAltitude,
         out Vector2 onTrackPosition, out int segmentIndex, out float segmentT)
@@ -1049,8 +1250,7 @@ public class Calculator : MonoBehaviour
             return false;
         }
 
-        var dToConstraintAtTod = (cruiseAltitude - constraintAlt) / VdiPathFtPerNm
-                                 + EnergyPadNm(route, anchorIndex);
+        var dToConstraintAtTod = (cruiseAltitude - constraintAlt) / VdiPathFtPerNm;
         if (dToConstraintAtTod < 0)
         {
             return false;
@@ -1069,23 +1269,37 @@ public class Calculator : MonoBehaviour
         constraintAlt = -1;
         distFromStart = 0;
 
-        double walked = 0;
-        for (var i = 1; i < route.Points.Length; i++)
-        {
-            walked += AlongTrackDistanceOnSegment(route, i);
-            var alt = GetPointCalculatedAltitude(route.Points[i]);
-            if (!IsDescentConstraintAltitude(alt, cruiseAltitude))
-            {
-                continue;
-            }
+        if (!TryGetFirstLegWaypoint(route, out anchorIndex, out constraintAlt))
+            return false;
 
-            anchorIndex = i;
-            constraintAlt = alt;
-            distFromStart = walked;
-            return true;
-        }
+        if (!IsDescentConstraintAltitude(constraintAlt, cruiseAltitude))
+            return false;
 
-        return false;
+        distFromStart = AlongTrackNmFromStart(route, anchorIndex);
+        return true;
+    }
+
+    /// <summary>True once the aircraft has reached the 3° TOD on the first leg.</summary>
+    static bool IsPastFirstLegTod(RouteScriptableObject route, double cruiseAltitude)
+    {
+        if (route?.Points == null || Session.PlayerAircraft == null)
+            return false;
+        if (!TryGetFirstLegWaypoint(route, out var firstIndex, out var firstAlt))
+            return false;
+        if (!IsDescentConstraintAltitude(firstAlt, cruiseAltitude))
+            return false;
+
+        var distToFirst = AlongTrackNmFromStart(route, firstIndex);
+        var backNm = Math.Clamp((cruiseAltitude - firstAlt) / VdiPathFtPerNm, 0, distToFirst);
+        var todFromStart = distToFirst - backNm;
+
+        var passed = Mathf.Clamp(PositionVirtualNode.PassedNodeIndex, 0, route.Points.Length - 2);
+        var left = Session.PlayerAircraft.ComputedDistanceLeftOnSegment;
+        if (left < 0)
+            left = Session.PlayerAircraft.DistanceToNextPoint;
+        var remainingToNext = LiveLegRemainingNm(route, passed, left);
+        var aircraftFromStart = AlongTrackNmFromStart(route, passed + 1) - remainingToNext;
+        return aircraftFromStart >= todFromStart - 0.05;
     }
 
     public static bool TryGetAlongTrackPosition(RouteScriptableObject route, double distAlongFromStart,
@@ -1175,54 +1389,36 @@ public class Calculator : MonoBehaviour
 
     public void DrawVDI()
     {
-        double DeltaAlt;
-        float posY;
-        var haveVnav = false;
-        double Target = CAltitude;
+        RouteScriptableObject _route = Session.IsMod ? Session.ModRoute : Session.ActiveRoute;
+        if (_route == null) _route = Session.ActiveRoute;
 
-        RouteScriptableObject activePoints = Session.ActiveRoute;
-        RouteScriptableObject modPoints = Session.ModRoute;
-        RouteScriptableObject _route = Session.IsMod ? modPoints : activePoints;
-        if (_route == null) _route = activePoints;
-
-        if (_route?.Points != null && PositionVirtualNode.PassedNodeIndex >= 0 &&
-            PositionVirtualNode.PassedNodeIndex < _route.Points.Length - 1)
-        {
-            var node0 = _route.Points[PositionVirtualNode.PassedNodeIndex];
-            var node1 = _route.Points[PositionVirtualNode.PassedNodeIndex + 1];
-            var d = Session.PlayerAircraft.ComputedDistanceLeftOnSegment;
-            var D = node1.Distance;
-            var alt0 = (double)node0.Altitude.ComputedValue;
-            var alt1 = (double)node1.Altitude.ComputedValue;
-            Target = ComputeVdiTarget(_route, PositionVirtualNode.PassedNodeIndex, d, alt0, alt1, D, StartAltitude);
-            haveVnav = true;
-            if (D == 0)
-            {
-                Target = CAltitude;
-            }
-        }
+        double reference = CAltitude;
+        var haveVnav = _route != null && TryGetReferenceAltitude(_route, out reference, out _, out _, out _);
 
         var blend = GsPathBlend();
         if (blend > 0f && TryGetIlsGsPathAltitude(out var gsAlt))
         {
-            Target = haveVnav ? Target * (1.0 - blend) + gsAlt * blend : gsAlt;
+            reference = haveVnav ? reference * (1.0 - blend) + gsAlt * blend : gsAlt;
         }
         else if (!haveVnav)
         {
             return;
         }
 
-        DeltaAlt = CAltitude - Target;
+        // Path relative to the airplane, same sense as a glideslope pointer.
+        // Positive: the 3° path is above. Full scale is 400 ft.
+        float pathAboveFt = (float)(reference - CAltitude);
+        const float fullScaleFt = 400f;
+        float pointerY = Mathf.Clamp(pathAboveFt / fullScaleFt, -1f, 1f) * (100f / 125f);
+        VDI_Index.transform.localPosition = new Vector2(0.3f, pointerY);
 
-        VDI_Text.text = (Mathf.Abs((float)DeltaAlt) >= 50) ? "" + (int)DeltaAlt : "";
-
-        posY = -((float)DeltaAlt / 5);
-        if (posY > 100) posY = 100;
-        if (posY < -100) posY = -100;
-
-        VDI_Index.transform.localPosition = new Vector2(0.3f, posY / 125);
-        if (DeltaAlt < 0) VDI_Text.transform.localPosition = new Vector2(0.1f, -1);
-        else VDI_Text.transform.localPosition = new Vector2(0.1f, 1);
+        if (Mathf.Abs(pathAboveFt) > fullScaleFt)
+        {
+            VDI_Text.text = "" + Mathf.RoundToInt(Mathf.Abs(pathAboveFt));
+            VDI_Text.transform.localPosition = new Vector2(0.1f, pathAboveFt > 0f ? 1f : -1f);
+        }
+        else
+            VDI_Text.text = "";
     }
     private int ApplyVnavPointSpeedLimit(int targetSpeed)
     {
@@ -1308,9 +1504,6 @@ public class Calculator : MonoBehaviour
             pathTarget = ComputeVdiTarget(route, PositionVirtualNode.PassedNodeIndex, d, alt0, alt1, D, StartAltitude);
         }
 
-        TryGetNextVdiAnchor(route, PositionVirtualNode.PassedNodeIndex, d,
-            out _, out var distToNext, out var nextAnchorIndex);
-
         var gsBlend = GsPathBlend();
         if (gsBlend > 0f && TryGetIlsGsPathAltitude(out var gsAlt) && Session.CurrentLevel?.levelInfo != null)
         {
@@ -1323,13 +1516,9 @@ public class Calculator : MonoBehaviour
         bool mcpDescentWindow = RAltitude < (int)CAltitude;
         double deviation = CAltitude - pathTarget; // + above path, - below
 
-        // Hold below the 3° path until the energy TOD. After that, descend to intercept.
+        // Hold below the path until the first-leg 3° TOD. After that, descend to intercept.
         const double belowPathHoldBand = 300;
-        var energyTodNm = (nextConstraintAlt > 0)
-            ? Math.Max(0.0, (StartAltitude - nextConstraintAlt) / VdiPathFtPerNm)
-              + EnergyPadNm(route, nextAnchorIndex)
-            : 0;
-        var pastEnergyTod = nextConstraintAlt <= 0 || distToNext <= energyTodNm;
+        var pastEnergyTod = IsPastFirstLegTod(route, StartAltitude);
         if (mcpDescentWindow && deviation < -belowPathHoldBand && !pastEnergyTod && gsBlend < 0.25f)
         {
             VNAV_VS = 0;
@@ -1407,14 +1596,9 @@ public class Calculator : MonoBehaviour
             && PositionVirtualNode.PassedNodeIndex < route.Points.Length - 1
             && Session.PlayerAircraft != null)
         {
-            var d = Session.PlayerAircraft.ComputedDistanceLeftOnSegment;
-            if (TryGetNextVdiAnchor(route, PositionVirtualNode.PassedNodeIndex, d,
-                    out var nextAlt, out var distToNext, out var nextAnchor)
-                && nextAlt > 0)
+            if (route.Points.Length > 1)
             {
-                var todNm = Math.Max(0.0, (StartAltitude - nextAlt) / VdiPathFtPerNm)
-                            + EnergyPadNm(route, nextAnchor);
-                pastTod = distToNext <= todNm;
+                pastTod = IsPastFirstLegTod(route, StartAltitude);
                 var stillAtCruise = CAltitude >= StartAltitude - 300.0;
                 var mcpUnchanged = RAltitude >= (int)StartAltitude - 100;
                 shouldShow = pastTod && stillAtCruise && mcpUnchanged
@@ -1688,25 +1872,46 @@ public class Calculator : MonoBehaviour
 
     static bool SpeedbrakeFull => SBUp;
 
+    /// <summary>Speedbrake/flap N1, FF and pitch. VS also carries the gear; gear N1/FF come from ApplyConfig.</summary>
     static (double n1Pct, double ffMul, double vsFpm, double pitchDeg) ConfigCorrection()
     {
         bool landingFlap = GetFlapSettingDegrees(Flap_Idx) == 30 || GetFlapSettingDegrees(Flap_Idx) == 40;
-        if (landingFlap && SpeedbrakeFull)
-        {
-            var sb = B738_75T_Corrections.ApplyFlapSB(0, 1, 0, 0);
-            if (!LGDown)
-                return (sb.N1, sb.FF, sb.VS, sb.Pitch);
-            var withGear = B738_75T_Corrections.Apply(sb.N1, sb.FF, sb.VS, sb.Pitch, true, false);
-            return (withGear.N1, withGear.FF, withGear.VS, withGear.Pitch);
-        }
-
-        var clean = B738_75T_Corrections.Apply(0, 1, 0, 0, LGDown, SpeedbrakeFull);
-        return (clean.N1, clean.FF, clean.VS, clean.Pitch);
+        var c = landingFlap && SpeedbrakeFull
+            ? B738_75T_Corrections.ApplyFlapSB(0, 1, 0, 0)
+            : B738_75T_Corrections.Apply(0, 1, 0, 0, SpeedbrakeFull);
+        return (c.N1, c.FF, c.VS + GearVsDelta(), c.Pitch);
     }
+
+    static double GearVsDelta() => LGDown ? B738_75T_Corrections.GearVsFpm : 0.0;
 
     static double ConfigVsDelta() => ConfigCorrection().vsFpm;
 
     static double IdleVs(int row, int corner) => M[row, corner, 0] + ConfigVsDelta();
+
+    /// <summary>Pitch on the chart's pitch/VS line without the gear shift, continued past idle down to the gear idle path.</summary>
+    static double PitchOnVs(int row, int levelCorner, double vs)
+    {
+        int idleCorner = levelCorner + 1;
+        double idleVs = IdleVs(row, idleCorner) - GearVsDelta();
+        return (M[row, levelCorner, 1] - M[row, idleCorner, 1]) / -idleVs * (vs - idleVs) + M[row, idleCorner, 1];
+    }
+
+    /// <summary>Idle-corner value; pitch is taken on the config idle path.</summary>
+    static double IdleCornerValue(int row, int idleCorner, int i) =>
+        i == 1 ? PitchOnVs(row, idleCorner - 1, IdleVs(row, idleCorner)) : M[row, idleCorner, i];
+
+    /// <summary>0 on the idle path, 1 in level flight or climb.</summary>
+    static double PowerFraction(double vs, double idleVs) =>
+        idleVs < -1.0 ? Mathf.Clamp01((float)(1.0 - vs / idleVs)) : 1.0;
+
+    static double ConfigIdleVsAt(double altitude, double speed)
+    {
+        int F = 8 - Mathf.FloorToInt((float)altitude / 5000);
+        F = Mathf.Clamp(F, 1, 8);
+        double at = IdleVsOnRow(F, speed);
+        double above = IdleVsOnRow(F - 1, speed);
+        return (at - above) / -5000.0 * (altitude - (8 - F + 1) * 5000.0) + above + ConfigVsDelta();
+    }
 
     /// <summary>Same idle-path speed InterpolateVS stores in increasedSpeed for this VS.</summary>
     static int IdleChartSpeed(double vsRef)
@@ -1745,12 +1950,18 @@ public class Calculator : MonoBehaviour
         return shallow;
     }
 
-    static void ApplyConfig(ref double pitchHundredths, ref double n1Hundredths, ref double ff)
+    static void ApplyConfig(ref double pitchHundredths, ref double n1Hundredths, ref double ff, double power, double altitude, double speed)
     {
         var c = ConfigCorrection();
         pitchHundredths += c.pitchDeg * 100.0;
         n1Hundredths += c.n1Pct * 100.0;
         ff *= c.ffMul;
+        if (LGDown)
+        {
+            var gear = B738_75T_Corrections.Gear(altitude, power, speed);
+            n1Hundredths += gear.N1 * 100.0;
+            ff *= gear.FFMul;
+        }
     }
 
     public static int FuelFlowFor(double Altitude, double VS, double Speed)
@@ -1769,7 +1980,7 @@ public class Calculator : MonoBehaviour
         double s2 = (vv3 - vv4) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (Speed - M[F - 1, 2, 0]) + vv4;
         int ff = (int)((s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2);
         double pitch = 0, n1 = 0, ffOut = ff;
-        ApplyConfig(ref pitch, ref n1, ref ffOut);
+        ApplyConfig(ref pitch, ref n1, ref ffOut, PowerFraction(VS, ConfigIdleVsAt(Altitude, Speed)), Altitude, Speed);
         return ApplyOperationalFf((int)ffOut, Altitude);
     }
 
@@ -1819,7 +2030,7 @@ public class Calculator : MonoBehaviour
         double s2 = (vv3 - vv4) / (M[F - 1, 0, 0] - M[F - 1, 2, 0]) * (Speed - M[F - 1, 2, 0]) + vv4;
         double n1 = (s1 - s2) / -5000f * (Altitude - (8 - F + 1) * 5000) + s2;
         double pitch = 0, ff = 1;
-        ApplyConfig(ref pitch, ref n1, ref ff);
+        ApplyConfig(ref pitch, ref n1, ref ff, PowerFraction(VS, ConfigIdleVsAt(Altitude, Speed)), Altitude, Speed);
         return (int)n1;
     }
     private void SetN1FF()
