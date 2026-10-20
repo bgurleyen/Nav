@@ -1,47 +1,25 @@
 using System;
 using System.Collections.Generic;
+using UnityEngine;
 
 namespace Unyawn.Utils
 {
     public class UYServiceLocator
     {
-        public class CannotHaveTwoInstancesException : Exception
-        {
-            public CannotHaveTwoInstancesException() : base(
-                "There can be only one instance of a the Services class. It is a singleton...")
-            {
-            }
-        }
-
-        public class ServiceAlreadyRegisteredException : Exception
-        {
-            public ServiceAlreadyRegisteredException(Type T) : base(
-                $"A service of that name ({T})  has already been registered!")
-            {
-            }
-        }
-
-        public class ServiceNotFoundException : Exception
-        {
-            public ServiceNotFoundException(Type T) : base(
-                $"Service ({T}) not found.\nAlways Register() in Awake(). Never Find() in Awake(). Check Script Execution Order.")
-            {
-            }
-        }
-
-
         private static UYServiceLocator _instance;
         private readonly Dictionary<Type, object> _services = new();
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetOnDomainLoad()
+        {
+            _instance = null;
+        }
 
 
         public UYServiceLocator()
         {
-            if (_instance != null)
-            {
-                throw new CannotHaveTwoInstancesException();
-            }
-
-            _instance = this;
+            if (_instance == null)
+                _instance = this;
         }
 
 
@@ -68,17 +46,27 @@ namespace Unyawn.Utils
         /// <typeparam name="T">Type of the instance object.</typeparam>
         public static void Register<T>(T service, bool overwrite = true) where T : class
         {
+            if (service == null)
+                return;
+
             if (!overwrite && Instance._services.ContainsKey(typeof(T)))
-            {
-                throw new ServiceAlreadyRegisteredException(typeof(T));
-            }
+                return;
 
             Instance._services[typeof(T)] = service;
         }
 
         public static bool Has<T>() where T : class
         {
-            return Instance._services.ContainsKey(typeof(T));
+            if (_instance == null || !Instance._services.TryGetValue(typeof(T), out var raw))
+                return false;
+
+            if (raw is UnityEngine.Object unityObject && unityObject == null)
+            {
+                Instance._services.Remove(typeof(T));
+                return false;
+            }
+
+            return raw != null;
         }
 
 
@@ -91,9 +79,10 @@ namespace Unyawn.Utils
         /// <returns>Service instance, or null if not initialized</returns>
         public static T Get<T>() where T : class
         {
-            var ret = Instance._services[typeof(T)] as T;
+            if (!Has<T>())
+                return null;
 
-            return ret;
+            return Instance._services[typeof(T)] as T;
         }
 
         public static void Unregister<T>()
@@ -113,24 +102,6 @@ namespace Unyawn.Utils
         public static void Clear()
         {
             Instance._services.Clear();
-        }
-
-
-        /// <summary>
-        /// Prints the list of services in the debug console
-        /// </summary>
-        public static void Debug()
-        {
-            string output = "Debug Services List:\n";
-
-            foreach (var s in Instance._services)
-            {
-                output += "* " + s.Key + " = " + s.Value.ToString() + "\n";
-            }
-
-            output += "Total: " + Instance._services.Count.ToString() + " services registered.";
-
-            UnityEngine.Debug.Log(output);
         }
 
     }

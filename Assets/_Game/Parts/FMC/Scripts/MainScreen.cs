@@ -5,7 +5,6 @@ using UnityEngine;
 public class MainScreen : Singleton<MainScreen>
 {
     [SerializeField] private Color modified;
-    [SerializeField] private Color idle;
     
     [Header("top header")]
     [SerializeField] private BgText leftInfo1;
@@ -18,6 +17,8 @@ public class MainScreen : Singleton<MainScreen>
     [Header("scratch pad")]
     [SerializeField]
     public BgText scratchPadText;
+
+    public static BgText Pad => Instance != null ? Instance.scratchPadText : null;
     
 
 

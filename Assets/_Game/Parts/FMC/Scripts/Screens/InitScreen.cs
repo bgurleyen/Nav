@@ -41,7 +41,11 @@ public class InitScreen : ScreenBase
 
    private void Refresh()
    {
-      var initRef = infoFMC.Instance.Fmc.Initref;
+      var fmc = infoFMC.Live;
+      if (fmc == null)
+         return;
+
+      var initRef = fmc.Initref;
       
       _gwt.text = initRef.GWT;
       _destinationRw.text = initRef.Destination + initRef.RW;

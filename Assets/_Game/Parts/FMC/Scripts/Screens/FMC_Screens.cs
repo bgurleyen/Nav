@@ -77,7 +77,8 @@ public class FMC_Screens : Singleton<FMC_Screens>
                 ShowPage(_fixScreen);
                 break;
             default:
-                throw new ArgumentOutOfRangeException(nameof(screen), screen, null);
+                Debug.LogWarning($"FMC screen {screen} is not wired.");
+                break;
         }
     }
 }

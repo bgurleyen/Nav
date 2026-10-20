@@ -21,69 +21,88 @@ public class RadialIndicators : MonoBehaviour
     [SerializeField] TextMeshPro _rangeText;
 
     private float _onePivotHeight;
+    private float _rangeBaseX;
+    private bool _rangeBaseReady;
 
     private void Awake()
     {
-        _onePivotHeight = _headingTop.localPosition.y;
+        if (_headingTop != null)
+            _onePivotHeight = _headingTop.localPosition.y;
+        PlaceRangeBox();
     }
 
     public void RefreshScale()
     {
-        Vector3 scale;
+        if (Session.State == null)
+            return;
 
-        switch (Session.State.MapMode)
+        Transform pivot = Session.State.MapMode switch
         {
-            case MapMode.Map:
-                scale = _mapPivot.localScale;
-                break;
-            case MapMode.Center:
-                scale = _centerPivot.localScale;
-                break;
-            case MapMode.Plan:
-                scale = _planPivot.localScale;
-                break;
-            default:
-                throw new ArgumentOutOfRangeException();
-        }
+            MapMode.Map => _mapPivot,
+            MapMode.Center => _centerPivot,
+            MapMode.Plan => _planPivot,
+            _ => null
+        };
+        if (pivot == null)
+            return;
 
-        _headingLine.transform.localScale = scale;
-        _headingTop.SetLocalY(scale.x * _onePivotHeight);
-        _windTop.SetLocalY(scale.x * _onePivotHeight);
-        _hdgRangeTop.SetLocalY(scale.x * _onePivotHeight);
-    }
-
-    public void RefreshVisibility()
-    {
-        _headingLine.gameObject.SetActive( Session.State.MapMode != MapMode.Plan && Session.State.HDG);
-        _headingTop.gameObject.SetActive(Session.State.MapMode != MapMode.Plan);
+        var scale = pivot.localScale;
+        if (_headingLine != null)
+            _headingLine.transform.localScale = scale;
+        _headingTop?.SetLocalY(scale.x * _onePivotHeight);
+        _windTop?.SetLocalY(scale.x * _onePivotHeight);
+        _hdgRangeTop?.SetLocalY(scale.x * _onePivotHeight);
     }
 
     public void RefreshZoomAndHDG()
     {
-        //var displayHeadingDegrees = Mathf.RoundToInt(Session.PlayerAircraft.DisplayHeadingDegrees);
-        ////Debug.Log(Session.PlayerAircraft.DisplayHeadingDegrees);
-        //if (displayHeadingDegrees > 359) displayHeadingDegrees -= 360;
-        //if (displayHeadingDegrees < 0) displayHeadingDegrees += 360;
+        if (Session.PlayerAircraft == null)
+            return;
 
-        //displayHeadingDegrees = Mathf.Abs(displayHeadingDegrees) % 360;
+        if (_headingText != null)
+            _headingText.text = Mathf.RoundToInt(Geometry.AbsAngle(Session.PlayerAircraft.DisplayHeadingDegrees)).ToString("D3");
 
-        _headingText.text = Mathf.RoundToInt(Geometry.AbsAngle(Session.PlayerAircraft.DisplayHeadingDegrees)).ToString("D3");
+        if (_rangeText != null)
+            _rangeText.text = $"RANGE\n{Math.Round(80f / Math.Max(0.01f, Session.ZoomMultiplier), 1)}";
 
-        //_headingText.text = Mathf.RoundToInt(displayHeadingDegrees).ToString("D3");
-        _rangeText.text = $"RANGE\n{Math.Round(80f / Session.ZoomMultiplier, 1)}";
+        PlaceRangeBox();
     }
 
-    public void HeadingLineVisibility()
+    void PlaceRangeBox()
     {
-        _headingLine.gameObject.SetActive(Session.State.MapMode != MapMode.Plan);
-        _headingTop.gameObject.SetActive(Session.State.MapMode != MapMode.Plan);
+        if (_rangeText == null)
+            return;
 
-        CancelInvoke(nameof(HideHeadingLine));
-        Invoke(nameof(HideHeadingLine), 10f);
-    }
+        var range = _rangeText.transform;
+        while (range != null && range.name != "RANGE")
+            range = range.parent;
+        if (range == null)
+            return;
 
-    private void HideHeadingLine()
-    {
-        _headingLine.gameObject.SetActive(false);
+        if (!_rangeBaseReady)
+        {
+            _rangeBaseX = range.localPosition.x;
+            _rangeBaseReady = true;
+        }
+
+        _rangeText.ForceMeshUpdate();
+        float width = 0f;
+        int count = 0;
+        var characters = _rangeText.textInfo.characterInfo;
+        int limit = Mathf.Min(_rangeText.textInfo.characterCount, characters.Length);
+        for (int i = 0; i < limit; i++)
+        {
+            if (!characters[i].isVisible)
+                continue;
+            width += characters[i].xAdvance - characters[i].origin;
+            count++;
+        }
+
+        if (count == 0)
+            return;
+
+        var position = range.localPosition;
+        position.x = _rangeBaseX + (width / count) * 2f;
+        range.localPosition = position;
     }
 }

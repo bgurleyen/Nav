@@ -3,6 +3,7 @@ using Navigation;
 using UnityEngine;
 using Unyawn.Utils;
 
+[DefaultExecutionOrder(-100)]
 public class GameManager : MonoBehaviour
 {
     [SerializeField] private GameConfigScriptableObject _gameConfig;
@@ -63,7 +64,12 @@ public class GameManager : MonoBehaviour
         }
 
         var levelData = _gameConfig.LevelsData[index];
-        
+        if (levelData.MainRoute == null || _routes == null)
+        {
+            Debug.LogError($"[GameManager] Level {index} has no route.");
+            return;
+        }
+
         Session.CurrentLevel = levelData;
 
         levelData.MainRoute.Init(true);
@@ -79,9 +85,6 @@ public class GameManager : MonoBehaviour
         //Debug.Log("Init For Level  222222 ");
         _routes.ActiveRoute = levelData.MainRoute.CloneAndInit();
 
-        //_routes.FixedPoints = FixedPointsScriptableObject.CreateDemo();
-        //Debug.Log(_routes.FixedPoints.Entries.Length);
-
         //Debug.Log("_routes.ActiveRoute: "+_routes.ActiveRoute);
 
 
@@ -96,7 +99,21 @@ public class GameManager : MonoBehaviour
 
         Session.RollRteOrigin();
 
-        Move.Instance.Init(levelData);
+        try
+        {
+            if (Move.Instance != null)
+                Move.Instance.Init(levelData);
+        }
+        catch (Exception e)
+        {
+            Debug.LogException(e);
+        }
+
+        if (_simulation == null)
+        {
+            Debug.LogError("[GameManager] Simulation is not available.");
+            return;
+        }
 
         _simulation.Init();
     }
@@ -131,8 +148,7 @@ public class GameManager : MonoBehaviour
         //    Time.deltaTime * Session.Settings.SpeedMultiplier;
         //_simulation.Tick();
 
-        //[ESA] High Performance, normal time calculation attempt regarding the solution of the original developer.
-        //I am suspicious that SplittedTickComputeTrace() may be needed to run on demand for some situtations.
+        // Route geometry is rebuilt when the level or an FMC edit changes the route.
         if (Session.Settings == null || _simulation == null)
         {
             return;
@@ -148,7 +164,6 @@ public class GameManager : MonoBehaviour
             : 0;
 
         _simulation.SplittedTickModHandling();
-        _simulation.SplittedTickComputeTrace();
         for (int i = 0; i < ticksInDeltaTime; i++)
         {
             _simulation.SplittedTickSimulation();
@@ -178,17 +193,26 @@ public class GameManager : MonoBehaviour
 
     private void ApplyMod()
     {
+        if (_simulation == null || Session.ModRoute == null || Session.PlayerAircraft == null || Session.State == null)
+            return;
+
         _simulation.RebuildModeSetWithPosition();
+        if (Session.ModeSetWithPosition == null)
+            return;
 
         Session.ModRoute.ClearModifiedFlags();
         Session.ModeSetWithPosition.ClearModifiedFlags();
         Session.ActiveRoute = Session.ModeSetWithPosition.CloneAndInit();
+        if (Session.ActiveRoute == null)
+            return;
+
         Session.ActiveRoute.ComputeTrace();
 
         Session.ModRoute = null;
         Session.IsMod = false;
         _simulation.ClearModPreview();
-        _legsScreen.DisplayOperation("0k");
+        if (_legsScreen != null)
+            _legsScreen.DisplayOperation("0k");
         if (Session.ActiveRoute.HasActiveDirectApproach(out var linearApproachIndex) && Session.State.LNAV)
         {
             if (!Session.PlayerAircraft.TryRejoinRoute())
@@ -200,6 +224,7 @@ public class GameManager : MonoBehaviour
         {
             var seekIndex = Session.ActiveRoute.FindForwardPositionNodeIndex();
             var seekVertex = 0;
+            var pointCount = Session.ActiveRoute.Points != null ? Session.ActiveRoute.Points.Length : 0;
             if (Session.ActiveRoute.IsCourseInterceptRoute)
             {
                 // The route now starts on the 200 NM course. Join the closest point on it.
@@ -208,10 +233,12 @@ public class GameManager : MonoBehaviour
             }
             else if (seekIndex < 0)
             {
+                if (pointCount < 2)
+                    return;
                 seekIndex = Mathf.Clamp(
                     PositionVirtualNode.PassedNodeIndex + 2,
                     1,
-                    Session.ActiveRoute.Points.Length - 1);
+                    pointCount - 1);
             }
 
             Session.PlayerAircraft.ResetSeekProgress(seekIndex, seekVertex);

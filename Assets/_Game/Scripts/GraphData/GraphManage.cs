@@ -469,11 +469,11 @@ public class GraphManage : MonoBehaviour
 
     void RefreshLevelsPanelRanks()
     {
-        if (levelsPanel == null || dataManage?.firestoreController == null)
+        if (levelsPanel == null || dataManage == null || dataManage.Cloud == null)
             return;
 
         int currentFuel = _meData?.remainingFuel ?? 0;
-        dataManage.firestoreController.FetchAllLevelRanks(
+        dataManage.Cloud.FetchAllLevelRanks(
             PlayerPrefsHolder.UiLevelIndex,
             currentFuel,
             ApplyLevelsPanelRanks);
@@ -623,7 +623,13 @@ public class GraphManage : MonoBehaviour
             return;
         }
 
-        dataManage.firestoreController.FetchLevelAggregate(levelKey, flightResult.remainingFuel, aggregate =>
+        if (dataManage == null || dataManage.Cloud == null)
+        {
+            RefreshDebriefPanel(preferLog: true);
+            return;
+        }
+
+        dataManage.Cloud.FetchLevelAggregate(levelKey, flightResult.remainingFuel, aggregate =>
         {
             _bestData = aggregate.best;
             _averageData = aggregate.average;

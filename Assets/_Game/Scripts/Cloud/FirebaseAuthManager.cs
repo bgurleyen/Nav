@@ -23,7 +23,6 @@ public class FirebaseAuthManager : MonoBehaviour
     [Space]
     [Header("Google")]
 #pragma warning disable CS0414 // Kept for Google Sign-In wiring (see commented GoogleSignInConfiguration).
-    [SerializeField] private string googleWebApi = "";
 #pragma warning restore CS0414
 
     public FirebaseUser user;
@@ -132,31 +131,6 @@ public class FirebaseAuthManager : MonoBehaviour
         //UIManager.Instance.loadingPanel.Hide();
     }
 
-    public void Login(string email, string password)
-    {
-        //_ = SigninWithEmailAsync(email, password);
-    }
-
-    public void ForgotPassword(string email)
-    {
-        SendPasswordResetEmail(email);
-    }
-
-    public void ResendEmail()
-    {
-        SendVerificationMail();
-    }
-
-    public void CreateUser(string email, string password)
-    {
-        _ = CreateUserWithEmailAsync(email, password);
-    }
-
-    public void LoginWithGoogle()
-    {
-        //GoogleLogin();
-    }
-
     public void LoginWithanonymous()
     {
         AnonymousLogin();
@@ -164,33 +138,6 @@ public class FirebaseAuthManager : MonoBehaviour
     #endregion
 
     #region FirebaseAPI
-
-    private Task CreateUserWithEmailAsync(string email, string password)
-    {
-        return firebaseAuth.CreateUserWithEmailAndPasswordAsync(email, password)
-          .ContinueWithOnMainThread((task) =>
-          {
-              if (LogTaskCompletion(task, "User Creation"))
-              {
-                  //SendVerificationMail(); //Use this for email verication
-              }
-              return task;
-          }).Unwrap();
-    }
-
-    private void SendVerificationMail()
-    {
-        user = firebaseAuth.CurrentUser;
-
-        _ = user.SendEmailVerificationAsync().ContinueWithOnMainThread((authTask) =>
-        {
-            if (LogTaskCompletion(authTask, "Send Password Reset Email"))
-            {
-                Debug.Log("Reset Email Password Successful");
-            }
-        });
-    }
-
 
     //private Task SigninWithEmailAsync(string email, string password)
     //{
@@ -215,36 +162,6 @@ public class FirebaseAuthManager : MonoBehaviour
     //  }
     //  //UIManager.Instance.loadingPanel.Hide();
     //}
-
-    private void SendPasswordResetEmail(string email)
-    {
-        _ = firebaseAuth.SendPasswordResetEmailAsync(email).ContinueWithOnMainThread((authTask) =>
-        {
-        });
-    }
-
-    private bool LogTaskCompletion(Task task, string operation)
-    {
-        bool complete = false;
-
-        if (task.IsCanceled)
-        {
-            Debug.Log("User Data Not Found");
-            //userInputs.popup.PopupMessage("Password Reset", operation + " canceled.");
-        }
-        else if (task.IsFaulted)
-        {
-            Debug.Log("User Data Not Found");
-        }
-        else if (task.IsCompleted)
-        {
-            complete = true;
-
-            Debug.Log("User Created/Logged In With Email/Password");
-        }
-        return complete;
-    }
-
 
     public void OnUserLogout()
     {
@@ -280,7 +197,6 @@ public class FirebaseAuthManager : MonoBehaviour
     //private void InitializeGoogle()
     //{
     //  configuration = new GoogleSignInConfiguration {
-    //    WebClientId = googleWebApi,
     //    RequestIdToken = true
     //  };
     //}

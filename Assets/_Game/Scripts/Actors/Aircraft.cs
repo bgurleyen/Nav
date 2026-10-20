@@ -43,7 +43,8 @@ public class Aircraft : MovingActor
 
         _pilot = new Pilot(Vector2.zero, Vector2.up, false);
 
-        _turningHeaderLine.positionCount = 10;
+        if (_turningHeaderLine != null)
+            _turningHeaderLine.positionCount = 10;
 
         debugHelper = GetComponent<AircraftDebugHelper>();
     }
@@ -58,11 +59,15 @@ public class Aircraft : MovingActor
         _gameFinished = true;
         Debug.Log(isStable ? "Finish GAME (stable)" : "Finish GAME (unstable)");
         GraphManage.OnGameFinish?.Invoke(isStable);
-        Session.State.AutoSetHDG(true);
+        if (Session.State != null)
+            Session.State.AutoSetHDG(true);
     }
     public override void SimulateTick()
     {
         DrawHeadingLine();
+
+        if (Session.State == null)
+            return;
 
         TryCaptureLoc();
         TryCaptureGs();
@@ -85,7 +90,14 @@ public class Aircraft : MovingActor
                 return;
             }
 
-            var foundClosePathDestination = Session.ActiveRoute.TracedRoute.FindCloseToRouteSegmentDestination(
+            var traced = Session.ActiveRoute?.TracedRoute;
+            if (traced == null || Session.Settings == null)
+            {
+                _pilot.TickAdvance();
+                return;
+            }
+
+            var foundClosePathDestination = traced.FindCloseToRouteSegmentDestination(
                 Session.Settings.PilotSeekDistancePathFollow,
                 out _lastFoundRoutePosition,
                 out var foundAtDistanceOnSegment,
@@ -136,7 +148,9 @@ public class Aircraft : MovingActor
 
     private void TryCaptureLoc()
     {
-        if (Session.State.LOCCaptured || Move.Instance == null)
+        if (Session.State == null || Session.State.LOCCaptured || Move.Instance == null)
+            return;
+        if (Session.CurrentLevel?.levelInfo == null)
             return;
 
         float course = Session.CurrentLevel.levelInfo.Course;
@@ -176,6 +190,9 @@ public class Aircraft : MovingActor
     /// </summary>
     private void SteerLocalizer()
     {
+        if (Session.CurrentLevel?.levelInfo == null)
+            return;
+
         float course = Session.CurrentLevel.levelInfo.Course;
         float intercept = 0f;
 
@@ -214,6 +231,9 @@ public class Aircraft : MovingActor
 
     private void DrawHeadingLine()
     {
+        if (_turningHeaderLine == null || _pilot == null || _turningHeaderLine.positionCount < 1)
+            return;
+
         var lerp = (float)1 / _turningHeaderLine.positionCount;
         var vectorStep = Vector2.Lerp(Vector2.zero, _upwardsHeaderLineTop, lerp);
 
@@ -252,7 +272,8 @@ public class Aircraft : MovingActor
                     return DistanceToNextPoint;
 
                 var nextViableNodeIndex = PositionVirtualNode.PassedNodeIndex + 1;
-                while (nextViableNodeIndex < points.Length && points[nextViableNodeIndex].IsSkippable)
+                while (nextViableNodeIndex < points.Length
+                    && (points[nextViableNodeIndex] == null || points[nextViableNodeIndex].IsSkippable))
                     nextViableNodeIndex++;
 
                 if (nextViableNodeIndex >= points.Length)
@@ -268,15 +289,6 @@ public class Aircraft : MovingActor
 
     public float HeadingDegrees => Calculator.CTrack;
     public float DisplayHeadingDegrees => _pilot.DisplayHeadingDegrees;
-    public float TrackDegrees => _pilot.HeadingDegrees;
-
-    /// <summary>Instantly set aircraft track (no turn lerp).</summary>
-    public void SnapToTrack(float trackDegrees)
-    {
-        _pilot.HeadingDegrees = trackDegrees;
-        _pilot.DisplayHeadingDegrees = trackDegrees;
-    }
-
 
     public void ResetOnActiveSet(float aircraftSpeed, float altitude)
     {
@@ -301,6 +313,8 @@ public class Aircraft : MovingActor
         _routeCapture = false;
         _trendAngle = 0f;
         _pilot.ClearWholeTurn();
+        if (Session.State == null)
+            return;
         Session.State.AutoSetLNAV(true, true);
         if (Session.CurrentLevel != null && Session.CurrentLevel.levelInfo != null
             && Session.CurrentLevel.levelInfo.LevelNumber == PlayerPrefsHolder.FreeFlightLevel)
@@ -324,29 +338,32 @@ public class Aircraft : MovingActor
     public bool TryRejoinRoute()
     {
         Debug.Log("Try-Re-Join-Route");
-        var startSegment = Session.ActiveRoute.FindForwardPositionNodeIndex();
+        var route = Session.ActiveRoute;
+        if (route?.TracedRoute == null || Session.Settings == null || Session.PlayerAircraft == null)
+            return false;
+
+        var startSegment = route.FindForwardPositionNodeIndex();
         if (startSegment < 1)
             startSegment = 1;
 
-        if (Session.ActiveRoute.TracedRoute.FindCloseToRouteSegmentDestination(
+        if (route.TracedRoute.FindCloseToRouteSegmentDestination(
                 Session.Settings.HDGCloseRejoinDistance,
                 out var routeIntersection,
                 out _,
                 out _,
                 startFromSegmentIndex: startSegment,
                 segmentBeginningIsAlwaysValid: false) ||
-            Session.ActiveRoute.FindFreeFlightDirectExitScenario(out routeIntersection))
+            route.FindFreeFlightDirectExitScenario(out routeIntersection))
         {
             ResetSeekProgress(routeIntersection.SegmentIndex, routeIntersection.SegmentVertexIndex);
             _pendingJoinRoutePosition = routeIntersection;
             return true;
         }
-        else
-        {
-            Debug.LogWarning("No Intersection Point Found");
+
+        Debug.LogWarning("No Intersection Point Found");
+        if (Session.State != null)
             Session.State.AutoSetLNAV(false, true);
-            return false;
-        }
+        return false;
     }
 
     /// <summary>
@@ -503,20 +520,28 @@ public class Aircraft : MovingActor
     private void CheckAdvancePointOnHDGProximity(out float proximityDistance)
     {
         proximityDistance = -1;
-        var firstNextPoint = Session.PlayerAircraft.CurrentSegmentIndex;
-        if (Session.ActiveRoute.Points.Length - 1 <= firstNextPoint)
-        {
+        var points = Session.ActiveRoute?.Points;
+        if (points == null || points.Length == 0 || Session.PlayerAircraft == null || Session.Settings == null || _pilot == null)
             return;
-        }
-        if (firstNextPoint < 0) firstNextPoint = 0;
-        var nodePosition = Session.ActiveRoute.Points[firstNextPoint].CartesianPosition;
+
+        var firstNextPoint = Session.PlayerAircraft.CurrentSegmentIndex;
+        if (firstNextPoint < 0)
+            firstNextPoint = 0;
+        if (points.Length - 1 <= firstNextPoint)
+            return;
+
+        var node = points[firstNextPoint];
+        if (node == null)
+            return;
+
+        var nodePosition = node.CartesianPosition;
         proximityDistance = Vector2.Distance(nodePosition, _pilot.NMPosition);
         if (proximityDistance <= Session.Settings.HDGProximityAdvanceDistance)
         {
             var nextIndex = firstNextPoint + 1;
-            if (nextIndex < Session.ActiveRoute.Points.Length)
+            if (nextIndex < points.Length)
             {
-                var next = Session.ActiveRoute.Points[nextIndex];
+                var next = points[nextIndex];
                 if (next != null && next.IsAfterDiscontinuity)
                     return;
             }

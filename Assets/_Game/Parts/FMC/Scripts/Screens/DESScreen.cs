@@ -62,7 +62,11 @@ public class DESScreen : ScreenBase
            pageTitle: "DES",
            currentPage: 0, totalPages: 1);
 
-        var des = infoFMC.Instance.Fmc.Des;
+        var fmc = infoFMC.Live;
+        if (fmc == null)
+            return;
+
+        var des = fmc.Des;
 
         if (!string.IsNullOrEmpty(des.RWAltitude))
         {
@@ -175,7 +179,7 @@ public class DESScreen : ScreenBase
                     if (ScratchPadInterpreter.IsDeletePending(_scratchPadBuffer))
                     {
                         _scratchPadBuffer = string.Empty;
-                        var econ = infoFMC.Instance.Fmc.Des.EconSpeed;
+                        var econ = infoFMC.Live != null ? infoFMC.Live.Des.EconSpeed : "";
                         _econSpeed_Mach.SetAsTall(string.IsNullOrEmpty(econ) ? "??/??" : econ);
                         ClearScratchPad();
                         break;
@@ -424,7 +428,7 @@ public class DESScreen : ScreenBase
 
     public void UpdateScratchPad(string buffer, bool withStatus = true)
     {
-        MainScreen.Instance.scratchPadText.SetAsDefault(buffer);
+        MainScreen.Pad?.SetAsDefault(buffer);
         if (withStatus)
         {
             //lastHLeft.text = "ECON";
@@ -434,6 +438,6 @@ public class DESScreen : ScreenBase
     private void ClearScratchPad()
     {
         _scratchPadBuffer = "";
-        MainScreen.Instance.scratchPadText.Clear();
+        MainScreen.Pad?.Clear();
     }
 }

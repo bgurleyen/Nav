@@ -12,25 +12,21 @@ namespace Navigation
         {
             var finalPosition = new Vector2(pos.x, pos.y);
 
-            var walkedPosition = Session.PlayerAircraft.NMPosition;
-            var aircraftHeadingRotation = Session.PlayerAircraft.DisplayHeadingDegrees;
-
-            switch (Session.State.MapMode)
+            if (Session.PlayerAircraft != null && Session.State != null)
             {
-                case MapMode.Map:
-                case MapMode.Center:
-                    // walked
-                    // walked rotation
-                    finalPosition -= walkedPosition;
-                    finalPosition = finalPosition.Rotate(aircraftHeadingRotation);
-                    break;
-                case MapMode.Plan:
-                    // centered
-                    finalPosition -= Session.CenteredPosition;
-                    break;
+                switch (Session.State.MapMode)
+                {
+                    case MapMode.Map:
+                    case MapMode.Center:
+                        finalPosition -= Session.PlayerAircraft.NMPosition;
+                        finalPosition = finalPosition.Rotate(Session.PlayerAircraft.DisplayHeadingDegrees);
+                        break;
+                    case MapMode.Plan:
+                        finalPosition -= Session.CenteredPosition;
+                        break;
+                }
             }
 
-            // zoom
             finalPosition *= Session.Zoom;
 
             return finalPosition;
@@ -48,9 +44,15 @@ namespace Navigation
 
         public static bool GetNodeIndex(this RoutePoint[] points, int nodeId, out int nodeIndex)
         {
+            if (points == null)
+            {
+                nodeIndex = -1;
+                return false;
+            }
+
             for (var i = 0; i < points.Length; i++)
             {
-                if (points[i].ID == nodeId)
+                if (points[i] != null && points[i].ID == nodeId)
                 {
                     nodeIndex = i;
                     return true;

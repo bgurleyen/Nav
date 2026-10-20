@@ -21,5 +21,4 @@ public class LevelInfoScriptableObject : ScriptableObject
     public int DesEconSpeed;
     public int DesEconMach;
     public int GlideSlope;
-    public int Reserved;
 }

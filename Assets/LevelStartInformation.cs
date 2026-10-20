@@ -1,6 +1,5 @@
 using Navigation;
 using Navigation.Data;
-using System;
 using System.Collections;
 using System.Text;
 using TMPro;
@@ -13,8 +12,6 @@ public class LevelStartInformation : MonoBehaviour
     public Text msgText1;
     public Image LevelStartInfo;
     public Button okButton;
-
-    public Action<MapMode> OnMapModeSet;
 
     const float VisibleLocalZ = -200f;
     const float GlowPulseSpeed = 5f;
@@ -195,6 +192,10 @@ public class LevelStartInformation : MonoBehaviour
 
         if (LevelStartInfo != null)
             LevelStartInfo.gameObject.SetActive(false);
+
+        var canvas = FindObjectOfType<CanvasUI>();
+        if (canvas != null)
+            canvas.OnRetractFMVClick();
     }
 
     void OnDisable()

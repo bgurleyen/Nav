@@ -1,4 +1,4 @@
-﻿using Navigation;
+using Navigation;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -10,44 +10,6 @@ using UnityEngine;
 public class FixedPointsScriptableObject : ScriptableObject
 {
     public FixedPointEntry[] Entries = new FixedPointEntry[3];
-
-    public static FixedPointsScriptableObject CreateDemo()
-    {
-        var demo = CreateInstance<FixedPointsScriptableObject>();
-
-        demo.Entries = new[]
-        {   new FixedPointEntry
-            {
-                Name = "DLE", Infos = new[]
-                {
-                    //new FixedPointInfo {RawDegrees = 300, NM = 8},
-                    new FixedPointInfo {RawDegrees = 300, NM = 5},
-                    new FixedPointInfo {RawDegrees = 30, NM = 3},
-                    new FixedPointInfo {RawDegrees = 30, NM = 1},
-                    //new FixedPointInfo {RawDegrees = 300, NM = 30},
-                    //new FixedPointInfo {RawDegrees = 30, NM = 10},
-                }
-            },
-            new FixedPointEntry
-            {
-                Name = "DV581", Infos = new[]
-                {
-                    //new FixedPointInfo {RawDegrees = 300, NM = 8},
-                    new FixedPointInfo {RawDegrees = 300, NM = 5},
-                    new FixedPointInfo {RawDegrees = 30, NM = 3},
-                    new FixedPointInfo {RawDegrees = 30, NM = 1},
-                    //new FixedPointInfo {RawDegrees = 300, NM = 30},
-                    //new FixedPointInfo {RawDegrees = 30, NM = 10},
-                }
-            },
-            //new FixEntry { Name = "DV575", Infos = new []
-            //    {
-            //       new FixInfo { RawDegrees = 300, NM = 30},
-            //    }
-            //},
-        };
-        return demo;
-    }
 
     public static FixedPointsScriptableObject CloneAndInit()
     {
@@ -123,29 +85,7 @@ public class FixedPointsScriptableObject : ScriptableObject
         }
     }
 
-    public void AddFixedPoint(FixedPointEntry fixedPoint)
-    {
-        if (fixedPoint != null)
-        {
-            FixedPointEntry[] newEntry = new FixedPointEntry[Entries.Length + 1];
-
-            for (int i = 0; i < Entries.Length; i++)
-            {
-                newEntry[i] = Entries[i];
-            }
-
-            newEntry[newEntry.Length - 1] = fixedPoint;
-
-            Entries = newEntry;
-
-            //Debug.Log(pointEntry.Name);
-            //Debug.Log($"Added Enteries Info : {pointEntry.Name}");
-        }
-        else
-        {
-            Debug.LogWarning("Input FixedPointEntry");
-        }
-    }*/
+*/
 
     public void AddOrUpdateFixedPoint(FixedPointEntry fixedPoint, int atIndex = -1)
     {

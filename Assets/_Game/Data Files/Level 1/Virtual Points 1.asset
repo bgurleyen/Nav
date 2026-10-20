@@ -23,8 +23,8 @@ MonoBehaviour:
     x: 0
     y: -10
   - Number: 54
-    x: 11.356708
-    y: -7.655438
+    x: 0
+    y: 0
   - Number: 55
     x: -5.368884
     y: 2.370417
@@ -32,17 +32,17 @@ MonoBehaviour:
     x: 9.950248
     y: -9.502481
   - Number: -30
-    x: 10
-    y: -20
+    x: 0
+    y: 0
   - Number: 58
     x: 20
     y: -15
   - Number: 59
-    x: 10
+    x: 0
     y: 0
   - Number: 60
-    x: 20.95691
-    y: 2.370417
+    x: 0
+    y: 0
   - Number: 61
     x: 18.342361
     y: -27.364656
@@ -53,11 +53,11 @@ MonoBehaviour:
     x: 20
     y: -10
   - Number: 64
-    x: 20
+    x: 0
     y: 0
   - Number: 65
-    x: -2.975629
-    y: 2.370417
+    x: 0
+    y: 0
   - Number: 66
     x: 30
     y: -19.5
@@ -71,8 +71,8 @@ MonoBehaviour:
     x: 33.48246
     y: -11.038088
   - Number: 70
-    x: 8.990641
-    y: 2.370417
+    x: 0
+    y: 0
   - Number: 71
     x: 11.50312
     y: 0.73249

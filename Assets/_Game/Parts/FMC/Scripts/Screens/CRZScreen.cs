@@ -51,8 +51,12 @@ public class CRZScreen : ScreenBase
            currentPage: 0, totalPages: 1);
 
 
-        var initRef = infoFMC.Instance.Fmc.Initref;
-        var crz = infoFMC.Instance.Fmc.Crz;
+        var fmc = infoFMC.Live;
+        if (fmc == null)
+            return;
+
+        var initRef = fmc.Initref;
+        var crz = fmc.Crz;
 
         //_crzAltitude.SetAsDefault(crz.Altitude);
         if (Session.IsMod)
@@ -199,7 +203,10 @@ public class CRZScreen : ScreenBase
                 if (ScratchPadInterpreter.IsDeletePending(_scratchPadBuffer))
                 {
                     _scratchPadBuffer = string.Empty;
-                    SetNumericValue(_crzSpeed, infoFMC.Instance.Fmc.Crz.Speed, modified: false);
+                    var live = infoFMC.Live;
+                    if (live == null)
+                        break;
+                    SetNumericValue(_crzSpeed, live.Crz.Speed, modified: false);
                     ClearScratchPad();
                     break;
                 }
@@ -461,7 +468,7 @@ public class CRZScreen : ScreenBase
 
     public void UpdateScratchPad(string buffer, bool withStatus = true)
     {
-        MainScreen.Instance.scratchPadText.SetAsDefault(buffer);
+        MainScreen.Pad?.SetAsDefault(buffer);
         if (withStatus)
         {
             //lastHLeft.text = "ECON";
@@ -471,6 +478,6 @@ public class CRZScreen : ScreenBase
     private void ClearScratchPad()
     {
         _scratchPadBuffer = "";
-        MainScreen.Instance.scratchPadText.Clear();
+        MainScreen.Pad?.Clear();
     }
 }

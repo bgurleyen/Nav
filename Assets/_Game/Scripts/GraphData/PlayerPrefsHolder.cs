@@ -40,8 +40,6 @@ public static class PlayerPrefsHolder
 
     public static bool IsTestLevel => ActiveLevel == TestLevel;
 
-    public static int DisplayLevel => ActiveLevel;
-
     public static int UiLevelIndex => IsTestLevel ? -1 : ActiveLevel - 1;
 
     public static string FirestoreLevelKey => IsTestLevel ? null : $"LEVEL {ActiveLevel}";

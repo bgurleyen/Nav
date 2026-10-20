@@ -11,15 +11,6 @@ using UnityEngine.Assertions.Must;
 [CustomEditor(typeof(UnityEngine.Object), true, isFallback = false)]
 public class InspectorAdvance : Editor
 {
-	private MethodInfo currentMethod;
-	private object[] arguments;
-	private ParameterInfo currentParameter;
-	private int intTypeField;
-	private float floatTypeField;
-	private bool boolTypeField;
-	private string stringTypeField;
-	private bool isFoldOut;
-
 	private FetchedData[] functionlist;
 
 	private void OnEnable()

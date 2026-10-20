@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Navigation;
 using TMPro;
 using UnityEngine;
@@ -15,8 +14,6 @@ public class LegsNodeLine : MonoBehaviour {
     public BgText fLeft;
     public TMP_Text fMiddle;
     public BgText fRight;
-
-    private NodeSelection _selection;
 
     public void DisplayNodeDetails(RoutePoint node, NodeSelection linkedInfo) {
 
@@ -54,7 +51,13 @@ public class LegsNodeLine : MonoBehaviour {
 
 
         //Old Code...
-        var distance = linkedInfo.LinkedId == PositionVirtualNode.GetNodeToOnActive.ID
+        if (node == null || linkedInfo == null)
+            return;
+
+        var toNode = PositionVirtualNode.GetNodeToOnActive;
+        var distance = toNode != null
+            && linkedInfo.LinkedId == toNode.ID
+            && Session.PlayerAircraft != null
             ? Session.PlayerAircraft.ComputedDistanceLeftOnSegment
             : node.Distance;
         var courseText = $"{node.RawDegrees:000}°";
@@ -68,35 +71,36 @@ public class LegsNodeLine : MonoBehaviour {
         if (linkedInfo.IsAddedDiscontinuity) {
             //Debug.Log("If Condition");
             ShowAsDiscontinuity();
-            //SetRouteID(Session.ActiveRoute);
-            //SetRouteID(Session.ModRoute);
-            //SetRouteID(Session.ModeSetWithPosition);
         }
         else {
             //Debug.Log("Else Condition");
 
             //Debug.Log("IsAfterDiscontinuity: "+ node.IsAfterDiscontinuity);
 
-            hFull.text = node.IsAfterDiscontinuity ? "--- ROUTE DISCONTINUITY ---" : "";
-            //Debug.Log(hFull.text);
+            if (hFull != null)
+                hFull.text = node.IsAfterDiscontinuity ? "--- ROUTE DISCONTINUITY ---" : "";
 
-            hLeft.text = node.IsAfterDiscontinuity ? "" : courseText;
-            hMiddle.text = node.IsAfterDiscontinuity ? "" : $"{distance:F1}NM";
+            if (hLeft != null)
+                hLeft.text = node.IsAfterDiscontinuity ? "" : courseText;
+            if (hMiddle != null)
+                hMiddle.text = node.IsAfterDiscontinuity ? "" : $"{distance:F1}NM";
 
-            if (node.IsModified) {
-                fLeft.SetAsModified(node.Name);
-                //Debug.Log("SetAsModified");
-            }
-            else if (node.GetIsDisplayCurrent) {
-                fLeft.SetAsMagenta(node.Name);
-                //Debug.Log("SetAsMagenta");
-            }
-            else {
-                fLeft.SetAsTall(node.Name);
+            if (fLeft != null)
+            {
+                if (node.IsModified) {
+                    fLeft.SetAsModified(node.Name);
+                }
+                else if (node.GetIsDisplayCurrent) {
+                    fLeft.SetAsMagenta(node.Name);
+                }
+                else {
+                    fLeft.SetAsTall(node.Name);
+                }
             }
 
-            fMiddle.text = linkedInfo.IsPlanCenter && Session.State.MapMode == MapMode.Plan
-                ? "<CTR>" : "";
+            if (fMiddle != null)
+                fMiddle.text = linkedInfo.IsPlanCenter && Session.State != null && Session.State.MapMode == MapMode.Plan
+                    ? "<CTR>" : "";
 
             var isSpeedRestriction = node.GetSpeedIsRestricted(out var speedDisplayValue);
             var isAltRestriction = node.GetAltitudeIsRestricted(out var altDisplayValue);
@@ -120,10 +124,11 @@ public class LegsNodeLine : MonoBehaviour {
             //     ? "#FF00C7"
             //     : "#EBE0C9";
 
+            var visible = Session.VisibleRoute;
             var speedState = node.IsSpeedModified
                 ? BgText.TextState.ModSelection
                 : isSpeedRestriction
-                    ? node.ID == Session.VisibleRoute.FirstSpeedRegulationNodeId
+                    ? visible != null && node.ID == visible.FirstSpeedRegulationNodeId
                         ? BgText.TextState.Magenta
                         : BgText.TextState.TallText
                     : BgText.TextState.SmallText;
@@ -131,116 +136,32 @@ public class LegsNodeLine : MonoBehaviour {
             var altState = node.IsAltitudeModified
                 ? BgText.TextState.ModSelection
                 : isAltRestriction
-                    ? node.ID == Session.VisibleRoute.FirstAltRegulationNodeId
+                    ? visible != null && node.ID == visible.FirstAltRegulationNodeId
                         ? BgText.TextState.Magenta
                         : BgText.TextState.TallText
                     : BgText.TextState.SmallText;
 
-            fRight.SetText(true, "/",
+            if (fRight != null)
+                fRight.SetText(true, "/",
                 new BgText.TextBuilder { State = speedState, Text = speedDisplayValue },
                 new BgText.TextBuilder { State = altState, Text = altDisplayValue });
         }
     }
 
-    /*public void SetRouteID(RouteScriptableObject routeScriptableObject) {
-
-        if (routeScriptableObject != null) {
-            for (int i = 0; i < routeScriptableObject.Points.Length; i++) {
-                if (routeScriptableObject.Points[i].Name == "_START_") {
-                    routeScriptableObject.Points[i].ID = 0;
-                }
-                if (routeScriptableObject.Points[i].Name == "DLE") {
-                    routeScriptableObject.Points[i].ID = 1;
-                }
-                if (routeScriptableObject.Points[i].Name == "DV581") {
-                    routeScriptableObject.Points[i].ID = 2;
-                }
-                if (routeScriptableObject.Points[i].Name == "ELNAT") {
-                    routeScriptableObject.Points[i].ID = 3;
-                }
-                if (routeScriptableObject.Points[i].Name == "NORTA") {
-                    routeScriptableObject.Points[i].ID = 4;
-                }
-                if (routeScriptableObject.Points[i].Name == "DLE-5") {
-                    routeScriptableObject.Points[i].ID = 5;
-                }
-                if (routeScriptableObject.Points[i].Name == "DV582") {
-                    routeScriptableObject.Points[i].ID = 6;
-                }
-                if (routeScriptableObject.Points[i].Name == "DV583") {
-                    routeScriptableObject.Points[i].ID = 7;
-                }
-                if (routeScriptableObject.Points[i].Name == "DV584") {
-                    routeScriptableObject.Points[i].ID = 8;
-                }
-                if (routeScriptableObject.Points[i].Name == "DV585") {
-                    routeScriptableObject.Points[i].ID = 9;
-                }
-                if (routeScriptableObject.Points[i].Name == "DV575") {
-                    routeScriptableObject.Points[i].ID = 10;
-                }
-                if (routeScriptableObject.Points[i].Name == "DV574") {
-                    routeScriptableObject.Points[i].ID = 11;
-                }
-                if (routeScriptableObject.Points[i].Name == "DV573") {
-                    routeScriptableObject.Points[i].ID = 12;
-                }
-                if (routeScriptableObject.Points[i].Name == "DV572") {
-                    routeScriptableObject.Points[i].ID = 13;
-                }
-                if (routeScriptableObject.Points[i].Name == "XAVER") {
-                    routeScriptableObject.Points[i].ID = 14;
-                }
-                if (routeScriptableObject.Points[i].Name == "HANB") {
-                    routeScriptableObject.Points[i].ID = 15;
-                }
-                if (routeScriptableObject.Points[i].Name == "RW27R") {
-                    routeScriptableObject.Points[i].ID = 16;
-                }
-            }
-        }
-    }*/
-    public void SetRouteID(RouteScriptableObject routeScriptableObject) {
-        if (routeScriptableObject == null) {
-            return;
-        }
-
-        Dictionary<string, int> nameToIDMap = new Dictionary<string, int> {
-        { "_START_", 0 },
-        { "DLE", 1 },
-        { "DV581", 2 },
-        { "ELNAT", 3 },
-        { "NORTA", 4 },
-        { "DLE-5", 5 },
-        { "DV582", 6 },
-        { "DV583", 7 },
-        { "DV584", 8 },
-        { "DV585", 9 },
-        { "DV575", 10 },
-        { "DV574", 11 },
-        { "DV573", 12 },
-        { "DV572", 13 },
-        { "XAVER", 14 },
-        { "HANB", 15 },
-        { "RW27R", 16 }
-    };
-
-        foreach (var point in routeScriptableObject.Points) {
-            if (nameToIDMap.TryGetValue(point.Name, out int id)) {
-                point.ID = id;
-            }
-        }
-    }
     private void ShowAsDiscontinuity() {
         //Debug.Log("ShowAsDiscontinuity");
-        hLeft.text = "THEN";
-        hMiddle.text = "";
-        hFull.text = "";
+        if (hLeft != null)
+            hLeft.text = "THEN";
+        if (hMiddle != null)
+            hMiddle.text = "";
+        if (hFull != null)
+            hFull.text = "";
 
-        fLeft.SetAsTall("□□□□□");
-        //Debug.Log("THEN  □□□□□");
+        if (fLeft != null)
+            fLeft.SetAsTall("□□□□□");
 
-        fRight.Clear();
+        if (fRight != null)
+            fRight.Clear();
     }
 
     static float InboundInterceptDistance(RoutePoint node)

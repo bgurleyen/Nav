@@ -12,7 +12,8 @@ public class ToggleIndicator : MonoBehaviour
     {
         while (true)
         {
-            lightToggle.isOn = Session.IsMod;
+            if (lightToggle != null)
+                lightToggle.isOn = Session.IsMod;
             yield return new WaitForSeconds(0.2f);
         }
     }

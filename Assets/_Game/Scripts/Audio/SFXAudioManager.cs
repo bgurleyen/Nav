@@ -16,7 +16,6 @@ public class SFXAudioManager : MonoBehaviour
     public static SFXAudioManager Instance { get; private set; }
 
     [SerializeField] private AudioSource audioSource;
-    private AudioClip defaultButtonClick;
     [SerializeField] private SFXAudioClips[] customButtonSounds;
     private Dictionary<string, SFXAudioClips> soundIdMap;
 
@@ -54,11 +53,6 @@ public class SFXAudioManager : MonoBehaviour
         if (clip == null) return;
         audioSource.pitch = pitch;
         audioSource.PlayOneShot(clip, volume);
-    }
-
-    public void PlayDefaultButtonSound()
-    {
-        PlaySound(defaultButtonClick);
     }
 
     public void PlayCustomSound(int soundIndex)

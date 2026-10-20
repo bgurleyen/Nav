@@ -9,7 +9,6 @@ public class BgText : MonoBehaviour
 {
     [SerializeField] private Color magentaColor;
     [SerializeField] private Color modifiedBackground;
-    [SerializeField] private Color defaultColor;
     
     [SerializeField] internal TMP_Text label;
 

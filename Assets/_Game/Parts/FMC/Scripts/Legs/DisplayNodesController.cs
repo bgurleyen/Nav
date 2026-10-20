@@ -21,8 +21,6 @@ public class DisplayNodesController
     private RouteScriptableObject _lastVisibleRoute;
     private int _displayStartIndex;
 
-    public int DisplayStartIndex => GetDisplayStartIndex();
-
     public void ComputeCorrections()
     {
         TotalPagesCorrection = GetTotalNodesCorrections(out _, out _);
@@ -32,16 +30,20 @@ public class DisplayNodesController
     {
         discontinuities = 0;
         skipped = 0;
+        var points = VisibleRoute?.Points;
+        if (points == null)
+            return 0;
+
         var startIndex = GetDisplayStartIndex();
-        for (var i = startIndex; i < VisibleRoute.Points.Length; i++)
+        for (var i = startIndex; i < points.Length; i++)
         {
-            if (VisibleRoute.Points[i].IsSkippable)
+            if (points[i] == null || points[i].IsSkippable)
             {
                 skipped++;
                 continue;
             }
 
-            if (VisibleRoute.Points[i].IsAfterDiscontinuity)
+            if (points[i].IsAfterDiscontinuity)
             {
                 discontinuities++;
             }
@@ -54,11 +56,17 @@ public class DisplayNodesController
     {
         var pagedLineIndex = lineIndex + currentPage * _nodesPerPage;
 
+        var activePoints = Session.ActiveRoute?.Points;
+        var visiblePoints = VisibleRoute?.Points;
+        if (activePoints == null || activePoints.Length == 0 || visiblePoints == null || visiblePoints.Length == 0)
+            return new NodeSelection { IsEmpty = true, LinkedId = -1 };
+
         var startIndex = GetDisplayStartIndex();
 
         // when an insert have been made with the future position node and has been executed. happening until passing the new position
-        var activeRouteStartIndex = Mathf.Clamp(startIndex, 0, Session.ActiveRoute.Points.Length - 1);
-        var positionIsTemporaryAhead = Session.ActiveRoute.Points[activeRouteStartIndex].IsPositionNode;
+        var activeRouteStartIndex = Mathf.Clamp(startIndex, 0, activePoints.Length - 1);
+        var startPoint = activePoints[activeRouteStartIndex];
+        var positionIsTemporaryAhead = startPoint != null && startPoint.IsPositionNode;
 
         var thisIsDiscontinuity = false;
         var thisIsAfterDiscontinuity = false;
@@ -84,8 +92,9 @@ public class DisplayNodesController
                     pointIsValid = VisibleRoute.GetPointAt(++linkedIndex, out linkedPoint);
                 }
 
-                if (!pointIsValid)
+                if (!pointIsValid || linkedPoint == null)
                 {
+                    pointIsValid = false;
                     if (PlanCenterNodeIndex >= i)
                     {
                         SetPlanCenterNode(0);
@@ -131,6 +140,9 @@ public class DisplayNodesController
             }
         }
 
+
+        if (!pointIsValid || linkedPoint == null)
+            pointIsValid = false;
 
         var linkedId = pointIsValid ? linkedPoint.ID : -1;
 
@@ -208,12 +220,13 @@ public class DisplayNodesController
     {
         for (var i = 0; i < visibleRoute.Points.Length; i++)
         {
-            if (visibleRoute.Points[i].IsSkippable)
+            var point = visibleRoute.Points[i];
+            if (point == null || point.IsSkippable)
             {
                 continue;
             }
 
-            if (visibleRoute.Points[i].GetIsDisplayCurrent)
+            if (point.GetIsDisplayCurrent)
             {
                 visibleRouteIndex = i;
                 return true;
@@ -240,7 +253,11 @@ public class DisplayNodesController
                 continue;
             }
 
-            if (visibleRoute.Points[visibleRouteIndex].IsSkippable)
+            if (visibleRouteIndex < 0 || visibleRouteIndex >= visibleRoute.Points.Length)
+                continue;
+
+            var visiblePoint = visibleRoute.Points[visibleRouteIndex];
+            if (visiblePoint == null || visiblePoint.IsSkippable)
             {
                 continue;
             }
@@ -263,7 +280,9 @@ public class DisplayNodesController
         var page = PlanCenterNodeIndex / _nodesPerPage;
         var line = PlanCenterNodeIndex % _nodesPerPage;
 
-        if (Session.ActiveRoute.GetPoint(GetNodeInfoAtLineIndex(line, page).LinkedId, out var point, out _))
+        if (Session.ActiveRoute != null
+            && Session.ActiveRoute.GetPoint(GetNodeInfoAtLineIndex(line, page).LinkedId, out var point, out _)
+            && point != null)
         {
             Session.CenteredPosition = point.CartesianPosition;
         }

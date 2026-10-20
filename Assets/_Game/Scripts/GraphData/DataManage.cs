@@ -6,6 +6,9 @@ public class DataManage : MonoBehaviour
 {
     public FirestoreController firestoreController;
 
+    public FirestoreController Cloud =>
+        FirestoreController.Instance != null ? FirestoreController.Instance : firestoreController;
+
     double _averageAltitude;
     double _lgAltitude;
     bool _lgCaptured;
@@ -39,12 +42,27 @@ public class DataManage : MonoBehaviour
         if (Session.Settings == null)
             return;
 
-        _secondAccumulator += Time.deltaTime * Session.Settings.SpeedMultiplier;
-        while (_secondAccumulator >= 1.0)
+        float step = Time.deltaTime * Session.Settings.SpeedMultiplier;
+        if (float.IsNaN(step) || float.IsInfinity(step) || step < 0f)
+            return;
+
+        _secondAccumulator += step;
+        if (double.IsNaN(_secondAccumulator) || double.IsInfinity(_secondAccumulator))
+        {
+            _secondAccumulator = 0;
+            return;
+        }
+
+        const int maxTicksPerFrame = 120;
+        int ticks = 0;
+        while (_secondAccumulator >= 1.0 && ticks < maxTicksPerFrame)
         {
             _secondAccumulator -= 1.0;
+            ticks++;
             Tick();
         }
+        if (_secondAccumulator >= 1.0)
+            _secondAccumulator = 0;
     }
 
     // Samples flight state once per (simulated) second.
@@ -100,7 +118,7 @@ public class DataManage : MonoBehaviour
 
     public void PushToCloud(LevelStat result, Action onSaved = null)
     {
-        if (result == null || firestoreController == null)
+        if (result == null || Cloud == null)
         {
             onSaved?.Invoke();
             return;
@@ -118,6 +136,6 @@ public class DataManage : MonoBehaviour
             $"fuel={result.remainingFuel} kg avgAlt={result.averageAltitude} " +
             $"lgAlt={result.lgAltitude} flapAlt={result.averageFlapAltitude} sb={result.speedBrakeSeconds}s");
 
-        firestoreController.SaveLevelStat(result, _ => onSaved?.Invoke());
+        Cloud.SaveLevelStat(result, _ => onSaved?.Invoke());
     }
 }

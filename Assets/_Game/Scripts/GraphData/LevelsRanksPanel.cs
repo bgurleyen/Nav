@@ -42,11 +42,6 @@ public class LevelsRanksPanel : MonoBehaviour
         }
     }
 
-    public void BindPlaceholder()
-    {
-        BindRanks(new int[LevelsLayoutSpec.LevelCount]);
-    }
-
     public void PrepareForDisplay()
     {
         gameObject.SetActive(true);

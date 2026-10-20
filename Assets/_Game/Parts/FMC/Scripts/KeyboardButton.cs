@@ -7,30 +7,36 @@ public class KeyboardButton : MonoBehaviour
 {
     private void Awake()
     {
-        GetComponent<Button>().onClick.AddListener(OnClickPress);
+        var button = GetComponent<Button>();
+        if (button != null)
+            button.onClick.AddListener(OnClickPress);
     }
 
     private void OnClickPress()
     {
-        var text = GetComponentInChildren<TMP_Text>().text;
+        var label = GetComponentInChildren<TMP_Text>();
+        if (label == null || !TryCurrentScreen(out var screen))
+            return;
+
+        var text = label.text ?? "";
 
         if (int.TryParse(text, out var _nr))
         {
-            FMC_Screens.Instance.CurrentScreen.OnNumberPressed(_nr);
+            screen.OnNumberPressed(_nr);
         }
         else if (text.Length == 1)
         {
             if (text == Keys.Decimal)
             {
-                FMC_Screens.Instance.CurrentScreen.OnDecimalPressed();
+                screen.OnDecimalPressed();
             }
             else if (text == Keys.Slash)
             {
-                FMC_Screens.Instance.CurrentScreen.OnSlashPressed();
+                screen.OnSlashPressed();
             }
             else // it's a letter
             {
-                FMC_Screens.Instance.CurrentScreen.OnCharacterInput(text[0]);
+                screen.OnCharacterInput(text[0]);
             }
         }
         else
@@ -38,78 +44,87 @@ public class KeyboardButton : MonoBehaviour
             switch (text)
             {
                 case Keys.Sign:
-                    FMC_Screens.Instance.CurrentScreen.OnSignPressed();
+                    screen.OnSignPressed();
                     break;
                 case Keys.Del:
-                    FMC_Screens.Instance.CurrentScreen.OnDeletePress();
+                    screen.OnDeletePress();
                     break;
                 case Keys.Clr:
-                    FMC_Screens.Instance.CurrentScreen.OnClearPress();
+                    screen.OnClearPress();
                     break;
             }
         }
     }
 
+    static bool TryCurrentScreen(out ScreenBase screen)
+    {
+        screen = FMC_Screens.Instance != null ? FMC_Screens.Instance.CurrentScreen : null;
+        return screen != null;
+    }
+
     public void OnExecPress()
     {
-        FMC_Screens.Instance.CurrentScreen.OnExecPress();
+        if (TryCurrentScreen(out var screen))
+            screen.OnExecPress();
     }
 
     public void OnPreviousPageClick()
     {
-        FMC_Screens.Instance.CurrentScreen.DisplayPrevPage();
+        if (TryCurrentScreen(out var screen))
+            screen.DisplayPrevPage();
     }
 
     public void OnNextPageClick()
     {
-        FMC_Screens.Instance.CurrentScreen.DisplayNextPage();
+        if (TryCurrentScreen(out var screen))
+            screen.DisplayNextPage();
     }
 
     public void OnMenuButtonClick()
     {
-        FMC_Screens.Instance.ShowPage(FMCScreens.Menu);
+        FMC_Screens.Instance?.ShowPage(FMCScreens.Menu);
     }
 
 
     public void OnLEGSButtonClick()
     {
-        FMC_Screens.Instance.ShowPage(FMCScreens.Legs);
+        FMC_Screens.Instance?.ShowPage(FMCScreens.Legs);
     }
 
 
     public void OnINITButtonClick()
     {
-        FMC_Screens.Instance.ShowPage(FMCScreens.Init);
+        FMC_Screens.Instance?.ShowPage(FMCScreens.Init);
     }
 
     public void OnRTEButtonClick()
     {
-        FMC_Screens.Instance.ShowPage(FMCScreens.Rte);
+        FMC_Screens.Instance?.ShowPage(FMCScreens.Rte);
     }
 
     public void OnCRZButtonClick()
     {
-        FMC_Screens.Instance.ShowPage(FMCScreens.Crz);
+        FMC_Screens.Instance?.ShowPage(FMCScreens.Crz);
     }
 
     public void OnDESButtonClick()
     {
-        FMC_Screens.Instance.ShowPage(FMCScreens.Des);
+        FMC_Screens.Instance?.ShowPage(FMCScreens.Des);
     }
 
     public void OnARRButtonClick()
     {
-        FMC_Screens.Instance.ShowPage(FMCScreens.Arr);
+        FMC_Screens.Instance?.ShowPage(FMCScreens.Arr);
     }
 
     public void OnPROGButtonClick()
     {
-        FMC_Screens.Instance.ShowPage(FMCScreens.Prog);
+        FMC_Screens.Instance?.ShowPage(FMCScreens.Prog);
     }
 
     public void OnFIXButtonClick()
     {
-        FMC_Screens.Instance.ShowPage(FMCScreens.Fix);
+        FMC_Screens.Instance?.ShowPage(FMCScreens.Fix);
     }
 
     public void OnPAUSEButtonClick()

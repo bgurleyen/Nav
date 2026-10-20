@@ -26,14 +26,11 @@ public static class DebriefLayoutSpec
     public const float TitleBlockHeight = 28f * FontScale;
     public const float SubtitleBlockHeight = 16f * FontScale;
     public const float TitleSubtitleGap = 4f * FontScale;
-    public const float BadgeHeight = 24f * FontScale;
     public const float ScoreLabelHeight = 16f * FontScale;
     public const float ScoreValueHeight = 34f * FontScale;
     public const float ScoreValueOffset = 18f * FontScale;
-    public const float TableBorderRadius = 6f;
 
     public const float CellPaddingH = 14f;
-    public const float CellPaddingV = 10f;
     public const float ScorePaddingH = 16f;
     public const float ScorePaddingV = 14f;
 

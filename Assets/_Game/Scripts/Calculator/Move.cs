@@ -4,10 +4,8 @@ using Gamelogic.Extensions;
 using Navigation;
 using UnityEngine;
 using UnityEngine.UI;
-using UnityEditor;
 using TMPro;
 using System;
-using System.IO;
 
 [System.Serializable]
 public class Move : Singleton<Move>
@@ -17,7 +15,6 @@ public class Move : Singleton<Move>
     public Dictionary<string, Vector2> ACPositions = new Dictionary<string, Vector2>();
     public Dictionary<string, string> ACTexts = new Dictionary<string, string>();
 
-    public GameObject myAC;
     public Image LOCIndex, GSIndex;
 
     public Text Atc1, Atc2, Atc3;
@@ -26,11 +23,9 @@ public class Move : Singleton<Move>
 
     private float ElapsedTime = 0f;
 
-    public string ATtc1; // maybe it's possible to use like this
     private bool NewPoint = true;
-    private Vector3 OncekiPos, PrvPos;
+    private Vector3 OncekiPos;
     private Vector2[] VirtualPtsPos = new Vector2[100];
-    private Vector2[] TempPtsPos = new Vector2[100];
     private long ATCAltitude, OncekiAlt;
     private int ATCVS, ATCSpeed;
     /// <summary>Last ATC Speed value that armed Atc3 / XFR3 UI (avoids RawSpeed↔ATCSpeed retrigger).</summary>
@@ -38,13 +33,28 @@ public class Move : Singleton<Move>
     private int modD = 0, modS = 0;
     private int RawSpeed = 0;
     private int AltAbove, AltBelow, AltExact;
-    public double FuelPenalty = 0;
+
+    /// <summary>ATC speed/altitude penalty already taken from remaining fuel.</summary>
+    public double FuelPenaltyKg { get; private set; }
+    const float CorrectionWindowSimSeconds = 15f;
+    const float LevelStartQuietSimSeconds = 30f;
+    const int SpeedToleranceKt = 10;
+    const int AltitudeToleranceFt = 150;
+    bool _speedLimitActive;
+    float _speedWrongSim;
+    bool _speedCorrectionSeen;
+    double _prevPenaltySpeed;
+    bool _prevPenaltySpeedValid;
+    float _altWrongSim;
+    bool _altCorrectionSeen;
+    int _penaltyFrame = -1;
+    int _trackedFix = -1;
+    float _levelSimTime;
 
     private LevelDataScriptableObject _currentLevelData;
     private OtherAC[] _otherACs;
     float DistanceToPoint, PrvDistanceToPoint;
     int PrvPoint;
-    public static int PrvHdg;
 
     float PrvTrackToPoint = 0, hyp;
     int prvWptIdx = -1;
@@ -100,26 +110,13 @@ public class Move : Singleton<Move>
         // var somePoint = GameManager.Instance.ActiveSet.Points[3].Clone();
 
         // Altitude computed: GameManager.Instance.ActiveSet.Points[4].Altitude.ComputedValue
-        Vector2 Pos = new Vector2(0, 0);
+        Vector2 Pos = Vector2.zero;
+        var routePoints = Session.OriginalReferenceRoute != null ? Session.OriginalReferenceRoute.Points : null;
+        if (routePoints != null && routePoints.Length > 1)
+            Pos = Session.OriginalReferenceRoute.GetCartesianPosition(routePoints.Length - 1);
 
-        for (int j = 1; j < Session.OriginalReferenceRoute.Points.Length; j++) // Locate the points on EditMap
+        for (int j = 1; j < 21; j++)
         {
-            Pos = Session.OriginalReferenceRoute.GetCartesianPosition(j);
-            var pt = GameObject.Find("pt (" + j + ")");
-            if (pt == null)
-            {
-                Debug.LogWarning($"[Move.Init] Missing EditMap marker 'pt ({j})' — skipping (route has {Session.OriginalReferenceRoute.Points.Length} points).");
-                TempPtsPos[j] = Pos;
-                continue;
-            }
-
-            pt.transform.localPosition = Pos;
-            TempPtsPos[j] = Pos;
-        }
-
-        for (int j = 1; j < 21; j++) //Locate Virtual points on EditMap
-        {
-            var pt = GameObject.Find("pt (" + (j + 50) + ")");
             if (_currentLevelData.VirtualPoints == null || j - 1 >= _currentLevelData.VirtualPoints.Length || 20 >= _currentLevelData.VirtualPoints.Length)
             {
                 Debug.LogWarning($"[Move.Init] VirtualPoints incomplete for index {j} — skipping.");
@@ -130,20 +127,11 @@ public class Move : Singleton<Move>
                                  _currentLevelData.VirtualPoints[20].x;
             VirtualPtsPos[j].y = Pos.y + _currentLevelData.VirtualPoints[j - 1].y -
                                  _currentLevelData.VirtualPoints[20].y;
-            if (pt != null)
-                pt.transform.localPosition = VirtualPtsPos[j];
         }
 
-        myAC = FindNamed("AC (0)");
-        if (myAC != null)
-        {
-            myAC.SetActive(true);
-            ApplyOwnX(myAC);
-        }
-
-        Atc1.text = "";
-        Atc2.text = "";
-        Atc3.text = "";
+        if (Atc1 != null) Atc1.text = "";
+        if (Atc2 != null) Atc2.text = "";
+        if (Atc3 != null) Atc3.text = "";
         _atc1GrayDone = false;
         _atc2GrayDone = false;
         _atc3GrayDone = false;
@@ -166,10 +154,21 @@ public class Move : Singleton<Move>
         XFRSpeedNx = 0;
         XFRHdg = 0;
         ATCAltitude = 0;
+        FuelPenaltyKg = 0;
+        _speedLimitActive = false;
+        _speedWrongSim = 0f;
+        _speedCorrectionSeen = false;
+        _prevPenaltySpeedValid = false;
+        _altWrongSim = 0f;
+        _altCorrectionSeen = false;
+        _penaltyFrame = -1;
+        _trackedFix = -1;
+        _levelSimTime = 0f;
         HideArmButton(true);
 
         _currentInstructionIndex = 0;
-        RW = Session.OriginalReferenceRoute.Points.Length - 1;
+        var originPoints = Session.OriginalReferenceRoute != null ? Session.OriginalReferenceRoute.Points : null;
+        RW = originPoints != null ? originPoints.Length - 1 : 0;
         OwnAtcRemainingAtStart = AtcInstructionsRemaining();
 
         _otherACs = new OtherAC[10];
@@ -183,127 +182,24 @@ public class Move : Singleton<Move>
 
     public void Tick()
     {
-        for (int i = 0; i < _otherACs.Length; i++)
+        if (_otherACs != null)
         {
-            _otherACs[i].Tick(ACTexts, ACPositions);
+            for (int i = 0; i < _otherACs.Length; i++)
+            {
+                if (_otherACs[i] != null)
+                    _otherACs[i].Tick(ACTexts, ACPositions);
+            }
         }
 
-        UpdateOwnMapMarker();
-        WriteLiveTraffic();
         CheckAirplaneMove();
     }
 
-    float _nextLiveWrite;
-
-    void WriteLiveTraffic()
-    {
-        if (Time.unscaledTime < _nextLiveWrite)
-            return;
-        _nextLiveWrite = Time.unscaledTime + 0.2f;
-        try
-        {
-            string path = AcRoutesLoader.LiveFilePath();
-            string dir = Path.GetDirectoryName(path);
-            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
-                Directory.CreateDirectory(dir);
-
-            int levelNo = _currentLevelData != null && _currentLevelData.levelInfo != null
-                ? _currentLevelData.levelInfo.LevelNumber
-                : 0;
-            var sb = new System.Text.StringBuilder(256);
-            sb.Append("LEVEL ").Append(levelNo).Append('\n');
-            if (Session.PlayerAircraft != null)
-            {
-                Vector2 own = Session.PlayerAircraft.NMPosition;
-                sb.Append("X ").Append(own.x.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture))
-                    .Append(' ').Append(own.y.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture))
-                    .Append('\n');
-            }
-            if (_otherACs != null)
-            {
-                for (int i = 0; i < _otherACs.Length; i++)
-                {
-                    OtherAC ac = _otherACs[i];
-                    if (ac == null || !ac.CanReportLive)
-                        continue;
-                    Vector2 p = ac.LivePosition;
-                    sb.Append(i + 1).Append(' ')
-                        .Append(p.x.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture))
-                        .Append(' ').Append(p.y.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture))
-                        .Append('\n');
-                }
-            }
-            string tmp = path + ".tmp";
-            File.WriteAllText(tmp, sb.ToString());
-            if (File.Exists(path))
-                File.Replace(tmp, path, null);
-            else
-                File.Move(tmp, path);
-        }
-        catch
-        {
-        }
-    }
-
-    private void UpdateOwnMapMarker()
-    {
-        if (myAC == null)
-            myAC = FindNamed("AC (0)");
-        if (myAC == null)
-            return;
-        if (!myAC.activeSelf)
-            myAC.SetActive(true);
-        if (Session.PlayerAircraft != null)
-            myAC.transform.localPosition = Session.PlayerAircraft.NMPosition;
-        ApplyOwnX(myAC);
-    }
-
-    private static void ApplyOwnX(GameObject go)
-    {
-        if (go == null)
-            return;
-        var green = new Color(0f, 0.85f, 0.2f, 1f);
-        var ui = go.GetComponent<UnityEngine.UI.Text>();
-        if (ui != null)
-        {
-            ui.enabled = true;
-            ui.text = "X";
-            ui.color = green;
-            ui.horizontalOverflow = HorizontalWrapMode.Overflow;
-            ui.verticalOverflow = VerticalWrapMode.Overflow;
-            ui.raycastTarget = false;
-        }
-        var tmps = go.GetComponentsInChildren<TMPro.TMP_Text>(true);
-        for (int i = 0; i < tmps.Length; i++)
-        {
-            var tmp = tmps[i];
-            tmp.gameObject.SetActive(true);
-            tmp.enabled = true;
-            tmp.text = "X";
-            tmp.color = green;
-            tmp.overflowMode = TMPro.TextOverflowModes.Overflow;
-            tmp.enableWordWrapping = false;
-        }
-    }
-
-    private static GameObject FindNamed(string name)
-    {
-        var live = GameObject.Find(name);
-        if (live != null)
-            return live;
-        var all = Resources.FindObjectsOfTypeAll<Transform>();
-        for (int i = 0; i < all.Length; i++)
-        {
-            var t = all[i];
-            if (t != null && t.name == name && t.gameObject.scene.IsValid())
-                return t.gameObject;
-        }
-        return null;
-    }
     void SlowDown()
     {
-        Session.State.Speed10X.Set(false);
-        Session.Settings.SpeedMultiplier = 1;
+        if (Session.State != null)
+            Session.State.Speed10X.Set(false);
+        if (Session.Settings != null)
+            Session.Settings.SpeedMultiplier = 1;
     }
     private string TurnDirection(float newHdg)
     {
@@ -314,13 +210,6 @@ public class Move : Singleton<Move>
     private string NxToString(int nx)
     {
         return (nx == 1) ? " or greater " : (nx == 2) ? " or less " : "";
-    }
-
-    private float DistanceFromRoute()
-    {
-        if (!TryGetRouteXte(out float signedXte, out _, out _))
-            return 0f;
-        return Mathf.Abs(signedXte);
     }
 
     /*
@@ -532,7 +421,7 @@ public class Move : Singleton<Move>
     void SetXfrGlow(int channel, bool glow)
     {
         TextMeshProUGUI txt = channel == 1 ? XFR1Txt : channel == 2 ? XFR2Txt : XFR3Txt;
-        if (txt != null)
+        if (txt != null && txt.fontMaterial != null)
             txt.fontMaterial.SetFloat(ShaderUtilities.ID_GlowPower, glow ? 1f : 0f);
     }
 
@@ -817,15 +706,16 @@ public class Move : Singleton<Move>
             _borderBusy = false;
 
             Calculator.RHeading = Calculator.NormalizeHeading360(hdg);
-            Calculator.Instance.AddWindEffectToRHeading();
+            Calculator.Instance?.AddWindEffectToRHeading();
 
             if (Session.State != null)
                 Session.State.AutoSetHDG(true);
 
-            Calculator.Instance.UpdatePFD();
+            Calculator.Instance?.UpdatePFD();
             mode = 2;
             XFRHdg = hdg;
-            XFR1.interactable = false;
+            if (XFR1 != null)
+                XFR1.interactable = false;
             SetAtcReroutingStandby();
         });
     }
@@ -833,36 +723,17 @@ public class Move : Singleton<Move>
 
     public Vector2 PointPos(int pt)
     {
-        //int ptCount =  virtualPoints[Level].VirtualPointsItems.Length;
-
-        return pt < 50 ? Session.OriginalReferenceRoute.GetCartesianPosition(pt) : VirtualPtsPos[pt - 50];
-    }
-
-    /// <summary>Direction of flight on the last STAR leg (toward the runway).</summary>
-    public Vector2 FinalInboundDir()
-    {
-        var route = Session.OriginalReferenceRoute;
-        if (route?.Points == null || route.Points.Length < 2)
-            return Vector2.up;
-        int last = route.Points.Length - 1;
-        Vector2 rw = route.GetCartesianPosition(last);
-        Vector2 prev = route.GetCartesianPosition(last - 1);
-        Vector2 d = rw - prev;
-        if (d.sqrMagnitude < 0.0001f)
+        if (pt < 50)
         {
-            float course = _currentLevelData != null && _currentLevelData.levelInfo != null
-                ? _currentLevelData.levelInfo.Course
-                : 0f;
-            d = Geometry.GetDirectionFromHeading(course);
+            if (Session.OriginalReferenceRoute == null)
+                return Vector2.zero;
+            return Session.OriginalReferenceRoute.GetCartesianPosition(pt);
         }
-        return d.normalized;
-    }
 
-    /// <summary>NM still to run along the final-approach axis to the runway.</summary>
-    public float FinalRemaining(Vector2 p)
-    {
-        Vector2 rw = PointPos(RW);
-        return Vector2.Dot(rw - p, FinalInboundDir());
+        int virtualIndex = pt - 50;
+        if (virtualIndex < 0 || virtualIndex >= VirtualPtsPos.Length)
+            return Vector2.zero;
+        return VirtualPtsPos[virtualIndex];
     }
 
     /// <summary>Own remaining NM at game start along ATC instruction points.</summary>
@@ -1169,29 +1040,205 @@ public class Move : Singleton<Move>
         return Mathf.Abs(GsAltitudeDeviation(glideSlopeDegrees)) <= GsCaptureAltBandFt;
     }
 
-    private void SpeedCheck()
+    void DisarmSpeedPenalty()
     {
-
-        if
-            (((modS == 0) && ((Calculator.CSpeed > ATCSpeed + 10) || (Calculator.CSpeed < ATCSpeed - 10))) ||
-
-             ((modS == 1) && (Calculator.CSpeed < ATCSpeed - 10)) ||
-
-             ((modS == 2) && (Calculator.CSpeed > ATCSpeed + 10)))
-        {
-            FuelPenalty += 0.001;
-        }
-
+        _speedLimitActive = false;
+        _speedWrongSim = 0f;
+        _speedCorrectionSeen = false;
+        _prevPenaltySpeedValid = false;
     }
 
-    private void FuelPenaltyAtFMCAltConstain()
+    void BeginSpeedGrace()
     {
-        int CAltitude = (int)Calculator.CAltitude;
+        _speedLimitActive = true;
+        _speedWrongSim = 0f;
+        _speedCorrectionSeen = false;
+        _prevPenaltySpeedValid = false;
+    }
 
-        if (((AltBelow > 0) && (CAltitude > AltBelow + 300)) ||
-            ((AltAbove > 0) && (CAltitude < AltAbove - 300)) ||
-            ((AltExact > 0) && (Mathf.Abs(CAltitude - AltExact) > 300))) FuelPenalty += 0.1;
+    void BeginAltitudeGrace()
+    {
+        _altWrongSim = 0f;
+        _altCorrectionSeen = false;
+    }
 
+    /// <summary>
+    /// No penalty for the first 30s of 1x time. After that, wrong speed or altitude
+    /// has 15s to start correcting the right way. If that does not start or does not continue, 1 kg per 1x second.
+    /// </summary>
+    void AdvancePenaltyGrace()
+    {
+        if (Time.frameCount == _penaltyFrame)
+            return;
+        _penaltyFrame = Time.frameCount;
+        if (LevelTestMode.IsActive || Session.Settings == null)
+            return;
+
+        float simDt = Time.deltaTime * Session.Settings.SpeedMultiplier;
+        if (simDt <= 0f)
+            return;
+
+        _levelSimTime += simDt;
+        if (_levelSimTime < LevelStartQuietSimSeconds)
+            return;
+
+        bool penalize = TickSpeedPenalty(simDt) || TickAltitudePenalty(simDt);
+        if (penalize)
+            ChargePenaltyKg(simDt);
+    }
+
+    bool TickSpeedPenalty(float simDt)
+    {
+        bool wrong = SpeedWrong(out int direction);
+        bool correcting = false;
+        if (wrong && _prevPenaltySpeedValid)
+        {
+            double delta = Calculator.CSpeed - _prevPenaltySpeed;
+            correcting = (direction > 0 && delta > 0d) || (direction < 0 && delta < 0d);
+        }
+
+        _prevPenaltySpeed = Calculator.CSpeed;
+        _prevPenaltySpeedValid = true;
+        return TrackCorrection(wrong, correcting, ref _speedWrongSim, ref _speedCorrectionSeen, simDt);
+    }
+
+    bool TickAltitudePenalty(float simDt)
+    {
+        bool wrong = AltitudeWrong(out int direction);
+        bool correcting = wrong && ((direction > 0 && Calculator.CVS > 0) || (direction < 0 && Calculator.CVS < 0));
+        return TrackCorrection(wrong, correcting, ref _altWrongSim, ref _altCorrectionSeen, simDt);
+    }
+
+    static bool TrackCorrection(bool wrong, bool correcting, ref float wrongSim, ref bool seen, float simDt)
+    {
+        if (!wrong)
+        {
+            wrongSim = 0f;
+            seen = false;
+            return false;
+        }
+
+        wrongSim += simDt;
+        if (correcting)
+            seen = true;
+
+        bool startedTooLate = wrongSim >= CorrectionWindowSimSeconds && !seen;
+        bool stopped = seen && !correcting;
+        return startedTooLate || stopped;
+    }
+
+    void ChargePenaltyKg(double kilograms)
+    {
+        if (kilograms <= 0)
+            return;
+
+        double fuelKg = Calculator.totalFuel * 10.0;
+        if (fuelKg <= 0)
+            return;
+        if (kilograms > fuelKg)
+            kilograms = fuelKg;
+
+        FuelPenaltyKg += kilograms;
+        Calculator.totalFuel -= kilograms / 10.0;
+    }
+
+    int SpeedMode()
+    {
+        if (modS == 1 || modS == 2)
+            return modS;
+        return 0;
+    }
+
+    bool SpeedWrong(out int direction)
+    {
+        direction = 0;
+        if (!_speedLimitActive || ATCSpeed <= 0)
+            return false;
+
+        int speed = (int)Calculator.CSpeed;
+        int limit = ATCSpeed;
+        if (SpeedMode() == 1)
+        {
+            if (speed >= limit - SpeedToleranceKt)
+                return false;
+            direction = 1;
+            return true;
+        }
+
+        if (SpeedMode() == 2)
+        {
+            if (speed <= limit + SpeedToleranceKt)
+                return false;
+            direction = -1;
+            return true;
+        }
+
+        if (Math.Abs(speed - limit) <= SpeedToleranceKt)
+            return false;
+
+        direction = speed < limit ? 1 : -1;
+        return true;
+    }
+
+    bool AltitudeWrong(out int direction)
+    {
+        direction = 0;
+        int altitude = (int)Calculator.CAltitude;
+        bool tooHigh = false;
+        bool tooLow = false;
+        NoteAltitudeSide(altitude, -1, -1, ATCAltitude > 0 ? (int)ATCAltitude : -1, ref tooHigh, ref tooLow);
+        if (TryReadFixLimits(point, out int above, out int below, out int exact))
+            NoteAltitudeSide(altitude, above, below, exact, ref tooHigh, ref tooLow);
+
+        if (tooHigh && !tooLow)
+        {
+            direction = -1;
+            return true;
+        }
+
+        if (tooLow && !tooHigh)
+        {
+            direction = 1;
+            return true;
+        }
+
+        return tooHigh;
+    }
+
+    static void NoteAltitudeSide(int altitude, int above, int below, int exact, ref bool tooHigh, ref bool tooLow)
+    {
+        if (below > 0 && altitude > below + AltitudeToleranceFt)
+            tooHigh = true;
+        if (above > 0 && altitude < above - AltitudeToleranceFt)
+            tooLow = true;
+        if (exact > 0 && altitude > exact + AltitudeToleranceFt)
+            tooHigh = true;
+        if (exact > 0 && altitude < exact - AltitudeToleranceFt)
+            tooLow = true;
+    }
+
+    bool TryReadFixLimits(int fix, out int above, out int below, out int exact)
+    {
+        above = below = exact = -1;
+        if (fix <= 1 || fix >= 50)
+            return false;
+
+        var points = Session.OriginalReferenceRoute?.Points;
+        if (points == null || fix >= points.Length)
+            return false;
+
+        DataHandler.ParseAltRegulation(points[fix].RawAltitude ?? "", out above, out below, out exact);
+        return above > 0 || below > 0 || exact > 0;
+    }
+
+    void TrackAltitudeFix()
+    {
+        if (point <= 1 || point >= 50 || point == _trackedFix)
+            return;
+
+        _trackedFix = point;
+        if (TryReadFixLimits(point, out _, out _, out _))
+            BeginAltitudeGrace();
     }
 
     void ATCCall()
@@ -1202,12 +1249,22 @@ public class Move : Singleton<Move>
     //                      3..CLEAR ILS       >2..NextInstructionDistance
 
     {
+        if (_currentLevelData?.ATCs == null || _currentLevelData.ATCs.Length == 0)
+            return;
+        if (_currentInstructionIndex < 0 || _currentInstructionIndex >= _currentLevelData.ATCs.Length)
+            return;
+
+        var route = Session.OriginalReferenceRoute;
+        if (route?.Points == null || route.Points.Length == 0 || Session.PlayerAircraft == null)
+            return;
 
         var currentInstruction = _currentLevelData.ATCs[_currentInstructionIndex];
 
         int oncemode = mode;
 
         point = currentInstruction.point;
+        if (point < 50 && (point < 0 || point >= route.Points.Length))
+            point = Mathf.Clamp(point, 0, route.Points.Length - 1);
         mode = (mode == 11) ? 1 : currentInstruction.mode;
         Altitude = currentInstruction.Altitude;
         VS = currentInstruction.VS;
@@ -1219,15 +1276,17 @@ public class Move : Singleton<Move>
         PrvDistanceToPoint = Vector2.Distance(Session.PlayerAircraft.NMPosition, PointPos(PrvPoint));
         DistanceToPoint = Vector2.Distance(Session.PlayerAircraft.NMPosition, PointPos(point));
 
-        if (point < 50 && point > 1) RawSpeed = Session.OriginalReferenceRoute.Points[point - 1].RawSpeed;
-
-        if (point < 50 && point > 1) RawAlt = (Session.OriginalReferenceRoute.Points[point - 1].RawAltitude);
+        if (point < 50 && point > 1 && point - 1 < route.Points.Length)
+        {
+            RawSpeed = route.Points[point - 1].RawSpeed;
+            RawAlt = route.Points[point - 1].RawAltitude;
+        }
 
         DataHandler.ParseAltRegulation(RawAlt, out AltAbove, out AltBelow, out AltExact); // FMS Altitude Limit
 
 
         // Debug.Log(point + ".   " + RawSpeed + "   /  " + AltExact + "   " + AltAbove + "A  " + AltBelow + "B" +
-        //           "    FP:" + FuelPenalty + "   MxSpd: " + ATCSpeed);
+        //           "    FP:" + FuelPenaltyKg + "   MxSpd: " + ATCSpeed);
 
         //   Debug.Log(" N:  " + LegsScreen.VisibleRoute.FirstSpeedRegulationNodeId); // Correct this
 
@@ -1235,18 +1294,20 @@ public class Move : Singleton<Move>
         {
 
 
-            Atc1.text = mode == 1 ? "Proceed direct to  " + Session.OriginalReferenceRoute.Points[point].Name :
-                mode == 2 ? "Turn " + TurnDirection(TrackToPoint(point))
-                          + "Heading " + Calculator.NormalizeHeading360(TrackToPointFactored(point)) : "";
+            string pointName = point >= 0 && point < route.Points.Length ? route.Points[point].Name : "";
+            if (Atc1 != null)
+                Atc1.text = mode == 1 ? "Proceed direct to  " + pointName :
+                    mode == 2 ? "Turn " + TurnDirection(TrackToPoint(point))
+                              + "Heading " + Calculator.NormalizeHeading360(TrackToPointFactored(point)) : "";
 
 
             string s = VS < 0 ? ", ROD " + (-VS) + " fpm" + NxToString(VS_nx) : "";
 
             if (!_ilsArmOutstanding)
             {
-                if (Altitude > 0) Atc2.text = "Descent altitude " + Altitude + " feet" + s;
+                if (Altitude > 0 && Atc2 != null) Atc2.text = "Descent altitude " + Altitude + " feet" + s;
 
-                if (VS_nx == 3)
+                if (VS_nx == 3 && Atc2 != null)
                 {
                     Atc2.text += " CLEAR ILS APPROACH ";
                     _clearIlsAwaitingXfr = true;
@@ -1259,20 +1320,18 @@ public class Move : Singleton<Move>
             }
         
 
-            Atc3.text = Speed > 0 ? "Speed " + Speed + " knots " + NxToString(Speed_nx) :
-                Speed == 0 ? Atc3.text : "";
+            if (Atc3 != null)
+                Atc3.text = Speed > 0 ? "Speed " + Speed + " knots " + NxToString(Speed_nx) :
+                    Speed == 0 ? Atc3.text : "";
 
             NextInstructionDistance = Speed_nx > 2 ? Speed_nx : 1.3f;
 
-            XFR1.interactable = mode == 2 ? true : false;
-            if (_ilsArmOutstanding)
-            {
-                if (!_atc2GrayDone)
-                    XFR2.interactable = true;
-            }
-            else
-                XFR2.interactable = Altitude > 0 || VS_nx == 3;
-            XFR3.interactable = Speed > 0;
+            bool xfr1On = mode == 2;
+            bool xfr2On = _ilsArmOutstanding ? !_atc2GrayDone : Altitude > 0 || VS_nx == 3;
+            bool xfr3On = Speed > 0;
+            if (XFR1 != null) XFR1.interactable = xfr1On;
+            if (XFR2 != null) XFR2.interactable = xfr2On;
+            if (XFR3 != null) XFR3.interactable = xfr3On;
 
             if (Speed > 0)
             {
@@ -1283,20 +1342,21 @@ public class Move : Singleton<Move>
             if (Altitude > 0) XFRAltitude = Altitude;
 
             // Keep glow in sync with arming (do not leave glow on a disabled button).
-            SetXfrGlow(1, XFR1.interactable);
+            SetXfrGlow(1, xfr1On);
             if (_ilsArmOutstanding)
             {
                 if (!_atc2GrayDone)
                     SetXfrGlow(2, true);
             }
             else
-                SetXfrGlow(2, XFR2.interactable);
-            SetXfrGlow(3, XFR3.interactable);
+                SetXfrGlow(2, xfr2On);
+            SetXfrGlow(3, xfr3On);
 
             PrvTrackToPoint = TrackToPoint(point);
             if (mode > 0)
             {
-                Atc1.color = Color.green;
+                if (Atc1 != null)
+                    Atc1.color = Color.green;
                 _atc1GrayDone = false;
                 if (mode != 2)
                     SetXfrGlow(1, false);
@@ -1305,7 +1365,6 @@ public class Move : Singleton<Move>
                 SetXfrGlow(1, false);
 
             if (mode > 0) Cmode = mode;
-            if (Cmode == 1) FuelPenaltyAtFMCAltConstain(); // Check  Alt constrains on point for penalty
 
             // Re-arm Atc3/XFR3 UI when this instruction includes a speed (even if value repeats)
             if (Speed > 0)
@@ -1324,15 +1383,16 @@ public class Move : Singleton<Move>
             }
             _openedByEarlyCall = false;
 
-            if (mode > 0 || XFR2.interactable || XFR3.interactable) SlowDown();
+            if (mode > 0 || xfr2On || xfr3On) SlowDown();
 
         }
         else // Not New
         {
-            // Debug.Log(XFRHdg +"H"+ Calculator.RHeading+  "     "+ XFRAltitude +"A"+ Calculator.RAltitude + "   " + Speed +"S"+ Calculator.RSpeed);
-
-            LocDeviation(Session.CurrentLevel.levelInfo.Course);
-            GsDeviation(Session.CurrentLevel.levelInfo.GlideSlope);
+            if (Session.CurrentLevel?.levelInfo != null)
+            {
+                LocDeviation(Session.CurrentLevel.levelInfo.Course);
+                GsDeviation(Session.CurrentLevel.levelInfo.GlideSlope);
+            }
 
             BorderGuard();
         }
@@ -1343,8 +1403,10 @@ public class Move : Singleton<Move>
         {
             if (!_ilsArmOutstanding)
             {
-                Atc2.color = Color.green;
-                XFR2.interactable = true;
+                if (Atc2 != null)
+                    Atc2.color = Color.green;
+                if (XFR2 != null)
+                    XFR2.interactable = true;
                 SetXfrGlow(2, true);
                 _atc2GrayDone = false;
             }
@@ -1352,6 +1414,7 @@ public class Move : Singleton<Move>
             ATCAltitude = Altitude;
             ATCVS = VS;
             modD = VS == 0 ? -1 : VS_nx;
+            BeginAltitudeGrace();
             CancelInvoke(nameof(DescentCheck));
             InvokeRepeating(nameof(DescentCheck), 10f, 1f);
         }
@@ -1361,19 +1424,18 @@ public class Move : Singleton<Move>
             _atc3IssuedSpeed = Speed;
             XFRSpeed = Speed;
             XFRSpeedNx = Speed_nx;
-            Atc3.color = Color.green;
+            if (Atc3 != null)
+                Atc3.color = Color.green;
             _atc3GrayDone = false;
             ATCSpeed = Speed;
             if ((RawSpeed > 0) && (RawSpeed < ATCSpeed) && (Speed_nx != 1) && (Cmode == 1))
                 ATCSpeed = RawSpeed;
             modS = ((RawSpeed > 0) && (RawSpeed < Speed) && (Speed_nx != 1) && (Cmode == 1)) ? 2 : Speed_nx;
-            CancelInvoke(nameof(SpeedCheck));
+            BeginSpeedGrace();
 
-            XFR3.interactable = true;
+            if (XFR3 != null)
+                XFR3.interactable = true;
             SetXfrGlow(3, true);
-
-            InvokeRepeating(nameof(SpeedCheck), Mathf.Abs((float)Calculator.CSpeed - ATCSpeed) * 2.5f,
-                1f); //  secs before warning
         }
         else if ((RawSpeed > 0) && (RawSpeed < ATCSpeed) && (Speed_nx != 1) && (Cmode == 1))
         {
@@ -1382,7 +1444,7 @@ public class Move : Singleton<Move>
             modS = 2;
         }
 
-        if (Speed == -1) CancelInvoke(nameof(SpeedCheck));
+        if (Speed == -1) DisarmSpeedPenalty();
 
     }
 
@@ -1397,14 +1459,19 @@ public class Move : Singleton<Move>
         }
 
         ATCCall();
+        TrackAltitudeFix();
+        AdvancePenaltyGrace();
 
+        if (_currentLevelData?.ATCs == null || Session.Settings == null || Session.PlayerAircraft == null)
+            return;
 
         if ((_currentInstructionIndex < _currentLevelData.ATCs.Length - 1))
         {
 
 
             ElapsedTime += Session.Settings.FlyingTickDuration;
-            TimerText.text = "" + ElapsedTime;
+            if (TimerText != null)
+                TimerText.text = "" + ElapsedTime;
 
             OncekiPos = Session.PlayerAircraft.NMPosition;
             OncekiAlt = (int)Calculator.CAltitude;
@@ -1430,6 +1497,8 @@ public class Move : Singleton<Move>
             return;
 
         if (_currentInstructionIndex < 0 || _currentInstructionIndex >= _currentLevelData.ATCs.Length)
+            return;
+        if (Session.PlayerAircraft == null || Session.State == null)
             return;
 
         var currentInstruction = _currentLevelData.ATCs[_currentInstructionIndex];
@@ -1524,6 +1593,9 @@ public class Move : Singleton<Move>
     {
         float Deviation = ComputeLocDeviationDegrees(course);
 
+        if (LOCIndex == null)
+            return Deviation;
+
         if (((Mathf.Abs(Deviation) < 35) && (DME() < 10)) || ((Mathf.Abs(Deviation) < 10) && (DME() < 25)))
         {
             LOCIndex.enabled = true;
@@ -1566,6 +1638,9 @@ public class Move : Singleton<Move>
         // After capture, needle stays centered (display only — path still uses real deviation).
         float needleDev = Session.State.GSCaptured ? 0f : Deviation;
 
+        if (GSIndex == null)
+            return Deviation;
+
         if ((Mathf.Abs(ComputeLocDeviationDegrees(_currentLevelData.levelInfo.Course)) < 5) && (DME() < 20))
         {
             GSIndex.enabled = true;
@@ -1587,9 +1662,11 @@ public class Move : Singleton<Move>
         // todo birol : there is another variable RawAlt in the begining of this class - should they be the same ?
         var rawAlt = "0";
 
-        if (Session.VisibleRoute != null)
+        if (Session.VisibleRoute != null && Session.ActiveRoute != null)
         {
-            if (Session.ActiveRoute.GetPoint(Session.VisibleRoute.FirstAltRegulationNodeId, out var altRegulationNode, out _))
+            if (Session.ActiveRoute.GetPoint(Session.VisibleRoute.FirstAltRegulationNodeId, out var altRegulationNode, out _)
+                && altRegulationNode != null
+                && altRegulationNode.RawAltitude != null)
             {
                 rawAlt = altRegulationNode.RawAltitude;
             }
@@ -1603,23 +1680,10 @@ public class Move : Singleton<Move>
             Mathf.Abs((int)Calculator.CAltitude - AltRef) <= 300)
         {
             CancelInvoke(nameof(DescentCheck));
-            if (!_ilsArmOutstanding)
+            if (!_ilsArmOutstanding && Atc2 != null)
                 Atc2.text = "";
         }
 
     }
-}
-
-
-[System.Serializable]
-public struct LevelData
-{
-    [SerializeField] private VirtualPointsScriptableObject virtualPoints;
-    [SerializeField] private ATCInstructionsScriptableObject aTCs;
-    public LevelInfoScriptableObject levelInfo;
-    public OtherACScriptableObject[] otherACnr;
-
-    public VirtualPoints[] VirtualPoints => virtualPoints.VirtualPointsItems;
-    public ATCInstructionInfo[] ATCs => aTCs.ATCInstrucitonItems;
 }
 

@@ -35,7 +35,11 @@ public class RTEScreen : ScreenBase
    
      private void Refresh()
       {
-         var rte = infoFMC.Instance.Fmc.Rte;
+         var fmc = infoFMC.Live;
+         if (fmc == null)
+            return;
+
+         var rte = fmc.Rte;
          
          _destination.text = rte.Destination ;
          _rw.alignment = TextAlignmentOptions.MidlineRight;

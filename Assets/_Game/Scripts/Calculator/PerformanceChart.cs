@@ -3,7 +3,7 @@
 /// Corners: high-speed level, high-speed idle, low-speed level, low-speed idle.
 /// Each corner is speed (kt), pitch times 100, N1 times 100, fuel flow lb/hr per engine divided by 10.
 /// Flaps index: 0, 1, 2, 5, 10, 15, 25, 30, 40. Each flap has FL200 down to sea level.
-/// Each cell: QRH (same altitude, speed within 5%), PerformanceChart_eski, previous chart and B737_Performance.
+/// Each cell: QRH (same altitude, speed within 5%), the previous chart and B737_Performance.
 /// Two or more within 10% (floor 0.25 deg / 0.5 N1 / 5 FF / 50 fpm): accepted (QRH value if in the group, else mean).
 /// Otherwise QRH alone or the QRH-anchored model.
 /// FL400 and FL350 high-speed corners are 240 kt. FL350 V/S, N1 and FF come from B737_Performance; its pitch is interpolated from the former 280/220 row.

@@ -8,8 +8,6 @@ using UnityEngine;
 using Unyawn.Utils;
 
 public class LegsScreen : ScreenBase {
-    public GameManager gameManager;
-    public MainScreen mainScreen;
     [SerializeField] private LegsNodeLine[] nodes;
 
     public Action OnLeftCornerPressErase;
@@ -17,9 +15,18 @@ public class LegsScreen : ScreenBase {
 
     private int NodesPerPage => nodes.Length;
 
-    private int TotalPages =>
-        Mathf.CeilToInt((Session.VisibleRoute.Points.Length - PositionVirtualNode.NextNodeIndex + _nodesController.TotalPagesCorrection) /
-                        (float)NodesPerPage);
+    private int TotalPages
+    {
+        get
+        {
+            var points = Session.VisibleRoute?.Points;
+            if (points == null || points.Length == 0 || nodes == null || nodes.Length == 0 || _nodesController == null)
+                return 1;
+
+            return Mathf.CeilToInt((points.Length - PositionVirtualNode.NextNodeIndex + _nodesController.TotalPagesCorrection) /
+                                   (float)NodesPerPage);
+        }
+    }
 
     private bool IsErase => LastLineLeft == ERASE_TITLE;
 
@@ -181,6 +188,9 @@ public class LegsScreen : ScreenBase {
     }
 
     public void DisplayCurrentPage() {
+        if (nodes == null || _nodesController == null)
+            return;
+
         Main.UpdatePageInfo(
             isMod: Session.IsMod,
             firstInfo: Session.IsMod ? "MOD" : "ACT",
@@ -192,20 +202,22 @@ public class LegsScreen : ScreenBase {
         // Debug.Log("start");
 
         for (var i = 0; i < nodes.Length; i++) {
+            if (nodes[i] == null)
+                continue;
+
             var linkedSelection = _nodesController.GetNodeInfoAtLineIndex(i, _currentPage);
 
             //Debug.Log("linkedSelection :" + linkedSelection.LinkedId);
             //Debug.Log("linkedSelection IsInvalid :" + linkedSelection.IsInvalid);
             //Debug.Log("linkedSelection IsEmpty :" + linkedSelection.IsEmpty);
 
-            if (linkedSelection.IsInvalid || linkedSelection.IsEmpty) {
-                //Debug.Log("IsInvalid OR IsEmpty");
+            if (linkedSelection.IsInvalid || linkedSelection.IsEmpty
+                || Session.VisibleRoute == null
+                || !Session.VisibleRoute.GetPoint(linkedSelection.LinkedId, out var _node, out _)
+                || _node == null) {
                 nodes[i].ShowEmpty();
             }
             else {
-                Session.VisibleRoute.GetPoint(linkedSelection.LinkedId, out var _node, out _);
-                //Debug.Log("ID : Name :" + _node.ID + _node.Name);
-                //Debug.Log("ID :" + _node.ID);
                 nodes[i].DisplayNodeDetails(_node, linkedSelection);
 
             }
@@ -245,7 +257,12 @@ public class LegsScreen : ScreenBase {
 
         if (ScratchPadInterpreter.IsDeletePending(_scratchPadBuffer))
         {
-            if(clickedNode.ID == Session.ActiveRoute.Points[Session.ActiveRoute.Points.Length - 1].ID) return;
+            var points = Session.ActiveRoute?.Points;
+            if (points == null || points.Length == 0)
+                return;
+            var last = points[points.Length - 1];
+            if (last != null && clickedNode.ID == last.ID)
+                return;
 
             _simulation.ExecuteDeleteWayPoint(new DeleteWayPointCommand
             {
@@ -662,13 +679,16 @@ public class LegsScreen : ScreenBase {
     private bool IsFutureNodeInfo(string text, out int lineIndex, out NodeSelection linkedSelection) {
         lineIndex = -1;
         linkedSelection = null;
+        if (nodes == null || _nodesController == null || Session.VisibleRoute == null)
+            return false;
+
         for (int page = _currentPage; page < TotalPages; page++) {
             for (var i = 0; i < nodes.Length; i++) {
                 linkedSelection = _nodesController.GetNodeInfoAtLineIndex(i, page);
 
                 if (!linkedSelection.IsInvalid && !linkedSelection.IsEmpty) {
                     Session.VisibleRoute.GetPoint(linkedSelection.LinkedId, out var node, out _);
-                    if (node.Name == text) {
+                    if (node != null && node.Name == text) {
                         lineIndex = i;
                         return true;
                     }
@@ -688,6 +708,9 @@ public class LegsScreen : ScreenBase {
     /// <param name="text"></param>
     /// <returns></returns>
     private bool IsPassedOriginalNodeName(string text, out RoutePoint originalNodeInfo) {
+        originalNodeInfo = null;
+        if (Session.OriginalReferenceRoute == null)
+            return false;
         return Session.OriginalReferenceRoute.GetPointByName(text, out originalNodeInfo);
     }
 
@@ -721,11 +744,11 @@ public class LegsScreen : ScreenBase {
                 break;
         }
 
-        MainScreen.Instance.scratchPadText.Clear();
+        MainScreen.Pad?.Clear();
     }
 
     public void UpdateScratchPad(string buffer, bool withStatus = true) {
-        MainScreen.Instance.scratchPadText.SetAsDefault(buffer);
+        MainScreen.Pad?.SetAsDefault(buffer);
         if (withStatus) {
             lastFLeft.text = "ok";
         }

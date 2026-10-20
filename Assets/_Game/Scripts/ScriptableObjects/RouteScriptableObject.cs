@@ -64,36 +64,33 @@ namespace Navigation
 
         public void ComputeTrace(bool isMod = false)
         {
+            if (TracedRoute == null)
+                TracedRoute = new TracedRoute();
+            // Points define the path. Call this after a route edit, not every flight frame.
             TracedRoute.Compute(Points, isMod);
-        }
-
-        public void InitIds()
-        {
-            for (var i = 0; i < Points.Length; i++)
-            {
-                Points[i].ID = i;
-            }
         }
 
         public Vector2 GetCartesianPosition(int lineIndex)
         {
-            if (Points.Length <= lineIndex)
-            {
+            if (Points == null || lineIndex < 0 || lineIndex >= Points.Length)
                 return Vector2.zero;
-            }
 
-            return Points[lineIndex].CartesianPosition;
+            var point = Points[lineIndex];
+            return point != null ? point.CartesianPosition : Vector2.zero;
         }
 
         public bool GetPointByName(string pointName, out RoutePoint point)
         {
-            for (int i = 0; i < Points.Length; i++)
+            if (Points != null)
             {
-                var p = Points[i];
-                if (p.Name == pointName)
+                for (int i = 0; i < Points.Length; i++)
                 {
-                    point = p;
-                    return true;
+                    var p = Points[i];
+                    if (p != null && p.Name == pointName)
+                    {
+                        point = p;
+                        return true;
+                    }
                 }
             }
 
@@ -128,27 +125,37 @@ namespace Navigation
 
         public bool GetPoint(int nodeId, out RoutePoint point, out int index)
         {
+            if (Points == null)
+            {
+                point = null;
+                index = -1;
+                return false;
+            }
+
             Points.GetNodeIndex(nodeId, out index);
             return GetPointAt(index, out point);
         }
 
         public bool GetPointAt(int index, out RoutePoint point)
         {
-            if (Points.Length <= index || index < 0)
+            if (Points == null || index < 0 || index >= Points.Length)
             {
                 point = null;
                 return false;
             }
 
             point = Points[index];
-            return true;
+            return point != null;
         }
 
 
         private int GetNewId(bool safe = false)
         {
+            if (Points == null)
+                return safe ? 50 : 0;
+
             var id = Points.Length;
-            while (Points.Any(x => x.ID == id))
+            while (Points.Any(x => x != null && x.ID == id))
             {
                 id++;
             }
@@ -158,10 +165,14 @@ namespace Navigation
 
         private string GetNewName(string fromNode)
         {
-            var intro = fromNode.Substring(0, 3);
+            var intro = string.IsNullOrEmpty(fromNode)
+                ? "WPT"
+                : fromNode.Length >= 3 ? fromNode.Substring(0, 3) : fromNode;
             var index = 1;
+            if (Points == null)
+                return intro + index.ToString("00");
 
-            while (Points.Any(x => x.Name == intro + index.ToString("00")))
+            while (Points.Any(x => x != null && x.Name == intro + index.ToString("00")))
             {
                 index++;
             }
@@ -201,27 +212,6 @@ namespace Navigation
             return newSet;
         }
 
-        // Method to remove duplicates that were added afterwards
-        public void RemoveSubsequentDuplicates()
-        {
-            var seenIds = new HashSet<string>();
-            var uniquePoints = new List<RoutePoint>();
-
-            // Iterate through the Points array and add only the first occurrence of each ID to the new list
-            foreach (var point in Points)
-            {
-                if (!seenIds.Contains(point.Name))
-                {
-                    seenIds.Add(point.Name);
-                    uniquePoints.Add(point);
-                }
-            }
-
-            // Assign the unique points back to the Points array
-            Points = uniquePoints.ToArray();
-            Debug.Log("Afterrasdasd ::" + Points.Length);
-        }
-
         // to be executed on ACTIVE route
         public bool FindFreeFlightDirectExitScenario(out RoutePosition routeIntersection)
         {
@@ -229,22 +219,31 @@ namespace Navigation
 
             routeIntersection = new RoutePosition { SegmentIndex = -1, SegmentVertexIndex = -1, SegmentVertex = nan };
 
+            if (Session.PlayerAircraft == null || Points == null || Points.Length < 2)
+                return false;
+
             var aircraftPosition = Session.PlayerAircraft.NMPosition; // would be free since we are in free flight
             var aircraftDirection = Geometry.GetDirectionFromHeading(Session.PlayerAircraft.HeadingDegrees);
 
             var startI = FindForwardPositionNodeIndex();
             if (startI < 1)
                 startI = 1;
-            var segmentEnd = Points[Mathf.Max(0, startI - 1)].CartesianPosition;
+            var origin = Points[Mathf.Max(0, startI - 1)];
+            if (origin == null)
+                return false;
+            var segmentEnd = origin.CartesianPosition;
 
             for (var i = startI; i < Points.Length; i++)
             {
                 var segmentStart = segmentEnd;
+                var point = Points[i];
+                if (point == null)
+                    continue;
 
-                segmentEnd = Points[i].CartesianPosition;
+                segmentEnd = point.CartesianPosition;
 
-                if (Points[i].IsHiddenLine ||
-                    Points[i].IsAfterDiscontinuity) //$^% ask if we can join discontinuity segments
+                if (point.IsHiddenLine ||
+                    point.IsAfterDiscontinuity) //$^% ask if we can join discontinuity segments
                 {
                     Debug.Log("Ask if we can join discontinuity segments");
                     continue;
@@ -261,8 +260,16 @@ namespace Navigation
 
             if (routeIntersection.SegmentIndex >= 0)
             {
+                var lines = TracedRoute?.ComputedLines;
+                var leg = lines != null
+                    && routeIntersection.SegmentIndex >= 0
+                    && routeIntersection.SegmentIndex < lines.Length
+                    ? lines[routeIntersection.SegmentIndex]
+                    : null;
+                if (leg == null || Session.Settings == null)
+                    return false;
 
-                TracedRoute.ComputedLines[routeIntersection.SegmentIndex].FindFurthestSeekTargetOnSegment(
+                leg.FindFurthestSeekTargetOnSegment(
                     routeIntersection.SegmentVertex,
                     Session.Settings.PilotSeekDistancePathFollow * 1.1f,
                     out _,
@@ -384,58 +391,15 @@ namespace Navigation
             Points = newSet;
         }
 
-        private void AddRelativeNodeAfter(int relativeFromNodeId, float rawDegrees, int distance,
-            out RoutePoint insertionNode, out RoutePoint afterInsertion, bool addCurveOffset = true)
-        {
-            Points.GetNodeIndex(relativeFromNodeId, out var relativeFromNodeIndex);
-            var relativeFromNode = Points[relativeFromNodeIndex];
-
-            afterInsertion = Points[relativeFromNodeIndex + 1];
-
-            insertionNode = new RoutePoint
-            {
-                Name = GetNewName(relativeFromNode.Name),
-                Distance = distance,
-                RawDegrees = rawDegrees,
-                ID = GetNewId()
-            };
-
-            var insertPosition = Geometry.GetNextPosition(Vector2.zero, distance, rawDegrees);
-            var originalToPosition =
-                Geometry.GetNextPosition(Vector2.zero, afterInsertion.Distance, afterInsertion.RawDegrees);
-            var returnDirection = originalToPosition - insertPosition;
-            afterInsertion.RawDegrees = Geometry.PositiveAngleBetween(Vector2.up, returnDirection);
-            afterInsertion.Distance = returnDirection.magnitude;
-
-            // simulate the curve to the the needed offset
-            // @£$
-            // var lastLine = new MarkLine(relativeFromNode, _drawerUnitLength);
-            //lastLine.InitBeginning();
-
-            //LinesComputer.ComputeLine(lastLine, out var testLine, insertionNode, afterInsertion);
-
-            // replace set with new set that also contains insertion node
-            var newSet = new RoutePoint[Points.Length + 1];
-            var offset = 0;
-            for (var i = 0; i < Points.Length; i++)
-            {
-                if (i == relativeFromNodeIndex + 1)
-                {
-                    newSet[i] = insertionNode;
-
-                    offset = 1;
-                }
-
-                newSet[i + offset] = Points[i];
-            }
-
-            Points = newSet;
-        }
-
         public void AddDirectToCartesianNodeBefore(int originalRouteNodeId, int nextNodeId)
         {
-            Session.OriginalReferenceRoute.GetPoint(originalRouteNodeId, out var originalRoutePoint, out _);
-            GetPoint(nextNodeId, out var modeAfterNode, out var modIndexAfter);
+            if (Session.OriginalReferenceRoute == null
+                || !Session.OriginalReferenceRoute.GetPoint(originalRouteNodeId, out var originalRoutePoint, out _)
+                || originalRoutePoint == null
+                || !GetPoint(nextNodeId, out var modeAfterNode, out var modIndexAfter)
+                || modeAfterNode == null)
+                return;
+
             GetPointAt(modIndexAfter - 1, out var modNodeBefore);
 
             // todo to add after discontinuity
@@ -636,46 +600,28 @@ namespace Navigation
             target.IsModified = true;
 
             // Direct-to leaves a discontinuity on the next leg. The route now continues through it.
-            if (newSet.Length > 2 && newSet[2].IsAfterDiscontinuity)
+            if (newSet.Length > 2 && newSet[2] != null && newSet[2].IsAfterDiscontinuity)
                 newSet[2].ClearDetails();
 
             Points = newSet;
             ComputeCartesianPositions();
         }
 
-        public void AddRejoinIntersectionNode(Vector2 segmentVertex, int segmentIndex)
-        {
-            var intersectionNodeToAdd = RoutePoint.ConstructFromPosition(
-                segmentVertex,
-                Points[segmentIndex - 1],
-                Points[segmentIndex],
-                GetNewId(true),
-                "",
-                "_rejoin_");
-
-            Debug.Log("================" +
-                " _reJoin ================");
-            // If we want active route to contain also the path from the current position we can also insert position nodes
-            ConstructPositionNodes(Points[segmentIndex - 1], intersectionNodeToAdd,
-                out var airplanePositionNodeToAdd, out var frontOfAirplanePositionNodeToAdd);
-
-
-            InsertNodes(segmentIndex,
-                airplanePositionNodeToAdd,
-                frontOfAirplanePositionNodeToAdd,
-                intersectionNodeToAdd);
-
-            ComputeTrace();
-        }
-
         private int FindNodeBeforePlaneOnMode()
         {
+            var modPoints = Session.ModRoute?.Points;
+            var activePoints = Session.ActiveRoute?.Points;
+            if (modPoints == null || activePoints == null)
+                return -1;
+
             int foundIndex = 0;
             for (foundIndex = 0;
-                 foundIndex < Session.ModRoute.Points.Length &&
-                 foundIndex < Session.ActiveRoute.Points.Length; foundIndex++)
+                 foundIndex < modPoints.Length &&
+                 foundIndex < activePoints.Length; foundIndex++)
             {
-                if (Session.ModRoute.Points[foundIndex].ID != Session.ActiveRoute.Points[foundIndex].ID)
+                var modPoint = modPoints[foundIndex];
+                var activePoint = activePoints[foundIndex];
+                if (modPoint == null || activePoint == null || modPoint.ID != activePoint.ID)
                 {
                     foundIndex -= 1;
                     break;
@@ -697,6 +643,9 @@ namespace Navigation
             if (IsCourseInterceptRoute)
                 return;
 
+            if (Points == null)
+                return;
+
             var nodeBeforePlaneIndex = FindNodeBeforePlaneOnMode();
             if (nodeBeforePlaneIndex < 0 || nodeBeforePlaneIndex >= Points.Length - 1)
                 return;
@@ -704,6 +653,8 @@ namespace Navigation
             var nodeBeforePosition = Points[nodeBeforePlaneIndex];
             int nodeAfterPlaneIndex = nodeBeforePlaneIndex + 1;
             var routeNextNode = Points[nodeAfterPlaneIndex];
+            if (nodeBeforePosition == null || routeNextNode == null)
+                return;
 
             ConstructPositionNodes(nodeBeforePosition, routeNextNode,
                 out var airplanePositionNodeToAdd, out var frontOfAirplanePositionNodeToAdd,
@@ -844,27 +795,6 @@ namespace Navigation
             Points = newSet;
         }
 
-        public void AddNodeAtLast(int NodeId, string name, float rawDegrees, float distance)
-        {
-            RoutePoint insertionNode = new RoutePoint
-            {
-                Name = name,
-                Distance = distance,
-                RawDegrees = rawDegrees,
-                ID = NodeId
-            };
-
-            var newSet = new RoutePoint[Points.Length + 1];
-
-            for (var i = 0; i < Points.Length; i++)
-            {
-                newSet[i] = Points[i];
-            }
-            newSet[Points.Length] = insertionNode;
-
-            Points = newSet;
-        }
-
         //code for remove a point from the array at specific index
         public void RemovePoint(int pointId)
         {
@@ -957,11 +887,19 @@ namespace Navigation
 
         public void RemoveNode(int nodeId, out RoutePoint removedNode)
         {
+            removedNode = null;
+            if (Points == null || Points.Length <= 1)
+            {
+                Debug.LogWarning($"Node with ID {nodeId} was not removed.");
+                return;
+            }
+
             Points.GetNodeIndex(nodeId, out var nodeIndexToRemove);
 
             if (nodeIndexToRemove < 0 || nodeIndexToRemove >= Points.Length)
             {
-                throw new ArgumentException($"Node with ID {nodeId} not found.");
+                Debug.LogWarning($"Node with ID {nodeId} not found.");
+                return;
             }
 
             removedNode = Points[nodeIndexToRemove].Clone();

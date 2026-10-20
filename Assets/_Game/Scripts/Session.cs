@@ -23,29 +23,50 @@ namespace Navigation {
 
         public static RouteScriptableObject ActiveRoute
         {
-            get => Routes.ActiveRoute;
-            set => Routes.ActiveRoute = value;
+            get => Routes?.ActiveRoute;
+            set
+            {
+                if (Routes != null)
+                    Routes.ActiveRoute = value;
+            }
         }
 
         public static RouteScriptableObject ModRoute
         {
-            get => Routes.ModRoute;
-            set => Routes.ModRoute = value;
+            get => Routes?.ModRoute;
+            set
+            {
+                if (Routes != null)
+                    Routes.ModRoute = value;
+            }
         }
 
         public static RouteScriptableObject ModeSetWithPosition
         {
-            get => Routes.ModeSetWithPosition;
-            set => Routes.ModeSetWithPosition = value;
+            get => Routes?.ModeSetWithPosition;
+            set
+            {
+                if (Routes != null)
+                    Routes.ModeSetWithPosition = value;
+            }
         }
 
         public static RouteScriptableObject VisibleRoute => IsMod ? ModRoute : ActiveRoute;
 
         public static bool IsMod;
 
-        public static float Zoom => (State.MapMode == MapMode.Plan
-            ? ZoomMultiplier * Settings.PlanReferenceLength80 
-            : ZoomMultiplier * Settings.MapReferenceLength80) / 80f;
+        public static float Zoom
+        {
+            get
+            {
+                if (State == null || Settings == null)
+                    return 1f;
+
+                return (State.MapMode == MapMode.Plan
+                    ? ZoomMultiplier * Settings.PlanReferenceLength80
+                    : ZoomMultiplier * Settings.MapReferenceLength80) / 80f;
+            }
+        }
 
         public static float ZoomMultiplier;
 

@@ -15,7 +15,6 @@ public class OtherAC
     private string _aircraftKey;
     private int _acIndex;
     private int _currentPointIndex = 1;
-    private GameObject _ac;
     private bool _hidden;
     private Vector2 finalPosition;
     private float AltitudeC;
@@ -34,9 +33,8 @@ public class OtherAC
         int levelNo = levelData != null && levelData.levelInfo != null ? levelData.levelInfo.LevelNumber : 0;
         _acItems = BuildItemsFromTxt(levelNo, acIndex + 1);
         _aircraftKey = "AC (" + (acIndex + 1) + ")";
-        _ac = FindAc(_aircraftKey);
 
-        if (_acItems == null || _acItems.Length < 2 || _ac == null)
+        if (_acItems == null || _acItems.Length < 2)
         {
             Hide();
             return;
@@ -75,7 +73,7 @@ public class OtherAC
 
     public void Tick(Dictionary<string, string> acTexts, Dictionary<string, Vector2> acPositions)
     {
-        if (_hidden || _acItems == null)
+        if (_hidden || _acItems == null || Session.Settings == null || Move.Instance == null || acTexts == null || acPositions == null)
             return;
 
         if (_currentPointIndex >= _acItems.Length)
@@ -139,17 +137,12 @@ public class OtherAC
         if (_hidden)
             return;
 
-        // ND-only filters (TooClose / short final). Keep flying so the editor overlay still shows them.
         if (TooCloseToOwn() || HideTrafficNearRunway())
         {
             SuppressDisplay(acTexts, acPositions);
             return;
         }
 
-        if (!_ac.activeSelf)
-            _ac.SetActive(true);
-        _ac.transform.localPosition = finalPosition;
-        ApplyBlackNumber(_ac, (_acIndex + 1).ToString());
         if (!InsideTcasWindow())
         {
             if (acPositions.ContainsKey(_aircraftKey))
@@ -205,7 +198,7 @@ public class OtherAC
             rw = Session.OriginalReferenceRoute.Points.Length - 1;
         if (rw > 0 && ids[ids.Count - 1] != rw)
             ids.Add(rw);
-        if (ids.Count < 2)
+        if (ids.Count < 2 || Move.Instance == null)
             return null;
 
         var pts = new Vector2[ids.Count];
@@ -242,19 +235,9 @@ public class OtherAC
         return items;
     }
 
-    public bool CanReportLive
-    {
-        get { return _acItems != null && _acItems.Length >= 2; }
-    }
-
-    public Vector2 LivePosition
-    {
-        get { return finalPosition; }
-    }
-
     private bool HasRoute
     {
-        get { return _ac != null && _acItems != null && _pts != null && _rem != null && _rem.Length >= 2; }
+        get { return _acItems != null && _pts != null && _rem != null && _rem.Length >= 2; }
     }
 
     private void PlaceForDesired(float desired)
@@ -289,11 +272,8 @@ public class OtherAC
 
     private void Show()
     {
-        if (_hidden || _ac == null)
+        if (_hidden)
             return;
-        _ac.SetActive(true);
-        _ac.transform.localPosition = finalPosition;
-        ApplyBlackNumber(_ac, (_acIndex + 1).ToString());
         if (TooCloseToOwn() || HideTrafficNearRunway())
             SuppressDisplay();
     }
@@ -333,25 +313,25 @@ public class OtherAC
             acPositions.Remove(_aircraftKey);
         if (acTexts != null)
             acTexts.Remove(_aircraftKey);
-        if (_ac == null)
-            return;
-        var txt = _ac.GetComponent<UnityEngine.UI.Text>();
-        if (txt != null)
-            txt.text = "";
-        if (_ac.activeSelf)
-            _ac.SetActive(false);
     }
 
     private float RemainingNm()
     {
-        if (_acItems == null || _currentPointIndex >= _acItems.Length)
+        if (Move.Instance == null || _acItems == null || _currentPointIndex < 0 || _currentPointIndex >= _acItems.Length)
             return 0f;
-        float rem = Vector2.Distance(finalPosition, Move.Instance.PointPos(_acItems[_currentPointIndex].Point));
+        var current = _acItems[_currentPointIndex];
+        if (current == null)
+            return 0f;
+        float rem = Vector2.Distance(finalPosition, Move.Instance.PointPos(current.Point));
         for (int i = _currentPointIndex; i < _acItems.Length - 1; i++)
         {
+            var from = _acItems[i];
+            var to = _acItems[i + 1];
+            if (from == null || to == null)
+                continue;
             rem += Vector2.Distance(
-                Move.Instance.PointPos(_acItems[i].Point),
-                Move.Instance.PointPos(_acItems[i + 1].Point));
+                Move.Instance.PointPos(from.Point),
+                Move.Instance.PointPos(to.Point));
         }
         return rem;
     }
@@ -388,53 +368,5 @@ public class OtherAC
             acPositions.Remove(_aircraftKey);
         if (acTexts != null)
             acTexts.Remove(_aircraftKey);
-        if (_ac == null)
-            return;
-        var txt = _ac.GetComponent<UnityEngine.UI.Text>();
-        if (txt != null)
-            txt.text = "";
-        if (_ac.activeSelf)
-            _ac.SetActive(false);
-    }
-
-    private static void ApplyBlackNumber(GameObject go, string num)
-    {
-        if (go == null)
-            return;
-        var ui = go.GetComponent<UnityEngine.UI.Text>();
-        if (ui != null)
-        {
-            ui.enabled = true;
-            ui.text = num;
-            ui.color = Color.black;
-            ui.raycastTarget = false;
-        }
-
-        var tmps = go.GetComponentsInChildren<TMPro.TMP_Text>(true);
-        for (int i = 0; i < tmps.Length; i++)
-        {
-            var tmp = tmps[i];
-            tmp.gameObject.SetActive(true);
-            tmp.enabled = true;
-            tmp.text = num;
-            tmp.color = Color.black;
-            tmp.overflowMode = TMPro.TextOverflowModes.Overflow;
-            tmp.enableWordWrapping = false;
-        }
-    }
-
-    private static GameObject FindAc(string name)
-    {
-        var live = GameObject.Find(name);
-        if (live != null)
-            return live;
-        var all = Resources.FindObjectsOfTypeAll<Transform>();
-        for (int i = 0; i < all.Length; i++)
-        {
-            var t = all[i];
-            if (t != null && t.name == name && t.gameObject.scene.IsValid())
-                return t.gameObject;
-        }
-        return null;
     }
 }

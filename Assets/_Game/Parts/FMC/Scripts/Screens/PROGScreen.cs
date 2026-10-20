@@ -61,7 +61,11 @@ public class PROGScreen : ScreenBase
 
     private void Refresh()
     {
-        var progRef = infoFMC.Instance.Fmc.Prog;
+        var fmc = infoFMC.Live;
+        if (fmc == null)
+            return;
+
+        var progRef = fmc.Prog;
 
         _fromNode.text = DisplayProgName(progRef.PrvName);
         _nextNode.text = DisplayProgName(progRef.NxtName);

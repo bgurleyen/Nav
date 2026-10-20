@@ -15,11 +15,12 @@ public class ARRScreen : ScreenBase
     public override void Show()
     {
         base.Show();
-        var fmc = infoFMC.Instance.Fmc;
+        var fmc = infoFMC.Live;
+        var destination = fmc != null ? fmc.Initref.Destination : "";
 
         Main.UpdatePageInfo(
            isMod: false,
-           secondInfo: fmc.Initref.Destination,
+           secondInfo: destination,
            pageTitle: "ARRIVALS",
            currentPage: 0, totalPages: 1);
 
@@ -37,7 +38,9 @@ public class ARRScreen : ScreenBase
 
     private void Refresh()
     {
-        var fmc = infoFMC.Instance.Fmc;
+        var fmc = infoFMC.Live;
+        if (fmc == null)
+            return;
 
         _star.text = fmc.Arr.STAR;
         _rw.text = fmc.Arr.RW;

@@ -58,12 +58,16 @@ public class Drawer : MonoBehaviour
 
     private void Start()
     {
-        Session.State.OnMapModeChanged += OnUIMapModeSet;
+        if (Session.State != null)
+            Session.State.OnMapModeChanged += OnUIMapModeSet;
     }
 
     // todo daniel - move this through session.State
     public void ResetMode()
     {
+        if (Session.State == null)
+            return;
+
         Session.State.AutoSetMapMode(MapMode.Map);
         OnUIMapModeSet(Session.State.MapMode);
     }
@@ -74,13 +78,16 @@ public class Drawer : MonoBehaviour
         switch (mode)
         {
             case MapMode.Map:
-                cameraAnimator.SetTrigger("Map");
+                if (cameraAnimator != null)
+                    cameraAnimator.SetTrigger("Map");
                 break;
             case MapMode.Center:
-                cameraAnimator.SetTrigger("Center");
+                if (cameraAnimator != null)
+                    cameraAnimator.SetTrigger("Center");
                 break;
             case MapMode.Plan:
-                cameraAnimator.SetTrigger("Plan");
+                if (cameraAnimator != null)
+                    cameraAnimator.SetTrigger("Plan");
                 break;
         }
         ShowCurrentMode();
@@ -89,24 +96,29 @@ public class Drawer : MonoBehaviour
 
 
 
+    private void SetModeHolders(GameObject[] holders, MapMode mode)
+    {
+        if (holders == null || Session.State == null)
+            return;
+
+        for (var i = 0; i < holders.Length; i++)
+        {
+            if (holders[i] != null)
+                holders[i].SetActive(Session.State.MapMode == mode);
+        }
+    }
+
     private void ShowCurrentMode()
     {
-        foreach (var x in mapHolder)
-        {
-            x.SetActive(Session.State.MapMode == MapMode.Map);
-        }
+        if (Session.State == null)
+            return;
 
-        foreach (var x in centerHolder)
-        {
-            x.SetActive(Session.State.MapMode == MapMode.Center);
-        }
+        SetModeHolders(mapHolder, MapMode.Map);
+        SetModeHolders(centerHolder, MapMode.Center);
+        SetModeHolders(planHolder, MapMode.Plan);
 
-        foreach (var x in planHolder)
-        {
-            x.SetActive(Session.State.MapMode == MapMode.Plan);
-        }
-
-        radialPivots.RefreshScale();
+        if (radialPivots != null)
+            radialPivots.RefreshScale();
 
         Clear();
         Display();
@@ -114,6 +126,9 @@ public class Drawer : MonoBehaviour
 
     private void ShowRangeLine()
     {
+        if (rangelineHolder == null || Session.State == null)
+            return;
+
         rangelineHolder.SetActive(Session.State.MapMode != MapMode.Plan);
     }
 
@@ -183,15 +198,18 @@ public class Drawer : MonoBehaviour
     {
 
         var zoomDistance = Math.Round(80f / Session.ZoomMultiplier / 2f, 1);
-        _reference40.text = zoomDistance.ToString();
-        _Mapreference40.text = (zoomDistance).ToString();
-        _reference80.text = (zoomDistance * 2).ToString();
+        if (_reference40 != null)
+            _reference40.text = zoomDistance.ToString();
+        if (_Mapreference40 != null)
+            _Mapreference40.text = zoomDistance.ToString();
+        if (_reference80 != null)
+            _reference80.text = (zoomDistance * 2).ToString();
 
     }
 
     public void Display()
     {
-        DisplaySet(Session.ActiveRoute?.TracedRoute.ComputedLines, LinesType.Active);
+        DisplaySet(Session.ActiveRoute?.TracedRoute?.ComputedLines, LinesType.Active);
         if (Session.ModRoute != null)
         {
             DisplaySet(Session.ModeSetWithPosition?.TracedRoute?.ComputedLines, LinesType.Mod);
@@ -199,11 +217,14 @@ public class Drawer : MonoBehaviour
 
         DisplayFixCircles();
         DisplayFixRays();
-        //radialPivots.RefreshVisibility();
-        radialPivots.RefreshZoomAndHDG();
-        float BananaPos = Calculator.Instance.GetBananaPosition;
-        bananaIndicatorPivot.SetLocalY(BananaPos);
-        if (BananaPos == 0) bananaIndicatorPivot.SetLocalY(-1000);
+        if (radialPivots != null)
+            radialPivots.RefreshZoomAndHDG();
+        if (Calculator.Instance != null && bananaIndicatorPivot != null)
+        {
+            float BananaPos = Calculator.Instance.GetBananaPosition;
+            bananaIndicatorPivot.SetLocalY(BananaPos);
+            if (BananaPos == 0) bananaIndicatorPivot.SetLocalY(-1000);
+        }
         //Debug.Log(BananaPos);
         DisplayOtherTraffic();
 
@@ -214,7 +235,7 @@ public class Drawer : MonoBehaviour
 
     private void DisplayRotations()
     {
-        if (!Session.IsRunning)
+        if (!Session.IsRunning || Session.State == null || Session.PlayerAircraft == null)
         {
             return;
         }
@@ -223,50 +244,58 @@ public class Drawer : MonoBehaviour
         {
             case MapMode.Center:
             case MapMode.Map:
-                //rotate compass
-                compasPivot.SetLocalRotationZ(Session.PlayerAircraft.DisplayHeadingDegrees);
-
-                _freeFlightPivot.SetLocalRotationZ(Session.PlayerAircraft.DisplayHeadingDegrees - Calculator.RHeading-1);
-                mobilePlaneIndicatorPivot.SetLocalRotationZ(0);
-
+                compasPivot?.SetLocalRotationZ(Session.PlayerAircraft.DisplayHeadingDegrees);
+                _freeFlightPivot?.SetLocalRotationZ(Session.PlayerAircraft.DisplayHeadingDegrees - Calculator.RHeading - 1);
+                mobilePlaneIndicatorPivot?.SetLocalRotationZ(0);
                 break;
             case MapMode.Plan:
-                //rotate compass
-                compasPivot.SetLocalRotationZ(0);
-                mobilePlaneIndicatorPivot.SetLocalRotationZ(-Session.PlayerAircraft.DisplayHeadingDegrees);
+                compasPivot?.SetLocalRotationZ(0);
+                mobilePlaneIndicatorPivot?.SetLocalRotationZ(-Session.PlayerAircraft.DisplayHeadingDegrees);
 
                 if (Session.State.HDG)
-                {
-                    _freeFlightPivot.SetLocalRotationZ(-Calculator.RTrack);
-                }
+                    _freeFlightPivot?.SetLocalRotationZ(-Calculator.RTrack);
 
                 break;
 
             default:
-                throw new ArgumentOutOfRangeException();
+                return;
         }
-        _windPivot.SetLocalRotationZ(-Calculator.CHeadingWindAddition);
-     
-        mobilePlaneIndicatorPivot.localPosition = Session.PlayerAircraft.NMPosition.ToDisplay();
+        _windPivot?.SetLocalRotationZ(-Calculator.CHeadingWindAddition);
+
+        if (mobilePlaneIndicatorPivot != null)
+            mobilePlaneIndicatorPivot.localPosition = Session.PlayerAircraft.NMPosition.ToDisplay();
     }
 
     private void DisplayOtherTraffic()
     {
+        if (Move.Instance == null || otherAircraftsPool == null)
+            return;
+
         var positions = Move.Instance.ACPositions;
         var texts = Move.Instance.ACTexts;
+        if (positions == null)
+            return;
 
         foreach (var key in positions.Keys)
         {
-            var drawer = otherAircraftsPool.Spawn(Vector3.zero, Quaternion.identity, dynamicHolderOtheriarcrafts)
-                .GetComponent<OtherAircrafIndicator>();
+            var spawned = otherAircraftsPool.Spawn(Vector3.zero, Quaternion.identity, dynamicHolderOtheriarcrafts);
+            if (spawned == null)
+                continue;
+            var drawer = spawned.GetComponent<OtherAircrafIndicator>();
+            if (drawer == null)
+                continue;
             drawer.name = key;
-            string label = texts.ContainsKey(key) ? texts[key] : "";
+            string label = texts != null && texts.ContainsKey(key) ? texts[key] : "";
             drawer.Init(label, Color.white, 0f, 45f);
             drawer.transform.localPosition = positions[key].ToDisplay();
         }
 
-        var objective = otherAircraftsPool.Spawn(Vector3.zero, Quaternion.identity, dynamicHolderOtheriarcrafts)
-            .GetComponent<OtherAircrafIndicator>();
+        var originSpawn = otherAircraftsPool.Spawn(Vector3.zero, Quaternion.identity, dynamicHolderOtheriarcrafts);
+        if (originSpawn == null)
+            return;
+        var objective = originSpawn.GetComponent<OtherAircrafIndicator>();
+        if (objective == null)
+            return;
         objective.name = "origin";
         objective.Init("o", Color.blue);
         objective.transform.localPosition = Vector2.zero.ToDisplay();
@@ -297,10 +326,11 @@ public class Drawer : MonoBehaviour
                 holder = dynamicHolder;
                 break;
             default:
-                throw new ArgumentOutOfRangeException(nameof(linesType), linesType, null);
+                return;
         }
 
-
+        if (pool == null)
+            return;
 
         for (var i = 0; i < lines.Count; i++)
         {
@@ -315,11 +345,21 @@ public class Drawer : MonoBehaviour
             }
 
             var point = line.LinkedPoint;
+            if (point == null)
+                continue;
 
-            var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<LineDrawer>();
+            var spawned = pool.Spawn(Vector3.zero, Quaternion.identity, holder);
+            if (spawned == null)
+                continue;
+            var drawer = spawned.GetComponent<LineDrawer>();
+            if (drawer == null)
+                continue;
             drawer.name = $"{linesType} {point.Name}";
 
-            if (linesType == LinesType.Mod && Session.ActiveRoute.GetPoint(point.ID, out var activePoint, out _))
+            if (linesType == LinesType.Mod
+                && Session.ActiveRoute != null
+                && Session.ActiveRoute.GetPoint(point.ID, out var activePoint, out _)
+                && activePoint != null)
             {
                 if (RoutePoint.HaveSamePosition(activePoint, point))
                 {
@@ -403,7 +443,11 @@ public class Drawer : MonoBehaviour
 
     private void DisplayFixCircles()
     {
-        var circles = Session.ActiveRoute.TracedRoute.ComputedCircles;
+        var traced = Session.ActiveRoute?.TracedRoute;
+        if (traced == null || circlePool == null)
+            return;
+
+        var circles = traced.ComputedCircles;
         var pool = circlePool;
         var holder = dynamicHolderCircles;
 
@@ -416,14 +460,19 @@ public class Drawer : MonoBehaviour
         {
             var line = circles[i];
 
-            if (line == null)
+            if (line?.LinkedPoint == null)
             {
                 continue;
             }
 
             var point = line.LinkedPoint;
 
-            var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<FixedCircleDrawer>();
+            var spawned = pool.Spawn(Vector3.zero, Quaternion.identity, holder);
+            if (spawned == null)
+                continue;
+            var drawer = spawned.GetComponent<FixedCircleDrawer>();
+            if (drawer == null)
+                continue;
             drawer.name = $"{line.GetName} {point.Name}";
             drawer.Display(line);
         }
@@ -431,7 +480,11 @@ public class Drawer : MonoBehaviour
 
     private void DisplayFixRays()
     {
-        var rays = Session.ActiveRoute.TracedRoute.ComputedRays;
+        var traced = Session.ActiveRoute?.TracedRoute;
+        if (traced == null || rayPool == null)
+            return;
+
+        var rays = traced.ComputedRays;
         var pool = rayPool;
         var holder = dynamicHolderRays;
 
@@ -444,14 +497,19 @@ public class Drawer : MonoBehaviour
         {
             var ray = rays[i];
 
-            if (ray == null)
+            if (ray?.LinkedPoint == null)
             {
                 continue;
             }
 
             var point = ray.LinkedPoint;
 
-            var drawer = pool.Spawn(Vector3.zero, Quaternion.identity, holder).GetComponent<FixedRayDrawer>();
+            var spawned = pool.Spawn(Vector3.zero, Quaternion.identity, holder);
+            if (spawned == null)
+                continue;
+            var drawer = spawned.GetComponent<FixedRayDrawer>();
+            if (drawer == null)
+                continue;
             drawer.name = $"{ray.GetName} {point.Name}";
             drawer.Display(ray);
         }

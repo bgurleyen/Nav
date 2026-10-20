@@ -6,33 +6,36 @@ public class SideButton : MonoBehaviour
 
     private void Awake()
     {
-        index = int.Parse(name);
+        if (!int.TryParse(name, out index))
+            index = 0;
     }
 
     public void OnClick()
     {
+        var screen = FMC_Screens.Instance != null ? FMC_Screens.Instance.CurrentScreen : null;
+        if (screen == null)
+            return;
+
         if (IsLeft(index, out var lineIndex, out var isExtra))
         {
             if (!isExtra)
             {
-                //Debug.Log("*** lineIndex: " + lineIndex);
-                FMC_Screens.Instance.CurrentScreen.OnLineSelectLeft(lineIndex);
+                screen.OnLineSelectLeft(lineIndex);
             }
             else
             {
-                //Debug.Log("OnLeftCornerPress");
-                FMC_Screens.Instance.CurrentScreen.OnLeftCornerPress();
+                screen.OnLeftCornerPress();
             }
         }
         else
         {
             if (!isExtra)
             {
-                FMC_Screens.Instance.CurrentScreen.OnLineSelectRight(lineIndex);
+                screen.OnLineSelectRight(lineIndex);
             }
             else
             {
-                FMC_Screens.Instance.CurrentScreen.OnRightCornerPress();
+                screen.OnRightCornerPress();
             }
         }
     }

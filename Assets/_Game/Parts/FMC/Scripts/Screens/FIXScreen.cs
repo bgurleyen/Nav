@@ -10,25 +10,10 @@ public class FIXScreen : ScreenBase
 {
     [SerializeField] private TMP_Text _pointName;
 
-    [SerializeField] private TMP_Text _rad;
-    [SerializeField] private TMP_Text _eta;
-    [SerializeField] private TMP_Text _dtg;
-    [SerializeField] private TMP_Text _alt;
-    [SerializeField] private TMP_Text _radSecond;
-    [SerializeField] private TMP_Text _etaSecond;
-    [SerializeField] private TMP_Text _dtgSecond;
-    [SerializeField] private TMP_Text _altSecond;
-    [SerializeField] private TMP_Text _radThird;
-    [SerializeField] private TMP_Text _etaThird;
-    [SerializeField] private TMP_Text _dtgThird;
-    [SerializeField] private TMP_Text _altThird;
-
     [SerializeField] private TMP_Text[] _rads;
 
     private NodeSelection _selectionInfo;
     private NodeSelection _lastSelectionClicked;
-
-    private RoutePoint selectedRouteNode;
 
     private int TotalPages => 3;
 
@@ -41,7 +26,8 @@ public class FIXScreen : ScreenBase
     {
         base.Show();
 
-        _scratchPadBuffer = MainScreen.Instance.scratchPadText.GetText();
+        var pad = MainScreen.Pad;
+        _scratchPadBuffer = pad != null ? pad.GetText() : "";
 
         DisplayCurrentPage();
         InvokeRepeating(nameof(DisplayCurrentPage), 0.2f, 0.2f);
@@ -257,7 +243,8 @@ public class FIXScreen : ScreenBase
             NMRegulation = null
         };
 
-        _scratchPadInterpreter.Node = Session.ActiveRoute.Points.FirstOrDefault(x => x.Name == _scratchPadBuffer);
+        _scratchPadInterpreter.Node = Session.ActiveRoute?.Points?
+            .FirstOrDefault(x => x != null && x.Name == _scratchPadBuffer);
 
         if (_scratchPadInterpreter.Node != null)
         {
@@ -356,29 +343,19 @@ public class FIXScreen : ScreenBase
 
     public void UpdateScratchPad(string buffer, bool withStatus = true)
     {
-        MainScreen.Instance.scratchPadText.SetAsDefault(buffer);
+        MainScreen.Pad?.SetAsDefault(buffer);
         if (withStatus)
         {
             //lastFLeft.text = "ok";
         }
     }
 
-    private void InitData()
-    {
-        _rad.text = "---";
-        _radSecond.text = "---";
-        _radThird.text = "---";
-    }
-
-    private void UpdateData(ref TMP_Text _rad, string radDis)
-    {
-        _rad.text = radDis;
-    }
-
     private void ClearScratchPad()
     {
         //Debug.Log("----- Clear Current Operation -----");
         _scratchPadBuffer = "";
-        MainScreen.Instance.scratchPadText.label.text = "";
+        var pad = MainScreen.Pad;
+        if (pad != null && pad.label != null)
+            pad.label.text = "";
     }
 }

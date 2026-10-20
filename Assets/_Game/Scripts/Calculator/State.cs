@@ -107,7 +107,8 @@ public class State
     private void UIOnSpeed10XToggle()
     {
         Speed10X.Switch();
-        Session.Settings.SpeedMultiplier = Speed10X ? 10 : 1;
+        if (Session.Settings != null)
+            Session.Settings.SpeedMultiplier = Speed10X ? 10 : 1;
     }
 
     private void UIOnMapModeAttemptChange()
@@ -296,6 +297,9 @@ private void UIOnHDGAttemptToggle()
 
     private void TriggerNewNAVState()
     {
+        if (Session.PlayerAircraft == null)
+            return;
+
         if (HDG)
         {
             Session.PlayerAircraft.StartHeadingMode();

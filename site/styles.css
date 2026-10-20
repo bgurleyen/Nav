@@ -59,11 +59,19 @@ footer {
 }
 
 .mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   color: var(--paper);
   font-family: var(--serif);
   font-size: 1.7rem;
   letter-spacing: -0.03em;
   text-decoration: none;
+}
+
+.mark img {
+  width: 36px;
+  height: 36px;
 }
 
 .top-note {
@@ -311,6 +319,41 @@ footer {
 
 footer p {
   margin: 0;
+}
+
+footer a {
+  color: var(--paper-dim);
+}
+
+.policy {
+  max-width: 40rem;
+  padding: 56px 0 8px;
+}
+
+.policy h1 {
+  font-size: clamp(2.6rem, 5vw, 4rem);
+}
+
+.policy h2 {
+  margin: 2rem 0 0.4rem;
+  font-family: var(--serif);
+  font-size: 1.7rem;
+  font-weight: 400;
+  letter-spacing: -0.03em;
+}
+
+.policy p,
+.policy li {
+  color: var(--paper-dim);
+}
+
+.policy ul {
+  margin: 0.4rem 0 0;
+  padding-left: 1.2rem;
+}
+
+.policy a {
+  color: var(--paper);
 }
 
 @media (max-width: 860px) {

@@ -23,7 +23,11 @@ public class DataHandler
 
     private static void BuildSpeeds(RouteScriptableObject set, int startFrom = 270)
     {
-        set.Points[0].RawSpeed = startFrom;
+        if (set?.Points == null || set.Points.Length == 0)
+            return;
+
+        if (set.Points[0].RawSpeed == 0)
+            set.Points[0].RawSpeed = startFrom;
         var lastRegulation = startFrom;
 
         for (var i = 0; i < set.Points.Length; i++)
@@ -54,11 +58,12 @@ public class DataHandler
     
     private static void BuildAltitudes(RouteScriptableObject set, int? startFrom = null)
     {
+           if (set?.Points == null || set.Points.Length == 0)
+               return;
 
-
-           if (set.Points[0].AltitudeRegulation == RoutePoint.AltitudeFlags.NotSet)
+           if (startFrom.HasValue && set.Points[0].AltitudeRegulation == RoutePoint.AltitudeFlags.NotSet)
            {
-               set.Points[0].RawAltitude = startFrom.ToString();
+               set.Points[0].RawAltitude = startFrom.Value.ToString();
            }
 
       
@@ -261,9 +266,14 @@ public class DataHandler
 
         // check each regulation
         var cursor = anchoredFrom; // from the first after start
-        while (cursor.Next != null) // until the last
+        var cursorSteps = 0;
+        var chainLimit = regulations.Count + 1;
+        while (cursor.Next != null && cursorSteps < chainLimit)
         {
             cursor = cursor.Next;
+            cursorSteps++;
+            if (cursor.LinkedPoint == null)
+                break;
             var point = cursor.LinkedPoint;
             var flag = point.AltitudeRegulation;
 
@@ -318,8 +328,11 @@ public class DataHandler
                     var validationAnchoredTo = anchoredTo;
 
                     bool validationUpdated;
+                    var validationSteps = 0;
                     do
                     {
+                        if (++validationSteps > chainLimit)
+                            break;
                         // shift validation interval to previous
                         var shiftedFrom = validationAnchoredFrom.AnchoredPrev == validationCursor
                             ? validationAnchoredFrom.AnchoredPrev.AnchoredPrev
@@ -426,7 +439,13 @@ public class DataHandler
             var altitudeFrom = from.LinkedPoint.GetAcceptedAltitude;
             var cumulativeDistance = 0f;
 
-            for (var i = from.IndexInList + 1; i <= to.IndexInList; i++)
+            int start = from.IndexInList + 1;
+            int end = to.IndexInList;
+            if (start < 0)
+                start = 0;
+            if (end >= regulations.Count)
+                end = regulations.Count - 1;
+            for (var i = start; i <= end; i++)
             {
                 var regulation = regulations[i];
                 cumulativeDistance += regulation.DistanceToPrevious;
@@ -434,19 +453,34 @@ public class DataHandler
                 regulation.LinkedPoint.Altitude.SetComputedValue(computedAltitude, false);
             }
         }
-        // fil in altitudes for points between regulations
+        // fill altitudes for points between regulations
         anchoredFrom = regulations[0];
-        while (anchoredFrom.Next != null)
+        var fillSteps = 0;
+        while (anchoredFrom != null && anchoredFrom.Next != null && fillSteps < chainLimit)
         {
+            fillSteps++;
+            if (anchoredFrom.Next == anchoredFrom || anchoredFrom.LinkedPoint == null || anchoredFrom.Next.LinkedPoint == null)
+                break;
+
             var totalDistance = anchoredFrom.Next.DistanceToPrevious;
             var totalDiff = anchoredFrom.Next.LinkedPoint.GetAcceptedAltitude - anchoredFrom.LinkedPoint.GetAcceptedAltitude;
-            var lossForMile = totalDiff / totalDistance;
+            var lossForMile = totalDistance > 1e-4f ? totalDiff / totalDistance : 0f;
 
-            for (int i = anchoredFrom.PointIndexInSet + 1; i <= anchoredFrom.Next.PointIndexInSet; i++)
+            if (set.Points != null)
             {
-
-                var dif = set.Points[i].Distance * lossForMile;
-                set.Points[i].Altitude.SetComputedValue(set.Points[i - 1].GetAcceptedAltitude + dif, false);
+                int fromIndex = anchoredFrom.PointIndexInSet;
+                int toIndex = anchoredFrom.Next.PointIndexInSet;
+                if (fromIndex < -1)
+                    fromIndex = -1;
+                if (toIndex >= set.Points.Length)
+                    toIndex = set.Points.Length - 1;
+                for (int i = fromIndex + 1; i <= toIndex; i++)
+                {
+                    if (i <= 0 || set.Points[i] == null || set.Points[i - 1] == null)
+                        continue;
+                    var dif = set.Points[i].Distance * lossForMile;
+                    set.Points[i].Altitude.SetComputedValue(set.Points[i - 1].GetAcceptedAltitude + dif, false);
+                }
             }
             anchoredFrom = anchoredFrom.Next;
         }

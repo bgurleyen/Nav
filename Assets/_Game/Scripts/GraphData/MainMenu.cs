@@ -1,17 +1,14 @@
-using System.Collections;
-using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using System.Threading;
 using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.UI;
 
 public class MainMenu : MonoBehaviour
 {
     [SerializeField] private string sceneName = "Main";
     [SerializeField] private GameObject agreePanel;
     [SerializeField] private GameObject namePanel;
-    [SerializeField] private GameObject howToPlayPanel;
     [SerializeField] private GameObject mainPanel;
 
     [Header("MainPanel")]
@@ -25,6 +22,8 @@ public class MainMenu : MonoBehaviour
 
     private void Awake()
     {
+        EnsureContactButton();
+
         if (PlayerPrefsHolder.Agree == 0)
         {
             agreePanel.SetActive(true);
@@ -66,6 +65,40 @@ public class MainMenu : MonoBehaviour
     {
         PlayerPrefsHolder.ShowLevelSelectOnLoad = true;
         SceneManager.LoadScene(sceneName);
+    }
+
+    public void OnContactButtonClick()
+    {
+        Application.OpenURL("mailto:info@zflite.com");
+    }
+
+    void EnsureContactButton()
+    {
+        Button source = null;
+        var buttons = FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            if (buttons[i].gameObject.name == "How to play")
+            {
+                source = buttons[i];
+                break;
+            }
+        }
+
+        if (source == null || source.transform.parent.Find("Contact us") != null)
+            return;
+
+        var copy = Instantiate(source.gameObject, source.transform.parent);
+        copy.name = "Contact us";
+        copy.transform.SetAsLastSibling();
+
+        var label = copy.GetComponentInChildren<Text>(true);
+        if (label != null)
+            label.text = ">  Contact us";
+
+        var button = copy.GetComponent<Button>();
+        button.onClick = new Button.ButtonClickedEvent();
+        button.onClick.AddListener(OnContactButtonClick);
     }
 
     public void OnAgreeButtonClick()

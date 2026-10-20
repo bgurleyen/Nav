@@ -1,6 +1,5 @@
-﻿using System;
+using System;
 using Navigation;
-using System.Text.RegularExpressions;
 using UnityEngine;
 
 [Serializable]
@@ -31,7 +30,6 @@ public class RoutePoint
 
     public float Degrees => 360 - RawDegrees;
     public bool IsAfterDiscontinuity => Details.Contains("D");
-    public bool IsCenter => Details.Contains("C");
     public bool IsLinearApproach => Details.Contains("L");
     public bool IsHiddenLine => Details.Contains("H");
     public bool IsPositionNode => Details.Contains("P");
@@ -64,8 +62,6 @@ public class RoutePoint
     }
 
     public AltitudeFlags AltitudeRegulation => Altitude.GetFlag(RawAltitude);
-    public string DisplayAltitude => Altitude.GetDisplayValue(RawAltitude, out var _);
-    public int DisplayDegrees => (int)Degrees;
     public float GetAcceptedAltitude => Altitude.GetAcceptedValue();
 
     public bool IsSpeedRegulated => Speed.IsSpeedRegulated(RawSpeed);
@@ -205,22 +201,6 @@ public class RoutePoint
         Details = "D";
     }
 
-    public void IndicateDirectApproach(int angle)
-    {
-        Details = "L";
-        LinearApproachAngle = angle;
-    }
-
-    public void IndicateHiddenLine()
-    {
-        Details = "H";
-    }
-
-    public void IndicateFakeFar()
-    {
-        Details = "F";
-    }
-
     public static bool HaveSamePosition(RoutePoint a, RoutePoint b)
     {
         return (a.CartesianPosition - b.CartesianPosition).sqrMagnitude < 0.01f;
@@ -259,23 +239,10 @@ public class RoutePoint
             }
         }
 
-        public int GetLinearValue(int rawSpeed, int acceptedAltitude)
-        {
-            var displayed = GetDisplayValue(rawSpeed, out var _);
-            if (acceptedAltitude > 10000)
-            {
-                return displayed;
-            }
-
-            return Mathf.Min(displayed, 240);
-        }
     }
 
     public class AltitudeData
     {
-
-        private static readonly Regex AltitudeTokenPattern = new Regex(@"(\d+)([a-zA-Z]{0,1})");
-
         public int RestrictionAbove = -1;
         public int RestrictionBelow = -1;
         public int RestrictionExact = -1;

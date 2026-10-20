@@ -17,6 +17,12 @@ public class TracedRoute
 
     public void Compute(RoutePoint[] pointsArray, bool hasOtherMarkers = false)
     {
+        if (pointsArray == null || pointsArray.Length == 0)
+        {
+            ComputedLines = Array.Empty<TracedLine>();
+            return;
+        }
+
         ComputedLines = new TracedLine[pointsArray.Length];
         if (hasOtherMarkers)
         {
@@ -24,15 +30,21 @@ public class TracedRoute
             ComputedRays = new List<FixRay>();
         }
 
+        if (pointsArray.Length < 2 || pointsArray[0] == null || Session.Settings == null)
+            return;
+
+        var aim = pointsArray[1] != null ? pointsArray[1].CartesianPosition : pointsArray[0].CartesianPosition;
         var pilot = new Pilot(
             nmPosition: pointsArray[0].CartesianPosition,
-            initialOrientationTarget: pointsArray[1].CartesianPosition,
+            initialOrientationTarget: aim,
             true);
 
         for (int i = 1; i < pointsArray.Length; i++)
         {
             var point = pointsArray[i];
             var fromPoint = pointsArray[i - 1];
+            if (point == null || fromPoint == null)
+                continue;
             Vector2? vectorRayEnd = null;
             if (fromPoint.IsVector)
             {
@@ -110,73 +122,22 @@ public class TracedRoute
 
     private static void SnapTracerToPoint(Pilot pilot, RoutePoint[] pointsArray, int index)
     {
+        if (pilot == null || pointsArray == null || index < 0 || index >= pointsArray.Length)
+            return;
+
         var point = pointsArray[index];
+        if (point == null)
+            return;
+
         pilot.NMPosition = point.CartesianPosition;
 
-        var next = index + 1 < pointsArray.Length ? pointsArray[index + 1].CartesianPosition : point.CartesianPosition;
+        var nextPoint = index + 1 < pointsArray.Length ? pointsArray[index + 1] : null;
+        var next = nextPoint != null ? nextPoint.CartesianPosition : point.CartesianPosition;
         var dir = next - point.CartesianPosition;
-        if (dir.sqrMagnitude < 0.0001f)
+        if (dir.sqrMagnitude < 0.0001f && Session.PlayerAircraft != null)
             dir = Geometry.GetDirectionFromHeading(Session.PlayerAircraft.HeadingDegrees);
         if (dir.sqrMagnitude > 0.0001f)
             pilot.HeadingDegrees = Geometry.GetHeadingOfDirection(dir);
-    }
-
-    public bool FindClosestVertexToPositionOnLineActive(Vector2 position, int lineIndex, out int vertexIndex,
-        out Vector2 vertexPosition)
-    {
-        var line = ComputedLines[lineIndex];
-        var minSqrDist = 1000f;
-        vertexIndex = -1;
-        vertexPosition = Vector2.zero;
-        for (var i = 1; i < line.Vertexes.Length; i++)
-        {
-            var sqrDist = (line.Vertexes[i] - position).sqrMagnitude;
-
-            if (minSqrDist > sqrDist)
-            {
-
-                vertexIndex = i;
-                vertexPosition = line.Vertexes[i];
-                minSqrDist = sqrDist;
-            }
-        }
-
-        if (vertexIndex >= 0)
-        {
-            if ((line.Vertexes[0] - position).sqrMagnitude >
-                (line.Vertexes[0] - line.Vertexes[vertexIndex]).sqrMagnitude)
-            {
-                vertexIndex++;
-                vertexIndex = Mathf.Min(vertexIndex, line.Vertexes.Length - 1);
-            }
-
-            return true;
-        }
-
-        return false;
-    }
-
-    public void FindClosestRoutePoint(int forLineIndex, Vector2 forNMPosition, out NodeRoutePosition foundVertexOnSegment)
-    {
-        var computedLine = ComputedLines[forLineIndex];
-        foundVertexOnSegment = new NodeRoutePosition();
-
-        var minFoundSqrDistance = computedLine.LinkedPoint.Distance * computedLine.LinkedPoint.Distance;
-        foundVertexOnSegment.NMPosition = computedLine.SegmentVertices[0];
-
-        for (int j = 0; j < computedLine.SegmentVertices.Length; j++)
-        {
-            var segmentVertex = computedLine.SegmentVertices[j];
-
-            var sqrDistance = (segmentVertex - forNMPosition).sqrMagnitude;
-
-            if (sqrDistance < minFoundSqrDistance)
-            {
-                minFoundSqrDistance = sqrDistance;
-                foundVertexOnSegment.NMPosition = segmentVertex;
-                foundVertexOnSegment.NMWalkedOnCurrentSegment = j * Session.Settings.SegmentGranularity;
-            }
-        }
     }
 
     public bool FindCloseToRouteSegmentDestination(
@@ -194,16 +155,26 @@ public class TracedRoute
         var reachedSegmentEnd = false;
         reachedRouteEnd = false;
 
-        if (ComputedLines == null)
+        if (ComputedLines == null || Session.PlayerAircraft == null)
         {
             Debug.LogWarning("Computed lines null");
             return false;
         }
 
+        if (startFromSegmentIndex < 0)
+            startFromSegmentIndex = 0;
+
+        var routePoints = Session.ActiveRoute?.Points;
+
         // 0 = start line, empty
         for (int i = startFromSegmentIndex; i < ComputedLines.Length; i++)
         {
             var computedLine = ComputedLines[i];
+            if (computedLine?.LinkedPoint == null)
+            {
+                startFromVertexIndex = 0;
+                continue;
+            }
 
             if (computedLine.LinkedPoint.IsHiddenLine)
             {
@@ -213,7 +184,10 @@ public class TracedRoute
 
             if (computedLine.LinkedPoint.IsAfterDiscontinuity &&
                 i > 0 &&
-                Session.ActiveRoute.Points[i - 1].IsLinearApproach)
+                routePoints != null &&
+                i - 1 < routePoints.Length &&
+                routePoints[i - 1] != null &&
+                routePoints[i - 1].IsLinearApproach)
             {
                 // 737 INTC CRS does not sequence through the discontinuity after the fix.
                 startFromVertexIndex = 0;
@@ -224,7 +198,7 @@ public class TracedRoute
             {
                 // After the last fix, keep LNAV on that leg's track. Do not cross the gap.
                 int legIndex = i - 1;
-                var points = Session.ActiveRoute.Points;
+                var points = routePoints;
                 while (legIndex > 0 && points != null && legIndex < points.Length)
                 {
                     var legPoint = points[legIndex];
@@ -233,10 +207,12 @@ public class TracedRoute
                     legIndex--;
                 }
 
-                if (legIndex > 0)
+                if (legIndex > 0 && points != null)
                 {
                     var legLine = ComputedLines[legIndex];
                     var coursePoint = points[legIndex];
+                    if (coursePoint == null)
+                        break;
                     var dir = Geometry.GetNextPosition(Vector2.zero, 1f, coursePoint.Degrees);
                     if (dir.sqrMagnitude < 0.0001f)
                         dir = Vector2.up;
@@ -273,9 +249,10 @@ public class TracedRoute
             lastFoundRoutePosition.SegmentVertex = foundSegmentVertex;
             lastFoundRoutePosition.SegmentVertexIndex = foundSegmentVertexIndex;
 
+            var pastRouteEnd = routePoints == null || i + 1 >= routePoints.Length;
+            var nextPoint = !pastRouteEnd ? routePoints[i + 1] : null;
             var interceptEndsHere = computedLine.LinkedPoint.IsLinearApproach &&
-                                    (i + 1 >= Session.ActiveRoute.Points.Length ||
-                                     Session.ActiveRoute.Points[i + 1].IsAfterDiscontinuity);
+                                    (pastRouteEnd || (nextPoint != null && nextPoint.IsAfterDiscontinuity));
 
             // another solution was found 
             if (!reachedSegmentEnd)
@@ -301,7 +278,8 @@ public class TracedRoute
             reachedRouteEnd = true;
         }
 
-        foundAtDistanceOnSegment = Mathf.Max(0, lastFoundRoutePosition.SegmentVertexIndex - 1) * Session.Settings.SegmentGranularity;
+        var granularity = Session.Settings != null ? Session.Settings.SegmentGranularity : 1f;
+        foundAtDistanceOnSegment = Mathf.Max(0, lastFoundRoutePosition.SegmentVertexIndex - 1) * granularity;
         return lastFoundRoutePosition.SegmentIndex > -1;
 
     }
@@ -336,12 +314,4 @@ public class TracedRoute
         position = Vector2.Lerp(line.Vertexes[i0], line.Vertexes[i1], target - i0);
         return true;
     }
-}
-
-[Serializable]
-public struct NodeRoutePosition
-{
-    public Vector2 NMPosition;
-    public float NMWalkedOnCurrentSegment;
-    public int CurrentNodeIndex;
 }

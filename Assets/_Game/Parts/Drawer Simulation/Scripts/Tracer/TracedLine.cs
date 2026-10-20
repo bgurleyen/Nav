@@ -150,15 +150,6 @@ namespace Navigation
 
                 return true;
             }
-            
-            
-            // if needed we can to a lerp to find the closest segment vertex to start from 
-            // var hasIntersection = Geometry.FindDistanceToSegment(forPosition, StartNMPosition, EndNMPosition,
-            //     out var closest,
-            //     out var distance);
-            //
-            // var isWithinSegment = hasIntersection && distance <= seekDistance;
-
             for (var i = startFromIndex; i < SegmentVertices.Length; i++)
             {
                 var vertex = SegmentVertices[i];

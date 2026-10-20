@@ -6,7 +6,6 @@ namespace Navigation
     public class Actor : MonoBehaviour
     {
         public virtual Vector2 NMPosition => Vector2.zero;
-        public float Height;
 
         private Transform _tr;
 
@@ -20,9 +19,5 @@ namespace Navigation
             
         }
 
-        public void Place()
-        {
-            _tr.localPosition = NMPosition.ToDisplay();
-        }
     }
 }

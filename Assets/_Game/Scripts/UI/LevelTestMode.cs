@@ -174,13 +174,4 @@ public static class LevelTestMode
         return true;
     }
 
-    /// <summary>True once per level when DME/route end should finish the test run.</summary>
-    public static bool TryClaimFinish()
-    {
-        if (!_isActive || _finishInvoked || _advancing)
-            return false;
-
-        _finishInvoked = true;
-        return true;
-    }
 }

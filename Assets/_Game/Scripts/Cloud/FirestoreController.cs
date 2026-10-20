@@ -16,19 +16,49 @@ public class FirestoreController : MonoBehaviour
     const string AverageDocId = "average";
     const string BestDocId = "best";
 
+    public static FirestoreController Instance { get; private set; }
+
     public string userId;
     private string _composedUserId;
 
     private FirebaseFirestore database;
     private Firebase.DependencyStatus dependencyStatus = Firebase.DependencyStatus.UnavailableOther;
+    bool _initStarted;
 
     public void Awake()
     {
+        if (Instance != null && Instance != this)
+        {
+            Destroy(this);
+            return;
+        }
+
+        // DataManage stays with the flight scene. Firebase lives on its own object.
+        if (GetComponent<DataManage>() != null)
+        {
+            var host = new GameObject("Firestore");
+            host.AddComponent<FirestoreController>();
+            Destroy(this);
+            return;
+        }
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
         InitializeFirestore();
+    }
+
+    void OnDestroy()
+    {
+        if (Instance == this)
+            Instance = null;
     }
 
     public void InitializeFirestore()
     {
+        if (_initStarted)
+            return;
+
+        _initStarted = true;
         _ = Firebase.FirebaseApp.CheckAndFixDependenciesAsync().ContinueWithOnMainThread(task =>
         {
             dependencyStatus = task.Result;

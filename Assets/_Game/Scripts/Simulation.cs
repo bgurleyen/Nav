@@ -12,7 +12,6 @@ namespace Navigation {
         public event Action OnOperationMade;
         public Drawer Drawer => _drawer;
 
-        private bool _queueEraseMode;
         private List<ICommand> _cachedCommands;
 
         private LegsScreen _legsScreen;
@@ -31,6 +30,13 @@ namespace Navigation {
 
         private void Start() {
             _legsScreen = UYServiceLocator.Get<LegsScreen>();
+            if (_legsScreen == null)
+                Debug.LogError("[Simulation] LegsScreen is not registered. LEGS scratchpad updates will be skipped.");
+        }
+
+        private void DisplayLegsOperation(string value, string details = "", bool tallDetails = false) {
+            if (_legsScreen != null)
+                _legsScreen.DisplayOperation(value, details, tallDetails);
         }
 
         public void Init() {
@@ -45,6 +51,13 @@ namespace Navigation {
             }
 
             Session.PlayerAircraft = _playerAircraft;
+
+            if (_playerAircraft == null || _drawer == null || Session.Routes == null
+                || Session.ActiveRoute == null || Session.Settings == null)
+            {
+                Debug.LogError("[Simulation.Init] Aircraft, drawer, route, or settings is missing.");
+                return;
+            }
 
             //changes by S.A
             Session.Routes.FixedPoints = FixedPointsScriptableObject.CloneAndInit();
@@ -75,26 +88,22 @@ namespace Navigation {
             Session.IsMod = false;
             ClearModeSetWithPosition();
             _modReExecutedForIndex = -1;
-            _legsScreen.DisplayOperation("0k");
+            DisplayLegsOperation("0k");
         }
 
         public void Tick() {
-            if (Session.IsMod && _queueEraseMode) {
-                EraseMod();
-            }
+            if (!Session.IsRunning)
+                return;
 
-            _queueEraseMode = false;
-
-            if (Session.IsRunning) {
-                Session.ActiveRoute.ComputeTrace();
-
+            if (_playerAircraft != null)
                 _playerAircraft.SimulateTick();
-
-
+            if (Move.Instance != null)
                 Move.Instance.Tick();
 
-                ComputeMod();
+            ComputeMod();
 
+            if (_drawer != null)
+            {
                 _drawer.Clear();
                 _drawer.Display();
             }
@@ -104,23 +113,16 @@ namespace Navigation {
         //simulate the steps of the aircraft at 10x speedup enabled while minimizing performance impact.
         //look at the GameManager.Update() function to see its use.
         public void SplittedTickModHandling() {
-            if (Session.IsMod && _queueEraseMode) {
-                EraseMod();
-            }
-            _queueEraseMode = false;
-        }
-
-        public void SplittedTickComputeTrace() {
-            if (Session.IsRunning) {
-                Session.ActiveRoute.ComputeTrace();
-            }
         }
 
         public void SplittedTickSimulation() {
-            if (Session.IsRunning) {
+            if (!Session.IsRunning)
+                return;
+
+            if (_playerAircraft != null)
                 _playerAircraft.SimulateTick();
+            if (Move.Instance != null)
                 Move.Instance.Tick();
-            }
         }
 
         public void SplittedTickComputeMod() {
@@ -130,16 +132,12 @@ namespace Navigation {
         }
 
         public void SplittedTickDraw() {
-            if (Session.IsRunning) {
+            if (Session.IsRunning && _drawer != null)
+            {
                 _drawer.Clear();
                 _drawer.Display();
             }
         }
-
-        public void QueueEraseMode() {
-            _queueEraseMode = true;
-        }
-
 
         private void ComputeMod() {
             if (Session.ModRoute == null) {
@@ -148,25 +146,29 @@ namespace Navigation {
                 return;
             }
 
-            if (Session.State.LNAV) {
+            if (Session.State != null && Session.State.LNAV) {
                 // mod always has to include the last passed active node ( all the passed nodes ) 
                 // otherwise it is invalid - will reapply all the commands
                 var passedNodeIndex = PositionVirtualNode.PassedNodeIndex;
 
                 if (passedNodeIndex != _modReExecutedForIndex) {
                     var modPoints = Session.ModRoute.Points;
-                    var activePoints = Session.ActiveRoute.Points;
+                    var activePoints = Session.ActiveRoute?.Points;
                     var bothInRange = modPoints != null && activePoints != null
                         && passedNodeIndex >= 0
                         && passedNodeIndex < modPoints.Length
                         && passedNodeIndex < activePoints.Length;
+                    var activePoint = bothInRange ? activePoints[passedNodeIndex] : null;
+                    var modPoint = bothInRange ? modPoints[passedNodeIndex] : null;
                     // A shorter MOD (direct-to removed waypoints) is not a reason to rebuild.
                     // Rebuilding here used to throw or restart every frame and lock the game.
                     // Course intercept always puts a new INTC id at index 0. Replaying that
                     // wipes the mod and runs the command again; a nested call overflows the stack.
                     var diverged = bothInRange
+                        && activePoint != null
+                        && modPoint != null
                         && !Session.ModRoute.IsCourseInterceptRoute
-                        && activePoints[passedNodeIndex].ID != modPoints[passedNodeIndex].ID;
+                        && activePoint.ID != modPoint.ID;
                     // Commit first, and again after replay: EraseMod clears this index,
                     // which otherwise restarts the replay on every following frame.
                     _modReExecutedForIndex = passedNodeIndex;
@@ -244,9 +246,10 @@ namespace Navigation {
             CheckModForOperation();
             _cachedCommands.Add(command);
 
-            _legsScreen.DisplayOperation("ERASE");
+            DisplayLegsOperation("ERASE");
 
-            Session.ModRoute.GetPoint(command.NodeId, out var node, out _);
+            if (!Session.ModRoute.GetPoint(command.NodeId, out var node, out _) || node == null)
+                return;
             node.RawAltitude = "";
             node.RawSpeed = 0;
 
@@ -257,8 +260,9 @@ namespace Navigation {
             CheckModForOperation();
             _cachedCommands.Add(command);
 
-            _legsScreen.DisplayOperation("ERASE");
-            Session.ModRoute.GetPoint(command.NodeId, out var node, out _);
+            DisplayLegsOperation("ERASE");
+            if (!Session.ModRoute.GetPoint(command.NodeId, out var node, out _) || node == null)
+                return;
             node.RawSpeed = command.Regulation;
             node.IsSpeedModified = true;
             DataHandler.BuildSetDetails(Session.ModRoute);
@@ -270,9 +274,9 @@ namespace Navigation {
             CheckModForOperation();
             _cachedCommands.Add(command);
 
-            _legsScreen.DisplayOperation("ERASE");
-            Session.ModRoute.GetPoint(command.NodeId, out var node, out _);
-            //maybe move this to route class to also do some tests?
+            DisplayLegsOperation("ERASE");
+            if (!Session.ModRoute.GetPoint(command.NodeId, out var node, out _) || node == null)
+                return;
             node.RawAltitude = command.Regulation;
             node.IsAltitudeModified = true;
             DataHandler.BuildSetDetails(Session.ModRoute);
@@ -287,7 +291,7 @@ namespace Navigation {
 
             Session.ModRoute.RemoveNode(command.NodeId, out _);
             DataHandler.BuildSetDetails(Session.ModRoute);
-            _legsScreen.DisplayOperation(MainScreen.Keywords.ERASE);
+            DisplayLegsOperation(MainScreen.Keywords.ERASE);
 
             OnOperationMade?.Invoke();
         }
@@ -301,7 +305,7 @@ namespace Navigation {
             if (!Session.ModRoute.Points.GetNodeIndex(command.ToNodeId, out _))
                 return;
 
-            _legsScreen.DisplayOperation("ERASE", ToDegreesDisplay(node.RawDegrees));
+            DisplayLegsOperation("ERASE", ToDegreesDisplay(node.RawDegrees));
             Session.ModRoute.ShortcutNodes(command.FromNodeId, command.ToNodeId, out var _);
             DataHandler.BuildSetDetails(Session.ModRoute);
 
@@ -320,7 +324,7 @@ namespace Navigation {
             Session.ModRoute.AddRelativeNodeOnDirection(command.FromNodeId, command.Distance, command.RelativeNodeId,
                 out _, out _);
             DataHandler.BuildSetDetails(Session.ModRoute);
-            _legsScreen.DisplayOperation("ERASE");
+            DisplayLegsOperation("ERASE");
 
             OnOperationMade?.Invoke();
         }
@@ -333,7 +337,7 @@ namespace Navigation {
             Session.ModRoute.AddDirectToCartesianNodeBefore(command.OriginalRouteNodeId, command.OnTopNodeId);
 
             DataHandler.BuildSetDetails(Session.ModRoute);
-            _legsScreen.DisplayOperation(MainScreen.Keywords.ERASE);
+            DisplayLegsOperation(MainScreen.Keywords.ERASE);
 
             OnOperationMade?.Invoke();
         }
@@ -346,7 +350,7 @@ namespace Navigation {
             Session.ModRoute.AddRelativeNodeBefore(command.BeforeNodeId, command.RawDegrees, command.Distance,
                 command.RelativeNodeId, out _, true);
             DataHandler.BuildSetDetails(Session.ModRoute);
-            _legsScreen.DisplayOperation(MainScreen.Keywords.ERASE);
+            DisplayLegsOperation(MainScreen.Keywords.ERASE);
 
             OnOperationMade?.Invoke();
         }
@@ -358,7 +362,7 @@ namespace Navigation {
 
             Session.ModRoute.CreateLinearApproach(command.ToNodeId, command.Angle);
             DataHandler.BuildSetDetails(Session.ModRoute);
-            _legsScreen.DisplayOperation(MainScreen.Keywords.ERASE, ToDegreesDisplay(command.Angle), true);
+            DisplayLegsOperation(MainScreen.Keywords.ERASE, ToDegreesDisplay(command.Angle), true);
 
             OnOperationMade?.Invoke();
         }
@@ -367,6 +371,8 @@ namespace Navigation {
             // IsMod is set below before the join shortcut. If that shortcut clears it,
             // this flag still stops CheckMod → shortcut → CheckMod.
             if (Session.IsMod || _insideCheckMod) return;
+            if (Session.ActiveRoute == null)
+                return;
 
             _insideCheckMod = true;
             try {

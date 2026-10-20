@@ -8,7 +8,6 @@ using UnityEngine;
 public static class AcRoutesLoader
 {
     const string RelativePath = "_Game/Data Files/General/ac_routes.txt";
-    const string LiveRelativePath = "_Game/Data Files/General/live_traffic.txt";
     static string _cachedText;
     static string _cachedPath;
     static DateTime _cachedWrite;
@@ -18,11 +17,6 @@ public static class AcRoutesLoader
         return Path.Combine(Application.dataPath, RelativePath);
     }
 
-    public static string LiveFilePath()
-    {
-        return Path.Combine(Application.dataPath, LiveRelativePath);
-    }
-
     public static List<int> GetPoints(int levelNumber, int acNumber)
     {
         Dictionary<int, List<int>> level = ParseLevel(levelNumber);
@@ -30,12 +24,6 @@ public static class AcRoutesLoader
         if (level != null && level.TryGetValue(acNumber, out pts))
             return new List<int>(pts);
         return new List<int>();
-    }
-
-    public static int CountForLevel(int levelNumber)
-    {
-        Dictionary<int, List<int>> level = ParseLevel(levelNumber);
-        return level == null ? 0 : level.Count;
     }
 
     static Dictionary<int, List<int>> ParseLevel(int levelNumber)
