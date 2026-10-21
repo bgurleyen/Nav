@@ -7,6 +7,7 @@ public class DESScreen : ScreenBase
 {
     private const float LargeFontSize = 40f;
     private const float LargeFontThreshold = 30f;
+    private const string FixedTargetSpeed = ".78/280";
 
     [SerializeField] private TMP_Text _rwAltitude;
     //[SerializeField] private TMP_Text _econSpeed_Mach;
@@ -42,7 +43,7 @@ public class DESScreen : ScreenBase
            pageTitle: "DES",
            currentPage: 0, totalPages: 1);
 
-        InvokeRepeating(nameof(Refresh), 0, 0.2f);
+        InvokeRepeating(nameof(Refresh), 0f, 1f);
     }
 
     public override void Hide()
@@ -62,19 +63,15 @@ public class DESScreen : ScreenBase
            pageTitle: "DES",
            currentPage: 0, totalPages: 1);
 
-        var fmc = infoFMC.Live;
-        if (fmc == null)
+        if (infoFMC.Instance == null)
             return;
 
-        var des = fmc.Des;
+        infoFMC.Instance.UpdateDescentToPointBeforeRunway();
+        var des = infoFMC.Live.Des;
 
         if (!string.IsNullOrEmpty(des.RWAltitude))
         {
             _rwAltitude.text = des.RWAltitude;
-        }
-        if (!Session.IsMod)
-        {
-            _econSpeed_Mach.SetAsTall(string.IsNullOrEmpty(des.EconSpeed) ? "??/??" : des.EconSpeed);
         }
         _wptAltFix.text = des.WptAltFix;
         if (_wptAltFix != null)
@@ -89,6 +86,36 @@ public class DESScreen : ScreenBase
         SetDesValue(_vs, des.VS);
         ApplyColumnLayout();
         ApplyLargeFontSize();
+        ShowFixedTargetSpeed();
+    }
+
+    private void ShowFixedTargetSpeed()
+    {
+        if (_econSpeed_Mach == null)
+        {
+            return;
+        }
+
+        _econSpeed_Mach.SetAsTall(FixedTargetSpeed);
+        var label = _econSpeed_Mach.label;
+        if (label != null)
+        {
+            label.horizontalAlignment = HorizontalAlignmentOptions.Left;
+            label.verticalAlignment = VerticalAlignmentOptions.Middle;
+        }
+
+        var rt = _econSpeed_Mach.transform as RectTransform;
+        if (rt == null)
+        {
+            return;
+        }
+
+        var min = rt.anchorMin;
+        min.x = 0f;
+        rt.anchorMin = min;
+        var pos = rt.anchoredPosition;
+        pos.x = 0f;
+        rt.anchoredPosition = pos;
     }
 
     private void SetDesValue(TMP_Text tmp, string value)
@@ -168,38 +195,10 @@ public class DESScreen : ScreenBase
         }
     }
 
-    public override void OnLineSelectLeft(int index)
-    {
-        InterpretScratchpadOnTextChanged();
-
-        switch (index)
-        {
-            case 1:
-                {
-                    if (ScratchPadInterpreter.IsDeletePending(_scratchPadBuffer))
-                    {
-                        _scratchPadBuffer = string.Empty;
-                        var econ = infoFMC.Live != null ? infoFMC.Live.Des.EconSpeed : "";
-                        _econSpeed_Mach.SetAsTall(string.IsNullOrEmpty(econ) ? "??/??" : econ);
-                        ClearScratchPad();
-                        break;
-                    }
-
-                    if (!_scratchPadInterpreter.IsValid) break;
-
-                    Session.IsMod = true;
-                    _econSpeed_Mach.SetAsModified(_scratchPadBuffer);
-                    ClearScratchPad();
-                    break;
-                }
-        }
-    }
-
     public override void OnExecPress()
     {
         Session.IsMod = false;
-        _econSpeed_Mach.SetAsTall(_econSpeed_Mach.GetText());
-        //_econSpeed_Mach.text = _scratchPadInterpreter.AltRegulation;
+        ShowFixedTargetSpeed();
     }
 
 

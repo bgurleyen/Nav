@@ -427,9 +427,9 @@ namespace AcRouteEditor
                     RoutePt last = lv.RoutePts[lv.RoutePts.Count - 1];
                     lv.Runway = new Vec(last.X, last.Y);
                 }
-                if (vpRaw.Count > 0)
+                if (vpRaw.Count > 20)
                 {
-                    Vp originItem = vpRaw[vpRaw.Count - 1];
+                    Vp originItem = vpRaw[20];
                     lv.OriginRaw = new Vec(originItem.X, originItem.Y);
                 }
                 lv.VirtualPts = ComputeVirtualWorld(lv.RoutePts, vpRaw);
@@ -624,10 +624,10 @@ namespace AcRouteEditor
                 runway = new Vec(last.X, last.Y);
             }
             Vec origin = new Vec(0, 0);
-            if (virtualItems.Count > 0)
+            if (virtualItems.Count > 20)
             {
-                Vp last = virtualItems[virtualItems.Count - 1];
-                origin = new Vec(last.X, last.Y);
+                Vp slot = virtualItems[20];
+                origin = new Vec(slot.X, slot.Y);
             }
             List<Vp> list = new List<Vp>();
             for (int j = 0; j < virtualItems.Count; j++)

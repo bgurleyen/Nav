@@ -22,19 +22,24 @@ public class Line
         var arcPoints = new List<Vector2>();
         var angle = startAngle;
 
-        var angleBetween = WrapSignedDegrees(endAngle - startAngle);
+        var rawSweep = endAngle - startAngle;
+        var angleBetween = WrapSignedDegrees(rawSweep);
+        // A full turn wraps to 0 and would leave the fix ring with a single point.
+        if (Mathf.Abs(Mathf.Abs(rawSweep) - 360f) <= 0.5f)
+            angleBetween = rawSweep >= 0f ? 360f : -360f;
+        else
+        {
+            var reversedAngle = (360 - Mathf.Abs(angleBetween)) * (angleBetween < 0 ? 1 : -1);
 
-        var reversedAngle = (360 - Mathf.Abs(angleBetween)) * (angleBetween < 0 ? 1 : -1);
+            // determine the direction of the arc based on if it gets away of towards the target by a small angle
+            var firstNextPoint = o + GetPointOnArc(angle + (angleBetween < 0 ? -1 : 1), radius).To3DXY();
+            var reversedNextPoint = o + GetPointOnArc(angle + (reversedAngle < 0 ? -1 : 1), radius).To3DXY();
 
+            var dist = (firstNextPoint - towardsPoint).sqrMagnitude;
+            var reversedDist = (reversedNextPoint - towardsPoint).sqrMagnitude;
 
-        // determine the direction of the arc based on if it gets away of towards the target by a small angle
-        var firstNextPoint = o + GetPointOnArc(angle + (angleBetween < 0 ? -1 : 1), radius).To3DXY();
-        var reversedNextPoint = o + GetPointOnArc(angle + (reversedAngle < 0 ? -1 : 1), radius).To3DXY();
-
-        var dist = (firstNextPoint - towardsPoint).sqrMagnitude;
-        var reversedDist = (reversedNextPoint - towardsPoint).sqrMagnitude;
-
-        angleBetween = dist < reversedDist ? angleBetween : reversedAngle;
+            angleBetween = dist < reversedDist ? angleBetween : reversedAngle;
+        }
 
         var arcLength = radius * Mathf.Deg2Rad * angleBetween;
         int segments = 0;

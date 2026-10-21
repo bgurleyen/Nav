@@ -32,7 +32,7 @@ public class MenuScreen : ScreenBase
     {
         base.OnRightCornerPress();
 
-        Application.OpenURL("https://games4pilot.com");
+        Application.OpenURL("https://zflite.com");
     }
 
     public override void Show()

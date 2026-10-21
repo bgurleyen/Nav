@@ -115,18 +115,27 @@ public class Move : Singleton<Move>
         if (routePoints != null && routePoints.Length > 1)
             Pos = Session.OriginalReferenceRoute.GetCartesianPosition(routePoints.Length - 1);
 
-        for (int j = 1; j < 21; j++)
+        var vps = _currentLevelData.VirtualPoints;
+        if (vps == null || vps.Length == 0)
         {
-            if (_currentLevelData.VirtualPoints == null || j - 1 >= _currentLevelData.VirtualPoints.Length || 20 >= _currentLevelData.VirtualPoints.Length)
+            Debug.LogWarning("[Move.Init] VirtualPoints incomplete — skipping.");
+        }
+        else
+        {
+            float ox = 0f;
+            float oy = 0f;
+            if (vps.Length > 20)
             {
-                Debug.LogWarning($"[Move.Init] VirtualPoints incomplete for index {j} — skipping.");
-                continue;
+                ox = vps[20].x;
+                oy = vps[20].y;
             }
 
-            VirtualPtsPos[j].x = Pos.x + _currentLevelData.VirtualPoints[j - 1].x -
-                                 _currentLevelData.VirtualPoints[20].x;
-            VirtualPtsPos[j].y = Pos.y + _currentLevelData.VirtualPoints[j - 1].y -
-                                 _currentLevelData.VirtualPoints[20].y;
+            int n = vps.Length < 20 ? vps.Length : 20;
+            for (int j = 1; j <= n; j++)
+            {
+                VirtualPtsPos[j].x = Pos.x + vps[j - 1].x - ox;
+                VirtualPtsPos[j].y = Pos.y + vps[j - 1].y - oy;
+            }
         }
 
         if (Atc1 != null) Atc1.text = "";

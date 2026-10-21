@@ -92,9 +92,6 @@ namespace Navigation.Data
             Fmc.Arr.Transition = levelData.Transition;
             Fmc.Arr.RW = levelData.Runway;
 
-            ApplyDesGateFields(activePoints, prvWptIdx, totalDistLeft);
-            ApplyDesVerticalBearing(activePoints, RW_Alt);
-
             if (prvWptIdx < 0 || prvWptIdx + 1 >= activePoints.Points.Length || Session.PlayerAircraft == null)
             {
                 return;
@@ -135,9 +132,6 @@ namespace Navigation.Data
                 GS_onpoint[i] = (int)gs;
 
             }
-
-            ApplyDesGateFields(activePoints, prvWptIdx, totalDistLeft);
-            ApplyDesVerticalBearing(activePoints, RW_Alt);
 
             Fmc.Crz.FuelAtDestination = "" + System.Math.Round(fr_onpoint[WPTCount - 1], 2);
 
@@ -234,79 +228,109 @@ namespace Navigation.Data
             return -1;
         }
 
-        private void ApplyDesGateFields(RouteScriptableObject route, int prvWptIdx, double[] totalDistLeft)
+        const float FeetPerNm = 6076.12f;
+        const float MinDescentDistanceNm = 0.05f;
+
+        public void UpdateDescentToPointBeforeRunway()
         {
-            if (!route.TryGetGatePoint(out var gate, out var gateIdx))
+            Fmc.Des.WptAltFix = "";
+            Fmc.Des.FPA = FormatActualFpa();
+            Fmc.Des.VB = "";
+            Fmc.Des.VS = "";
+
+            var route = Session.ActiveRoute;
+            if (!TryGetPointBeforeRunway(route, out var point, out var index))
             {
-                Fmc.Des.WptAltFix = "";
-                Fmc.Des.FPA = FormatFpaFromVerticalSpeed(Calculator.CVS, Calculator.GS);
-                Fmc.Des.VS = "";
                 return;
             }
 
-            var gateAlt = ResolvePointAltitude(gate);
-            Fmc.Des.WptAltFix = $"{gate.Name}/{Calculator.FormatFmcAltitude((long)gateAlt)}";
-
-            double distToGateNm;
-            if (gateIdx > prvWptIdx && totalDistLeft != null && gateIdx < totalDistLeft.Length)
+            var targetAlt = ResolvePointAltitude(point);
+            Fmc.Des.WptAltFix = targetAlt > 0
+                ? $"{point.Name}/{Calculator.FormatFmcAltitude((long)targetAlt)}"
+                : point.Name;
+            if (targetAlt <= 0 || Session.PlayerAircraft == null)
             {
-                distToGateNm = totalDistLeft[gateIdx];
-            }
-            else if (Session.PlayerAircraft == null)
-            {
-                distToGateNm = 0;
-            }
-            else
-            {
-                distToGateNm = Vector2.Distance(
-                    route.GetCartesianPosition(gateIdx),
-                    Session.PlayerAircraft.NMPosition);
-            }
-
-            if (distToGateNm <= 0.01 || Calculator.GS <= 0)
-            {
-                Fmc.Des.FPA = "0";
-                Fmc.Des.VS = "0";
-                return;
-            }
-
-            var requiredVs = (Calculator.CAltitude - gateAlt) / (distToGateNm / Calculator.GS * 60);
-            Fmc.Des.FPA = FormatFpaFromVerticalSpeed(-requiredVs, Calculator.GS);
-            Fmc.Des.VS = "" + (int)requiredVs;
-        }
-
-        private void ApplyDesVerticalBearing(RouteScriptableObject route, double rwAlt)
-        {
-            if (route?.Points == null || route.Points.Length == 0 || Session.PlayerAircraft == null)
-            {
-                Fmc.Des.VB = "";
                 return;
             }
 
             var distNm = Vector2.Distance(
-                route.GetCartesianPosition(route.Points.Length - 1),
+                route.GetCartesianPosition(index),
                 Session.PlayerAircraft.NMPosition);
-            if (distNm <= 0.01)
+            if (distNm <= MinDescentDistanceNm)
             {
-                Fmc.Des.VB = "0";
+                Fmc.Des.VB = "0.00";
+                Fmc.Des.VS = "0";
                 return;
             }
 
-            Fmc.Des.VB = "" +
-                         System.Math.Round(
-                             Mathf.Atan((float)((Calculator.CAltitude - rwAlt) / (distNm * 6076))) *
-                             Mathf.Rad2Deg, 2);
-        }
+            var deltaFeet = Calculator.CAltitude - targetAlt;
+            var bearingDeg = Mathf.Atan((float)(deltaFeet / (distNm * FeetPerNm))) * Mathf.Rad2Deg;
+            Fmc.Des.VB = bearingDeg.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
 
-        private static string FormatFpaFromVerticalSpeed(double vsFeetPerMin, float gsKnots)
-        {
-            if (gsKnots <= 0.01f)
+            if (Calculator.GS <= 1f)
             {
-                return "0";
+                Fmc.Des.VS = "0";
+                return;
             }
 
-            var deg = Mathf.Atan((float)(-vsFeetPerMin / (gsKnots / 60f * 6076f))) * Mathf.Rad2Deg;
-            return "" + System.Math.Round(deg, 2);
+            var minutes = distNm / Calculator.GS * 60.0;
+            var descentFpm = deltaFeet / minutes;
+            Fmc.Des.VS = ((int)System.Math.Round(-descentFpm)).ToString();
+        }
+
+        static string FormatActualFpa()
+        {
+            if (Calculator.GS <= 1f)
+            {
+                return "0.00";
+            }
+
+            var horizontalFpm = Calculator.GS * (FeetPerNm / 60f);
+            var fpaDeg = Mathf.Atan(Calculator.CVS / horizontalFpm) * Mathf.Rad2Deg;
+            return fpaDeg.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+        }
+
+        private static bool TryGetPointBeforeRunway(RouteScriptableObject route, out RoutePoint point, out int index)
+        {
+            point = null;
+            index = -1;
+            var points = route?.Points;
+            if (points == null || points.Length < 2)
+            {
+                return false;
+            }
+
+            var runway = points.Length - 1;
+            for (var i = points.Length - 1; i >= 0; i--)
+            {
+                var name = points[i]?.Name;
+                if (!string.IsNullOrEmpty(name)
+                    && name.StartsWith("RW", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    runway = i;
+                    break;
+                }
+            }
+
+            for (var i = runway - 1; i >= 0; i--)
+            {
+                var candidate = points[i];
+                if (candidate == null || candidate.IsHiddenLine || candidate.IsPositionNode)
+                {
+                    continue;
+                }
+
+                if (string.IsNullOrEmpty(candidate.Name))
+                {
+                    continue;
+                }
+
+                point = candidate;
+                index = i;
+                return true;
+            }
+
+            return false;
         }
 
         private static double ResolvePointAltitude(RoutePoint point)

@@ -2742,7 +2742,7 @@ PrefabInstance:
     - target: {fileID: 3381803085142526471, guid: ce72435e861474d479b2cab7c79068f0,
         type: 3}
       propertyPath: m_Name
-      value: Button INT
+      value: Button INIT
       objectReference: {fileID: 0}
     - target: {fileID: 3381803085142526471, guid: ce72435e861474d479b2cab7c79068f0,
         type: 3}
@@ -2757,7 +2757,7 @@ PrefabInstance:
     - target: {fileID: 8086127187701778376, guid: ce72435e861474d479b2cab7c79068f0,
         type: 3}
       propertyPath: m_text
-      value: INT
+      value: INIT
       objectReference: {fileID: 0}
     - target: {fileID: 8086127187701778376, guid: ce72435e861474d479b2cab7c79068f0,
         type: 3}
@@ -2782,7 +2782,7 @@ PrefabInstance:
     - target: {fileID: 8086127187701778376, guid: ce72435e861474d479b2cab7c79068f0,
         type: 3}
       propertyPath: m_textInfo.characterCount
-      value: 3
+      value: 4
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

@@ -14,17 +14,17 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   VirtualPointsItems:
   - Number: 51
-    x: 0
-    y: 0
+    x: -82.2985382
+    y: 52.8495483
   - Number: 52
-    x: 91.704924
-    y: -48.369957
+    x: 9.40638733
+    y: 4.47959137
   - Number: 53
     x: 0
     y: 0
   - Number: 54
-    x: 70.818049
-    y: -33.246869
+    x: -11.4804916
+    y: 19.6026802
   - Number: 55
     x: 0
     y: 0
@@ -47,20 +47,20 @@ MonoBehaviour:
     x: 0
     y: 0
   - Number: 62
-    x: 91.704924
-    y: -76.679635
+    x: 9.40638733
+    y: -23.8300858
   - Number: 63
-    x: 75.970467
-    y: -84.725302
+    x: -6.32807159
+    y: -31.8757553
   - Number: 64
     x: 0
     y: 0
   - Number: 65
-    x: 19.99
-    y: -46.861
+    x: -62.3085384
+    y: 5.98854828
   - Number: 66
-    x: 91.704924
-    y: -55.447375
+    x: 9.40638733
+    y: -2.59782791
   - Number: 67
     x: 0
     y: 0
@@ -73,6 +73,3 @@ MonoBehaviour:
   - Number: 70
     x: 0
     y: 0
-  - Number: 71
-    x: 82.29854
-    y: -52.84955

@@ -10,10 +10,25 @@ public class FIXScreen : ScreenBase
 {
     [SerializeField] private TMP_Text _pointName;
 
+    [SerializeField] private TMP_Text _rad;
+    [SerializeField] private TMP_Text _eta;
+    [SerializeField] private TMP_Text _dtg;
+    [SerializeField] private TMP_Text _alt;
+    [SerializeField] private TMP_Text _radSecond;
+    [SerializeField] private TMP_Text _etaSecond;
+    [SerializeField] private TMP_Text _dtgSecond;
+    [SerializeField] private TMP_Text _altSecond;
+    [SerializeField] private TMP_Text _radThird;
+    [SerializeField] private TMP_Text _etaThird;
+    [SerializeField] private TMP_Text _dtgThird;
+    [SerializeField] private TMP_Text _altThird;
+
     [SerializeField] private TMP_Text[] _rads;
 
     private NodeSelection _selectionInfo;
     private NodeSelection _lastSelectionClicked;
+
+    private RoutePoint selectedRouteNode;
 
     private int TotalPages => 3;
 
@@ -26,11 +41,11 @@ public class FIXScreen : ScreenBase
     {
         base.Show();
 
-        var pad = MainScreen.Pad;
-        _scratchPadBuffer = pad != null ? pad.GetText() : "";
+        Main.UpdatePageInfo(secondInfo: "FIX INFO", currentPage: 0, totalPages: 1);
 
-        DisplayCurrentPage();
-        InvokeRepeating(nameof(DisplayCurrentPage), 0.2f, 0.2f);
+        _scratchPadBuffer = MainScreen.Instance.scratchPadText.GetText();
+
+        InvokeRepeating(nameof(DisplayCurrentPage), 0, 0.2f);
     }
 
     public override void Hide()
@@ -43,24 +58,11 @@ public class FIXScreen : ScreenBase
     public override void DisplayNextPage()
     {
         _currentPage = Mathf.Min(TotalPages - 1, _currentPage + 1);
-        DisplayCurrentPage();
     }
 
     public override void DisplayPrevPage()
     {
         _currentPage = Mathf.Max(0, _currentPage - 1);
-        DisplayCurrentPage();
-    }
-
-    void RefreshHeader()
-    {
-        Main.UpdatePageInfo(
-            isMod: false,
-            firstInfo: "",
-            pageTitle: "",
-            secondInfo: "FIX INFO",
-            currentPage: _currentPage,
-            totalPages: TotalPages);
     }
 
     public override void OnLineSelectLeft(int index)
@@ -148,34 +150,37 @@ public class FIXScreen : ScreenBase
 
     public void DisplayCurrentPage()
     {
-        RefreshHeader();
+        Main.UpdatePageInfo(
+            isMod: false,
+            firstInfo: "",
+            pageTitle: "",
+            secondInfo: "",
+            _currentPage,
+            TotalPages);
 
-        var fixPoints = Session.Routes?.FixedPoints;
-        var wayPoint = fixPoints != null ? fixPoints.GetWaypointAt(_currentPage) : null;
+
+        var fixPoints = Session.Routes.FixedPoints;
+        var wayPoint = fixPoints.GetWaypointAt(_currentPage);
 
         if (wayPoint == null)
         {
             _pointName.text = "□□□□□";
-            foreach (var rad in _rads)
-            {
-                rad.text = "";
-            }
         }
         else
         {
             _pointName.text = wayPoint.Name;
+        }
 
-            for (int i = 0; i < 3; i++)
-            {
-                if (wayPoint.Infos.Length > i)
-                {
-                    _rads[i].text = $"{wayPoint.Infos[i]?.RawDegrees?.ToString() ?? "---"}/{wayPoint.Infos[i]?.NM?.ToString() ?? "---"}";
-                }
-                else
-                {
-                    _rads[i].text = "---";
-                }
-            }
+        for (int i = 0; i < 3; i++)
+        {
+            if (_rads == null || i >= _rads.Length || _rads[i] == null)
+                continue;
+
+            var info = wayPoint?.Infos != null && i < wayPoint.Infos.Length ? wayPoint.Infos[i] : null;
+            if (info == null || (info.RawDegrees == null && info.NM == null))
+                _rads[i].text = "---/---";
+            else
+                _rads[i].text = $"{info.RawDegrees?.ToString() ?? "---"}/{info.NM?.ToString() ?? "---"}";
         }
     }
 
@@ -243,8 +248,7 @@ public class FIXScreen : ScreenBase
             NMRegulation = null
         };
 
-        _scratchPadInterpreter.Node = Session.ActiveRoute?.Points?
-            .FirstOrDefault(x => x != null && x.Name == _scratchPadBuffer);
+        _scratchPadInterpreter.Node = Session.ActiveRoute.Points.FirstOrDefault(x => x.Name == _scratchPadBuffer);
 
         if (_scratchPadInterpreter.Node != null)
         {
@@ -343,19 +347,29 @@ public class FIXScreen : ScreenBase
 
     public void UpdateScratchPad(string buffer, bool withStatus = true)
     {
-        MainScreen.Pad?.SetAsDefault(buffer);
+        MainScreen.Instance.scratchPadText.SetAsDefault(buffer);
         if (withStatus)
         {
             //lastFLeft.text = "ok";
         }
     }
 
+    private void InitData()
+    {
+        _rad.text = "---/---";
+        _radSecond.text = "---/---";
+        _radThird.text = "---/---";
+    }
+
+    private void UpdateData(ref TMP_Text _rad, string radDis)
+    {
+        _rad.text = radDis;
+    }
+
     private void ClearScratchPad()
     {
         //Debug.Log("----- Clear Current Operation -----");
         _scratchPadBuffer = "";
-        var pad = MainScreen.Pad;
-        if (pad != null && pad.label != null)
-            pad.label.text = "";
+        MainScreen.Instance.scratchPadText.label.text = "";
     }
 }
