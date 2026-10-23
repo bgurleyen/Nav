@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   Points:
   - ID: 0
-    Name: _START
+    Name: _START_
     RawDegrees: 20
     Distance: 0
     RawSpeed: 0
@@ -23,7 +23,7 @@ MonoBehaviour:
   - ID: 1
     Name: ELNAT
     RawDegrees: 20
-    Distance: 40.9
+    Distance: 93.8
     RawSpeed: 0
     RawAltitude: 
     Details: 

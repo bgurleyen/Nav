@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 using JetBrains.Annotations;
@@ -47,6 +48,7 @@ public class Calculator : MonoBehaviour
     private double CMach, RMach, VNAV_VS;
     private bool _fmcCruiseClearedOnVnavDescent;
     private bool _resetMcpAltitudePosted;
+    private bool _dragRequired;
     public static float TAS, GS;
     public Toggle co;//Landing Gear ,Speed Brake;
     // Single gear state. True = extended. Lever, drag, speed tape and stable check all read this.
@@ -425,6 +427,9 @@ public class Calculator : MonoBehaviour
 
         _fmcScheduleSpeed = ApplyVnavPointSpeedLimit(_fmcScheduleSpeed);
         int commanded = _fmcScheduleSpeed;
+        // Profile slows to 240 kt on a level segment at 10000 ft; start when the path levels there.
+        if (CAltitude < ProfileLowAltitudeFt + 100.0 && commanded > ProfileLowAltitudeMaxIas)
+            commanded = (int)ProfileLowAltitudeMaxIas;
         if (commanded < minimumSpeed)
             commanded = minimumSpeed;
         if (PFD_Animation.LimitSpeed > 0 && commanded > PFD_Animation.LimitSpeed)
@@ -503,6 +508,7 @@ public class Calculator : MonoBehaviour
             {
                 FlyVerticalPath();
                 CheckResetMcpAltitudeScratchpad();
+                CheckDragRequiredScratchpad();
                 InterpolateVS();
                 InterpolateLvlChg();
                 EnsureSpeedWindowSynced();
@@ -532,6 +538,7 @@ public class Calculator : MonoBehaviour
         double[] a = new double[4];
 
         increasedSpeed = 0;
+        _pathSteeperThanIdle = false;
 
         if (Session.State.VS || Session.State.AH || Session.State.VNAV || Session.State.GSCaptured)
         {
@@ -581,13 +588,7 @@ public class Calculator : MonoBehaviour
                 i = 0; // Find speed for Current VS on idle
                 vv1 = (M[F, 0, i] - M[F, 2, i]) / IdleSpan(F) * (vsRef - IdleVs(F, 3)) + M[F, 2, i];
                 vv2 = (M[F - 1, 0, i] - M[F - 1, 2, i]) / IdleSpan(F - 1) * (vsRef - IdleVs(F - 1, 3)) + M[F - 1, 2, i];
-                // A fixed VS has one idle speed. GS and VNAV make VS grow with speed, so
-                // chasing the chart speed of the current VS runs away. Use the speed where
-                // the idle descent rate equals the path angle.
-                if (Session.State.GSCaptured || Session.State.VNAV)
-                    increasedSpeed = EquilibriumIdleSpeed(PathFpmPerKnot(vsRef));
-                else
-                    increasedSpeed = (int)((vv1 - vv2) / -5000f * (Altitude - (8 - F + 1) * 5000) + vv2);
+                increasedSpeed = (int)((vv1 - vv2) / -5000f * (Altitude - (8 - F + 1) * 5000) + vv2);
             }
             // Idle only when decelerating AND path still within idle capability (path first).
             if (RSpeed < CSpeed - 5 && pathWithinIdle)
@@ -596,13 +597,31 @@ public class Calculator : MonoBehaviour
                 a[2] = M[F, 1, 3];
                 power = 0.0;
             }
+            _pathSteeperThanIdle = !pathWithinIdle && vsRef < 0;
             if (RSpeed > CSpeed + 5)
             {
-                a[1] = AccelN1;
-                a[2] = 621;
+                int vnavN1 = VnavDescentAccelN1(Altitude);
+                int n1Cmd = vnavN1 > 0 ? vnavN1 : AccelN1;
+                if (_pathSteeperThanIdle)
+                    n1Cmd = Math.Min(n1Cmd, SteepDescentMaxN1);
+                if (n1Cmd < AccelN1)
+                {
+                    double idleN1 = M[F, 1, 2];
+                    double idleFf = M[F, 1, 3];
+                    double t = Math.Clamp((n1Cmd - idleN1) / Math.Max(1.0, AccelN1 - idleN1), 0.0, 1.0);
+                    a[1] = n1Cmd;
+                    a[2] = idleFf + (621 - idleFf) * t;
+                }
+                else
+                {
+                    a[1] = AccelN1;
+                    a[2] = 621;
+                }
                 power = 0.0;
             }
             ApplyConfig(ref a[0], ref a[1], ref a[2], power, Altitude, CSpeed);
+            if (_pathSteeperThanIdle)
+                a[1] = Math.Min(a[1], SteepDescentMaxN1);
             bool idleFuel = !pathWithinIdle || (RSpeed < CSpeed - 5 && pathWithinIdle);
             if (!idleFuel)
                 a[2] = ApplyOperationalFf((int)a[2], Altitude);
@@ -814,6 +833,33 @@ public class Calculator : MonoBehaviour
 
     /// <summary>N1 (hundredths) the autothrottle sets to accelerate.</summary>
     const int AccelN1 = 9650;
+    /// <summary>VNAV descent speed recovery: extra N1 (x100) per knot below target, and its ceiling.</summary>
+    const int VnavAccelN1PerKt = 60;
+    const int VnavAccelN1Max = 8500;
+    int _vnavPeakN1;
+    /// <summary>Path steeper than the idle path at the target speed: A/T thrust is capped at this N1 (x100).</summary>
+    const int SteepDescentMaxN1 = 5500;
+    bool _pathSteeperThanIdle;
+
+    /// <summary>
+    /// VNAV path descent below target speed: A/T adds only enough N1 over what the path needs
+    /// to close the gap, never climb thrust. -1 outside VNAV descent.
+    /// </summary>
+    int VnavDescentAccelN1(double altitude)
+    {
+        if (Session.State == null || !Session.State.VNAV || Session.State.GSCaptured || RVS >= 0)
+        {
+            _vnavPeakN1 = 0;
+            return -1;
+        }
+        double gap = Math.Max(0.0, RSpeed - CSpeed);
+        int pathN1 = N1For(altitude, CVS, CSpeed);
+        int cmd = Mathf.Clamp(pathN1 + (int)(gap * VnavAccelN1PerKt), pathN1, Math.Max(pathN1, VnavAccelN1Max));
+        if (CSpeed < RSpeed - 1)
+            cmd = Math.Max(cmd, _vnavPeakN1);
+        _vnavPeakN1 = CSpeed < RSpeed - 1 ? cmd : 0;
+        return cmd;
+    }
     /// <summary>Inside 5 kt of the target the autothrottle trims with part power.</summary>
     const float TrimMaxKtPerMin = 60f;
     const float MinSpeedChangeKtPerMin = 2f;
@@ -832,13 +878,63 @@ public class Calculator : MonoBehaviour
         if (accelerating)
         {
             bool idleDescent = Session.State.LC && (int)CAltitude >= RAltitude;
-            float thrustRate = idleDescent ? 0f
-                : B737_Performance.IasRateFromN1((float)altitude, (float)CSpeed, N1For(altitude, CVS, CSpeed) / 100f, AccelN1 / 100f);
-            rate = Mathf.Max(thrustRate, idlePathRate);
+            int vnavN1 = VnavDescentAccelN1(altitude);
+            if (_pathSteeperThanIdle && !idleDescent)
+                rate = ChartThrustRate(altitude, idleVs, Math.Min(vnavN1 > 0 ? vnavN1 : AccelN1, SteepDescentMaxN1));
+            else if (vnavN1 > 0)
+                rate = ChartThrustRate(altitude, idleVs, vnavN1);
+            else
+            {
+                int n1Cmd = AccelN1;
+                float thrustRate = idleDescent ? 0f
+                    : B737_Performance.IasRateFromN1((float)altitude, (float)CSpeed, N1For(altitude, CVS, CSpeed) / 100f, n1Cmd / 100f);
+                rate = Mathf.Max(thrustRate, idlePathRate);
+            }
         }
+        else
+            rate += PathExcessSpeedDrag(altitude);
         if (!fullThrustRange)
             rate = Mathf.Min(rate, TrimMaxKtPerMin);
         return Mathf.Clamp(rate, MinSpeedChangeKtPerMin, MaxSpeedChangeKtPerMin);
+    }
+
+    /// <summary>Extra deceleration (kt/min) per knot above the idle chart speed of the flown VS.</summary>
+    const float PathExcessDragPerKt = 1.0f;
+
+    /// <summary>
+    /// VNAV / G/S descent: the chart idle speed for the current VS (config included). Above it,
+    /// add drag proportional to the excess. 0 outside a path descent or at/below that speed.
+    /// </summary>
+    float PathExcessSpeedDrag(double altitude)
+    {
+        if (Session.State == null || CVS >= 0 || !(Session.State.VNAV || Session.State.GSCaptured))
+            return 0f;
+        const double probeKt = 20.0;
+        double vsAt = ConfigIdleVsAt(altitude, CSpeed);
+        double vsBelow = ConfigIdleVsAt(altitude, CSpeed - probeKt);
+        double fpmPerKt = (vsAt - vsBelow) / probeKt;
+        if (Math.Abs(fpmPerKt) < 0.01)
+            return 0f;
+        double chartSpeed = CSpeed + (CVS - vsAt) / fpmPerKt;
+        double excess = CSpeed - chartSpeed;
+        if (excess <= 0 || double.IsNaN(excess) || double.IsInfinity(excess))
+            return 0f;
+        return (float)excess * PathExcessDragPerKt;
+    }
+
+    const double DescentThrustGain = 3.0;
+
+    /// <summary>
+    /// Descent with part thrust. Chart N1 is linear in VS from the idle path to level flight (and on into the climb),
+    /// so n1Cmd holds speed on a shallower path; the gap to the flown path sets the acceleration.
+    /// </summary>
+    float ChartThrustRate(double altitude, double idleVs, double n1Cmd)
+    {
+        double levelN1 = N1For(altitude, 0, CSpeed);
+        double idleN1 = N1For(altitude, idleVs, CSpeed);
+        double fraction = DescentThrustGain * Math.Clamp((n1Cmd - idleN1) / Math.Max(1.0, levelN1 - idleN1), 0.0, 3.0);
+        double holdVs = idleVs * (1.0 - fraction);
+        return B737_Performance.IasRateFromVsGap((float)altitude, (float)CSpeed, (float)(holdVs - CVS));
     }
 
     float FiniteSpeedRate(bool accelerating, bool fullThrustRange)
@@ -1174,8 +1270,179 @@ public class Calculator : MonoBehaviour
         return (altFrom - altTo) / legNm;
     }
 
+    const double IdleProfileSliceFt = 5000.0;
+    const double IdleProfileTopFt = 41000.0;
+    const double ProfileLowAltitudeFt = 10000.0;
+    const double ProfileLowAltitudeMaxIas = 240.0;
+
     /// <summary>
-    /// Path altitude at the aircraft. First leg: 3° to that waypoint's calculated altitude.
+    /// Descent schedule IAS at an altitude: DesEcon Mach above crossover, DesEcon IAS below,
+    /// at most 240 kt below 10000 ft.
+    /// </summary>
+    static double DescentScheduleIas(double altitude)
+    {
+        double scheduled = altitude >= GetCoAltitudeFeet() ? Mach2Speed(DesEconMach(), altitude) : DesEconIas();
+        if (altitude < ProfileLowAltitudeFt)
+            scheduled = Math.Min(scheduled, ProfileLowAltitudeMaxIas);
+        return scheduled;
+    }
+
+    /// <summary>NM flown per foot of clean idle descent at an altitude (groundspeed / idle VS).</summary>
+    static double IdleNmPerFt(double altitude, int track)
+    {
+        double ias = DescentScheduleIas(altitude);
+        double vs = Math.Abs(ConfigIdleVsAt(altitude, ias) - ConfigVsDelta());
+        if (vs < 300.0)
+            vs = 300.0;
+        double gs = CalculateWindElements(altitude, ias, track).GS;
+        return gs / 60.0 / vs;
+    }
+
+    /// <summary>
+    /// Level-flight NM to bleed fromIas down to toIas at idle, clean. Uses the same energy model as
+    /// SpeedChangeKtPerMin: level flight means the whole idle VS gap goes into deceleration.
+    /// </summary>
+    public static double LevelDecelNm(double altitude, double fromIas, double toIas, int track)
+    {
+        if (toIas <= 0 || fromIas <= toIas + 0.5)
+            return 0.0;
+
+        const double stepKt = 5.0;
+        double nm = 0.0;
+        double ias = fromIas;
+        while (ias > toIas + 0.01)
+        {
+            double step = Math.Min(stepKt, ias - toIas);
+            double mid = ias - step * 0.5;
+            double idleVs = ConfigIdleVsAt(altitude, mid) - ConfigVsDelta();
+            float rate = -B737_Performance.IasRateFromVsGap((float)altitude, (float)mid, (float)idleVs);
+            if (float.IsNaN(rate) || float.IsInfinity(rate))
+                rate = MinSpeedChangeKtPerMin;
+            rate = Mathf.Clamp(rate, MinSpeedChangeKtPerMin, MaxSpeedChangeKtPerMin);
+            double minutes = step / rate;
+            double gs = CalculateWindElements(altitude, mid, track).GS;
+            nm += gs * minutes / 60.0;
+            ias -= step;
+        }
+        return nm;
+    }
+
+    /// <summary>Level segment before the first-leg constraint: schedule speed down to that fix's speed.</summary>
+    static double FirstLegDecelNm(RouteScriptableObject route, int firstIndex, double constraintAlt, int track)
+    {
+        if (route?.Points == null || firstIndex < 0 || firstIndex >= route.Points.Length)
+            return 0.0;
+        int fixSpeed = route.Points[firstIndex].RawSpeed;
+        if (fixSpeed <= 0)
+            return 0.0;
+        return LevelDecelNm(constraintAlt, DescentScheduleIas(constraintAlt), fixSpeed, track);
+    }
+
+    static int FirstLegTrack(RouteScriptableObject route, int firstIndex)
+    {
+        if (route?.Points == null || firstIndex < 1 || firstIndex >= route.Points.Length)
+            return 0;
+        Vector2 a = route.GetCartesianPosition(firstIndex - 1);
+        Vector2 b = route.GetCartesianPosition(firstIndex);
+        float deg = Mathf.Atan2(b.x - a.x, b.y - a.y) * Mathf.Rad2Deg;
+        return NormalizeHeading360(Mathf.RoundToInt(deg));
+    }
+
+    /// <summary>
+    /// Idle descent profile above a constraint. Slice edges sit on the 5000 ft chart rows,
+    /// plus the crossover altitude. Each slice is one angle: its NM is the trapezoid of
+    /// groundspeed / idle VS at both edges. alts[i] is reached cum[i] NM before the constraint.
+    /// decelNm is a level segment at the constraint altitude, flown before reaching the fix.
+    /// </summary>
+    static void BuildIdleProfile(double constraintAlt, int track, double decelNm, List<double> alts, List<double> cum)
+    {
+        alts.Clear();
+        cum.Clear();
+        double lo = Math.Max(0.0, constraintAlt);
+        alts.Add(lo);
+        cum.Add(0.0);
+        if (decelNm > 0.01)
+        {
+            alts.Add(lo);
+            cum.Add(decelNm);
+        }
+
+        double co = GetCoAltitudeFeet();
+        while (lo < IdleProfileTopFt - 1.0)
+        {
+            double hi = (Math.Floor(lo / IdleProfileSliceFt) + 1.0) * IdleProfileSliceFt;
+            if (co > lo + 1.0 && co < hi - 1.0)
+                hi = co;
+            if (hi > IdleProfileTopFt)
+                hi = IdleProfileTopFt;
+
+            // Edges are sampled 1 ft inside the slice: the speed schedule steps at 10000 ft.
+            double rateLo = IdleNmPerFt(Math.Min(lo + 1.0, hi), track);
+            double rateHi = IdleNmPerFt(Math.Max(hi - 1.0, lo), track);
+            double nm = (hi - lo) * 0.5 * (rateLo + rateHi);
+            alts.Add(hi);
+            cum.Add(cum[cum.Count - 1] + nm);
+
+            if (Math.Abs(hi - ProfileLowAltitudeFt) < 1.0 && constraintAlt < ProfileLowAltitudeFt - 1.0)
+            {
+                double above = DescentScheduleIas(ProfileLowAltitudeFt + 1.0);
+                double levelNm = LevelDecelNm(ProfileLowAltitudeFt, above, ProfileLowAltitudeMaxIas, track);
+                if (levelNm > 0.01)
+                {
+                    alts.Add(hi);
+                    cum.Add(cum[cum.Count - 1] + levelNm);
+                }
+            }
+            lo = hi;
+        }
+    }
+
+    /// <summary>NM before the constraint where the idle profile reaches topAlt (the TOD distance).</summary>
+    static double IdleProfileBackNm(double constraintAlt, double topAlt, int track, double decelNm)
+    {
+        var alts = new List<double>();
+        var cum = new List<double>();
+        BuildIdleProfile(constraintAlt, track, decelNm, alts, cum);
+        if (topAlt <= alts[0])
+            return 0.0;
+
+        for (int i = 1; i < alts.Count; i++)
+        {
+            if (topAlt > alts[i])
+                continue;
+            double t = (topAlt - alts[i - 1]) / Math.Max(1.0, alts[i] - alts[i - 1]);
+            return cum[i - 1] + t * (cum[i] - cum[i - 1]);
+        }
+
+        int n = alts.Count - 1;
+        double topSlope = (alts[n] - alts[n - 1]) / Math.Max(1e-6, cum[n] - cum[n - 1]);
+        return cum[n] + (topAlt - alts[n]) / Math.Max(1e-6, topSlope);
+    }
+
+    /// <summary>Profile altitude distNm before the constraint, and that slice's ft/NM.</summary>
+    static double IdleProfileAltitudeAt(double constraintAlt, double distNm, int track, double decelNm,
+        out double slopeFtPerNm)
+    {
+        var alts = new List<double>();
+        var cum = new List<double>();
+        BuildIdleProfile(constraintAlt, track, decelNm, alts, cum);
+        distNm = Math.Max(0.0, distNm);
+
+        for (int i = 1; i < alts.Count; i++)
+        {
+            if (distNm > cum[i] && i < alts.Count - 1)
+                continue;
+            double span = Math.Max(1e-6, cum[i] - cum[i - 1]);
+            slopeFtPerNm = (alts[i] - alts[i - 1]) / span;
+            return alts[i - 1] + slopeFtPerNm * (distNm - cum[i - 1]);
+        }
+
+        slopeFtPerNm = VdiPathFtPerNm;
+        return constraintAlt + VdiPathFtPerNm * distNm;
+    }
+
+    /// <summary>
+    /// Path altitude at the aircraft. First leg: idle descent profile to that waypoint's calculated altitude.
     /// Later legs: that leg's calculated-altitude angle over the distance still on the leg.
     /// </summary>
     static bool TryLegReference(RouteScriptableObject route, int passedNodeIndex, double distanceLeftOnSegment,
@@ -1201,7 +1468,12 @@ public class Calculator : MonoBehaviour
             distanceNm = LiveLegRemainingNm(route, passedNodeIndex, distanceLeftOnSegment);
             for (var i = toIndex + 1; i <= firstIndex; i++)
                 distanceNm += PublishedLegNm(route, i);
-            slopeFtPerNm = VdiPathFtPerNm;
+            if (calculatedAltitude < 0)
+                return false;
+            int track = FirstLegTrack(route, firstIndex);
+            referenceAltitude = IdleProfileAltitudeAt(calculatedAltitude, distanceNm, track,
+                FirstLegDecelNm(route, firstIndex, calculatedAltitude, track), out slopeFtPerNm);
+            return true;
         }
         else
         {
@@ -1278,7 +1550,7 @@ public class Calculator : MonoBehaviour
     }
 
     /// <summary>
-    /// TOD: cruise intersects the 3° path on the first leg, aimed at that leg's
+    /// TOD: cruise intersects the idle descent profile on the first leg, aimed at that leg's
     /// calculated altitude. If 3° needs more NM than the route has, TOD is
     /// clamped to the start of the route. Distances follow the magenta curve.
     /// segmentIndex is the destination node index.
@@ -1300,7 +1572,9 @@ public class Calculator : MonoBehaviour
             return false;
         }
 
-        var dToConstraintAtTod = (cruiseAltitude - constraintAlt) / VdiPathFtPerNm;
+        int track = FirstLegTrack(route, anchorIndex);
+        var dToConstraintAtTod = IdleProfileBackNm(constraintAlt, cruiseAltitude, track,
+            FirstLegDecelNm(route, anchorIndex, constraintAlt, track));
         if (dToConstraintAtTod < 0)
         {
             return false;
@@ -1329,7 +1603,7 @@ public class Calculator : MonoBehaviour
         return true;
     }
 
-    /// <summary>True once the aircraft has reached the 3° TOD on the first leg.</summary>
+    /// <summary>True once the aircraft has reached the idle-profile TOD on the first leg.</summary>
     static bool IsPastFirstLegTod(RouteScriptableObject route, double cruiseAltitude)
     {
         if (route?.Points == null || Session.PlayerAircraft == null)
@@ -1340,7 +1614,9 @@ public class Calculator : MonoBehaviour
             return false;
 
         var distToFirst = AlongTrackNmFromStart(route, firstIndex);
-        var backNm = Math.Clamp((cruiseAltitude - firstAlt) / VdiPathFtPerNm, 0, distToFirst);
+        int track = FirstLegTrack(route, firstIndex);
+        var backNm = Math.Clamp(IdleProfileBackNm(firstAlt, cruiseAltitude, track,
+            FirstLegDecelNm(route, firstIndex, firstAlt, track)), 0, distToFirst);
         var todFromStart = distToFirst - backNm;
 
         var passed = Mathf.Clamp(PositionVirtualNode.PassedNodeIndex, 0, route.Points.Length - 2);
@@ -1498,16 +1774,15 @@ public class Calculator : MonoBehaviour
         }
 
         float distLeftNm = aircraft.ComputedDistanceLeftOnSegment;
-        int deltaKts = Mathf.Max(0, (int)CSpeed - pointSpeed);
-        if (deltaKts < 5)
-            deltaKts = targetSpeed - pointSpeed;
-
-        float gsKts = Mathf.Max(GS, 120f);
-        float decelNm = deltaKts * gsKts / 3600f + 0.8f;
+        double fromIas = CSpeed - pointSpeed >= 5 ? CSpeed : targetSpeed;
+        double decelAlt = GetPointCalculatedAltitude(points[pointIndex]);
+        if (decelAlt <= 0)
+            decelAlt = CAltitude;
+        float decelNm = (float)LevelDecelNm(decelAlt, fromIas, pointSpeed, CTrack);
         if (decelNm < 1.5f)
             decelNm = 1.5f;
-        if (decelNm > 12f)
-            decelNm = 12f;
+        if (decelNm > 20f)
+            decelNm = 20f;
 
         if (distLeftNm > decelNm)
         {
@@ -1567,11 +1842,10 @@ public class Calculator : MonoBehaviour
             var gsSlope = Math.Tan(glide * Math.PI / 180.0) * NmToFeet;
             slopeFtPerNm = slopeFtPerNm * (1.0 - gsBlend) + gsSlope * gsBlend;
         }
-
         bool mcpDescentWindow = RAltitude < (int)CAltitude;
         double deviation = CAltitude - pathTarget; // + above path, - below
 
-        // Hold below the path until the first-leg 3° TOD. After that, descend to intercept.
+        // Hold below the path until the first-leg TOD. After that, descend to intercept.
         const double belowPathHoldBand = 300;
         var pastEnergyTod = IsPastFirstLegTod(route, StartAltitude);
         if (mcpDescentWindow && deviation < -belowPathHoldBand && !pastEnergyTod && gsBlend < 0.25f)
@@ -1677,6 +1951,31 @@ public class Calculator : MonoBehaviour
         }
 
         if (!shouldShow && showingOurs)
+            pad.Clear();
+    }
+
+    /// <summary>
+    /// VNAV path descent at idle: 737 posts DRAG REQUIRED once speed runs about
+    /// 10 kt above target, and clears it when speed is back within 5 kt.
+    /// </summary>
+    void CheckDragRequiredScratchpad()
+    {
+        const string msg = MainScreen.Keywords.DragRequired;
+        var pad = MainScreen.Instance != null ? MainScreen.Instance.scratchPadText : null;
+        if (pad == null)
+            return;
+
+        var inVnavDescent = Session.State != null && Session.State.VNAV && !Session.State.GSCaptured && CVS < -100;
+        if (inVnavDescent && CSpeed > RSpeed + 10)
+            _dragRequired = true;
+        else if (!inVnavDescent || CSpeed <= RSpeed + 5)
+            _dragRequired = false;
+
+        var current = pad.GetText() ?? "";
+        var showingOurs = string.Equals(current, msg, StringComparison.Ordinal);
+        if (_dragRequired && !showingOurs && string.IsNullOrEmpty(current))
+            pad.SetAsDefault(msg);
+        else if (!_dragRequired && showingOurs)
             pad.Clear();
     }
 
@@ -2053,57 +2352,6 @@ public class Calculator : MonoBehaviour
         return (at - above) / -5000.0 * (altitude - (8 - F + 1) * 5000.0) + above + ConfigVsDelta();
     }
 
-    /// <summary>
-    /// Descent rate of the active path, fpm per knot. GS uses the glideslope angle.
-    /// VNAV uses the commanded rate over current groundspeed, which stays put while
-    /// both vary together.
-    /// </summary>
-    static double PathFpmPerKnot(double vsRef)
-    {
-        if (Session.State != null && Session.State.GSCaptured && Session.CurrentLevel?.levelInfo != null)
-        {
-            float glide = Session.CurrentLevel.levelInfo.GlideSlope;
-            return 6076.0 * Math.Tan(glide * Math.PI / 180.0) / 60.0;
-        }
-
-        double gs = GS > 1f ? GS : 1.0;
-        return Math.Max(0.5, -vsRef / gs);
-    }
-
-    /// <summary>
-    /// Speed at which the config idle vertical speed matches a path of fpmPerKnot.
-    /// 0 when idle is already at least that steep at 110 kt (do not speed up).
-    /// 360 when the path is still steeper than idle there.
-    /// </summary>
-    static int EquilibriumIdleSpeed(double fpmPerKnot)
-    {
-        if (fpmPerKnot < 0.2)
-            return 0;
-
-        double alt = CAltitude > 39900 ? 39900 : (CAltitude < 0 ? 0 : CAltitude);
-        double Gap(double speed) => ConfigIdleVsAt(alt, speed) + fpmPerKnot * speed;
-
-        const double lo = 110;
-        const double hi = 360;
-        if (Gap(lo) <= 0)
-            return 0;
-        if (Gap(hi) > 0)
-            return (int)hi;
-
-        double a = lo;
-        double b = hi;
-        for (int n = 0; n < 24; n++)
-        {
-            double mid = (a + b) * 0.5;
-            if (Gap(mid) > 0)
-                a = mid;
-            else
-                b = mid;
-        }
-
-        return (int)Math.Round(b);
-    }
-
     /// <summary>Same idle-path speed InterpolateVS stores in increasedSpeed for this VS.</summary>
     static int IdleChartSpeed(double vsRef)
     {
@@ -2267,15 +2515,29 @@ public class Calculator : MonoBehaviour
     }
 
     /// <summary>
-    /// Schedule CO altitude from level DesEcon IAS/Mach (fallback 280/.78 ≈ FL325).
+    /// Schedule CO altitude from level DesEcon IAS/Mach.
     /// </summary>
     public static double GetCoAltitudeFeet()
     {
-        var levelInfo = Session.CurrentLevel != null ? Session.CurrentLevel.levelInfo : null;
-        if (levelInfo == null || levelInfo.DesEconSpeed <= 0 || levelInfo.DesEconMach <= 0)
-            return CrossOverAltitude(280, 0.78);
+        return CrossOverAltitude(DesEconIas(), DesEconMach());
+    }
 
-        return CrossOverAltitude(levelInfo.DesEconSpeed, levelInfo.DesEconMach / 100.0);
+    const int FallbackDesEconIas = 280;
+    const int FallbackDesEconMachHundredths = 78;
+
+    /// <summary>Level Info DES ECON IAS (kt). Fallback only when the level has none.</summary>
+    public static int DesEconIas()
+    {
+        var info = Session.CurrentLevel != null ? Session.CurrentLevel.levelInfo : null;
+        return info != null && info.DesEconSpeed > 0 ? info.DesEconSpeed : FallbackDesEconIas;
+    }
+
+    /// <summary>Level Info DES ECON Mach (e.g. 0.77). Fallback only when the level has none.</summary>
+    public static double DesEconMach()
+    {
+        var info = Session.CurrentLevel != null ? Session.CurrentLevel.levelInfo : null;
+        var hundredths = info != null && info.DesEconMach > 0 ? info.DesEconMach : FallbackDesEconMachHundredths;
+        return hundredths / 100.0;
     }
 
     /// <summary>Formats Mach as .78 (digits=2) or .780 (digits=3).</summary>

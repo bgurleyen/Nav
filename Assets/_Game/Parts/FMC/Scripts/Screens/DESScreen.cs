@@ -1,4 +1,4 @@
-﻿using Navigation;
+using Navigation;
 using Navigation.Data;
 using TMPro;
 using UnityEngine;
@@ -7,8 +7,6 @@ public class DESScreen : ScreenBase
 {
     private const float LargeFontSize = 40f;
     private const float LargeFontThreshold = 30f;
-    private const string FixedTargetSpeed = ".78/280";
-
     [SerializeField] private TMP_Text _rwAltitude;
     //[SerializeField] private TMP_Text _econSpeed_Mach;
     [SerializeField] private BgText _econSpeed_Mach;
@@ -86,17 +84,19 @@ public class DESScreen : ScreenBase
         SetDesValue(_vs, des.VS);
         ApplyColumnLayout();
         ApplyLargeFontSize();
-        ShowFixedTargetSpeed();
+        ShowTargetSpeed();
     }
 
-    private void ShowFixedTargetSpeed()
+    private void ShowTargetSpeed()
     {
         if (_econSpeed_Mach == null)
         {
             return;
         }
 
-        _econSpeed_Mach.SetAsTall(FixedTargetSpeed);
+        _econSpeed_Mach.SetAsTall(Calculator.FormatMachIas(
+            (int)System.Math.Round(Calculator.DesEconMach() * 100.0),
+            Calculator.DesEconIas()));
         var label = _econSpeed_Mach.label;
         if (label != null)
         {
@@ -198,7 +198,7 @@ public class DESScreen : ScreenBase
     public override void OnExecPress()
     {
         Session.IsMod = false;
-        ShowFixedTargetSpeed();
+        ShowTargetSpeed();
     }
 
 

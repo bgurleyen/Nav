@@ -79,7 +79,9 @@ namespace Navigation.Data
             Fmc.Rte.RW = levelData.Runway;
             Fmc.Rte.Origin = Session.RteOrigin;
             Fmc.Des.RWAltitude = Calculator.FormatFmcAltitude((long)RW_Alt);
-            Fmc.Des.EconSpeed = Calculator.FormatMachIas(levelData.DesEconMach, levelData.DesEconSpeed);
+            Fmc.Des.EconSpeed = Calculator.FormatMachIas(
+                (int)System.Math.Round(Calculator.DesEconMach() * 100.0),
+                Calculator.DesEconIas());
 
             long cruiseAltitude = Calculator.RouteIdZeroAltitude(activePoints);
             Fmc.Crz.Destination = levelData.Destination;

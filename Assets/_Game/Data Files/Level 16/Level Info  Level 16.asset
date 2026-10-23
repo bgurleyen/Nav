@@ -24,7 +24,7 @@ MonoBehaviour:
   Fuel: 12
   CrzSpeed: 273
   F30Speed: 121
-  DesEconSpeed: 280
-  DesEconMach: 78
+  DesEconSpeed: 290
+  DesEconMach: 77
   GlideSlope: 3
   Reserved: 0

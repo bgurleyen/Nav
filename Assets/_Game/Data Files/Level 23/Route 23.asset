@@ -23,7 +23,7 @@ MonoBehaviour:
   - ID: 1
     Name: CABIN
     RawDegrees: 380
-    Distance: 59.1
+    Distance: 57.6
     RawSpeed: 240
     RawAltitude: 9000A
     Details: 

@@ -68,5 +68,6 @@ public class MainScreen : Singleton<MainScreen>
         public const string ERASE = "ERASE";
         public const string STEP = "STEP";
         public const string ResetMcpAltitude = "RESET MCP ALTITUDE";
+        public const string DragRequired = "DRAG REQUIRED";
     }
 }
