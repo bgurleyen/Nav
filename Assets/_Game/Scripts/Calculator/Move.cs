@@ -36,6 +36,8 @@ public class Move : Singleton<Move>
 
     /// <summary>ATC speed/altitude penalty already taken from remaining fuel.</summary>
     public double FuelPenaltyKg { get; private set; }
+    // Temporary: penalty charges are off. Set true to deduct fuel again.
+    const bool PenaltyEnabled = false;
     const float CorrectionWindowSimSeconds = 15f;
     const float LevelStartQuietSimSeconds = 30f;
     const int SpeedToleranceKt = 10;
@@ -103,6 +105,9 @@ public class Move : Singleton<Move>
 
     Button _armButton;
     TextMeshProUGUI _armButtonTxt;
+    Transform _armHome;
+    Vector2 _armHomePos;
+    Vector2 _armHomePivot;
 
     public void Init(LevelDataScriptableObject levelData)
     {
@@ -163,6 +168,12 @@ public class Move : Singleton<Move>
         XFRSpeedNx = 0;
         XFRHdg = 0;
         ATCAltitude = 0;
+        if (Session.State != null)
+        {
+            Session.State.AppArmed = false;
+            Session.State.LOCCaptured = false;
+            Session.State.GSCaptured = false;
+        }
         FuelPenaltyKg = 0;
         _speedLimitActive = false;
         _speedWrongSim = 0f;
@@ -174,6 +185,10 @@ public class Move : Singleton<Move>
         _trackedFix = -1;
         _levelSimTime = 0f;
         HideArmButton(true);
+        if (IsFreeFlight())
+            ShowArmButton();
+        else
+            RestoreArmHome();
 
         _currentInstructionIndex = 0;
         var originPoints = Session.OriginalReferenceRoute != null ? Session.OriginalReferenceRoute.Points : null;
@@ -598,7 +613,20 @@ public class Move : Singleton<Move>
             _armButtonTxt.fontMaterial = mat;
         }
 
+        var home = go.GetComponent<RectTransform>();
+        _armHome = go.transform.parent;
+        if (home != null)
+        {
+            _armHomePos = home.anchoredPosition;
+            _armHomePivot = home.pivot;
+        }
         go.SetActive(false);
+    }
+
+    static bool IsFreeFlight()
+    {
+        var info = Session.CurrentLevel != null ? Session.CurrentLevel.levelInfo : null;
+        return info != null && info.LevelNumber == PlayerPrefsHolder.FreeFlightLevel;
     }
 
     void ShowArmButton()
@@ -612,17 +640,126 @@ public class Move : Singleton<Move>
 
         _armButton.gameObject.SetActive(true);
         _armButton.interactable = true;
-        if (_armButtonTxt != null)
-            _armButtonTxt.fontMaterial.SetFloat(ShaderUtilities.ID_GlowPower, 1f);
-
         if (_armPulse != null)
+        {
             StopCoroutine(_armPulse);
-        _armPulse = StartCoroutine(PulseArmButton());
+            _armPulse = null;
+        }
+
+        if (IsFreeFlight())
+        {
+            var rt = _armButton.GetComponent<RectTransform>();
+            if (rt != null)
+                rt.localScale = Vector3.one;
+            if (_armButtonTxt != null)
+            {
+                _armButtonTxt.color = Color.yellow;
+                _armButtonTxt.fontMaterial.SetFloat(ShaderUtilities.ID_GlowPower, 0f);
+            }
+            PlaceArmUnderVdi();
+        }
+        else
+        {
+            if (_armButtonTxt != null)
+                _armButtonTxt.fontMaterial.SetFloat(ShaderUtilities.ID_GlowPower, 1f);
+            _armPulse = StartCoroutine(PulseArmButton());
+            RestoreArmHome();
+        }
         SlowDown();
+    }
+
+    void RestoreArmHome()
+    {
+        if (_armButton == null || _armHome == null)
+            return;
+        _armButton.transform.SetParent(_armHome, false);
+        var rt = _armButton.GetComponent<RectTransform>();
+        if (rt == null)
+            return;
+        rt.anchorMin = new Vector2(0.5f, 0.5f);
+        rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = _armHomePivot;
+        rt.anchoredPosition = _armHomePos;
+        rt.localScale = Vector3.one;
+    }
+
+    void PlaceArmUnderVdi()
+    {
+        if (_armButton == null || Calculator.Instance == null || Calculator.Instance.VDI_Index == null)
+            return;
+
+        Transform scale = Calculator.Instance.VDI_Index.parent != null
+            ? Calculator.Instance.VDI_Index.parent
+            : Calculator.Instance.VDI_Index;
+        var sprite = scale.GetComponent<SpriteRenderer>();
+        Vector3 world = sprite != null
+            ? new Vector3(sprite.bounds.center.x, sprite.bounds.min.y, sprite.bounds.center.z)
+            : scale.position;
+
+        Canvas canvas = _armButton.GetComponentInParent<Canvas>();
+        if (canvas == null && Atc2 != null)
+            canvas = Atc2.GetComponentInParent<Canvas>();
+        if (canvas == null)
+            return;
+
+        if (_armButton.transform.parent != canvas.transform)
+            _armButton.transform.SetParent(canvas.transform, false);
+        _armButton.transform.SetAsLastSibling();
+
+        Camera cam = canvas.worldCamera != null ? canvas.worldCamera : Camera.main;
+        if (cam == null)
+            return;
+
+        Vector3 vdiScreen = cam.WorldToScreenPoint(world);
+        if (vdiScreen.z < 0f)
+            return;
+
+        float screenY = vdiScreen.y - 70f;
+        RectTransform mcp = McpPanel();
+        if (mcp != null)
+        {
+            Vector3[] corners = new Vector3[4];
+            mcp.GetWorldCorners(corners);
+            Vector3 top = (corners[1] + corners[2]) * 0.5f;
+            Vector3 topScreen = cam.WorldToScreenPoint(top);
+            if (topScreen.z > 0f)
+                screenY = topScreen.y + 6f;
+        }
+
+        var canvasRt = canvas.transform as RectTransform;
+        var rt = _armButton.GetComponent<RectTransform>();
+        if (canvasRt == null || rt == null)
+            return;
+
+        Camera eventCam = canvas.renderMode == RenderMode.ScreenSpaceOverlay ? null : cam;
+        var screen = new Vector2(vdiScreen.x, screenY);
+        if (!RectTransformUtility.ScreenPointToLocalPointInRectangle(canvasRt, screen, eventCam, out Vector2 local))
+            return;
+
+        rt.anchorMin = new Vector2(0.5f, 0.5f);
+        rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0f);
+        rt.localScale = Vector3.one;
+        rt.anchoredPosition = local;
+    }
+
+    RectTransform _mcpPanel;
+
+    RectTransform McpPanel()
+    {
+        if (_mcpPanel != null)
+            return _mcpPanel;
+        var found = GameObject.Find("pivot 1");
+        if (found == null)
+            return null;
+        _mcpPanel = found.GetComponent<RectTransform>();
+        return _mcpPanel;
     }
 
     void HideArmButton(bool force = false)
     {
+        if (!force && IsFreeFlight())
+            return;
         if (!force && _armButton != null && _armButton.gameObject.activeSelf && (Session.State == null || !Session.State.AppArmed))
             return;
 
@@ -662,7 +799,25 @@ public class Move : Singleton<Move>
         Session.State.AppArmed = true;
         _ilsArmOutstanding = false;
         CancelInvoke(nameof(DescentCheck));
-        HideArmButton(true);
+        if (!IsFreeFlight())
+            HideArmButton(true);
+        else if (_armButton != null)
+        {
+            if (_armPulse != null)
+            {
+                StopCoroutine(_armPulse);
+                _armPulse = null;
+            }
+            var rt = _armButton.GetComponent<RectTransform>();
+            if (rt != null)
+                rt.localScale = Vector3.one;
+            if (_armButtonTxt != null)
+            {
+                _armButtonTxt.color = Color.gray;
+                _armButtonTxt.fontMaterial.SetFloat(ShaderUtilities.ID_GlowPower, 0f);
+            }
+            PlaceArmUnderVdi();
+        }
 
         if (Atc2 != null)
         {
@@ -1077,6 +1232,8 @@ public class Move : Singleton<Move>
     /// </summary>
     void AdvancePenaltyGrace()
     {
+        if (!PenaltyEnabled)
+            return;
         if (Time.frameCount == _penaltyFrame)
             return;
         _penaltyFrame = Time.frameCount;
@@ -1397,11 +1554,7 @@ public class Move : Singleton<Move>
         }
         else // Not New
         {
-            if (Session.CurrentLevel?.levelInfo != null)
-            {
-                LocDeviation(Session.CurrentLevel.levelInfo.Course);
-                GsDeviation(Session.CurrentLevel.levelInfo.GlideSlope);
-            }
+            UpdateApproachNeedles();
 
             BorderGuard();
         }
@@ -1466,6 +1619,11 @@ public class Move : Singleton<Move>
             TickLevelTestApproachArm();
             return;
         }
+
+        if (_currentLevelData?.ATCs == null || _currentLevelData.ATCs.Length == 0)
+            UpdateApproachNeedles();
+        if (IsFreeFlight() && _armButton != null && _armButton.gameObject.activeSelf)
+            PlaceArmUnderVdi();
 
         ATCCall();
         TrackAltitudeFix();
@@ -1598,6 +1756,14 @@ public class Move : Singleton<Move>
         return Mathf.Rad2Deg * Mathf.Atan2(crossTrackNm, alongFromThreshold);
     }
 
+    void UpdateApproachNeedles()
+    {
+        if (Session.CurrentLevel?.levelInfo == null)
+            return;
+        LocDeviation(Session.CurrentLevel.levelInfo.Course);
+        GsDeviation(Session.CurrentLevel.levelInfo.GlideSlope);
+    }
+
     public float LocDeviation(float course)
     {
         float Deviation = ComputeLocDeviationDegrees(course);
@@ -1609,7 +1775,8 @@ public class Move : Singleton<Move>
         {
             LOCIndex.enabled = true;
             float locFullScaleDegrees = LocCaptureDegrees;
-            float locNeedleX = Mathf.Clamp((Deviation / locFullScaleDegrees) * 1243f, -1243f, 1243f);
+            // Positive deviation is right of course. The bar shows the localizer, so it moves the other way.
+            float locNeedleX = Mathf.Clamp((-Deviation / locFullScaleDegrees) * 1243f, -1243f, 1243f);
             LOCIndex.transform.localPosition = new Vector2(locNeedleX, -645);
         }
         else

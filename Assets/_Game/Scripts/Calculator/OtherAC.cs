@@ -139,8 +139,12 @@ public class OtherAC
 
         if (TooCloseToOwn() || HideTrafficNearRunway())
         {
-            SuppressDisplay(acTexts, acPositions);
-            return;
+            RestartRoute();
+            if (_hidden || TooCloseToOwn() || HideTrafficNearRunway())
+            {
+                SuppressDisplay(acTexts, acPositions);
+                return;
+            }
         }
 
         if (!InsideTcasWindow())

@@ -163,7 +163,7 @@ public class LevelStartInformation : MonoBehaviour
         var builder = new StringBuilder();
         builder.AppendLine($"Course: {Session.CurrentLevel.levelInfo.Course}°");
         builder.AppendLine(
-            $"Cruise: {Calculator.FormatFmcAltitude(Session.CurrentLevel.levelInfo.CrzAltitude)} / {Session.CurrentLevel.levelInfo.CrzSpeed} KT");
+            $"Cruise: {Calculator.FormatFmcAltitude(Calculator.RouteIdZeroAltitude(Session.ActiveRoute))} / {Session.CurrentLevel.levelInfo.CrzSpeed} KT");
         builder.AppendLine(
             $"ZFW/Fuel: {Session.CurrentLevel.levelInfo.ZFW:0.#} / {Calculator.totalFuel / 100:0.#}");
         builder.AppendLine();

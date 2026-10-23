@@ -15,7 +15,6 @@ public class LevelInfoScriptableObject : ScriptableObject
     public int  Course;
     public float ZFW;
     public float Fuel;
-    public long CrzAltitude;
     public int CrzSpeed;
     public int F30Speed;
     public int DesEconSpeed;

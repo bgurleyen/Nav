@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   cMagenta: {r: 1, g: 0.2, b: 0.8, a: 1}
   cLightYellow: {r: 0.92156863, g: 0.8784314, b: 0.7882353, a: 1}
-  StartingZoom: 4
+  StartingZoom: 1
   MapReferenceLength80: 5.12
   PlanReferenceLength80: 3.82
   HDGProximityAdvanceDistance: 1.3

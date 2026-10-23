@@ -173,22 +173,14 @@ public class Calculator : MonoBehaviour
             return;
         }
 
-        var startPoint = points[0];
-        long cruiseAltitude = 0;
-        if (startPoint?.Altitude != null)
+        long cruiseAltitude = RouteIdZeroAltitude(Session.ActiveRoute);
+        if (cruiseAltitude <= 0)
         {
-            _ = startPoint.AltitudeRegulation;
-            cruiseAltitude = startPoint.Altitude.RestrictionExact;
+            cruiseAltitude = 10000;
+            SetRouteIdZeroAltitude(Session.ActiveRoute, (int)cruiseAltitude);
         }
 
         var info = Session.CurrentLevel.levelInfo;
-        if (cruiseAltitude <= 0 && info != null)
-            cruiseAltitude = info.CrzAltitude;
-        if (cruiseAltitude <= 0)
-            cruiseAltitude = 10000;
-
-        if (info != null)
-            info.CrzAltitude = cruiseAltitude;
         StartAltitude = cruiseAltitude;
 
         CSpeed = info != null && info.CrzSpeed > 0 ? info.CrzSpeed : 250;
@@ -589,7 +581,13 @@ public class Calculator : MonoBehaviour
                 i = 0; // Find speed for Current VS on idle
                 vv1 = (M[F, 0, i] - M[F, 2, i]) / IdleSpan(F) * (vsRef - IdleVs(F, 3)) + M[F, 2, i];
                 vv2 = (M[F - 1, 0, i] - M[F - 1, 2, i]) / IdleSpan(F - 1) * (vsRef - IdleVs(F - 1, 3)) + M[F - 1, 2, i];
-                increasedSpeed = (int)((vv1 - vv2) / -5000f * (Altitude - (8 - F + 1) * 5000) + vv2);
+                // A fixed VS has one idle speed. GS and VNAV make VS grow with speed, so
+                // chasing the chart speed of the current VS runs away. Use the speed where
+                // the idle descent rate equals the path angle.
+                if (Session.State.GSCaptured || Session.State.VNAV)
+                    increasedSpeed = EquilibriumIdleSpeed(PathFpmPerKnot(vsRef));
+                else
+                    increasedSpeed = (int)((vv1 - vv2) / -5000f * (Altitude - (8 - F + 1) * 5000) + vv2);
             }
             // Idle only when decelerating AND path still within idle capability (path first).
             if (RSpeed < CSpeed - 5 && pathWithinIdle)
@@ -1683,8 +1681,8 @@ public class Calculator : MonoBehaviour
     }
 
     /// <summary>
-    /// Soft GS track after capture: geometric slope + mild altitude correction,
-    /// deadband and RVS rate-limit to avoid hunting.
+    /// GS track after capture: geometric slope plus altitude correction at twice
+    /// the previous rate, with a deadband and RVS rate-limit.
     /// </summary>
     private void FlyGlideSlope()
     {
@@ -1695,10 +1693,10 @@ public class Calculator : MonoBehaviour
             ? Move.Instance.GsAltitudeDeviation(glide)
             : 0f; // + above path
 
-        // Ignore small errors; correct the rest slowly (~45 s) with a tight fpm cap.
+        // Ignore small errors. Close the rest in ~22 s, twice the previous capture rate.
         const float deadbandFt = 60f;
-        const float tauSec = 45f;
-        const float maxCorrectionFpm = 180f;
+        const float tauSec = 22.5f;
+        const float maxCorrectionFpm = 360f;
         float err = 0f;
         if (Mathf.Abs(altErr) > deadbandFt)
             err = altErr - Mathf.Sign(altErr) * deadbandFt;
@@ -1706,15 +1704,65 @@ public class Calculator : MonoBehaviour
         float correction = Mathf.Clamp(err * (60f / tauSec), -maxCorrectionFpm, maxCorrectionFpm);
         float desired = geometricVs - correction;
 
-        // 1 Hz path loop: limit how fast commanded VS can change.
-        const float maxDeltaFpmPerSec = 60f;
+        // 1 Hz path loop: commanded VS may move twice as fast onto the glideslope.
+        const float maxDeltaFpmPerSec = 120f;
         float next = Mathf.MoveTowards(RVS, desired, maxDeltaFpmPerSec);
         VNAV_VS = next;
         RVS = Mathf.RoundToInt(next);
     }
 
     /// <summary>
-    /// FMC CRZ altitude only — cleared when VNAV descent begins (page shows 00000).
+    /// First route point whose ID is 0. Later points that also use 0 are left alone.
+    /// </summary>
+    public static RoutePoint FirstRoutePointWithId(RouteScriptableObject route, int id)
+    {
+        var points = route?.Points;
+        if (points == null)
+            return null;
+
+        for (int i = 0; i < points.Length; i++)
+        {
+            var point = points[i];
+            if (point != null && point.ID == id)
+                return point;
+        }
+
+        return null;
+    }
+
+    /// <summary>Exact altitude of the route point with ID 0, or 0 when it has none.</summary>
+    public static long RouteIdZeroAltitude(RouteScriptableObject route)
+    {
+        var point = FirstRoutePointWithId(route, 0);
+        if (point?.Altitude == null)
+            return 0;
+
+        _ = point.AltitudeRegulation;
+        return point.Altitude.RestrictionExact > 0 ? point.Altitude.RestrictionExact : 0;
+    }
+
+    public static void SetRouteIdZeroAltitude(RouteScriptableObject route, int altitudeFeet)
+    {
+        var point = FirstRoutePointWithId(route, 0);
+        if (point == null)
+            return;
+
+        point.RawAltitude = altitudeFeet > 0
+            ? altitudeFeet.ToString(System.Globalization.CultureInfo.InvariantCulture)
+            : "";
+        if (point.Altitude != null)
+            _ = point.AltitudeRegulation;
+    }
+
+    static void SetSessionRouteIdZeroAltitude(int altitudeFeet)
+    {
+        SetRouteIdZeroAltitude(Session.ActiveRoute, altitudeFeet);
+        SetRouteIdZeroAltitude(Session.ModRoute, altitudeFeet);
+        SetRouteIdZeroAltitude(Session.ModeSetWithPosition, altitudeFeet);
+    }
+
+    /// <summary>
+    /// Clears the ID 0 altitude when VNAV descent begins (CRZ page shows 00000).
     /// Does not clear <see cref="StartAltitude"/> used by VNAV path math.
     /// </summary>
     public void ClearFmcCruiseAltitudeOnVnavDescentStart()
@@ -1723,8 +1771,7 @@ public class Calculator : MonoBehaviour
             return;
 
         _fmcCruiseClearedOnVnavDescent = true;
-        if (Session.CurrentLevel?.levelInfo != null)
-            Session.CurrentLevel.levelInfo.CrzAltitude = 0;
+        SetSessionRouteIdZeroAltitude(0);
 
         if (infoFMC.Instance?.Fmc?.Crz != null)
             infoFMC.Instance.Fmc.Crz.Altitude = FormatFmcCruiseAltitude(0);
@@ -1738,7 +1785,7 @@ public class Calculator : MonoBehaviour
     }
 
     /// <summary>
-    /// New FMC cruise altitude (feet). Updates TOD source and VNAV cruise reference, redraws route.
+    /// New cruise altitude (feet) on the route point with ID 0. Updates TOD and VNAV, redraws the route.
     /// </summary>
     public void ApplyFmcCruiseAltitude(int altitudeFeet)
     {
@@ -1747,8 +1794,7 @@ public class Calculator : MonoBehaviour
         _fmcCruiseClearedOnVnavDescent = altitudeFeet <= 0;
         _resetMcpAltitudePosted = false;
 
-        if (Session.CurrentLevel?.levelInfo != null)
-            Session.CurrentLevel.levelInfo.CrzAltitude = altitudeFeet;
+        SetSessionRouteIdZeroAltitude(altitudeFeet);
 
         if (infoFMC.Instance?.Fmc?.Crz != null)
             infoFMC.Instance.Fmc.Crz.Altitude = FormatFmcCruiseAltitude(altitudeFeet);
@@ -2005,6 +2051,57 @@ public class Calculator : MonoBehaviour
         double at = IdleVsOnRow(F, speed);
         double above = IdleVsOnRow(F - 1, speed);
         return (at - above) / -5000.0 * (altitude - (8 - F + 1) * 5000.0) + above + ConfigVsDelta();
+    }
+
+    /// <summary>
+    /// Descent rate of the active path, fpm per knot. GS uses the glideslope angle.
+    /// VNAV uses the commanded rate over current groundspeed, which stays put while
+    /// both vary together.
+    /// </summary>
+    static double PathFpmPerKnot(double vsRef)
+    {
+        if (Session.State != null && Session.State.GSCaptured && Session.CurrentLevel?.levelInfo != null)
+        {
+            float glide = Session.CurrentLevel.levelInfo.GlideSlope;
+            return 6076.0 * Math.Tan(glide * Math.PI / 180.0) / 60.0;
+        }
+
+        double gs = GS > 1f ? GS : 1.0;
+        return Math.Max(0.5, -vsRef / gs);
+    }
+
+    /// <summary>
+    /// Speed at which the config idle vertical speed matches a path of fpmPerKnot.
+    /// 0 when idle is already at least that steep at 110 kt (do not speed up).
+    /// 360 when the path is still steeper than idle there.
+    /// </summary>
+    static int EquilibriumIdleSpeed(double fpmPerKnot)
+    {
+        if (fpmPerKnot < 0.2)
+            return 0;
+
+        double alt = CAltitude > 39900 ? 39900 : (CAltitude < 0 ? 0 : CAltitude);
+        double Gap(double speed) => ConfigIdleVsAt(alt, speed) + fpmPerKnot * speed;
+
+        const double lo = 110;
+        const double hi = 360;
+        if (Gap(lo) <= 0)
+            return 0;
+        if (Gap(hi) > 0)
+            return (int)hi;
+
+        double a = lo;
+        double b = hi;
+        for (int n = 0; n < 24; n++)
+        {
+            double mid = (a + b) * 0.5;
+            if (Gap(mid) > 0)
+                a = mid;
+            else
+                b = mid;
+        }
+
+        return (int)Math.Round(b);
     }
 
     /// <summary>Same idle-path speed InterpolateVS stores in increasedSpeed for this VS.</summary>

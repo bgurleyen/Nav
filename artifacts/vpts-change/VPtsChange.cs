@@ -206,6 +206,8 @@ namespace VPtsChange
         public float X;
         public float Y;
         public float R;
+        public float W;
+        public float H;
         public string Kind;
         public string Label;
         public bool UsedByAtc;
@@ -831,6 +833,8 @@ namespace VPtsChange
         private double _cx, _cy, _scale;
         private double _zoomMul = 1;
         private double _panX, _panY;
+        private bool _panning;
+        private float _panLastX, _panLastY;
         private readonly List<NavBtn> _nav = new List<NavBtn>();
         private string _navHeld;
         private int _navTicks;
@@ -853,6 +857,8 @@ namespace VPtsChange
             _zoomMul = 1;
             _panX = 0;
             _panY = 0;
+            _panning = false;
+            Cursor = Cursors.Default;
             _freeze = false;
             _navHeld = null;
             _navClick = false;
@@ -867,6 +873,14 @@ namespace VPtsChange
             {
                 HitPt h = Hits[i];
                 if (h.Kind == "virtual" && Level != null && h.Id == Level.OriginNumber) continue;
+                if (h.W > 0f)
+                {
+                    RectangleF rc = new RectangleF(h.X - 2f, h.Y - 2f, h.W + 4f, h.H + 4f);
+                    if (!rc.Contains(x, y) || 0f >= bestD) continue;
+                    bestD = 0f;
+                    best = h;
+                    continue;
+                }
                 float dx = h.X - x;
                 float dy = h.Y - y;
                 float d = (float)Math.Sqrt(dx * dx + dy * dy);
@@ -888,6 +902,18 @@ namespace VPtsChange
         protected override void OnMouseDown(MouseEventArgs e)
         {
             base.OnMouseDown(e);
+            if (e.Button == MouseButtons.Right)
+            {
+                if (_dragVp != null) return;
+                float px, py;
+                CanvasPos(e.X, e.Y, out px, out py);
+                _panning = true;
+                _panLastX = px;
+                _panLastY = py;
+                Capture = true;
+                Cursor = Cursors.SizeAll;
+                return;
+            }
             _dragVp = null;
             _dragMoved = false;
             _navClick = false;
@@ -925,6 +951,22 @@ namespace VPtsChange
         protected override void OnMouseMove(MouseEventArgs e)
         {
             base.OnMouseMove(e);
+            if (_panning)
+            {
+                float px, py;
+                CanvasPos(e.X, e.Y, out px, out py);
+                float pdx = px - _panLastX;
+                float pdy = py - _panLastY;
+                _panLastX = px;
+                _panLastY = py;
+                if (_scale > 1e-9)
+                {
+                    _panX -= pdx / _scale;
+                    _panY += pdy / _scale;
+                }
+                Invalidate();
+                return;
+            }
             if (_dragVp == null || _scale < 1e-9) return;
             float x, y;
             if (!ToCanvas(e.X, e.Y, out x, out y)) return;
@@ -949,6 +991,13 @@ namespace VPtsChange
         protected override void OnMouseUp(MouseEventArgs e)
         {
             base.OnMouseUp(e);
+            if (e.Button == MouseButtons.Right)
+            {
+                _panning = false;
+                if (_dragVp == null) Capture = false;
+                Cursor = Cursors.Default;
+                return;
+            }
             if (e.Button != MouseButtons.Left) return;
             Capture = false;
             if (_navTimer != null) _navTimer.Stop();
@@ -998,12 +1047,18 @@ namespace VPtsChange
             }
         }
 
-        private bool ToCanvas(int mx, int my, out float cx, out float cy)
+        private void CanvasPos(int mx, int my, out float x, out float y)
         {
             float fit, ox, oy;
             Fit(out fit, out ox, out oy);
-            cx = (mx - ox) / fit;
-            cy = (my - oy) / fit;
+            if (fit <= 0f) fit = 1f;
+            x = (mx - ox) / fit;
+            y = (my - oy) / fit;
+        }
+
+        private bool ToCanvas(int mx, int my, out float cx, out float cy)
+        {
+            CanvasPos(mx, my, out cx, out cy);
             return cx >= 0 && cy >= 0 && cx <= Cw && cy <= Ch;
         }
 
@@ -1041,18 +1096,9 @@ namespace VPtsChange
             Color header = RGB(0.08, 0.14, 0.22);
             Color paper = Color.White;
             Color border = RGB(0.78, 0.82, 0.88);
-            Color star = RGB(0.18, 0.42, 0.72);
-            Color starW = RGB(0.72, 0.84, 0.94);
-            Color atc = RGB(0.92, 0.42, 0.08);
-            Color startC = RGB(0.12, 0.62, 0.32);
-            Color endC = RGB(0.82, 0.18, 0.18);
             Color vp = RGB(0.52, 0.28, 0.72);
-            Color vpFill = RGB(0.92, 0.86, 0.98);
-            Color ink = RGB(0.12, 0.14, 0.18);
             Color muted = RGB(0.4, 0.45, 0.52);
             Color gold = RGB(0.95, 0.78, 0.25);
-            Color ils = RGB(0.82, 0.12, 0.55);
-            Color acCol = Color.FromArgb(20, 90, 200);
 
             g.FillRectangle(new SolidBrush(bg), 0, 0, Cw, Ch);
             if (Level == null)
@@ -1195,27 +1241,21 @@ namespace VPtsChange
 
             g.DrawRectangle(new Pen(RGB(0.88, 0.9, 0.93), 0.5f), plotX, plotY, plotW, plotH);
 
-            using (Pen wide = new Pen(starW, 5f))
-            using (Pen thin = new Pen(star, 1.8f))
+            using (Pen routePen = new Pen(Color.FromArgb(120, 190, 240), 2.6f))
             {
-                wide.LineJoin = LineJoin.Round; thin.LineJoin = LineJoin.Round;
+                routePen.LineJoin = LineJoin.Round;
+                routePen.StartCap = LineCap.Round;
+                routePen.EndCap = LineCap.Round;
                 for (int i = _routeStart + 1; i < pts.Count; i++)
                 {
                     Vec a, b;
                     if (!pos.TryGetValue("R:" + pts[i - 1].Id, out a)) continue;
                     if (!pos.TryGetValue("R:" + pts[i].Id, out b)) continue;
-                    g.DrawLine(wide, (float)a.X, (float)a.Y, (float)b.X, (float)b.Y);
-                }
-                for (int i = _routeStart + 1; i < pts.Count; i++)
-                {
-                    Vec a, b;
-                    if (!pos.TryGetValue("R:" + pts[i - 1].Id, out a)) continue;
-                    if (!pos.TryGetValue("R:" + pts[i].Id, out b)) continue;
-                    g.DrawLine(thin, (float)a.X, (float)a.Y, (float)b.X, (float)b.Y);
+                    g.DrawLine(routePen, (float)a.X, (float)a.Y, (float)b.X, (float)b.Y);
                 }
             }
 
-            using (Pen atcPen = new Pen(atc, 2.3f))
+            using (Pen atcPen = new Pen(Color.FromArgb(240, 196, 0), 2.4f))
             {
                 atcPen.DashPattern = new float[] { 7f, 3.5f };
                 atcPen.LineJoin = LineJoin.Round;
@@ -1249,11 +1289,6 @@ namespace VPtsChange
                 }
             }
 
-            RoutePt rwyPt = pts[pts.Count - 1];
-            double rwyElev = Fmt.NumericAlt(rwyPt.RawAltitude);
-            double totalNm = rwyPt.CumDist;
-            List<RectangleF> boxes = new List<RectangleF>();
-
             using (Font fNum = new Font("Segoe UI", 6.2f, FontStyle.Bold, GraphicsUnit.Point))
             using (Font fLab = new Font("Segoe UI", 6.4f, FontStyle.Regular, GraphicsUnit.Point))
             {
@@ -1263,77 +1298,33 @@ namespace VPtsChange
                     Vec mpt;
                     if (!pos.TryGetValue("R:" + p.Id, out mpt)) continue;
                     AtcItem a = AssetLoader.FindAtc(Level, p.Id);
-                    bool isIls = Fmt.IsIls(a);
-                    bool isStart = i == _routeStart;
-                    bool isEnd = i == pts.Count - 1;
-                    int gs = Fmt.Gs3Alt(totalNm - p.CumDist, rwyElev);
-                    string gsTxt = gs.ToString(CultureInfo.InvariantCulture);
-                    SizeF tw = g.MeasureString(gsTxt, fNum);
-                    float r = Math.Max(11f, tw.Width / 2f + 3.2f);
-                    Color fill = isIls ? RGB(0.98, 0.88, 0.94) : isStart ? RGB(0.82, 0.95, 0.86) : isEnd ? RGB(0.98, 0.88, 0.88) : a != null ? RGB(1.0, 0.93, 0.86) : Color.White;
-                    Color stroke = isIls ? ils : a != null ? atc : isStart ? startC : isEnd ? endC : RGB(0.1, 0.2, 0.35);
-                    using (SolidBrush br = new SolidBrush(fill))
-                    using (Pen pn = new Pen(stroke, isIls ? 1.8f : a != null ? 1.3f : 0.7f))
-                    {
-                        g.FillEllipse(br, (float)mpt.X - r, (float)mpt.Y - r, r * 2, r * 2);
-                        g.DrawEllipse(pn, (float)mpt.X - r, (float)mpt.Y - r, r * 2, r * 2);
-                        if (isIls) g.DrawEllipse(new Pen(ils, 1.4f), (float)mpt.X - r - 3, (float)mpt.Y - r - 3, (r + 3) * 2, (r + 3) * 2);
-                    }
-                    g.DrawString(gsTxt, fNum, new SolidBrush(ink), (float)mpt.X - tw.Width / 2f, (float)mpt.Y - tw.Height / 2f);
-                    float outer = isIls ? r + 3 : r;
-                    boxes.Add(new RectangleF((float)mpt.X - outer - 1.5f, (float)mpt.Y - outer - 1.5f, (outer + 1.5f) * 2, (outer + 1.5f) * 2));
+                    string numTxt = p.Id.ToString(CultureInfo.InvariantCulture);
+                    SizeF tw = g.MeasureString(numTxt, fNum);
+                    float r = Math.Max(7f, tw.Width / 2f + 1.2f);
                     HitPt hp = new HitPt();
-                    hp.Id = p.Id; hp.X = (float)mpt.X; hp.Y = (float)mpt.Y; hp.R = outer;
-                    hp.Kind = "route"; hp.Label = "#" + p.Id + " " + p.Name;
-                    hp.IsIls = isIls; hp.IsStart = isStart; hp.IsEnd = isEnd; hp.UsedByAtc = a != null; hp.GsAlt = gs;
-                    string sa = Fmt.StarAlt(p.RawAltitude); string ss = Fmt.StarSpd(p.RawSpeed);
-                    hp.StarRest = (sa + " " + ss).Trim();
-                    string aa = Fmt.AtcAlt(a); string aspd = Fmt.AtcSpd(a);
-                    hp.AtcRest = ((aa + " " + aspd).Trim());
+                    hp.Id = p.Id; hp.X = (float)mpt.X; hp.Y = (float)mpt.Y; hp.R = r;
+                    hp.Kind = "route"; hp.Label = p.Id.ToString(CultureInfo.InvariantCulture);
+                    hp.IsIls = Fmt.IsIls(a); hp.IsStart = i == _routeStart; hp.IsEnd = i == pts.Count - 1; hp.UsedByAtc = a != null;
                     Hits.Add(hp);
                 }
 
                 for (int i = 0; i < vpDraw.Count; i++)
                 {
                     HitPt item = vpDraw[i];
-                    if (item.UsedByAtc)
+                    string numTxt = item.Id.ToString(CultureInfo.InvariantCulture);
+                    SizeF tw = g.MeasureString(numTxt, fNum);
+                    float rw = Math.Max(14f, tw.Width + 5f);
+                    float rh = Math.Max(12f, tw.Height + 1f);
+                    g.FillRectangle(Brushes.Black, item.X, item.Y, rw, rh);
+                    using (StringFormat sf = new StringFormat())
                     {
-                        Vp world = AssetLoader.ResolveVp(Level, item.Id);
-                        double remain = 0;
-                        if (world != null)
-                        {
-                            double dx = world.X - rwyPt.X, dy = world.Y - rwyPt.Y;
-                            remain = Math.Sqrt(dx * dx + dy * dy);
-                        }
-                        int gs = Fmt.Gs3Alt(remain, rwyElev);
-                        string gsTxt = gs.ToString(CultureInfo.InvariantCulture);
-                        SizeF tw = g.MeasureString(gsTxt, fNum);
-                        float r = Math.Max(11f, tw.Width / 2f + 3.2f);
-                        Color stroke = item.IsIls ? ils : atc;
-                        using (SolidBrush br = new SolidBrush(vpFill))
-                        using (Pen pn = new Pen(stroke, item.IsIls ? 1.8f : 1.3f))
-                        {
-                            g.FillEllipse(br, item.X - r, item.Y - r, r * 2, r * 2);
-                            g.DrawEllipse(pn, item.X - r, item.Y - r, r * 2, r * 2);
-                            if (item.IsIls) g.DrawEllipse(new Pen(ils, 1.4f), item.X - r - 3, item.Y - r - 3, (r + 3) * 2, (r + 3) * 2);
-                        }
-                        g.DrawString(gsTxt, fNum, new SolidBrush(ink), item.X - tw.Width / 2f, item.Y - tw.Height / 2f);
-                        item.R = item.IsIls ? r + 3 : r;
-                        item.GsAlt = gs;
-                        boxes.Add(new RectangleF(item.X - item.R - 1.5f, item.Y - item.R - 1.5f, (item.R + 1.5f) * 2, (item.R + 1.5f) * 2));
+                        sf.Alignment = StringAlignment.Center;
+                        sf.LineAlignment = StringAlignment.Center;
+                        g.DrawString(numTxt, fNum, Brushes.White, new RectangleF(item.X, item.Y, rw, rh), sf);
                     }
-                    else
-                    {
-                        float sz = item.Outside ? 6f : 5f;
-                        PointF[] dia = new PointF[] {
-                            new PointF(item.X, item.Y - sz), new PointF(item.X + sz, item.Y),
-                            new PointF(item.X, item.Y + sz), new PointF(item.X - sz, item.Y)
-                        };
-                        g.FillPolygon(new SolidBrush(vpFill), dia);
-                        g.DrawPolygon(new Pen(vp, 1f), dia);
-                        item.R = sz + 2;
-                        boxes.Add(new RectangleF(item.X - 8, item.Y - 8, 16, 16));
-                    }
+                    item.W = rw;
+                    item.H = rh;
+                    item.R = Math.Max(rw, rh);
                     if (item.Outside)
                     {
                         float tick = 7f;
@@ -1345,25 +1336,6 @@ namespace VPtsChange
                     Hits.Add(item);
                 }
 
-                HashSet<int> selected = new HashSet<int>(CurrentRoute);
-                using (Pen acPen = new Pen(acCol, 3.2f))
-                {
-                    acPen.LineJoin = LineJoin.Round;
-                    acPen.StartCap = LineCap.Round;
-                    acPen.EndCap = LineCap.Round;
-                    List<PointF> poly = new List<PointF>();
-                    for (int i = 0; i < CurrentRoute.Count; i++)
-                    {
-                        HitPt hp = FindHit(CurrentRoute[i]);
-                        if (hp != null) poly.Add(new PointF(hp.X, hp.Y));
-                    }
-                    if (poly.Count >= 2) g.DrawLines(acPen, poly.ToArray());
-                    for (int i = 0; i < poly.Count; i++)
-                    {
-                        g.FillEllipse(new SolidBrush(acCol), poly[i].X - 4, poly[i].Y - 4, 8, 8);
-                    }
-                }
-
                 List<Vec> anchors = new List<Vec>();
                 for (int i = _routeStart; i < pts.Count; i++)
                 {
@@ -1373,85 +1345,32 @@ namespace VPtsChange
                 for (int i = 0; i < vpDraw.Count; i++) anchors.Add(new Vec(vpDraw[i].X, vpDraw[i].Y));
                 RectangleF tbl = PlaceTable(plotX, plotY, plotW, plotH, Level.Atc.Count, anchors);
                 DrawAtcTable(g, tbl, Level, fLab);
-                boxes.Add(new RectangleF(tbl.X - 3, tbl.Y - 3, tbl.Width + 6, tbl.Height + 6));
-
-                float lblL = x0 + 6, lblR = x0 + w - 6, lblB = y0 + 6, lblTtop = y0 + h - 6;
-                for (int i = 0; i < Hits.Count; i++)
-                {
-                    HitPt hp = Hits[i];
-                    List<string> lines = new List<string>();
-                    if (hp.Kind == "route")
-                    {
-                        lines.Add(hp.Label.Trim());
-                        if (!string.IsNullOrEmpty(hp.StarRest)) lines.Add(hp.StarRest);
-                        if (!string.IsNullOrEmpty(hp.AtcRest)) lines.Add("ATC " + hp.AtcRest);
-                        if (hp.IsIls) lines.Add("ILS CLR");
-                    }
-                    else
-                    {
-                        List<int> nums = new List<int>(hp.GroupIds);
-                        nums.Sort();
-                        string name;
-                        if (nums.Count <= 3)
-                        {
-                            StringBuilder nb = new StringBuilder();
-                            for (int k = 0; k < nums.Count; k++)
-                            {
-                                if (k > 0) nb.Append("/");
-                                nb.Append("V").Append(nums[k]);
-                            }
-                            name = nb.ToString();
-                        }
-                        else name = string.Format("V{0}-{1} ({2})", nums[0], nums[nums.Count - 1], nums.Count);
-                        lines.Add(name);
-                        if (hp.Outside) lines.Add("out");
-                        AtcItem ai = AssetLoader.FindAtc(Level, hp.Id);
-                        string aa = Fmt.AtcAlt(ai); string aspd = Fmt.AtcSpd(ai);
-                        if (!string.IsNullOrEmpty(aa) || !string.IsNullOrEmpty(aspd))
-                            lines.Add(("ATC " + aa + " " + aspd).Trim());
-                        if (hp.IsIls) lines.Add("ILS CLR");
-                    }
-                    float bw = 4, bh = lines.Count * 9f + 3f;
-                    for (int li = 0; li < lines.Count; li++)
-                    {
-                        float tw = g.MeasureString(lines[li], fLab).Width;
-                        if (tw + 4 > bw) bw = tw + 4;
-                    }
-                    RectangleF box = PickSlot(hp.X, hp.Y, bw, bh, boxes, lblL, lblR, lblB, lblTtop);
-                    boxes.Add(box);
-                    Color lc = hp.IsIls ? ils : hp.Kind == "virtual" ? vp : hp.IsEnd ? endC : ink;
-                    float dx = box.X + box.Width / 2f - hp.X;
-                    float dy = box.Y + box.Height / 2f - hp.Y;
-                    if (dx * dx + dy * dy > (hp.R + 8) * (hp.R + 8))
-                    {
-                        PointF attach = NearestOnBox(hp.X, hp.Y, box);
-                        using (Pen ap = new Pen(lc, 0.7f))
-                        {
-                            float len = (float)Math.Sqrt((attach.X - hp.X) * (attach.X - hp.X) + (attach.Y - hp.Y) * (attach.Y - hp.Y));
-                            if (len > 10)
-                            {
-                                float ux = (hp.X - attach.X) / len;
-                                float uy = (hp.Y - attach.Y) / len;
-                                float gap = hp.R + 1.6f;
-                                PointF end = new PointF(hp.X - ux * gap, hp.Y - uy * gap);
-                                g.DrawLine(ap, attach, end);
-                            }
-                        }
-                    }
-                    g.FillRectangle(new SolidBrush(Color.FromArgb(250, 250, 252)), box);
-                    g.DrawRectangle(new Pen(RGB(0.82, 0.84, 0.88), 0.4f), box.X, box.Y, box.Width, box.Height);
-                    using (SolidBrush tb = new SolidBrush(lc))
-                    {
-                        for (int li = 0; li < lines.Count; li++)
-                            g.DrawString(lines[li], fLab, tb, box.X + 2, box.Y + 1 + li * 9f);
-                    }
-                    if (selected.Contains(hp.Id))
-                        g.DrawEllipse(new Pen(acCol, 2f), hp.X - hp.R - 2, hp.Y - hp.R - 2, (hp.R + 2) * 2, (hp.R + 2) * 2);
-                }
             }
 
             DrawLiveTraffic(g, plotX, plotY, plotW, plotH, cx, cy, scale);
+            DrawRouteCircles(g);
             DrawNav(g);
+        }
+
+        private void DrawRouteCircles(Graphics g)
+        {
+            using (Font fNum = new Font("Segoe UI", 6.2f, FontStyle.Bold, GraphicsUnit.Point))
+            using (StringFormat sf = new StringFormat())
+            using (Pen edge = new Pen(Color.Black, 0.9f))
+            {
+                sf.Alignment = StringAlignment.Center;
+                sf.LineAlignment = StringAlignment.Center;
+                for (int i = 0; i < Hits.Count; i++)
+                {
+                    HitPt hp = Hits[i];
+                    if (hp.Kind != "route") continue;
+                    float r = hp.R;
+                    bool rwy = hp.IsEnd;
+                    g.FillEllipse(rwy ? Brushes.Red : Brushes.White, hp.X - r, hp.Y - r, r * 2f, r * 2f);
+                    g.DrawEllipse(rwy ? Pens.DarkRed : edge, hp.X - r, hp.Y - r, r * 2f, r * 2f);
+                    g.DrawString(hp.Label, fNum, rwy ? Brushes.White : Brushes.Black, new RectangleF(hp.X - r, hp.Y - r, r * 2f, r * 2f), sf);
+                }
+            }
         }
 
         private class NavBtn
@@ -1919,8 +1838,9 @@ namespace VPtsChange
         {
             int n = Math.Max(1, atcCount);
             float rowH = n >= 11 ? 10f : 11.4f;
+            int gaps = atcCount > 1 ? atcCount - 1 : 0;
             float tw = 292f;
-            float th = 5f + 13f + 12f + n * rowH + 5f;
+            float th = 5f + 13f + 12f + n * rowH + gaps * rowH + 5f;
             float m = 10f;
             Vec[] cands = new Vec[] {
                 new Vec(plotX + m, plotY + m),
@@ -1977,13 +1897,14 @@ namespace VPtsChange
                 return;
             }
             float rowH = n >= 11 ? 10f : 11.4f;
+            float step = rowH * 2f;
             using (Font fr = new Font("Segoe UI", 6.3f, FontStyle.Regular, GraphicsUnit.Point))
             using (Font fb = new Font("Segoe UI", 6.3f, FontStyle.Bold, GraphicsUnit.Point))
             {
                 for (int i = 0; i < n; i++)
                 {
                     AtcItem a = lv.Atc[i];
-                    float ry = tbl.Y + titleH + headH + i * rowH;
+                    float ry = tbl.Y + titleH + headH + i * step;
                     if (i % 2 == 0) g.FillRectangle(new SolidBrush(Color.FromArgb(247, 250, 255)), tbl.X + 1, ry, tbl.Width - 2, rowH);
                     string ptName;
                     if (a.Point < 50)

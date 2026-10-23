@@ -539,6 +539,16 @@ public class GraphManage : MonoBehaviour
         if (LevelTestMode.TryHandleGameFinished())
             return;
 
+        if (PlayerPrefsHolder.ActiveLevel == PlayerPrefsHolder.FreeFlightLevel)
+        {
+            _finishHandled = true;
+            IsEndScreenVisible = true;
+            Time.timeScale = 0f;
+            SwitchToGraphUi();
+            ShowLevelSelect();
+            return;
+        }
+
         _finishHandled = true;
         IsEndScreenVisible = true;
         Time.timeScale = 0f;

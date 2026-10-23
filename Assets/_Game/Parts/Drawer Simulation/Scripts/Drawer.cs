@@ -434,11 +434,8 @@ public class Drawer : MonoBehaviour
 
     private static double ResolveCruiseAltitude(RouteScriptableObject route)
     {
-        // FMC CRZ page altitude drives TOD. Cleared to 0 when VNAV descent starts.
-        if (Session.CurrentLevel?.levelInfo != null && Session.CurrentLevel.levelInfo.CrzAltitude > 0)
-            return Session.CurrentLevel.levelInfo.CrzAltitude;
-
-        return 0;
+        // Route point ID 0 altitude drives TOD. Cleared to 0 when VNAV descent starts.
+        return Calculator.RouteIdZeroAltitude(route);
     }
 
     private void DisplayFixCircles()

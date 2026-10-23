@@ -218,7 +218,7 @@ public class CRZScreen : ScreenBase
                     SetNumericValue(_crzSpeed,
                         Calculator.FormatFmcSpeedDisplay(
                             _scratchPadInterpreter.SpeedRegulation.Value,
-                            Session.CurrentLevel.levelInfo.CrzAltitude,
+                            Calculator.RouteIdZeroAltitude(Session.ActiveRoute),
                             machDigits: 3),
                         modified: true);
                 }

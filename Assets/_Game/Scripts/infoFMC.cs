@@ -81,10 +81,11 @@ namespace Navigation.Data
             Fmc.Des.RWAltitude = Calculator.FormatFmcAltitude((long)RW_Alt);
             Fmc.Des.EconSpeed = Calculator.FormatMachIas(levelData.DesEconMach, levelData.DesEconSpeed);
 
+            long cruiseAltitude = Calculator.RouteIdZeroAltitude(activePoints);
             Fmc.Crz.Destination = levelData.Destination;
-            Fmc.Crz.Altitude = Calculator.FormatFmcCruiseAltitude(levelData.CrzAltitude);
+            Fmc.Crz.Altitude = Calculator.FormatFmcCruiseAltitude(cruiseAltitude);
             Fmc.Crz.Speed = Calculator.FormatFmcSpeedDisplay(
-                levelData.CrzSpeed, levelData.CrzAltitude, machDigits: 3);
+                levelData.CrzSpeed, cruiseAltitude, machDigits: 3);
             Fmc.Crz.ActualWind = "" + Calculator.CWind;
 
             Fmc.Arr.Destination = levelData.Destination;

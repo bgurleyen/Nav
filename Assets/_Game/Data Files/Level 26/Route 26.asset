@@ -20,63 +20,63 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 39000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: CARLI
     RawDegrees: 88
     Distance: 55.4
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 2
     Name: DKI44
     RawDegrees: 89
     Distance: 37.6
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 3
     Name: NOKTA
     RawDegrees: 164
     Distance: 13.4
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 4
     Name: DKI28
     RawDegrees: 207
     Distance: 41.2
     RawSpeed: 0
     RawAltitude: 6000A
     Details: 
-  - ID: 0
+  - ID: 5
     Name: DKI-42
     RawDegrees: 255
     Distance: 14
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 6
     Name: INTC
     RawDegrees: 158
     Distance: 6.9
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 7
     Name: CF07R
     RawDegrees: 68
     Distance: 8.4
     RawSpeed: 179
     RawAltitude: 3000
     Details: 
-  - ID: 0
+  - ID: 8
     Name: OM07R
     RawDegrees: 64
     Distance: 4.2
     RawSpeed: 173
     RawAltitude: 1693
     Details: 
-  - ID: 0
+  - ID: 9
     Name: RW07R
     RawDegrees: 68
     Distance: 5.2

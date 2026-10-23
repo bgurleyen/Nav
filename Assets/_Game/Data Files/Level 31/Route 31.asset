@@ -20,56 +20,56 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 27000
     Details: 
-  - ID: 0
+  - ID: 1
     Name: 'NOLSI '
     RawDegrees: 182
     Distance: 50.7
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 2
     Name: MARSA
     RawDegrees: 171
     Distance: 60.1
     RawSpeed: 0
     RawAltitude: 3000A
     Details: 
-  - ID: 0
+  - ID: 3
     Name: D062M
     RawDegrees: 173
     Distance: 5.6
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 4
     Name: D082M
     RawDegrees: 161
     Distance: 4.5
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 0
+  - ID: 5
     Name: D103M
     RawDegrees: 182
     Distance: 5.1
     RawSpeed: 0
     RawAltitude: 2200A
     Details: 
-  - ID: 0
+  - ID: 6
     Name: CI29
     RawDegrees: 247
     Distance: 2.6
     RawSpeed: 179
     RawAltitude: 2200
     Details: 
-  - ID: 0
+  - ID: 7
     Name: 'FI29 '
     RawDegrees: 291
     Distance: 3.5
     RawSpeed: 173
     RawAltitude: 2200
     Details: 
-  - ID: 0
+  - ID: 8
     Name: RW29
     RawDegrees: 291
     Distance: 6.8

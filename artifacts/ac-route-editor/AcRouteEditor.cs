@@ -205,6 +205,8 @@ namespace AcRouteEditor
         public float X;
         public float Y;
         public float R;
+        public float W;
+        public float H;
         public string Kind;
         public string Label;
         public bool UsedByAtc;
@@ -809,14 +811,43 @@ namespace AcRouteEditor
     {
         public LevelData Level;
         public List<int> CurrentRoute = new List<int>();
+        public List<List<int>> TrafficRoutes = new List<List<int>>();
         public HashSet<int> UsedPointIds = new HashSet<int>();
         public int CurrentAc = 1;
         public LiveSnapshot Live;
         public event Action<int> PointClicked;
+        public event Action SimUiChanged;
 
         public readonly List<HitPt> Hits = new List<HitPt>();
         private const float Cw = 1191f;
         private const float Ch = 842f;
+        private Vp _dragVp;
+        private bool _dragMoved;
+        private bool _dragWasZero;
+        private float _downX, _downY;
+        private double _dragRawX, _dragRawY, _dragWX, _dragWY;
+        private bool _freeze;
+        private float _plotX, _plotY, _plotW, _plotH;
+        private double _cx, _cy, _scale = 1;
+        private bool _playing;
+        private bool _paused;
+        private bool _finished;
+        private bool _fast;
+        private Timer _flyTimer;
+        private DateTime _flyStamp;
+        private List<int> _ownIds = new List<int>();
+        private int _ownNext;
+        private int _ownPhase;
+        private bool _ownIls;
+        private double _ownX, _ownY, _ownDirX, _ownDirY, _ownCross, _ownStraight;
+        private bool _ownVisible;
+        private readonly List<int>[] _acIds = new List<int>[10];
+        private readonly int[] _acNext = new int[10];
+        private readonly double[] _acX = new double[10];
+        private readonly double[] _acY = new double[10];
+        private readonly bool[] _acOn = new bool[10];
+        private readonly bool[] _acHide = new bool[10];
+        private double _rwyAlt;
 
         public ChartPanel()
         {
@@ -824,19 +855,71 @@ namespace AcRouteEditor
             ResizeRedraw = true;
             BackColor = Color.FromArgb(237, 239, 245);
             this.SetStyle(ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.UserPaint, true);
+            _flyTimer = new Timer();
+            _flyTimer.Interval = 40;
+            _flyTimer.Tick += delegate { FlyTick(); };
         }
 
-        protected override void OnMouseClick(MouseEventArgs e)
+        public bool IsRunning { get { return _playing && !_paused; } }
+        public bool FastOn { get { return _fast; } }
+
+        public void StopPlayback()
         {
-            base.OnMouseClick(e);
-            if (e.Button != MouseButtons.Left || Hits.Count == 0) return;
-            float x, y;
-            if (!ToCanvas(e.X, e.Y, out x, out y)) return;
+            _playing = false;
+            _paused = false;
+            _finished = false;
+            _ownVisible = false;
+            for (int i = 0; i < 10; i++)
+            {
+                _acOn[i] = false;
+                _acHide[i] = false;
+            }
+            if (_flyTimer != null) _flyTimer.Stop();
+            if (SimUiChanged != null) SimUiChanged();
+            Invalidate();
+        }
+
+        public void ToggleFast()
+        {
+            _fast = !_fast;
+            if (SimUiChanged != null) SimUiChanged();
+        }
+
+        public void TogglePlay()
+        {
+            if (_playing && !_paused)
+            {
+                _paused = true;
+                if (_flyTimer != null) _flyTimer.Stop();
+                if (SimUiChanged != null) SimUiChanged();
+                return;
+            }
+            if (_paused && !_finished)
+            {
+                _paused = false;
+                _flyStamp = DateTime.UtcNow;
+                if (_flyTimer != null) _flyTimer.Start();
+                if (SimUiChanged != null) SimUiChanged();
+                return;
+            }
+            BeginPlayback();
+        }
+
+        private HitPt PickHit(float x, float y)
+        {
             HitPt best = null;
             float bestD = 22f;
-            for (int i = 0; i < Hits.Count; i++)
+            for (int i = Hits.Count - 1; i >= 0; i--)
             {
                 HitPt h = Hits[i];
+                if (h.W > 0f)
+                {
+                    RectangleF rc = new RectangleF(h.X - 2f, h.Y - 2f, h.W + 4f, h.H + 4f);
+                    if (!rc.Contains(x, y) || 0f >= bestD) continue;
+                    bestD = 0f;
+                    best = h;
+                    continue;
+                }
                 float dx = h.X - x;
                 float dy = h.Y - y;
                 float d = (float)Math.Sqrt(dx * dx + dy * dy);
@@ -847,6 +930,98 @@ namespace AcRouteEditor
                     best = h;
                 }
             }
+            return best;
+        }
+
+        private bool InsidePlot(float x, float y)
+        {
+            return x >= _plotX && x <= _plotX + _plotW && y >= _plotY && y <= _plotY + _plotH;
+        }
+
+        protected override void OnMouseDown(MouseEventArgs e)
+        {
+            base.OnMouseDown(e);
+            _dragVp = null;
+            _dragMoved = false;
+            if (e.Button != MouseButtons.Left) return;
+            float x, y;
+            if (!ToCanvas(e.X, e.Y, out x, out y)) return;
+            _downX = x;
+            _downY = y;
+            HitPt best = PickHit(x, y);
+            if (best == null || best.Kind != "virtual") return;
+            Vp v = FindVp(best.Id);
+            if (v == null) return;
+            _dragVp = v;
+            _dragWasZero = v.IsRawZero;
+            _dragRawX = v.RawX;
+            _dragRawY = v.RawY;
+            _dragWX = v.X;
+            _dragWY = v.Y;
+            _freeze = true;
+            Capture = true;
+        }
+
+        protected override void OnMouseMove(MouseEventArgs e)
+        {
+            base.OnMouseMove(e);
+            if (_dragVp == null || _scale < 1e-9) return;
+            float x, y;
+            if (!ToCanvas(e.X, e.Y, out x, out y)) return;
+            float dx = x - _downX;
+            float dy = y - _downY;
+            if (dx * dx + dy * dy > 16f) _dragMoved = true;
+            if (!_dragMoved) return;
+            if (_dragWasZero && !InsidePlot(x, y))
+            {
+                _dragVp.X = _dragWX;
+                _dragVp.Y = _dragWY;
+            }
+            else
+                ApplyScreenToVp(_dragVp, x, y, _plotX, _plotY, _plotW, _plotH, _cx, _cy, _scale);
+            Invalidate();
+        }
+
+        protected override void OnMouseUp(MouseEventArgs e)
+        {
+            base.OnMouseUp(e);
+            if (e.Button != MouseButtons.Left) return;
+            Capture = false;
+            float x, y;
+            bool on = ToCanvas(e.X, e.Y, out x, out y);
+            if (_dragVp != null)
+            {
+                if (_dragMoved)
+                {
+                    bool inside = on && InsidePlot(x, y);
+                    bool commit = !_dragWasZero || inside;
+                    if (!commit)
+                    {
+                        _dragVp.RawX = _dragRawX;
+                        _dragVp.RawY = _dragRawY;
+                        _dragVp.X = _dragWX;
+                        _dragVp.Y = _dragWY;
+                    }
+                    else
+                    {
+                        if (on)
+                            ApplyScreenToVp(_dragVp, x, y, _plotX, _plotY, _plotW, _plotH, _cx, _cy, _scale);
+                        try { AssetLoader.WriteVirtualPoints(Level); }
+                        catch (Exception ex) { Program.Log("WriteVirtualPoints: " + ex.Message); }
+                    }
+                }
+                else if (on && PointClicked != null)
+                    PointClicked(_dragVp.Number);
+                _dragVp = null;
+                _freeze = false;
+                Invalidate();
+                return;
+            }
+            if (!on) return;
+            float mdx = x - _downX;
+            float mdy = y - _downY;
+            if (mdx * mdx + mdy * mdy > 16f) return;
+            HitPt best = PickHit(x, y);
             if (best != null && PointClicked != null) PointClicked(best.Id);
         }
 
@@ -893,17 +1068,8 @@ namespace AcRouteEditor
             Color header = RGB(0.08, 0.14, 0.22);
             Color paper = Color.White;
             Color border = RGB(0.78, 0.82, 0.88);
-            Color star = RGB(0.18, 0.42, 0.72);
-            Color starW = RGB(0.72, 0.84, 0.94);
-            Color atc = RGB(0.92, 0.42, 0.08);
-            Color startC = RGB(0.12, 0.62, 0.32);
-            Color endC = RGB(0.82, 0.18, 0.18);
-            Color vp = RGB(0.52, 0.28, 0.72);
-            Color vpFill = RGB(0.92, 0.86, 0.98);
-            Color ink = RGB(0.12, 0.14, 0.18);
             Color muted = RGB(0.4, 0.45, 0.52);
             Color gold = RGB(0.95, 0.78, 0.25);
-            Color ils = RGB(0.82, 0.12, 0.55);
             Color acCol = Color.FromArgb(20, 90, 200);
 
             g.FillRectangle(new SolidBrush(bg), 0, 0, Cw, Ch);
@@ -924,7 +1090,7 @@ namespace AcRouteEditor
                 g.DrawString("LEVEL " + n, fBig, new SolidBrush(gold), 16, 8);
                 string title = string.Format("{0}  |  RWY {1}  |  STAR {2}  |  TRANS {3}", info.Destination, info.Runway, info.Star, info.Transition);
                 g.DrawString(title, fMid, Brushes.White, 140, 6);
-                string sub = string.Format("CRS {0} deg  |  ILS {1}  |  click points for AC{2}  |  3deg GS in circles (ft)", info.Course, info.Freq, CurrentAc);
+                string sub = string.Format("CRS {0} deg  |  ILS {1}  |  click a point to append AC{2}", info.Course, info.Freq, CurrentAc);
                 g.DrawString(sub, fSm, new SolidBrush(Color.FromArgb(180, 200, 220)), 140, 26);
             }
 
@@ -933,7 +1099,7 @@ namespace AcRouteEditor
             g.FillRectangle(new SolidBrush(paper), 10, Ch - 32, 1171, 26);
             g.DrawRectangle(new Pen(border), 10, Ch - 32, 1171, 26);
             using (Font fFt = new Font("Segoe UI", 7, FontStyle.Regular, GraphicsUnit.Point))
-                g.DrawString("circle = 3deg GS alt (ft)  |  unused VPs around route  |  off-map VPs sit on page  |  click to append", fFt, new SolidBrush(muted), 16, Ch - 26);
+                g.DrawString("route from the first fix  |  zoom skips _START_ and 0,0  |  click to append", fFt, new SolidBrush(muted), 16, Ch - 26);
 
             List<RoutePt> pts = Level.RoutePts;
             if (pts.Count == 0) return;
@@ -942,131 +1108,105 @@ namespace AcRouteEditor
             float pad = 52;
             float plotX = x0 + pad, plotY = y0 + pad, plotW = w - pad * 2, plotH = h - pad * 2;
 
+            int routeStart = 0;
+            for (int i = 0; i < pts.Count; i++)
+            {
+                if (!SkipRoutePoint(pts[i])) { routeStart = i; break; }
+            }
+
             double minX = double.PositiveInfinity, maxX = double.NegativeInfinity;
             double minY = double.PositiveInfinity, maxY = double.NegativeInfinity;
-            for (int i = 0; i < pts.Count; i++)
+            bool any = false;
+            for (int i = routeStart; i < pts.Count; i++)
             {
-                if (pts[i].X < minX) minX = pts[i].X;
-                if (pts[i].X > maxX) maxX = pts[i].X;
-                if (pts[i].Y < minY) minY = pts[i].Y;
-                if (pts[i].Y > maxY) maxY = pts[i].Y;
+                if (SkipRoutePoint(pts[i])) continue;
+                Include(pts[i].X, pts[i].Y, ref minX, ref maxX, ref minY, ref maxY, ref any);
             }
-            double spanX = Math.Max(maxX - minX, 1.0);
-            double spanY = Math.Max(maxY - minY, 1.0);
-            double scale = Math.Min(plotW / spanX, plotH / spanY) * 0.82;
+            for (int i = 0; i < Level.VirtualPts.Count; i++)
+            {
+                Vp v = Level.VirtualPts[i];
+                if (v.IsRawZero) continue;
+                Include(v.X, v.Y, ref minX, ref maxX, ref minY, ref maxY, ref any);
+            }
+            if (!any)
+            {
+                for (int i = 0; i < pts.Count; i++)
+                    Include(pts[i].X, pts[i].Y, ref minX, ref maxX, ref minY, ref maxY, ref any);
+            }
+            if (!any) { minX = -1; maxX = 1; minY = -1; maxY = 1; }
+
+            double spanX = Math.Max(maxX - minX, 0.5);
+            double spanY = Math.Max(maxY - minY, 0.5);
+            float inset = 28f;
+            double fitW = Math.Max(plotW - inset * 2f, 40f);
+            double fitH = Math.Max(plotH - inset * 2f, 40f);
+            double scale = Math.Min(fitW / spanX, fitH / spanY);
             double cx = (minX + maxX) / 2.0;
             double cy = (minY + maxY) / 2.0;
+            if (_freeze && _scale > 1e-9)
+            {
+                plotX = _plotX; plotY = _plotY; plotW = _plotW; plotH = _plotH;
+                cx = _cx; cy = _cy; scale = _scale;
+            }
+            else
+            {
+                _plotX = plotX; _plotY = plotY; _plotW = plotW; _plotH = plotH;
+                _cx = cx; _cy = cy; _scale = scale;
+            }
 
             Dictionary<string, Vec> pos = new Dictionary<string, Vec>();
-            for (int i = 0; i < pts.Count; i++)
+            for (int i = routeStart; i < pts.Count; i++)
             {
+                if (SkipRoutePoint(pts[i])) continue;
                 RoutePt p = pts[i];
                 pos["R:" + p.Id] = Map(p.X, p.Y, plotX, plotY, plotW, plotH, cx, cy, scale);
             }
 
-            float left = plotX + 8, right = plotX + plotW - 8, bottom = plotY + 8, top = plotY + plotH - 8;
-            List<Vp> keepVps = new List<Vp>();
-            List<Vp> unusedZero = new List<Vp>();
+            float left = plotX, right = plotX + plotW, bottom = plotY, top = plotY + plotH;
+            List<HitPt> vpDraw = new List<HitPt>();
+            List<Vp> tray = new List<Vp>();
             for (int i = 0; i < Level.VirtualPts.Count; i++)
             {
                 Vp v = Level.VirtualPts[i];
-                bool used = UsedPointIds != null && UsedPointIds.Contains(v.Number);
-                if (v.IsRawZero && !used) unusedZero.Add(v);
-                else keepVps.Add(v);
-            }
-            unusedZero.Sort(delegate(Vp a, Vp b) { return a.Number.CompareTo(b.Number); });
-            List<List<Vp>> groups = GroupVps(keepVps);
-            List<HitPt> vpDraw = new List<HitPt>();
-            List<HitPt> edgeL = new List<HitPt>(), edgeR = new List<HitPt>(), edgeT = new List<HitPt>(), edgeB = new List<HitPt>();
-            for (int gi = 0; gi < groups.Count; gi++)
-            {
-                List<Vp> grp = groups[gi];
-                double gx = 0, gy = 0;
-                for (int k = 0; k < grp.Count; k++) { gx += grp[k].X; gy += grp[k].Y; }
-                gx /= grp.Count; gy /= grp.Count;
-                Vec mpt = Map(gx, gy, plotX, plotY, plotW, plotH, cx, cy, scale);
+                Vec mpt = Map(v.X, v.Y, plotX, plotY, plotW, plotH, cx, cy, scale);
                 bool outside = mpt.X < left || mpt.X > right || mpt.Y < bottom || mpt.Y > top;
-                HitPt item = new HitPt();
-                item.X = (float)mpt.X; item.Y = (float)mpt.Y; item.Outside = outside; item.Kind = "virtual";
-                for (int k = 0; k < grp.Count; k++) item.GroupIds.Add(grp[k].Number);
-                AtcItem usedAtc = null;
-                for (int k = 0; k < grp.Count; k++)
+                if (v.IsRawZero && outside)
                 {
-                    AtcItem a = AssetLoader.FindAtc(Level, grp[k].Number);
-                    if (a != null) { item.UsedByAtc = true; if (usedAtc == null) usedAtc = a; }
+                    tray.Add(v);
+                    continue;
                 }
-                item.Id = item.UsedByAtc && usedAtc != null ? usedAtc.Point : grp[0].Number;
-                item.IsIls = Fmt.IsIls(usedAtc);
-                if (outside)
-                {
-                    string edge;
-                    Vec pr = ProjectToEdge(mpt.X, mpt.Y, left, right, bottom, top, out edge);
-                    item.X = (float)pr.X; item.Y = (float)pr.Y; item.Edge = edge;
-                    if (edge == "L") edgeL.Add(item);
-                    else if (edge == "R") edgeR.Add(item);
-                    else if (edge == "T") edgeT.Add(item);
-                    else edgeB.Add(item);
-                }
+                HitPt item = MakeVpHit(v, (float)mpt.X, (float)mpt.Y);
                 vpDraw.Add(item);
-                for (int k = 0; k < grp.Count; k++)
-                    pos["V:" + grp[k].Number] = new Vec(item.X, item.Y);
+                pos["V:" + v.Number] = new Vec(item.X, item.Y);
             }
-            SpreadEdge(edgeL, "L", left, right, bottom, top);
-            SpreadEdge(edgeR, "R", left, right, bottom, top);
-            SpreadEdge(edgeT, "T", left, right, bottom, top);
-            SpreadEdge(edgeB, "B", left, right, bottom, top);
-
-            for (int i = 0; i < vpDraw.Count; i++)
+            tray.Sort(delegate(Vp a, Vp b) { return a.Number.CompareTo(b.Number); });
+            for (int i = 0; i < tray.Count; i++)
             {
-                HitPt hp = vpDraw[i];
-                if (!hp.Outside) continue;
-                hp.Outside = false;
-                hp.Edge = "";
-                for (int k = 0; k < hp.GroupIds.Count; k++)
-                    pos["V:" + hp.GroupIds[k]] = new Vec(hp.X, hp.Y);
-            }
-
-            List<Vec> starScr = new List<Vec>();
-            for (int i = 0; i < pts.Count; i++)
-                starScr.Add(pos["R:" + pts[i].Id]);
-            List<Vec> around = PlaceAroundRoute(starScr, unusedZero.Count, 90f, left, right, bottom, top);
-            for (int i = 0; i < unusedZero.Count; i++)
-            {
-                Vp v = unusedZero[i];
-                Vec sl = i < around.Count ? around[i] : new Vec((left + right) / 2, (bottom + top) / 2);
-                HitPt item = new HitPt();
-                item.X = (float)sl.X;
-                item.Y = (float)sl.Y;
-                item.Kind = "virtual";
-                item.Id = v.Number;
-                item.GroupIds.Add(v.Number);
-                item.UsedByAtc = false;
-                item.Outside = false;
+                Vp v = tray[i];
+                float ty = plotY + 16f + i * 18f;
+                if (ty > plotY + plotH - 12f) break;
+                HitPt item = MakeVpHit(v, plotX + 16f, ty);
                 vpDraw.Add(item);
-                pos["V:" + v.Number] = sl;
+                pos["V:" + v.Number] = new Vec(item.X, item.Y);
             }
 
             g.DrawRectangle(new Pen(RGB(0.88, 0.9, 0.93), 0.5f), plotX, plotY, plotW, plotH);
 
-            using (Pen wide = new Pen(starW, 5f))
-            using (Pen thin = new Pen(star, 1.8f))
+            using (Pen routePen = new Pen(Color.FromArgb(120, 190, 240), 2.6f))
             {
-                wide.LineJoin = LineJoin.Round; thin.LineJoin = LineJoin.Round;
-                for (int i = 1; i < pts.Count; i++)
+                routePen.LineJoin = LineJoin.Round;
+                routePen.StartCap = LineCap.Round;
+                routePen.EndCap = LineCap.Round;
+                for (int i = routeStart + 1; i < pts.Count; i++)
                 {
-                    Vec a = pos["R:" + pts[i - 1].Id];
-                    Vec b = pos["R:" + pts[i].Id];
-                    g.DrawLine(wide, (float)a.X, (float)a.Y, (float)b.X, (float)b.Y);
-                }
-                for (int i = 1; i < pts.Count; i++)
-                {
-                    Vec a = pos["R:" + pts[i - 1].Id];
-                    Vec b = pos["R:" + pts[i].Id];
-                    g.DrawLine(thin, (float)a.X, (float)a.Y, (float)b.X, (float)b.Y);
+                    Vec a, b;
+                    if (!pos.TryGetValue("R:" + pts[i - 1].Id, out a)) continue;
+                    if (!pos.TryGetValue("R:" + pts[i].Id, out b)) continue;
+                    g.DrawLine(routePen, (float)a.X, (float)a.Y, (float)b.X, (float)b.Y);
                 }
             }
 
-            using (Pen atcPen = new Pen(atc, 2.3f))
+            using (Pen atcPen = new Pen(Color.FromArgb(240, 196, 0), 2.4f))
             {
                 atcPen.DashPattern = new float[] { 7f, 3.5f };
                 atcPen.LineJoin = LineJoin.Round;
@@ -1081,7 +1221,7 @@ namespace AcRouteEditor
                         if (a.Point < 50)
                         {
                             RoutePt rp = AssetLoader.ResolveRoute(Level, a.Point);
-                            if (rp != null) mp = Map(rp.X, rp.Y, plotX, plotY, plotW, plotH, cx, cy, scale);
+                            if (rp != null && !SkipRoutePoint(rp)) mp = Map(rp.X, rp.Y, plotX, plotY, plotW, plotH, cx, cy, scale);
                         }
                         else
                         {
@@ -1100,102 +1240,47 @@ namespace AcRouteEditor
                 }
             }
 
-            RoutePt rwyPt = pts[pts.Count - 1];
-            double rwyElev = Fmt.NumericAlt(rwyPt.RawAltitude);
-            double totalNm = rwyPt.CumDist;
-            List<RectangleF> boxes = new List<RectangleF>();
-
             using (Font fNum = new Font("Segoe UI", 6.2f, FontStyle.Bold, GraphicsUnit.Point))
             using (Font fLab = new Font("Segoe UI", 6.4f, FontStyle.Regular, GraphicsUnit.Point))
             {
-                for (int i = 0; i < pts.Count; i++)
+                for (int i = routeStart; i < pts.Count; i++)
                 {
                     RoutePt p = pts[i];
-                    Vec mpt = pos["R:" + p.Id];
+                    Vec mpt;
+                    if (!pos.TryGetValue("R:" + p.Id, out mpt)) continue;
                     AtcItem a = AssetLoader.FindAtc(Level, p.Id);
-                    bool isIls = Fmt.IsIls(a);
-                    bool isStart = i == 0;
-                    bool isEnd = i == pts.Count - 1;
-                    int gs = Fmt.Gs3Alt(totalNm - p.CumDist, rwyElev);
-                    string gsTxt = gs.ToString(CultureInfo.InvariantCulture);
-                    SizeF tw = g.MeasureString(gsTxt, fNum);
-                    float r = Math.Max(11f, tw.Width / 2f + 3.2f);
-                    Color fill = isIls ? RGB(0.98, 0.88, 0.94) : isStart ? RGB(0.82, 0.95, 0.86) : isEnd ? RGB(0.98, 0.88, 0.88) : a != null ? RGB(1.0, 0.93, 0.86) : Color.White;
-                    Color stroke = isIls ? ils : a != null ? atc : isStart ? startC : isEnd ? endC : RGB(0.1, 0.2, 0.35);
-                    using (SolidBrush br = new SolidBrush(fill))
-                    using (Pen pn = new Pen(stroke, isIls ? 1.8f : a != null ? 1.3f : 0.7f))
-                    {
-                        g.FillEllipse(br, (float)mpt.X - r, (float)mpt.Y - r, r * 2, r * 2);
-                        g.DrawEllipse(pn, (float)mpt.X - r, (float)mpt.Y - r, r * 2, r * 2);
-                        if (isIls) g.DrawEllipse(new Pen(ils, 1.4f), (float)mpt.X - r - 3, (float)mpt.Y - r - 3, (r + 3) * 2, (r + 3) * 2);
-                    }
-                    g.DrawString(gsTxt, fNum, new SolidBrush(ink), (float)mpt.X - tw.Width / 2f, (float)mpt.Y - tw.Height / 2f);
-                    float outer = isIls ? r + 3 : r;
-                    boxes.Add(new RectangleF((float)mpt.X - outer - 1.5f, (float)mpt.Y - outer - 1.5f, (outer + 1.5f) * 2, (outer + 1.5f) * 2));
+                    string numTxt = p.Id.ToString(CultureInfo.InvariantCulture);
+                    SizeF tw = g.MeasureString(numTxt, fNum);
+                    float r = Math.Max(7f, tw.Width / 2f + 1.2f);
                     HitPt hp = new HitPt();
-                    hp.Id = p.Id; hp.X = (float)mpt.X; hp.Y = (float)mpt.Y; hp.R = outer;
-                    hp.Kind = "route"; hp.Label = "#" + p.Id + " " + p.Name;
-                    hp.IsIls = isIls; hp.IsStart = isStart; hp.IsEnd = isEnd; hp.UsedByAtc = a != null; hp.GsAlt = gs;
-                    string sa = Fmt.StarAlt(p.RawAltitude); string ss = Fmt.StarSpd(p.RawSpeed);
-                    hp.StarRest = (sa + " " + ss).Trim();
-                    string aa = Fmt.AtcAlt(a); string aspd = Fmt.AtcSpd(a);
-                    hp.AtcRest = ((aa + " " + aspd).Trim());
+                    hp.Id = p.Id; hp.X = (float)mpt.X; hp.Y = (float)mpt.Y; hp.R = r;
+                    hp.Kind = "route"; hp.Label = numTxt;
+                    hp.IsIls = Fmt.IsIls(a); hp.IsStart = i == routeStart; hp.IsEnd = i == pts.Count - 1; hp.UsedByAtc = a != null;
                     Hits.Add(hp);
                 }
 
                 for (int i = 0; i < vpDraw.Count; i++)
                 {
                     HitPt item = vpDraw[i];
-                    if (item.UsedByAtc)
+                    string numTxt = item.Id.ToString(CultureInfo.InvariantCulture);
+                    SizeF tw = g.MeasureString(numTxt, fNum);
+                    float rw = Math.Max(14f, tw.Width + 5f);
+                    float rh = Math.Max(12f, tw.Height + 1f);
+                    bool never = UsedPointIds == null || !UsedPointIds.Contains(item.Id);
+                    Color box = item.UsedByAtc ? Color.FromArgb(25, 95, 210) : never ? Color.FromArgb(128, 45, 175) : Color.Black;
+                    g.FillRectangle(new SolidBrush(box), item.X, item.Y, rw, rh);
+                    using (StringFormat sf = new StringFormat())
                     {
-                        Vp world = AssetLoader.ResolveVp(Level, item.Id);
-                        double remain = 0;
-                        if (world != null)
-                        {
-                            double dx = world.X - rwyPt.X, dy = world.Y - rwyPt.Y;
-                            remain = Math.Sqrt(dx * dx + dy * dy);
-                        }
-                        int gs = Fmt.Gs3Alt(remain, rwyElev);
-                        string gsTxt = gs.ToString(CultureInfo.InvariantCulture);
-                        SizeF tw = g.MeasureString(gsTxt, fNum);
-                        float r = Math.Max(11f, tw.Width / 2f + 3.2f);
-                        Color stroke = item.IsIls ? ils : atc;
-                        using (SolidBrush br = new SolidBrush(vpFill))
-                        using (Pen pn = new Pen(stroke, item.IsIls ? 1.8f : 1.3f))
-                        {
-                            g.FillEllipse(br, item.X - r, item.Y - r, r * 2, r * 2);
-                            g.DrawEllipse(pn, item.X - r, item.Y - r, r * 2, r * 2);
-                            if (item.IsIls) g.DrawEllipse(new Pen(ils, 1.4f), item.X - r - 3, item.Y - r - 3, (r + 3) * 2, (r + 3) * 2);
-                        }
-                        g.DrawString(gsTxt, fNum, new SolidBrush(ink), item.X - tw.Width / 2f, item.Y - tw.Height / 2f);
-                        item.R = item.IsIls ? r + 3 : r;
-                        item.GsAlt = gs;
-                        boxes.Add(new RectangleF(item.X - item.R - 1.5f, item.Y - item.R - 1.5f, (item.R + 1.5f) * 2, (item.R + 1.5f) * 2));
+                        sf.Alignment = StringAlignment.Center;
+                        sf.LineAlignment = StringAlignment.Center;
+                        g.DrawString(numTxt, fNum, Brushes.White, new RectangleF(item.X, item.Y, rw, rh), sf);
                     }
-                    else
-                    {
-                        float sz = item.Outside ? 6f : 5f;
-                        PointF[] dia = new PointF[] {
-                            new PointF(item.X, item.Y - sz), new PointF(item.X + sz, item.Y),
-                            new PointF(item.X, item.Y + sz), new PointF(item.X - sz, item.Y)
-                        };
-                        g.FillPolygon(new SolidBrush(vpFill), dia);
-                        g.DrawPolygon(new Pen(vp, 1f), dia);
-                        item.R = sz + 2;
-                        boxes.Add(new RectangleF(item.X - 8, item.Y - 8, 16, 16));
-                    }
-                    if (item.Outside)
-                    {
-                        float tick = 7f;
-                        if (item.Edge == "L") g.DrawLine(new Pen(vp, 1.2f), item.X, item.Y, item.X - tick, item.Y);
-                        else if (item.Edge == "R") g.DrawLine(new Pen(vp, 1.2f), item.X, item.Y, item.X + tick, item.Y);
-                        else if (item.Edge == "T") g.DrawLine(new Pen(vp, 1.2f), item.X, item.Y, item.X, item.Y - tick);
-                        else g.DrawLine(new Pen(vp, 1.2f), item.X, item.Y, item.X, item.Y + tick);
-                    }
+                    item.W = rw;
+                    item.H = rh;
+                    item.R = Math.Max(rw, rh);
                     Hits.Add(item);
                 }
 
-                HashSet<int> selected = new HashSet<int>(CurrentRoute);
                 using (Pen acPen = new Pen(acCol, 3.2f))
                 {
                     acPen.LineJoin = LineJoin.Round;
@@ -1208,95 +1293,467 @@ namespace AcRouteEditor
                         if (hp != null) poly.Add(new PointF(hp.X, hp.Y));
                     }
                     if (poly.Count >= 2) g.DrawLines(acPen, poly.ToArray());
-                    for (int i = 0; i < poly.Count; i++)
-                    {
-                        g.FillEllipse(new SolidBrush(acCol), poly[i].X - 4, poly[i].Y - 4, 8, 8);
-                    }
                 }
 
                 List<Vec> anchors = new List<Vec>();
-                for (int i = 0; i < pts.Count; i++) anchors.Add(pos["R:" + pts[i].Id]);
+                for (int i = routeStart; i < pts.Count; i++)
+                {
+                    Vec rv;
+                    if (pos.TryGetValue("R:" + pts[i].Id, out rv)) anchors.Add(rv);
+                }
                 for (int i = 0; i < vpDraw.Count; i++) anchors.Add(new Vec(vpDraw[i].X, vpDraw[i].Y));
                 RectangleF tbl = PlaceTable(plotX, plotY, plotW, plotH, Level.Atc.Count, anchors);
                 DrawAtcTable(g, tbl, Level, fLab);
-                boxes.Add(new RectangleF(tbl.X - 3, tbl.Y - 3, tbl.Width + 6, tbl.Height + 6));
-
-                float lblL = x0 + 6, lblR = x0 + w - 6, lblB = y0 + 6, lblTtop = y0 + h - 6;
-                for (int i = 0; i < Hits.Count; i++)
-                {
-                    HitPt hp = Hits[i];
-                    List<string> lines = new List<string>();
-                    if (hp.Kind == "route")
-                    {
-                        lines.Add(hp.Label.Trim());
-                        if (!string.IsNullOrEmpty(hp.StarRest)) lines.Add(hp.StarRest);
-                        if (!string.IsNullOrEmpty(hp.AtcRest)) lines.Add("ATC " + hp.AtcRest);
-                        if (hp.IsIls) lines.Add("ILS CLR");
-                    }
-                    else
-                    {
-                        List<int> nums = new List<int>(hp.GroupIds);
-                        nums.Sort();
-                        string name;
-                        if (nums.Count <= 3)
-                        {
-                            StringBuilder nb = new StringBuilder();
-                            for (int k = 0; k < nums.Count; k++)
-                            {
-                                if (k > 0) nb.Append("/");
-                                nb.Append("V").Append(nums[k]);
-                            }
-                            name = nb.ToString();
-                        }
-                        else name = string.Format("V{0}-{1} ({2})", nums[0], nums[nums.Count - 1], nums.Count);
-                        lines.Add(name);
-                        if (hp.Outside) lines.Add("out");
-                        AtcItem ai = AssetLoader.FindAtc(Level, hp.Id);
-                        string aa = Fmt.AtcAlt(ai); string aspd = Fmt.AtcSpd(ai);
-                        if (!string.IsNullOrEmpty(aa) || !string.IsNullOrEmpty(aspd))
-                            lines.Add(("ATC " + aa + " " + aspd).Trim());
-                        if (hp.IsIls) lines.Add("ILS CLR");
-                    }
-                    float bw = 4, bh = lines.Count * 9f + 3f;
-                    for (int li = 0; li < lines.Count; li++)
-                    {
-                        float tw = g.MeasureString(lines[li], fLab).Width;
-                        if (tw + 4 > bw) bw = tw + 4;
-                    }
-                    RectangleF box = PickSlot(hp.X, hp.Y, bw, bh, boxes, lblL, lblR, lblB, lblTtop);
-                    boxes.Add(box);
-                    Color lc = hp.IsIls ? ils : hp.Kind == "virtual" ? vp : hp.IsEnd ? endC : ink;
-                    float dx = box.X + box.Width / 2f - hp.X;
-                    float dy = box.Y + box.Height / 2f - hp.Y;
-                    if (dx * dx + dy * dy > (hp.R + 8) * (hp.R + 8))
-                    {
-                        PointF attach = NearestOnBox(hp.X, hp.Y, box);
-                        using (Pen ap = new Pen(lc, 0.7f))
-                        {
-                            float len = (float)Math.Sqrt((attach.X - hp.X) * (attach.X - hp.X) + (attach.Y - hp.Y) * (attach.Y - hp.Y));
-                            if (len > 10)
-                            {
-                                float ux = (hp.X - attach.X) / len;
-                                float uy = (hp.Y - attach.Y) / len;
-                                float gap = hp.R + 1.6f;
-                                PointF end = new PointF(hp.X - ux * gap, hp.Y - uy * gap);
-                                g.DrawLine(ap, attach, end);
-                            }
-                        }
-                    }
-                    g.FillRectangle(new SolidBrush(Color.FromArgb(250, 250, 252)), box);
-                    g.DrawRectangle(new Pen(RGB(0.82, 0.84, 0.88), 0.4f), box.X, box.Y, box.Width, box.Height);
-                    using (SolidBrush tb = new SolidBrush(lc))
-                    {
-                        for (int li = 0; li < lines.Count; li++)
-                            g.DrawString(lines[li], fLab, tb, box.X + 2, box.Y + 1 + li * 9f);
-                    }
-                    if (selected.Contains(hp.Id))
-                        g.DrawEllipse(new Pen(acCol, 2f), hp.X - hp.R - 2, hp.Y - hp.R - 2, (hp.R + 2) * 2, (hp.R + 2) * 2);
-                }
             }
 
             DrawLiveTraffic(g, plotX, plotY, plotW, plotH, cx, cy, scale);
+            DrawRouteCircles(g);
+            DrawSim(g, plotX, plotY, plotW, plotH, cx, cy, scale);
+        }
+
+        private void DrawRouteCircles(Graphics g)
+        {
+            using (Font fNum = new Font("Segoe UI", 6.2f, FontStyle.Bold, GraphicsUnit.Point))
+            using (StringFormat sf = new StringFormat())
+            using (Pen edge = new Pen(Color.Black, 0.9f))
+            {
+                sf.Alignment = StringAlignment.Center;
+                sf.LineAlignment = StringAlignment.Center;
+                for (int i = 0; i < Hits.Count; i++)
+                {
+                    HitPt hp = Hits[i];
+                    if (hp.Kind != "route") continue;
+                    float r = hp.R;
+                    bool rwy = hp.IsEnd;
+                    g.FillEllipse(rwy ? Brushes.Red : Brushes.White, hp.X - r, hp.Y - r, r * 2f, r * 2f);
+                    g.DrawEllipse(rwy ? Pens.DarkRed : edge, hp.X - r, hp.Y - r, r * 2f, r * 2f);
+                    g.DrawString(hp.Label, fNum, rwy ? Brushes.White : Brushes.Black, new RectangleF(hp.X - r, hp.Y - r, r * 2f, r * 2f), sf);
+                }
+            }
+        }
+
+        private HitPt MakeVpHit(Vp v, float x, float y)
+        {
+            HitPt item = new HitPt();
+            item.X = x;
+            item.Y = y;
+            item.Kind = "virtual";
+            item.Id = v.Number;
+            item.GroupIds.Add(v.Number);
+            AtcItem a = Level == null ? null : AssetLoader.FindAtc(Level, v.Number);
+            item.UsedByAtc = a != null;
+            item.IsIls = Fmt.IsIls(a);
+            return item;
+        }
+
+        private static bool IsStartName(string name)
+        {
+            if (string.IsNullOrEmpty(name)) return false;
+            string n = name.Replace("_", "").Trim();
+            return n.Equals("START", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool SkipRoutePoint(RoutePt p)
+        {
+            if (p == null) return true;
+            if (IsStartName(p.Name)) return true;
+            return Math.Abs(p.X) < 0.05 && Math.Abs(p.Y) < 0.05;
+        }
+
+        private static void Include(double x, double y, ref double minX, ref double maxX, ref double minY, ref double maxY, ref bool any)
+        {
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+            any = true;
+        }
+
+        private void BeginPlayback()
+        {
+            if (Level == null) return;
+            _ownIds = new List<int>();
+            _ownIls = false;
+            int ils = -1;
+            for (int i = 0; i < Level.Atc.Count; i++)
+            {
+                if (Fmt.IsIls(Level.Atc[i])) { ils = i; break; }
+            }
+            int last = ils >= 0 ? ils : Level.Atc.Count - 1;
+            for (int i = 0; i <= last && i < Level.Atc.Count; i++)
+                _ownIds.Add(Level.Atc[i].Point);
+            _ownIls = ils >= 0;
+            if (!_ownIls && Level.RoutePts.Count > 0)
+                _ownIds.Add(Level.RoutePts[Level.RoutePts.Count - 1].Id);
+            Vec start;
+            if (_ownIds.Count == 0 || !WorldOf(_ownIds[0], out start)) return;
+            _ownX = start.X;
+            _ownY = start.Y;
+            _ownNext = _ownIds.Count > 1 ? 1 : 0;
+            _ownPhase = _ownIds.Count > 1 ? 0 : 3;
+            _ownDirX = 0;
+            _ownDirY = 1;
+            _ownCross = 0;
+            _ownStraight = 0;
+            _ownVisible = true;
+            _rwyAlt = RunwayAltitude();
+            int rw = Level.RoutePts.Count > 0 ? Level.RoutePts[Level.RoutePts.Count - 1].Id : -1;
+            for (int a = 0; a < 10; a++)
+            {
+                _acOn[a] = false;
+                _acIds[a] = new List<int>();
+                if (TrafficRoutes == null || a >= TrafficRoutes.Count || TrafficRoutes[a] == null) continue;
+                for (int k = 0; k < TrafficRoutes[a].Count; k++)
+                    _acIds[a].Add(TrafficRoutes[a][k]);
+                if (rw >= 0 && (_acIds[a].Count == 0 || _acIds[a][_acIds[a].Count - 1] != rw))
+                    _acIds[a].Add(rw);
+                Vec p0;
+                if (_acIds[a].Count < 2 || !WorldOf(_acIds[a][0], out p0)) continue;
+                _acX[a] = p0.X;
+                _acY[a] = p0.Y;
+                _acNext[a] = 1;
+                _acOn[a] = true;
+                _acHide[a] = false;
+            }
+            _playing = true;
+            _paused = false;
+            _finished = false;
+            _flyStamp = DateTime.UtcNow;
+            if (_flyTimer != null) _flyTimer.Start();
+            if (SimUiChanged != null) SimUiChanged();
+            Invalidate();
+        }
+
+        private void FlyTick()
+        {
+            if (!_playing || _paused) return;
+            double dt = (DateTime.UtcNow - _flyStamp).TotalSeconds;
+            _flyStamp = DateTime.UtcNow;
+            if (dt < 0) dt = 0;
+            if (dt > 0.25) dt = 0.25;
+            double step = 300.0 / 3600.0 * dt * (_fast ? 10.0 : 1.0);
+            StepOwn(step);
+            for (int i = 0; i < 10; i++)
+                if (_acOn[i]) StepTraffic(i, step);
+            SeparateFromOwn();
+            if (_ownPhase >= 3)
+            {
+                _playing = false;
+                _paused = false;
+                _finished = true;
+                if (_flyTimer != null) _flyTimer.Stop();
+                if (SimUiChanged != null) SimUiChanged();
+            }
+            Invalidate();
+        }
+
+        private void StepOwn(double step)
+        {
+            if (_ownPhase >= 3) return;
+            if (_ownPhase == 0)
+            {
+                while (step > 0.00001 && _ownNext < _ownIds.Count)
+                {
+                    Vec tgt;
+                    if (!WorldOf(_ownIds[_ownNext], out tgt)) { _ownNext++; continue; }
+                    double dx = tgt.X - _ownX;
+                    double dy = tgt.Y - _ownY;
+                    double hyp = Math.Sqrt(dx * dx + dy * dy);
+                    if (hyp < 0.35) { _ownNext++; continue; }
+                    _ownDirX = dx / hyp;
+                    _ownDirY = dy / hyp;
+                    double move = step < hyp ? step : hyp;
+                    _ownX += _ownDirX * move;
+                    _ownY += _ownDirY * move;
+                    step -= move;
+                    if (move >= hyp - 0.00001) _ownNext++;
+                }
+                if (_ownNext >= _ownIds.Count)
+                {
+                    _ownPhase = _ownIls ? 1 : 3;
+                    _ownStraight = 0;
+                }
+                return;
+            }
+            if (_ownPhase == 1)
+            {
+                _ownX += _ownDirX * step;
+                _ownY += _ownDirY * step;
+                _ownStraight += step;
+                double cross = CenterlineCross(_ownX, _ownY);
+                if ((Math.Abs(_ownCross) > 0.05 && cross * _ownCross < 0) || Math.Abs(cross) < 0.2 || _ownStraight > 40)
+                    _ownPhase = 2;
+                _ownCross = cross;
+                return;
+            }
+            double along = CenterlineAlong(_ownX, _ownY);
+            if (along < 0) along = Math.Min(0, along + step);
+            else along = Math.Max(0, along - step);
+            Vec rwy = RunwayVec();
+            Vec inbound = Inbound();
+            _ownX = rwy.X + inbound.X * along;
+            _ownY = rwy.Y + inbound.Y * along;
+            if (Math.Abs(along) < 0.3) _ownPhase = 3;
+        }
+
+        private void StepTraffic(int i, double step)
+        {
+            List<int> ids = _acIds[i];
+            if (ids == null || ids.Count < 2) return;
+            while (step > 0.00001)
+            {
+                if (_acNext[i] >= ids.Count)
+                {
+                    Vec home;
+                    if (!WorldOf(ids[0], out home)) return;
+                    _acX[i] = home.X;
+                    _acY[i] = home.Y;
+                    _acNext[i] = 1;
+                }
+                Vec tgt;
+                if (!WorldOf(ids[_acNext[i]], out tgt)) { _acNext[i]++; continue; }
+                double dx = tgt.X - _acX[i];
+                double dy = tgt.Y - _acY[i];
+                double hyp = Math.Sqrt(dx * dx + dy * dy);
+                if (hyp < 0.45)
+                {
+                    _acNext[i]++;
+                    if (_acNext[i] >= ids.Count)
+                    {
+                        Vec home;
+                        if (!WorldOf(ids[0], out home)) return;
+                        _acX[i] = home.X;
+                        _acY[i] = home.Y;
+                        _acNext[i] = 1;
+                    }
+                    continue;
+                }
+                double move = step < hyp ? step : hyp;
+                _acX[i] += dx / hyp * move;
+                _acY[i] += dy / hyp * move;
+                step -= move;
+                if (move >= hyp - 0.00001)
+                    _acNext[i]++;
+            }
+        }
+
+        private void SeparateFromOwn()
+        {
+            double ownAlt = _rwyAlt + OwnRemainingNm() * 300.0;
+            Vec rwy = RunwayVec();
+            double ownDme = Hyp(_ownX, _ownY, rwy.X, rwy.Y);
+            for (int i = 0; i < 10; i++)
+            {
+                if (!_acOn[i])
+                {
+                    _acHide[i] = false;
+                    continue;
+                }
+                bool close = TooCloseToOwn(i, ownAlt) || TrafficNearRunway(i, ownDme, rwy);
+                if (!close)
+                {
+                    _acHide[i] = false;
+                    continue;
+                }
+                RestartAc(i);
+                _acHide[i] = TooCloseToOwn(i, ownAlt) || TrafficNearRunway(i, ownDme, rwy);
+            }
+        }
+
+        private bool TooCloseToOwn(int i, double ownAlt)
+        {
+            double dist = Hyp(_acX[i], _acY[i], _ownX, _ownY);
+            if (dist > 3.0) return false;
+            double acAlt = _rwyAlt + TrafficRemainingNm(i) * 300.0;
+            return Math.Abs(acAlt - ownAlt) <= 1000.0;
+        }
+
+        private bool TrafficNearRunway(int i, double ownDme, Vec rwy)
+        {
+            if (ownDme > 15.0) return false;
+            return Hyp(_acX[i], _acY[i], rwy.X, rwy.Y) <= 3.0;
+        }
+
+        private void RestartAc(int i)
+        {
+            List<int> ids = _acIds[i];
+            if (ids == null || ids.Count < 2) return;
+            Vec home;
+            if (!WorldOf(ids[0], out home)) return;
+            _acX[i] = home.X;
+            _acY[i] = home.Y;
+            _acNext[i] = 1;
+        }
+
+        private double OwnRemainingNm()
+        {
+            if (_ownPhase >= 2)
+                return Math.Abs(CenterlineAlong(_ownX, _ownY));
+            if (_ownPhase == 1)
+                return StraightThenFinal(_ownX, _ownY, _ownDirX, _ownDirY);
+            double rem = 0;
+            double x = _ownX;
+            double y = _ownY;
+            for (int i = _ownNext; i < _ownIds.Count; i++)
+            {
+                Vec p;
+                if (!WorldOf(_ownIds[i], out p)) continue;
+                rem += Hyp(x, y, p.X, p.Y);
+                x = p.X;
+                y = p.Y;
+            }
+            if (_ownIls)
+            {
+                double dx = _ownDirX;
+                double dy = _ownDirY;
+                if (_ownIds.Count >= 2)
+                {
+                    Vec a;
+                    Vec b;
+                    if (WorldOf(_ownIds[_ownIds.Count - 2], out a) && WorldOf(_ownIds[_ownIds.Count - 1], out b))
+                    {
+                        double h = Hyp(a.X, a.Y, b.X, b.Y);
+                        if (h > 0.001)
+                        {
+                            dx = (b.X - a.X) / h;
+                            dy = (b.Y - a.Y) / h;
+                        }
+                    }
+                }
+                rem += StraightThenFinal(x, y, dx, dy);
+            }
+            return rem;
+        }
+
+        private double StraightThenFinal(double x, double y, double dirX, double dirY)
+        {
+            Vec rwy = RunwayVec();
+            Vec inbound = Inbound();
+            double cross = inbound.X * (y - rwy.Y) - inbound.Y * (x - rwy.X);
+            double denom = inbound.X * dirY - inbound.Y * dirX;
+            double t = 0;
+            if (Math.Abs(denom) > 1e-6) t = -cross / denom;
+            if (t < 0) t = 0;
+            if (double.IsNaN(t) || t > 80) t = Hyp(x, y, rwy.X, rwy.Y);
+            double ix = x + dirX * t;
+            double iy = y + dirY * t;
+            double along = inbound.X * (ix - rwy.X) + inbound.Y * (iy - rwy.Y);
+            return t + Math.Abs(along);
+        }
+
+        private double TrafficRemainingNm(int i)
+        {
+            List<int> ids = _acIds[i];
+            if (ids == null || _acNext[i] >= ids.Count) return 0;
+            double rem = 0;
+            double x = _acX[i];
+            double y = _acY[i];
+            for (int k = _acNext[i]; k < ids.Count; k++)
+            {
+                Vec p;
+                if (!WorldOf(ids[k], out p)) continue;
+                rem += Hyp(x, y, p.X, p.Y);
+                x = p.X;
+                y = p.Y;
+            }
+            return rem;
+        }
+
+        private double RunwayAltitude()
+        {
+            if (Level == null || Level.RoutePts == null || Level.RoutePts.Count == 0) return 0;
+            RoutePt last = Level.RoutePts[Level.RoutePts.Count - 1];
+            if (last == null || string.IsNullOrEmpty(last.RawAltitude)) return 0;
+            double n;
+            if (!double.TryParse(last.RawAltitude.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out n)) return 0;
+            return n < 0 ? 0 : n;
+        }
+
+        private static double Hyp(double x1, double y1, double x2, double y2)
+        {
+            double dx = x2 - x1;
+            double dy = y2 - y1;
+            return Math.Sqrt(dx * dx + dy * dy);
+        }
+
+        private bool WorldOf(int id, out Vec w)
+        {
+            w = null;
+            if (Level == null) return false;
+            if (id < 50)
+            {
+                RoutePt p = AssetLoader.ResolveRoute(Level, id);
+                if (p == null) return false;
+                w = new Vec(p.X, p.Y);
+                return true;
+            }
+            Vp v = AssetLoader.ResolveVp(Level, id);
+            if (v == null) return false;
+            w = new Vec(v.X, v.Y);
+            return true;
+        }
+
+        private Vec RunwayVec()
+        {
+            if (Level != null && Level.Runway != null) return Level.Runway;
+            return new Vec();
+        }
+
+        private Vec Inbound()
+        {
+            double crs = Level != null && Level.Info != null ? Level.Info.Course : 0;
+            double rad = crs * Math.PI / 180.0;
+            return new Vec(Math.Sin(rad), Math.Cos(rad));
+        }
+
+        private double CenterlineCross(double x, double y)
+        {
+            Vec rwy = RunwayVec();
+            Vec inbound = Inbound();
+            double relx = x - rwy.X;
+            double rely = y - rwy.Y;
+            return inbound.X * rely - inbound.Y * relx;
+        }
+
+        private double CenterlineAlong(double x, double y)
+        {
+            Vec rwy = RunwayVec();
+            Vec inbound = Inbound();
+            return inbound.X * (x - rwy.X) + inbound.Y * (y - rwy.Y);
+        }
+
+        private void DrawSim(Graphics g, float plotX, float plotY, float plotW, float plotH, double cx, double cy, double scale)
+        {
+            if (!_ownVisible && !AnyTraffic()) return;
+            using (Font f = new Font("Segoe UI", 7f, FontStyle.Bold, GraphicsUnit.Point))
+            using (StringFormat sf = new StringFormat())
+            {
+                sf.Alignment = StringAlignment.Center;
+                sf.LineAlignment = StringAlignment.Center;
+                for (int i = 0; i < 10; i++)
+                {
+                    if (!_acOn[i] || _acHide[i]) continue;
+                    Vec s = Map(_acX[i], _acY[i], plotX, plotY, plotW, plotH, cx, cy, scale);
+                    float r = 8f;
+                    g.FillEllipse(new SolidBrush(Color.FromArgb(20, 20, 20)), (float)s.X - r, (float)s.Y - r, r * 2f, r * 2f);
+                    g.DrawString((i + 1).ToString(CultureInfo.InvariantCulture), f, Brushes.White, new RectangleF((float)s.X - r, (float)s.Y - r, r * 2f, r * 2f), sf);
+                }
+                if (_ownVisible)
+                {
+                    Vec s = Map(_ownX, _ownY, plotX, plotY, plotW, plotH, cx, cy, scale);
+                    float r = 9f;
+                    g.FillEllipse(new SolidBrush(Color.FromArgb(20, 160, 60)), (float)s.X - r, (float)s.Y - r, r * 2f, r * 2f);
+                    g.DrawEllipse(new Pen(Color.White, 1.2f), (float)s.X - r, (float)s.Y - r, r * 2f, r * 2f);
+                    g.DrawString("O", f, Brushes.White, new RectangleF((float)s.X - r, (float)s.Y - r, r * 2f, r * 2f), sf);
+                }
+            }
+        }
+
+        private bool AnyTraffic()
+        {
+            for (int i = 0; i < 10; i++)
+                if (_acOn[i]) return true;
+            return false;
         }
 
         private void DrawLiveTraffic(Graphics g, float plotX, float plotY, float plotW, float plotH, double cx, double cy, double scale)
@@ -1777,6 +2234,8 @@ namespace AcRouteEditor
         private TextBox _box;
         private Label _status;
         private Button _btnNext;
+        private Button _btnPlay;
+        private Button _btnFast;
         private Button _btnPrevLevel;
         private Button _btnNextLevel;
         private bool _loading;
@@ -1800,18 +2259,25 @@ namespace AcRouteEditor
             _btnNextLevel = MakeBtn("Next Level", 148, 8, 110);
             _btnNext = MakeBtn("Next", 270, 8, 90);
             _btnNext.BackColor = Color.FromArgb(230, 140, 40);
+            _btnPlay = MakeBtn("Play", 368, 8, 84);
+            _btnPlay.BackColor = Color.FromArgb(30, 140, 70);
+            _btnFast = MakeBtn("10x", 460, 8, 58);
             _status = new Label();
             _status.ForeColor = Color.FromArgb(240, 220, 120);
             _status.Font = new Font("Segoe UI", 11f, FontStyle.Bold);
             _status.AutoSize = false;
-            _status.SetBounds(372, 12, 980, 24);
+            _status.SetBounds(530, 12, 820, 24);
 
             _btnPrevLevel.Click += delegate { ChangeLevel(-1); };
             _btnNextLevel.Click += delegate { ChangeLevel(1); };
             _btnNext.Click += delegate { NextAc(); };
+            _btnPlay.Click += delegate { PushTraffic(); _chart.TogglePlay(); };
+            _btnFast.Click += delegate { _chart.ToggleFast(); };
             top.Controls.Add(_btnPrevLevel);
             top.Controls.Add(_btnNextLevel);
             top.Controls.Add(_btnNext);
+            top.Controls.Add(_btnPlay);
+            top.Controls.Add(_btnFast);
             top.Controls.Add(_status);
 
             Panel bottom = new Panel();
@@ -1840,6 +2306,7 @@ namespace AcRouteEditor
             _chart = new ChartPanel();
             _chart.Dock = DockStyle.Fill;
             _chart.PointClicked += OnPointClicked;
+            _chart.SimUiChanged += RefreshSimButtons;
 
             Controls.Add(_chart);
             Controls.Add(bottom);
@@ -1926,6 +2393,8 @@ namespace AcRouteEditor
             _chart.CurrentAc = _ac;
             _chart.CurrentRoute = ParseAcPoints(_ac);
             SyncChartUsed();
+            PushTraffic();
+            _chart.StopPlayback();
             UpdateStatus();
             _loading = false;
             _chart.Invalidate();
@@ -1945,8 +2414,26 @@ namespace AcRouteEditor
             _chart.CurrentRoute = ParseAcPoints(_ac);
             _chart.CurrentAc = _ac;
             SyncChartUsed();
+            PushTraffic();
             _chart.Invalidate();
             UpdateStatus();
+        }
+
+        private void PushTraffic()
+        {
+            List<List<int>> all = new List<List<int>>();
+            for (int ac = 1; ac <= 10; ac++)
+                all.Add(ParseAcPoints(ac));
+            _chart.TrafficRoutes = all;
+        }
+
+        private void RefreshSimButtons()
+        {
+            if (_btnPlay == null || _chart == null) return;
+            _btnPlay.Text = _chart.IsRunning ? "Pause" : "Play";
+            _btnPlay.BackColor = _chart.IsRunning ? Color.FromArgb(180, 90, 30) : Color.FromArgb(30, 140, 70);
+            if (_btnFast != null)
+                _btnFast.BackColor = _chart.FastOn ? Color.FromArgb(200, 150, 30) : Color.FromArgb(40, 70, 110);
         }
 
         private void ChangeLevel(int delta)

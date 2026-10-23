@@ -22,7 +22,6 @@ MonoBehaviour:
   Course: 91
   ZFW: 49
   Fuel: 11
-  CrzAltitude: 35000
   CrzSpeed: 270
   F30Speed: 120
   DesEconSpeed: 270
