@@ -66,7 +66,18 @@ public class DataHandler
                set.Points[0].RawAltitude = startFrom.Value.ToString();
            }
 
-      
+        // VNAV descent clears the ID 0 altitude for the CRZ page; the profile still starts at cruise.
+        var first = set.Points[0];
+        if (first.AltitudeRegulation == RoutePoint.AltitudeFlags.NotSet)
+            first.Altitude.SetComputedValue(ProfileStartAltitude(first), true);
+
+        // Mod routes are clones: drop predictions from the previous build so they do not act as anchors.
+        for (var i = 1; i < set.Points.Length; i++)
+        {
+            var p = set.Points[i];
+            p.Altitude.GetFlag(p.RawAltitude);
+            p.Altitude.SetComputedValue(-1f, false);
+        }
 
         List<AltitudeRegulationNode> regulations = null;
         var distanceToPrevious = 0f;
@@ -85,17 +96,8 @@ public class DataHandler
                 }
 
                 // start new regulations interval
-                regulations = new List<AltitudeRegulationNode>
-                {
-                    new AltitudeRegulationNode
-                    {
-                        IndexInList = i,
-                        LinkedPoint = set.Points[i],
-                        Next = null,
-                        Prev = null
-                    }
-                };
-                distanceToPrevious = point.Distance;
+                regulations = StartRegulations(set.Points[i], i);
+                distanceToPrevious = 0f;
                 continue;
             }
 
@@ -122,6 +124,7 @@ public class DataHandler
                 if (set.Points[i].AltitudeRegulation == RoutePoint.AltitudeFlags.Exact)
                 {
                     ComputeRegulationsInterval(regulations, set);
+                    regulations = StartRegulations(point, i);
                 }
             }
         }
@@ -161,54 +164,68 @@ public class DataHandler
 
         ClampAbRestrictions(pts);
 
-        var anchors = new List<int>();
+        var anchor = new bool[pts.Length];
+        var anyAnchor = false;
         for (var i = 0; i < pts.Length; i++)
         {
-            if (pts[i].Altitude.ComputedValue > 0)
-                anchors.Add(i);
+            anchor[i] = pts[i].Altitude.ComputedValue > 0;
+            anyAnchor |= anchor[i];
         }
 
-        if (anchors.Count == 0)
+        if (!anyAnchor)
             return;
 
-        if (anchors[anchors.Count - 1] != pts.Length - 1)
-            anchors.Add(pts.Length - 1);
+        anchor[pts.Length - 1] = true;
 
-        for (var a = 0; a < anchors.Count - 1; a++)
+        // An A/B point clamped after interpolation becomes an anchor and its neighbours are interpolated again.
+        for (var pass = 0; pass <= pts.Length; pass++)
         {
-            var from = anchors[a];
-            var to = anchors[a + 1];
-            if (to <= from + 1)
-                continue;
+            InterpolateBetweenAnchors(pts, anchor);
 
-            var total = 0f;
-            for (var i = from + 1; i <= to; i++)
-                total += pts[i].Distance;
-
-            if (total < 1e-4f)
+            var clamped = false;
+            for (var i = 0; i < pts.Length; i++)
             {
-                var hold = pts[from].Altitude.ComputedValue;
+                if (anchor[i])
+                    continue;
+                var before = pts[i].Altitude.ComputedValue;
+                ClampAbRestriction(pts[i]);
+                if (pts[i].Altitude.ComputedValue != before)
+                {
+                    anchor[i] = true;
+                    clamped = true;
+                }
+            }
+
+            if (!clamped)
+                break;
+        }
+    }
+
+    private static void InterpolateBetweenAnchors(RoutePoint[] pts, bool[] anchor)
+    {
+        var from = -1;
+        for (var to = 0; to < pts.Length; to++)
+        {
+            if (!anchor[to])
+                continue;
+            if (from >= 0 && to > from + 1)
+            {
+                var total = 0f;
+                for (var i = from + 1; i <= to; i++)
+                    total += pts[i].Distance;
+
+                var alt0 = pts[from].Altitude.ComputedValue;
+                var alt1 = pts[to].Altitude.ComputedValue;
+                var cum = 0f;
                 for (var i = from + 1; i < to; i++)
                 {
-                    if (pts[i].Altitude.ComputedValue <= 0)
-                        pts[i].Altitude.SetComputedValue(hold, false);
+                    cum += pts[i].Distance;
+                    var value = total < 1e-4f ? alt0 : alt0 + (alt1 - alt0) * (cum / total);
+                    pts[i].Altitude.SetComputedValue(value, false);
                 }
-                continue;
             }
-
-            var alt0 = pts[from].Altitude.ComputedValue;
-            var alt1 = pts[to].Altitude.ComputedValue;
-            var cum = 0f;
-            for (var i = from + 1; i < to; i++)
-            {
-                cum += pts[i].Distance;
-                if (pts[i].Altitude.ComputedValue > 0)
-                    continue;
-                pts[i].Altitude.SetComputedValue(alt0 + (alt1 - alt0) * (cum / total), false);
-            }
+            from = to;
         }
-
-        ClampAbRestrictions(pts);
     }
 
     private static float RunwayTargetAltitude(RoutePoint rw)
@@ -239,19 +256,21 @@ public class DataHandler
     private static void ClampAbRestrictions(RoutePoint[] pts)
     {
         for (var i = 0; i < pts.Length; i++)
-        {
-            var p = pts[i];
-            var fl = p.AltitudeRegulation;
-            var v = p.Altitude.ComputedValue;
-            if (v <= 0)
-                continue;
-            if ((fl == RoutePoint.AltitudeFlags.Below || fl == RoutePoint.AltitudeFlags.AboveBelow)
-                && p.Altitude.RestrictionBelow > 0 && v > p.Altitude.RestrictionBelow)
-                p.Altitude.SetComputedValue(p.Altitude.RestrictionBelow, true);
-            if ((fl == RoutePoint.AltitudeFlags.Above || fl == RoutePoint.AltitudeFlags.AboveBelow)
-                && p.Altitude.RestrictionAbove > 0 && v < p.Altitude.RestrictionAbove)
-                p.Altitude.SetComputedValue(p.Altitude.RestrictionAbove, true);
-        }
+            ClampAbRestriction(pts[i]);
+    }
+
+    private static void ClampAbRestriction(RoutePoint p)
+    {
+        var fl = p.AltitudeRegulation;
+        var v = p.Altitude.ComputedValue;
+        if (v <= 0)
+            return;
+        if ((fl == RoutePoint.AltitudeFlags.Below || fl == RoutePoint.AltitudeFlags.AboveBelow)
+            && p.Altitude.RestrictionBelow > 0 && v > p.Altitude.RestrictionBelow)
+            p.Altitude.SetComputedValue(p.Altitude.RestrictionBelow, true);
+        if ((fl == RoutePoint.AltitudeFlags.Above || fl == RoutePoint.AltitudeFlags.AboveBelow)
+            && p.Altitude.RestrictionAbove > 0 && v < p.Altitude.RestrictionAbove)
+            p.Altitude.SetComputedValue(p.Altitude.RestrictionAbove, true);
     }
 
     private static void ComputeRegulationsInterval(List<AltitudeRegulationNode> regulations, RouteScriptableObject set)
@@ -435,7 +454,7 @@ public class DataHandler
             }
 
             var totalDiff = to.LinkedPoint.GetAcceptedAltitude - from.LinkedPoint.GetAcceptedAltitude;
-            var lossForMile = totalDiff / totalDistance;
+            var lossForMile = totalDistance > 1e-4f ? totalDiff / totalDistance : 0f;
             var altitudeFrom = from.LinkedPoint.GetAcceptedAltitude;
             var cumulativeDistance = 0f;
 
@@ -525,6 +544,28 @@ public class DataHandler
         return true;
     }
 
+
+    private static float ProfileStartAltitude(RoutePoint first)
+    {
+        if (Calculator.Instance != null && Calculator.Instance.StartAltitude > 0)
+            return (float)Calculator.Instance.StartAltitude;
+        if (first.Altitude.ComputedValue > 0)
+            return first.Altitude.ComputedValue;
+        return 10000f;
+    }
+
+    private static List<AltitudeRegulationNode> StartRegulations(RoutePoint point, int pointIndex)
+    {
+        return new List<AltitudeRegulationNode>
+        {
+            new AltitudeRegulationNode
+            {
+                IndexInList = 0,
+                PointIndexInSet = pointIndex,
+                LinkedPoint = point
+            }
+        };
+    }
 
     private class AltitudeRegulationNode
     {

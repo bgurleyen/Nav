@@ -83,16 +83,9 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 10
-    Name: DISC
-    RawDegrees: 60
-    Distance: 0
-    RawSpeed: 0
-    RawAltitude: 
-    Details: D
   - ID: 11
     Name: BEMKA
-    RawDegrees: 270
+    RawDegrees: 150
     Distance: 9
     RawSpeed: 0
     RawAltitude: 3500A

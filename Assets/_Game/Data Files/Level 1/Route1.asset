@@ -54,7 +54,7 @@ MonoBehaviour:
     Distance: 4
     RawSpeed: 0
     RawAltitude: 
-    Details: C
+    Details: 
   - ID: 6
     Name: DV584
     RawDegrees: 91

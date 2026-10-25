@@ -691,9 +691,10 @@ public class Move : Singleton<Move>
         Transform scale = Calculator.Instance.VDI_Index.parent != null
             ? Calculator.Instance.VDI_Index.parent
             : Calculator.Instance.VDI_Index;
+        // Sprite-local bounds: the renderer is disabled while the VDI is hidden.
         var sprite = scale.GetComponent<SpriteRenderer>();
-        Vector3 world = sprite != null
-            ? new Vector3(sprite.bounds.center.x, sprite.bounds.min.y, sprite.bounds.center.z)
+        Vector3 world = sprite != null && sprite.sprite != null
+            ? scale.TransformPoint(new Vector3(sprite.sprite.bounds.center.x, sprite.sprite.bounds.min.y, 0f))
             : scale.position;
 
         Canvas canvas = _armButton.GetComponentInParent<Canvas>();

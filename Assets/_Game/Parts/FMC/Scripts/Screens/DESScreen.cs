@@ -49,6 +49,11 @@ public class DESScreen : ScreenBase
         base.Hide();
 
         CancelInvoke(nameof(Refresh));
+        if (_desNowPending)
+        {
+            _desNowPending = false;
+            Session.IsMod = false;
+        }
     }
 
 
@@ -85,6 +90,60 @@ public class DESScreen : ScreenBase
         ApplyColumnLayout();
         ApplyLargeFontSize();
         ShowTargetSpeed();
+        ShowDesNow();
+    }
+
+    private const string DesNowPrompt = "DES NOW>";
+    private bool _desNowPending;
+    private TMP_Text _desNowLabel;
+
+    /// <summary>6R data line: the large "right label" next to the 6R header.</summary>
+    private TMP_Text DesNowLabel()
+    {
+        if (_desNowLabel != null || lastHRight == null)
+            return _desNowLabel;
+
+        // Line prefab: header/h right and footer/right label.
+        var line = lastHRight.transform.parent != null ? lastHRight.transform.parent.parent : null;
+        if (line != null)
+        {
+            foreach (var t in line.GetComponentsInChildren<TMP_Text>(true))
+            {
+                if (t != lastHRight && t.gameObject.name == "right label")
+                {
+                    _desNowLabel = t;
+                    break;
+                }
+            }
+        }
+        if (_desNowLabel == null)
+            _desNowLabel = lastHRight;
+        return _desNowLabel;
+    }
+
+    private void ShowDesNow()
+    {
+        var label = DesNowLabel();
+        if (label == null)
+            return;
+
+        var calc = Calculator.Instance;
+        bool available = calc != null && calc.DesNowAvailable;
+        if (!available)
+            _desNowPending = false;
+        label.text = available ? DesNowPrompt : "";
+        label.horizontalAlignment = HorizontalAlignmentOptions.Right;
+    }
+
+    public override void OnRightCornerPress()
+    {
+        var calc = Calculator.Instance;
+        if (calc == null || !calc.DesNowAvailable)
+            return;
+
+        _desNowPending = true;
+        Session.IsMod = true;
+        Refresh();
     }
 
     private void ShowTargetSpeed()
@@ -197,33 +256,14 @@ public class DESScreen : ScreenBase
 
     public override void OnExecPress()
     {
+        if (_desNowPending)
+        {
+            _desNowPending = false;
+            Calculator.Instance?.StartDesNow();
+        }
         Session.IsMod = false;
         ShowTargetSpeed();
-    }
-
-
-    public override void OnRightCornerPress()
-    {
-        /*if (Session.State.MapMode == MapMode.Plan)
-        {
-            _nodesController.DoPlanModeStep(false);
-        }
-        else
-        {
-            if (!Session.IsMod)
-            {
-                return;
-            }
-
-            if (_lastSelectionClicked.GetRouteNode() is { IsModified: true } &&
-                _scratchPadInterpreter.IsLinearApproach(out var angle))
-            {
-                Debug.Log("=linear approach= on " + _lastSelectionClicked.GetRouteNode().Name + " with: " + angle);
-                _simulation.ExecuteLinearApproachOnMod(new ExecuteAddLinearApproachCommand { ToNodeId = _lastSelectionClicked.LinkedId, Angle = angle });
-                Debug.Log("OnRightCornerPress");
-            }
-
-        }*/
+        ShowDesNow();
     }
 
     public override void OnLeftCornerPress()
