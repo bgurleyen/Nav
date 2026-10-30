@@ -18,12 +18,12 @@ MonoBehaviour:
     RawDegrees: 172
     Distance: 0
     RawSpeed: 0
-    RawAltitude: 25000
+    RawAltitude: 21000
     Details: 
   - ID: 1
     Name: WYNB
     RawDegrees: 172
-    Distance: 94.4
+    Distance: 78.3
     RawSpeed: 0
     RawAltitude: 
     Details: 

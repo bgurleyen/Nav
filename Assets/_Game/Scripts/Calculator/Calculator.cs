@@ -30,12 +30,20 @@ public class Calculator : MonoBehaviour
     public Text Qnh, txtMach;
 
     public Text txtN1, txtFF, txtTotalFuel;// N1( / 100) , Fuel Flow ( X 100) , Pitch attitude ( / 100)
-    Text _fuelPenaltyLabel;
     public TMP_Text VDI_Text;
 
     public Transform VDI_Index;
     public double StartAltitude;
     public static double CSpeed, CAltitude; // Current Altitude*************************
+    public const int DisplayIasCapKt = 360;
+    public static int DisplayIasKt(double ias)
+    {
+        if (ias > DisplayIasCapKt)
+            return DisplayIasCapKt;
+        if (ias < 0)
+            return 0;
+        return (int)ias;
+    }
     //                            
     private int RVS;
     public static int RSpeed = (int)CSpeed, minimumSpeed = 110, RHeading, RAltitude, CVS, CHeading;
@@ -96,6 +104,7 @@ public class Calculator : MonoBehaviour
     public static bool PacksOn = true;
     public static int EnginesRunning = 2;
     public static double totalFuel = 1000; // 10 tons *100
+    public const int OverspeedFuelPenaltyKg = 10;
 
 
     //Speed:(NM per Hour = Knots)--> Show in PFD , map will move in this speed
@@ -180,7 +189,6 @@ public class Calculator : MonoBehaviour
     {
         totalFuel = 1000;
         SetLabel(txtTotalFuel, "10");
-        RefreshFuelPenaltyLabel();
 
         var points = Session.ActiveRoute?.Points;
         if (points == null || points.Length == 0 || Session.CurrentLevel == null)
@@ -214,13 +222,14 @@ public class Calculator : MonoBehaviour
         SetLabel(txtRAltitude_overTape, txtRAltitude != null ? txtRAltitude.text : "" + RAltitude);
         SetLabel(txtCAltitude, "" + (int)CAltitude);
         SetLabel(txtMeter, "" + (int)(CAltitude / 3.28084) + "M");
-        SetLabel(txtCSpeed, "" + (int)CSpeed);
+        SetLabel(txtCSpeed, "" + DisplayIasKt(CSpeed));
         SetLabel(txtCVS, "");
         SetLabel(FMAarmed, "");
 
         ApplyInitialSpeedDisplayForAltitude();
         BindSpeedWindowClick(txtRSpeed);
         BindSpeedWindowClick(txtRSpeed_overTape);
+        RefreshInitialSpeedDisplay();
 
         Invoke(nameof(VS_Equalize), 1f);
         Invoke(nameof(Speed_Equalize), 0.1f);
@@ -238,7 +247,7 @@ public class Calculator : MonoBehaviour
         if (ScoreTestSceneBootstrap.ConsumePending())
             return;
 
-        // Level Test scene: pick starting level, then fly 320 kt @ 10x with ATC ignored.
+        // Level Test scene: pick starting level, then fly info CRZ speed @ 10x with ATC ignored.
         if (LevelTestMode.IsActive)
         {
             if (LevelTestMode.ConsumeAwaitingLevelPick())
@@ -253,6 +262,19 @@ public class Calculator : MonoBehaviour
                 LevelTestMode.ApplyFlightConfig();
                 return;
             }
+        }
+
+        if (AutopilotMode.IsActive)
+        {
+            if (AutopilotMode.ConsumeAwaitingLevelPick())
+            {
+                Time.timeScale = 0f;
+                AutopilotDialog.ShowLevelPicker();
+                return;
+            }
+
+            if (AutopilotMode.ConsumePendingApplyConfig())
+                AutopilotMode.ApplyInitialConfig();
         }
 
         var levelInfo = FindFirstObjectByType<LevelStartInformation>();
@@ -275,55 +297,43 @@ public class Calculator : MonoBehaviour
             label.text = value;
     }
 
-    void RefreshFuelPenaltyLabel()
+    /// <summary>totalFuel is tons×100; remaining kg = totalFuel×10. 10 kg → 1.0 units.</summary>
+    public void DeductFuelKg(int kilograms)
     {
-        if (txtTotalFuel == null)
+        if (kilograms <= 0 || totalFuel <= 0)
             return;
-
-        if (_fuelPenaltyLabel == null)
-        {
-            Transform existing = txtTotalFuel.transform.parent != null
-                ? txtTotalFuel.transform.parent.Find("Penalty")
-                : null;
-            if (existing != null)
-                _fuelPenaltyLabel = existing.GetComponent<Text>();
-        }
-
-        if (_fuelPenaltyLabel == null)
-        {
-            var source = txtTotalFuel.rectTransform;
-            var go = new GameObject("Penalty", typeof(RectTransform));
-            go.transform.SetParent(source.parent, false);
-
-            var rt = go.GetComponent<RectTransform>();
-            rt.anchorMin = source.anchorMin;
-            rt.anchorMax = source.anchorMax;
-            rt.pivot = new Vector2(0f, source.pivot.y);
-            rt.localRotation = source.localRotation;
-            rt.localScale = Vector3.one;
-            rt.sizeDelta = new Vector2(180f, source.sizeDelta.y);
-            float rightEdge = source.anchoredPosition.x + source.sizeDelta.x * (1f - source.pivot.x);
-            rt.anchoredPosition = new Vector2(rightEdge + 8f, source.anchoredPosition.y);
-
-            _fuelPenaltyLabel = go.AddComponent<Text>();
-            _fuelPenaltyLabel.font = txtTotalFuel.font;
-            _fuelPenaltyLabel.fontSize = txtTotalFuel.fontSize;
-            _fuelPenaltyLabel.fontStyle = txtTotalFuel.fontStyle;
-            _fuelPenaltyLabel.alignment = TextAnchor.MiddleLeft;
-            _fuelPenaltyLabel.color = new Color(0.30f, 0.66f, 0.79f, 0.78f);
-            _fuelPenaltyLabel.horizontalOverflow = HorizontalWrapMode.Overflow;
-            _fuelPenaltyLabel.verticalOverflow = VerticalWrapMode.Overflow;
-            _fuelPenaltyLabel.raycastTarget = false;
-        }
-
-        int kg = Move.Instance != null ? Mathf.RoundToInt((float)Move.Instance.FuelPenaltyKg) : 0;
-        _fuelPenaltyLabel.color = new Color(0.30f, 0.66f, 0.79f, 0.78f);
-        _fuelPenaltyLabel.text = "pty: " + kg + " kg";
+        double units = kilograms / 10.0;
+        if (units > totalFuel)
+            units = totalFuel;
+        totalFuel -= units;
+        SetLabel(txtTotalFuel, "" + System.Math.Round(totalFuel / 100, 2));
     }
 
     PFD_Animation FindPfd()
     {
         return FindObjectOfType<PFD_Animation>();
+    }
+
+    /// <summary>
+    /// PFD speed tape and bug follow CRZ before the briefing pauses scaled time.
+    /// Speed_Equalize is an Invoke, so it does not run while timeScale is 0.
+    /// </summary>
+    void RefreshInitialSpeedDisplay()
+    {
+        SnapSpeedBug();
+    }
+
+    /// <summary>Selected speed, speed window and PFD speed bug all sit on RSpeed.</summary>
+    public void SnapSpeedBug()
+    {
+        if (co != null && co.isOn)
+            RMach = Speed2Mach(RSpeed, CAltitude);
+        RefreshSpeedWindow();
+        var pfd = FindPfd();
+        if (pfd == null)
+            return;
+        pfd.SpeedTapeUpdate();
+        pfd.SpeedIndexUpdate_Click();
     }
 
     /// <summary>
@@ -536,7 +546,6 @@ public class Calculator : MonoBehaviour
                 Debug.LogException(ex);
             }
 
-            //Debug.Log(Move.Instance.FuelPenaltyKg);
             yield return new WaitForSeconds(1);
         }
     }
@@ -969,6 +978,8 @@ public class Calculator : MonoBehaviour
     {
         if (LevelTestMode.IsActive)
             LevelTestMode.EnforceFlightConfig();
+        else if (AutopilotMode.IsActive)
+            AutopilotMode.EnforceFlightConfig();
 
         int rrSpeed = RSpeed;
         try
@@ -1018,7 +1029,7 @@ public class Calculator : MonoBehaviour
                 if (Math.Abs(rrSpeed - CSpeed) <= 0.5)
                     _speedKnotCredit = 0f;
                 if (CSpeed != before)
-                    SetLabel(txtCSpeed, "" + (int)CSpeed);
+                    SetLabel(txtCSpeed, "" + DisplayIasKt(CSpeed));
 
                 float secondsPerKnot = 60f / rate;
                 SpeedTime = secondsPerKnot;
@@ -2697,7 +2708,6 @@ public class Calculator : MonoBehaviour
         double burned = (double)FF * engines / 3600 * Session.Settings.SpeedMultiplier;
         totalFuel -= burned;
         SetLabel(txtTotalFuel, "" + System.Math.Round(totalFuel / 100, 2));
-        RefreshFuelPenaltyLabel();
 
         CMach = Speed2Mach(CSpeed, CAltitude);
         SetLabel(txtMach, CMach > 0.4 ? FormatMach(CMach) : "GS " + GS);
@@ -2779,10 +2789,14 @@ public class Calculator : MonoBehaviour
 
     bool CanSelectFlap(int flapIdx)
     {
+        if (AutopilotMode.IsActive)
+            return true;
         return CSpeed <= PFD_Animation.FlapSelectLimitKnots(flapIdx);
     }
     public static bool GearLeverLocked()
     {
+        if (AutopilotMode.IsActive)
+            return false;
         return CSpeed > 270 || Speed2Mach(CSpeed, CAltitude) > 0.82;
     }
 
@@ -3134,25 +3148,6 @@ public class Calculator : MonoBehaviour
         if (LevelTestMode.IsActive)
             return;
 
-        // CLEAR ILS is already out. Leaving the final course by 10 NM ends the level.
-        // Once LOC is captured, the airplane is established and may turn back onto the line.
-        if (Move.Instance.IlsArmCommandIssued
-            && (Session.State == null || !Session.State.LOCCaptured)
-            && Move.Instance.FinalApproachCrossTrackNm() >= 10f)
-        {
-            _approachEndTriggered = true;
-            ApproachStatusDialog.Show("APP NOT ARMED", "", "Exit", () =>
-            {
-                Aircraft aircraft = FindAnyObjectByType<Aircraft>();
-                if (aircraft != null)
-                {
-                    aircraft.FinishGame(isStable: false);
-                    CAltitude = 10000;
-                }
-            });
-            return;
-        }
-
         float dme = Move.Instance.DME();
         if (dme >= 3f && CAltitude > 1000)
             return;
@@ -3164,6 +3159,12 @@ public class Calculator : MonoBehaviour
         _approachEndTriggered = true;
 
         var report = BuildStabilizationReport(out bool allOk);
+        if (AutopilotMode.IsActive)
+        {
+            AutopilotMode.PresentStabilizationAndFinish(allOk ? "STABLE" : "NOT STABLE", report, allOk);
+            return;
+        }
+
         ApproachStatusDialog.Show(allOk ? "STABLE" : "NOT STABLE", report, "Exit", () =>
         {
             Aircraft aircraft = FindAnyObjectByType<Aircraft>();

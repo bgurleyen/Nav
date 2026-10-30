@@ -167,6 +167,15 @@ public class ApproachStatusDialog : MonoBehaviour
         _instance.Close();
     }
 
+    /// <summary>Autopilot: invoke Exit immediately after Show (runs close callback).</summary>
+    public static void AutoPressExit()
+    {
+        if (_instance == null || !_instance.gameObject.activeSelf)
+            return;
+
+        _instance.Close();
+    }
+
     void Close()
     {
         gameObject.SetActive(false);

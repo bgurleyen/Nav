@@ -1,3 +1,4 @@
+using Navigation;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -9,6 +10,7 @@ public class NdPauseOverlay : MonoBehaviour
 {
     const string PauseText = "P A U S E";
     const string CheckSpeedText = "C H E C K   S P E E D";
+    const string OverspeedTitle = "O V E R S P E E D";
     const float PulseSpeed = 3.5f;
     const float FontSize = 3.4f * 1.5f;
     const float CheckSpeedSeconds = 3f;
@@ -21,6 +23,8 @@ public class NdPauseOverlay : MonoBehaviour
     Transform _pivot;
     TMP_Text _fontSource;
     TextMeshPro _label;
+    float _overspeedAccSec;
+    int _overspeedPenaltyKg;
 
     public static void NotifyCheckSpeed()
     {
@@ -48,7 +52,9 @@ public class NdPauseOverlay : MonoBehaviour
 
         var checkSpeed = Time.unscaledTime < _checkSpeedUntilUnscaled;
         var pause = ShouldShowPause();
-        var show = checkSpeed || pause;
+        var overspeed = !pause && IsOverspeed();
+        TickOverspeedFuel(overspeed);
+        var show = overspeed || checkSpeed || pause;
         if (force || _label.gameObject.activeSelf != show)
             _label.gameObject.SetActive(show);
 
@@ -56,8 +62,22 @@ public class NdPauseOverlay : MonoBehaviour
             return;
 
         var pulse = (Mathf.Sin(Time.unscaledTime * PulseSpeed) + 1f) * 0.5f;
-        if (checkSpeed)
+        if (overspeed)
         {
+            _label.enableWordWrapping = true;
+            _label.overflowMode = TextOverflowModes.Overflow;
+            _label.rectTransform.sizeDelta = new Vector2(16f, 3.4f);
+            var text = OverspeedTitle + "\nFuel Penalty  - " + _overspeedPenaltyKg + "kg";
+            if (_label.text != text)
+                _label.text = text;
+            var color = NdRed;
+            color.a = Mathf.Lerp(0.55f, 1f, pulse);
+            _label.color = color;
+        }
+        else if (checkSpeed)
+        {
+            _label.enableWordWrapping = false;
+            _label.rectTransform.sizeDelta = new Vector2(16f, 1.5f);
             if (_label.text != CheckSpeedText)
                 _label.text = CheckSpeedText;
             var color = NdRed;
@@ -66,12 +86,52 @@ public class NdPauseOverlay : MonoBehaviour
         }
         else
         {
+            _label.enableWordWrapping = false;
+            _label.rectTransform.sizeDelta = new Vector2(16f, 1.5f);
             if (_label.text != PauseText)
                 _label.text = PauseText;
             var color = NdCyan;
             color.a = Mathf.Lerp(0.55f, 1f, pulse);
             _label.color = color;
         }
+    }
+
+    static bool IsOverspeed()
+    {
+        return PFD_Animation.LimitSpeed > 0 && Calculator.CSpeed >= PFD_Animation.LimitSpeed;
+    }
+
+    void TickOverspeedFuel(bool overspeed)
+    {
+        if (!overspeed)
+        {
+            _overspeedAccSec = 0f;
+            _overspeedPenaltyKg = 0;
+            return;
+        }
+
+        if (_overspeedPenaltyKg <= 0)
+            ApplyOverspeedPenalty();
+
+        float dt = Session.Settings != null ? Session.Settings.FlyingTickDuration : Time.deltaTime;
+        if (dt < 0f)
+            dt = 0f;
+        _overspeedAccSec += dt;
+        while (_overspeedAccSec >= 1f)
+        {
+            _overspeedAccSec -= 1f;
+            ApplyOverspeedPenalty();
+        }
+    }
+
+    void ApplyOverspeedPenalty()
+    {
+        int kg = Calculator.OverspeedFuelPenaltyKg;
+        _overspeedPenaltyKg += kg;
+        if (Calculator.Instance != null)
+            Calculator.Instance.DeductFuelKg(kg);
+        else
+            Calculator.totalFuel = System.Math.Max(0, Calculator.totalFuel - kg / 10.0);
     }
 
     static bool ShouldShowPause()

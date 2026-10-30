@@ -11,7 +11,6 @@ public static class LevelTestMode
     public const string SceneName = "Level Test";
     public const string MainSceneName = "Main";
 
-    public const int InitialSpeedKnots = 320;
     public const int ForcedSpeedMultiplier = 10;
 
     static bool _isActive;
@@ -69,7 +68,7 @@ public static class LevelTestMode
         return true;
     }
 
-    /// <summary>Calculator.Start: apply 320 kt / 10x / APP after level chosen or auto-advance.</summary>
+    /// <summary>Calculator.Start: apply info CRZ speed / 10x / APP after level chosen or auto-advance.</summary>
     public static bool ConsumePendingApplyConfig()
     {
         if (!_isActive || !_pendingApplyConfig)
@@ -105,14 +104,16 @@ public static class LevelTestMode
         if (!_isActive || Session.State == null)
             return;
 
-        Calculator.CSpeed = InitialSpeedKnots;
-        Calculator.RSpeed = InitialSpeedKnots;
+        int cruise = CruiseSpeedKnots();
+        Calculator.CSpeed = cruise;
+        Calculator.RSpeed = cruise;
 
         if (Calculator.Instance != null)
         {
             if (Calculator.Instance.txtCSpeed != null)
-                Calculator.Instance.txtCSpeed.text = InitialSpeedKnots.ToString();
+                Calculator.Instance.txtCSpeed.text = Calculator.DisplayIasKt(cruise).ToString();
             Calculator.Instance.ShowSpeedWindow();
+            Calculator.Instance.SnapSpeedBug();
         }
 
         Session.State.Speed10X.Set(true);
@@ -125,7 +126,13 @@ public static class LevelTestMode
         LevelTestDialog.NotifyLevelRunning(PlayerPrefsHolder.Level);
 
         Debug.Log(
-            $"[LevelTest] Level {PlayerPrefsHolder.Level} — start {InitialSpeedKnots} kt (manual) @ {ForcedSpeedMultiplier}x, ATC ignored (APP arms at VS_nx=3)");
+            $"[LevelTest] Level {PlayerPrefsHolder.Level} — start {cruise} kt CRZ (manual) @ {ForcedSpeedMultiplier}x, ATC ignored (APP arms at VS_nx=3)");
+    }
+
+    static int CruiseSpeedKnots()
+    {
+        var info = Session.CurrentLevel != null ? Session.CurrentLevel.levelInfo : null;
+        return info != null && info.CrzSpeed > 0 ? info.CrzSpeed : 250;
     }
 
     /// <summary>Keep 10x; do not override pilot-selected IAS or APP arm state.</summary>

@@ -18,12 +18,12 @@ MonoBehaviour:
     RawDegrees: 146
     Distance: 0
     RawSpeed: 0
-    RawAltitude: 38000
+    RawAltitude: 21000
     Details: 
   - ID: 1
     Name: AVITU
     RawDegrees: 146
-    Distance: 46.2
+    Distance: 36
     RawSpeed: 0
     RawAltitude: 
     Details: 

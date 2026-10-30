@@ -571,14 +571,9 @@ public class DebriefSummaryPanel : MonoBehaviour
         if (_remainingFuel != null)
             _remainingFuel.text = DebriefMetrics.FormatFuel(remainingFuelKg);
 
-        int penaltyKg = Move.Instance != null ? (int)Math.Round(Move.Instance.FuelPenaltyKg) : 0;
         TMP_Text scoreHint = FindTextUnder(transform, "ScoreHint");
         if (scoreHint != null)
-        {
-            scoreHint.text = penaltyKg > 0
-                ? $"Includes {penaltyKg:N0} kg ATC penalty"
-                : "Remaining fuel at touchdown";
-        }
+            scoreHint.text = "Remaining fuel at touchdown";
 
         if (_fuelRank != null)
             _fuelRank.text = DebriefMetrics.FormatRank(rank, totalPlayers);

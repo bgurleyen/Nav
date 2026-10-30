@@ -23,7 +23,7 @@ MonoBehaviour:
   - ID: 1
     Name: CARLI
     RawDegrees: 88
-    Distance: 55.4
+    Distance: 25
     RawSpeed: 0
     RawAltitude: 
     Details: 

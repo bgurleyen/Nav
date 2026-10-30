@@ -31,13 +31,15 @@ public class PFD_Animation : MonoBehaviour
         upSpeed.transform.localPosition = new Vector2(92, upSpeedVal * 2 - 445);
         Vref.transform.localPosition = new Vector2(92, (upSpeedVal - 70) * 2 - 443);
         SyncVariables();
+        SpeedTapeUpdate();
+        SpeedIndexUpdate_Click();
         AltUpdate(10000);//Init at 10k to update to initial Alt.
     }
 
     public void SyncVariables()
     {
         RSpeed = (int)Calculator.RSpeed;
-        CSpeed = Calculator.CSpeed;
+        CSpeed = Calculator.DisplayIasKt(Calculator.CSpeed);
     }
     // Red speed-tape band Y while this flap index is set. Knots = 220 + (bandY - 190) / 2.
     // 737-800 placard: UP 340, flaps 1/2/5 250, 10 210, 15 200, 25 190, 30 175, 40 162.
@@ -74,7 +76,7 @@ public class PFD_Animation : MonoBehaviour
     public void SpeedTapeUpdate()
     {
         RSpeed = Calculator.RSpeed;
-        CSpeed = Calculator.CSpeed;
+        CSpeed = Calculator.DisplayIasKt(Calculator.CSpeed);
         int MachLimSpeed = (int)Calculator.Mach2Speed(0.82, Calculator.CAltitude);
         speedTape.transform.localPosition = new Vector2(-150, (float)-CSpeed * 2 + 440);
         CheckSpeedIndicator();
@@ -89,7 +91,7 @@ public class PFD_Animation : MonoBehaviour
     public void SpeedIndexUpdate_Click()
     {
         RSpeed = Calculator.RSpeed;
-        CSpeed = (int)Calculator.CSpeed;
+        CSpeed = Calculator.DisplayIasKt(Calculator.CSpeed);
 
         if ((RSpeed < CSpeed + 52) && (RSpeed > CSpeed - 52))
         {

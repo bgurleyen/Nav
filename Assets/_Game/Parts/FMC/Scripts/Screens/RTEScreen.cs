@@ -9,6 +9,7 @@ public class RTEScreen : ScreenBase
    [SerializeField] private TMP_Text _rw;
    [SerializeField] private TMP_Text _origin;
    [SerializeField] private TMP_Text _originHeader;
+   TMP_Text _levelLabel;
 
    public override void Show()
    {
@@ -37,7 +38,10 @@ public class RTEScreen : ScreenBase
       {
          var fmc = infoFMC.Live;
          if (fmc == null)
+         {
+            RefreshLevelLabel();
             return;
+         }
 
          var rte = fmc.Rte;
          
@@ -63,7 +67,84 @@ public class RTEScreen : ScreenBase
                _origin.fontSize = _destination.fontSize;
             }
          }
+
+         RefreshLevelLabel();
       }
+
+   void RefreshLevelLabel()
+   {
+      if (_levelLabel == null)
+         _levelLabel = CreateLevelLabel();
+      if (_levelLabel == null)
+         return;
+
+      var info = Session.CurrentLevel != null ? Session.CurrentLevel.levelInfo : null;
+      _levelLabel.text = info != null && info.LevelNumber > 0
+         ? "LEVEL " + info.LevelNumber
+         : "LEVEL";
+
+      if (_origin == null)
+         return;
+
+      _levelLabel.font = _origin.font;
+      _levelLabel.fontSharedMaterial = _origin.fontSharedMaterial;
+      _levelLabel.color = _origin.color;
+      _levelLabel.fontStyle = _origin.fontStyle;
+      _levelLabel.enableAutoSizing = false;
+      _levelLabel.fontSize = _origin.fontSize;
+      _levelLabel.alignment = _origin.alignment;
+   }
+
+   TMP_Text CreateLevelLabel()
+   {
+      if (_origin == null)
+         return null;
+
+      var sourceLine = _origin.transform;
+      while (sourceLine != null && sourceLine.name != "Three Columns HF Line")
+         sourceLine = sourceLine.parent;
+      if (sourceLine == null)
+         return null;
+
+      Transform bottomRow = null;
+      var rows = GetComponentsInChildren<Transform>(true);
+      for (var i = 0; i < rows.Length; i++)
+      {
+         if (rows[i].name == "LineEntry 5")
+         {
+            bottomRow = rows[i];
+            break;
+         }
+      }
+      if (bottomRow == null)
+         return null;
+
+      var copy = Instantiate(sourceLine.gameObject, bottomRow);
+      copy.name = "Level Line";
+      var rect = copy.GetComponent<RectTransform>();
+      rect.anchorMin = Vector2.zero;
+      rect.anchorMax = Vector2.one;
+      rect.offsetMin = Vector2.zero;
+      rect.offsetMax = Vector2.zero;
+      rect.localScale = Vector3.one;
+
+      TMP_Text left = null;
+      var labels = copy.GetComponentsInChildren<TMP_Text>(true);
+      for (var i = 0; i < labels.Length; i++)
+      {
+         var label = labels[i];
+         if (label.gameObject.name == "left label")
+         {
+            left = label;
+            label.gameObject.SetActive(true);
+            continue;
+         }
+
+         label.gameObject.SetActive(false);
+      }
+
+      return left;
+   }
 
    private void CacheOriginLabels()
    {

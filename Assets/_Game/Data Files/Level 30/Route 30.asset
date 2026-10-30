@@ -18,12 +18,12 @@ MonoBehaviour:
     RawDegrees: 221
     Distance: 0
     RawSpeed: 0
-    RawAltitude: 23000
+    RawAltitude: 20000
     Details: 
   - ID: 1
     Name: OBOGA
     RawDegrees: 221
-    Distance: 87.3
+    Distance: 60.7
     RawSpeed: 0
     RawAltitude: 
     Details: 

@@ -18,12 +18,12 @@ MonoBehaviour:
     RawDegrees: 133
     Distance: 0
     RawSpeed: 0
-    RawAltitude: 24000
+    RawAltitude: 22000
     Details: 
   - ID: 1
     Name: NEGRA
     RawDegrees: 133
-    Distance: 50.9
+    Distance: 61
     RawSpeed: 0
     RawAltitude: 
     Details: 

@@ -23,7 +23,7 @@ MonoBehaviour:
   - ID: 1
     Name: KENET
     RawDegrees: 167
-    Distance: 51.4
+    Distance: 50
     RawSpeed: 0
     RawAltitude: 14000B7000A
     Details: 

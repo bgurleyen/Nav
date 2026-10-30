@@ -23,7 +23,7 @@ MonoBehaviour:
   - ID: 1
     Name: SILVA
     RawDegrees: 80
-    Distance: 61.1
+    Distance: 70
     RawSpeed: 240
     RawAltitude: 9000A
     Details: 

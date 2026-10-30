@@ -92,13 +92,19 @@ namespace Navigation
 
                 pilot.TickSteerToPathFoundVertex(foundVertex, out var heading );
                 pilot.TickAdvance();
-                if (Math.Abs(heading - cachedLastHeading) < 0.001f && tracePositions.Count > 1)
+                var headingSettled = Math.Abs(heading - cachedLastHeading) < 0.001f;
+                if (headingSettled && tracePositions.Count > 1)
                 {
                     tracePositions.RemoveAt(tracePositions.Count - 1);
                 }
 
                 cachedLastHeading = heading;
-                tracePositions.Add(pilot.NMPosition);
+                // Settled heading used to keep the tracer's small cross-track, so the
+                // straight chord sat beside the leg. Pin that sample to the leg.
+                var recorded = headingSettled
+                    ? ProjectOntoLeg(pilot.NMPosition, StartNMPosition, EndNMPosition)
+                    : pilot.NMPosition;
+                tracePositions.Add(recorded);
 
                 if (reachedEnd)
                 {
@@ -114,6 +120,16 @@ namespace Navigation
 
             //Debug.Log($"tracePositions : {tracePositions.Count}");
             Vertexes = tracePositions.ToArray();
+        }
+
+        static Vector2 ProjectOntoLeg(Vector2 point, Vector2 from, Vector2 to)
+        {
+            var ab = to - from;
+            var lenSq = ab.sqrMagnitude;
+            if (lenSq < 0.0001f)
+                return point;
+            var t = Mathf.Clamp01(Vector2.Dot(point - from, ab) / lenSq);
+            return from + ab * t;
         }
 
         /// <summary>

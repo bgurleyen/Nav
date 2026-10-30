@@ -289,16 +289,6 @@ public class Drawer : MonoBehaviour
             drawer.Init(label, Color.white, 0f, 45f);
             drawer.transform.localPosition = positions[key].ToDisplay();
         }
-
-        var originSpawn = otherAircraftsPool.Spawn(Vector3.zero, Quaternion.identity, dynamicHolderOtheriarcrafts);
-        if (originSpawn == null)
-            return;
-        var objective = originSpawn.GetComponent<OtherAircrafIndicator>();
-        if (objective == null)
-            return;
-        objective.name = "origin";
-        objective.Init("o", Color.blue);
-        objective.transform.localPosition = Vector2.zero.ToDisplay();
     }
 
 

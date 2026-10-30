@@ -23,7 +23,7 @@ MonoBehaviour:
   - ID: 1
     Name: POPET
     RawDegrees: 78
-    Distance: 101.07
+    Distance: 70
     RawSpeed: 0
     RawAltitude: 
     Details: 
@@ -41,21 +41,21 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 5
+  - ID: 4
     Name: CI25L
     RawDegrees: 0
     Distance: 4
     RawSpeed: 179
     RawAltitude: 1750
     Details: 
-  - ID: 6
+  - ID: 5
     Name: SGNB
     RawDegrees: 249
     Distance: 4
     RawSpeed: 173
     RawAltitude: 1750
     Details: 
-  - ID: 7
+  - ID: 6
     Name: RW25L
     RawDegrees: 249
     Distance: 5.3

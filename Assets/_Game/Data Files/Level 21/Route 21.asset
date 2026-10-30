@@ -23,7 +23,7 @@ MonoBehaviour:
   - ID: 1
     Name: GELBU
     RawDegrees: 128
-    Distance: 134.9
+    Distance: 26
     RawSpeed: 0
     RawAltitude: 
     Details: 
@@ -104,28 +104,28 @@ MonoBehaviour:
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 14
+  - ID: 13
     Name: ASDEV
     RawDegrees: 329
     Distance: 4
     RawSpeed: 0
     RawAltitude: 
     Details: 
-  - ID: 15
+  - ID: 14
     Name: CI06
     RawDegrees: 59
     Distance: 1.6
     RawSpeed: 179
     RawAltitude: 3000
     Details: 
-  - ID: 16
+  - ID: 15
     Name: FI06
     RawDegrees: 59
     Distance: 3
     RawSpeed: 173
     RawAltitude: 
     Details: 
-  - ID: 17
+  - ID: 16
     Name: RW06
     RawDegrees: 60
     Distance: 4.2

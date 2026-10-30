@@ -5,11 +5,19 @@ using UnityEngine;
 public class OtherAC
 {
     const float PointCheckNm = 1.3f;
-    const float SpacingNm = 10f;
+    const float StarGsKt = 400f;
+    const float RwyGsKt = 140f;
+    const float FinalSpacingNm = 5f;
+    const float GateNm = 20f;
+    const float GateAboveRwyFt = 6000f;
     const float OwnHideNm = 3f;
     const float OwnHideFt = 1000f;
     const float OwnShortFinalNm = 15f;
     const float TrafficNearRunwayNm = 3f;
+    const float TcasMaxRangeNm = 40f;
+    const float PositionPeriodSec = 1f;
+    const float TrafficSepNm = 5f;
+    const float TrafficSepFt = 1000f;
 
     private ACInfo[] _acItems;
     private string _aircraftKey;
@@ -18,7 +26,6 @@ public class OtherAC
     private bool _hidden;
     private Vector2 finalPosition;
     private float AltitudeC;
-    private int AltitudeR;
     private int PointIndex;
     private Vector2 PtPos;
     private float dx, dy, hyp, x, y;
@@ -26,6 +33,16 @@ public class OtherAC
     private float[] _rem;
     private float _rwyAlt;
     private float _initialRemaining;
+    private bool _released;
+    private float _releaseAtHours;
+    private int _lastPosSeq = -1;
+    private static OtherAC[] _all;
+    private static float _simHours;
+    private static int _clockFrame = -1;
+    private static float _posAccSec;
+    private static float _posStepSec;
+    private static bool _posDue;
+    private static int _posSeq;
 
     public OtherAC(int acIndex, LevelDataScriptableObject levelData)
     {
@@ -43,31 +60,37 @@ public class OtherAC
 
     public static void ApplyFormation(OtherAC[] all)
     {
+        _all = all;
+        _simHours = 0f;
+        _clockFrame = -1;
+        _posAccSec = 0f;
+        _posStepSec = 0f;
+        _posDue = false;
+        _posSeq = 0;
         if (all == null)
             return;
 
         var flying = new List<OtherAC>();
-        int paceSlot = -1;
         for (int i = 0; i < all.Length; i++)
         {
             OtherAC ac = all[i];
             if (ac == null || !ac.HasRoute)
                 continue;
-            if (ac._acIndex == 6)
-                paceSlot = flying.Count;
+            ac.PlaceForDesired(ac._rem[0]);
+            ac.Hold();
             flying.Add(ac);
         }
 
-        float own = Move.Instance != null ? Move.Instance.OwnFlownPathNm() : 0f;
+        flying.Sort(CompareStarArrival);
+        float prevArrival = 0f;
+        float gapHours = FinalSpacingNm / RwyGsKt;
         for (int s = 0; s < flying.Count; s++)
         {
-            float desired = flying[s]._rem[0];
-            if (paceSlot >= 0 && own >= 1f)
-                desired = own + SpacingNm * (s - paceSlot);
-            if (desired < 0.5f)
-                desired = 0.5f;
-            flying[s].PlaceForDesired(desired);
-            flying[s].Show();
+            float path = flying[s]._rem[0];
+            float fromStar = TimeToRwyHours(path, path);
+            float arrival = s == 0 ? fromStar : Mathf.Max(fromStar, prevArrival + gapHours);
+            prevArrival = arrival;
+            flying[s]._releaseAtHours = arrival - fromStar;
         }
     }
 
@@ -76,12 +99,33 @@ public class OtherAC
         if (_hidden || _acItems == null || Session.Settings == null || Move.Instance == null || acTexts == null || acPositions == null)
             return;
 
+        AdvanceClock();
+        if (!_released)
+        {
+            if (_simHours < _releaseAtHours)
+            {
+                SuppressDisplay(acTexts, acPositions);
+                return;
+            }
+            _released = true;
+        }
+
+        if (_hidden || !_released)
+        {
+            SuppressDisplay(acTexts, acPositions);
+            return;
+        }
+
+        if (!_posDue || _lastPosSeq == _posSeq)
+            return;
+        _lastPosSeq = _posSeq;
+
         if (_currentPointIndex >= _acItems.Length)
             RestartRoute();
-        if (_hidden)
+        if (_hidden || !_released)
             return;
 
-        float stepLeft = Session.Settings.AircraftTickDistance(OwnGroundSpeedKt());
+        float stepLeft = GroundSpeedKt() / 3600f * _posStepSec;
 
         if (!acPositions.ContainsKey(_aircraftKey))
         {
@@ -90,11 +134,10 @@ public class OtherAC
         }
 
         int hops = 0;
-        while (stepLeft > 0.0001f && !_hidden && _currentPointIndex < _acItems.Length && hops < 200)
+        while (stepLeft > 0.0001f && !_hidden && _released && _currentPointIndex < _acItems.Length && hops < 200)
         {
             hops++;
             PointIndex = _acItems[_currentPointIndex].Point;
-            AltitudeR = _acItems[_currentPointIndex].Altitude;
             PtPos = Move.Instance.PointPos(PointIndex);
 
             x = finalPosition.x;
@@ -118,7 +161,6 @@ public class OtherAC
             if (toCheck <= stepLeft)
             {
                 finalPosition = new Vector2(x + dx / hyp * toCheck, y + dy / hyp * toCheck);
-                AltitudeC -= (AltitudeC - AltitudeR) / hyp * toCheck;
                 stepLeft -= toCheck;
                 if (_currentPointIndex >= _acItems.Length - 1)
                 {
@@ -129,22 +171,23 @@ public class OtherAC
                 continue;
             }
 
-            AltitudeC -= (AltitudeC - AltitudeR) / hyp * stepLeft;
             finalPosition = new Vector2(x + dx / hyp * stepLeft, y + dy / hyp * stepLeft);
             stepLeft = 0f;
         }
 
-        if (_hidden)
+        AltitudeC = ProfileAltitude(RemainingNm());
+
+        if (_hidden || !_released)
+        {
+            SuppressDisplay(acTexts, acPositions);
             return;
+        }
 
         if (TooCloseToOwn() || HideTrafficNearRunway())
         {
             RestartRoute();
-            if (_hidden || TooCloseToOwn() || HideTrafficNearRunway())
-            {
-                SuppressDisplay(acTexts, acPositions);
-                return;
-            }
+            SuppressDisplay(acTexts, acPositions);
+            return;
         }
 
         if (!InsideTcasWindow())
@@ -165,6 +208,65 @@ public class OtherAC
         acTexts[_aircraftKey] = RelativeAltitudeLabel();
     }
 
+    public static void ApplyVerticalSeparation(
+        Dictionary<string, string> acTexts, Dictionary<string, Vector2> acPositions)
+    {
+        if (_all == null)
+            return;
+
+        for (int i = 0; i < _all.Length; i++)
+        {
+            OtherAC ac = _all[i];
+            if (ac == null || !ac.IsFlying())
+                continue;
+            ac.AltitudeC = ac.ProfileAltitude(ac.RemainingNm());
+        }
+
+        bool changed = true;
+        int guard = 0;
+        while (changed && guard < 20)
+        {
+            changed = false;
+            guard++;
+            for (int i = 0; i < _all.Length; i++)
+            {
+                OtherAC a = _all[i];
+                if (a == null || !a.IsFlying())
+                    continue;
+                for (int j = i + 1; j < _all.Length; j++)
+                {
+                    OtherAC b = _all[j];
+                    if (b == null || !b.IsFlying())
+                        continue;
+                    if (Vector2.Distance(a.finalPosition, b.finalPosition) >= TrafficSepNm)
+                        continue;
+                    if (Mathf.Abs(a.AltitudeC - b.AltitudeC) >= TrafficSepFt)
+                        continue;
+                    if (a.AltitudeC > b.AltitudeC || (a.AltitudeC == b.AltitudeC && a._acIndex < b._acIndex))
+                        a.AltitudeC += TrafficSepFt;
+                    else
+                        b.AltitudeC += TrafficSepFt;
+                    changed = true;
+                }
+            }
+        }
+
+        if (acTexts == null)
+            return;
+        for (int i = 0; i < _all.Length; i++)
+        {
+            OtherAC ac = _all[i];
+            if (ac == null || !ac.IsFlying() || !acTexts.ContainsKey(ac._aircraftKey))
+                continue;
+            acTexts[ac._aircraftKey] = ac.RelativeAltitudeLabel();
+        }
+    }
+
+    private bool IsFlying()
+    {
+        return !_hidden && _released && HasRoute;
+    }
+
     private bool InsideTcasWindow()
     {
         if (Session.State == null || Session.PlayerAircraft == null || Session.State.MapMode == MapMode.Plan)
@@ -177,7 +279,8 @@ public class OtherAC
             zoom = Session.Settings != null ? Session.Settings.StartingZoom : 1f;
         if (zoom < 0.01f)
             zoom = 1f;
-        float rangeNm = 80f / zoom;
+        float mapRangeNm = 80f / zoom;
+        float rangeNm = Mathf.Min(TcasMaxRangeNm, mapRangeNm);
         return Vector2.Distance(finalPosition, Session.PlayerAircraft.NMPosition) <= rangeNm;
     }
 
@@ -229,7 +332,7 @@ public class OtherAC
             items[i] = new ACInfo
             {
                 Point = ids[i],
-                Altitude = Mathf.Max(0, Mathf.RoundToInt(rwyAlt + rem[i] * 300f)),
+                Altitude = Mathf.Max(0, Mathf.RoundToInt(ProfileAltitude(rem[i], rem[0], rwyAlt))),
                 Speed = 0
             };
         }
@@ -271,21 +374,149 @@ public class OtherAC
         }
 
         _initialRemaining = RemainingNm();
-        AltitudeC = _rwyAlt + _initialRemaining * 300f;
+        AltitudeC = ProfileAltitude(_initialRemaining);
     }
 
-    private void Show()
+    private void Hold()
     {
-        if (_hidden)
+        _released = false;
+        _releaseAtHours = 0f;
+        _hidden = false;
+    }
+
+    private static void AdvanceClock()
+    {
+        int frame = Time.frameCount;
+        if (frame == _clockFrame)
             return;
-        if (TooCloseToOwn() || HideTrafficNearRunway())
-            SuppressDisplay();
+        _clockFrame = frame;
+        float dt = Session.Settings != null ? Session.Settings.FlyingTickDuration : 0f;
+        if (dt < 0f)
+            dt = 0f;
+        _simHours += dt / 3600f;
+        _posAccSec += dt;
+        _posStepSec = 0f;
+        _posDue = false;
+        while (_posAccSec >= PositionPeriodSec)
+        {
+            _posAccSec -= PositionPeriodSec;
+            _posStepSec += PositionPeriodSec;
+        }
+        if (_posStepSec > 0f)
+        {
+            _posDue = true;
+            _posSeq++;
+        }
     }
 
-    private static float OwnGroundSpeedKt()
+    private float GroundSpeedKt()
     {
-        float ownGs = Calculator.GS > 1f ? Calculator.GS : (float)Calculator.CSpeed;
-        return ownGs < 1f ? 1f : ownGs;
+        float path = PathNm();
+        float rem = RemainingNm();
+        float gs = ProfileGs(rem, path);
+        return gs < 1f ? 1f : gs;
+    }
+
+    private float PathNm()
+    {
+        if (_rem == null || _rem.Length == 0)
+            return 1f;
+        return _rem[0] < 0.01f ? 1f : _rem[0];
+    }
+
+    private static int CompareStarArrival(OtherAC a, OtherAC b)
+    {
+        float ta = TimeToRwyHours(a._rem[0], a._rem[0]);
+        float tb = TimeToRwyHours(b._rem[0], b._rem[0]);
+        int c = ta.CompareTo(tb);
+        if (c != 0)
+            return c;
+        return a._acIndex.CompareTo(b._acIndex);
+    }
+
+    private float ProfileAltitude(float rem)
+    {
+        return ProfileAltitude(rem, PathNm(), _rwyAlt);
+    }
+
+    private static float ProfileAltitude(float rem, float path, float rwyAlt)
+    {
+        rem = Mathf.Max(0f, rem);
+        float gateAlt = rwyAlt + GateAboveRwyFt;
+        if (rem <= GateNm)
+            return rwyAlt + GateAboveRwyFt * (rem / GateNm);
+
+        float span = path - GateNm;
+        if (span < 0.01f)
+            return gateAlt;
+        float startAlt = StarStartAltitudeFt(gateAlt);
+        float t = Mathf.Clamp01((rem - GateNm) / span);
+        return Mathf.Lerp(gateAlt, startAlt, t);
+    }
+
+    private static float StarStartAltitudeFt(float gateAlt)
+    {
+        float start = 0f;
+        if (Calculator.Instance != null && Calculator.Instance.StartAltitude > 0)
+            start = (float)Calculator.Instance.StartAltitude;
+        else if (Session.OriginalReferenceRoute?.Points != null && Session.OriginalReferenceRoute.Points.Length > 0)
+        {
+            var alt = Session.OriginalReferenceRoute.Points[0].Altitude;
+            if (alt != null && alt.ComputedValue > 0f)
+                start = alt.ComputedValue;
+        }
+        if (start < gateAlt)
+            start = gateAlt;
+        return start;
+    }
+
+    private static float ProfileGs(float rem, float path)
+    {
+        if (path < 0.01f)
+            return RwyGsKt;
+        return Mathf.Lerp(RwyGsKt, StarGsKt, Mathf.Clamp01(rem / path));
+    }
+
+    private static float TimeToRwyHours(float rem, float path)
+    {
+        if (rem <= 0f)
+            return 0f;
+        if (path < 0.01f)
+            return rem / RwyGsKt;
+        float span = StarGsKt - RwyGsKt;
+        float starHours = path * Mathf.Log(StarGsKt / RwyGsKt) / span;
+        if (rem <= path)
+        {
+            float gs = ProfileGs(rem, path);
+            if (gs <= RwyGsKt + 0.01f)
+                return rem / RwyGsKt;
+            return path * Mathf.Log(gs / RwyGsKt) / span;
+        }
+        return starHours + (rem - path) / StarGsKt;
+    }
+
+    private float NextReleaseAtHours()
+    {
+        float path = PathNm();
+        float fromStar = TimeToRwyHours(path, path);
+        float gapHours = FinalSpacingNm / RwyGsKt;
+        float arrival = _simHours + fromStar;
+        if (_all == null)
+            return _simHours;
+        for (int i = 0; i < _all.Length; i++)
+        {
+            OtherAC ac = _all[i];
+            if (ac == null || ac == this || !ac.HasRoute)
+                continue;
+            float otherArrival;
+            if (ac._released)
+                otherArrival = _simHours + TimeToRwyHours(ac.RemainingNm(), ac.PathNm());
+            else
+                otherArrival = ac._releaseAtHours + TimeToRwyHours(ac.PathNm(), ac.PathNm());
+            if (otherArrival + gapHours > arrival)
+                arrival = otherArrival + gapHours;
+        }
+        return arrival - fromStar;
     }
 
     private bool TooCloseToOwn()
@@ -361,8 +592,10 @@ public class OtherAC
         finalPosition = _pts[0];
         _currentPointIndex = 1;
         _initialRemaining = _rem[0];
-        AltitudeC = _rwyAlt + _initialRemaining * 300f;
+        AltitudeC = ProfileAltitude(_initialRemaining);
         _hidden = false;
+        _released = false;
+        _releaseAtHours = NextReleaseAtHours();
     }
 
     private void Hide(Dictionary<string, string> acTexts = null, Dictionary<string, Vector2> acPositions = null)

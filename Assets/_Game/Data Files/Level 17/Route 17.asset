@@ -18,12 +18,12 @@ MonoBehaviour:
     RawDegrees: 53
     Distance: 0
     RawSpeed: 0
-    RawAltitude: 29000
+    RawAltitude: 26000
     Details: 
   - ID: 1
     Name: ARVOL
     RawDegrees: 53
-    Distance: 63.2
+    Distance: 73
     RawSpeed: 250
     RawAltitude: 
     Details: 

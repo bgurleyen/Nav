@@ -539,6 +539,9 @@ public class GraphManage : MonoBehaviour
         if (LevelTestMode.TryHandleGameFinished())
             return;
 
+        if (AutopilotMode.TryHandleGameFinished())
+            return;
+
         if (PlayerPrefsHolder.ActiveLevel == PlayerPrefsHolder.FreeFlightLevel)
         {
             _finishHandled = true;

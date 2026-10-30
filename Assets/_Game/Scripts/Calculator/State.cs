@@ -295,6 +295,25 @@ private void UIOnHDGAttemptToggle()
         TriggerNewNAVState();
     }
 
+    public void AutoSetLC(bool state)
+    {
+        if (GSCaptured && state)
+            return;
+
+        if (state && Calculator.RAltitude == Calculator.CAltitude)
+            return;
+
+        LC.Set(state);
+        if (state)
+        {
+            VNAV.Set(false);
+            AH.Set(false);
+            VS.Set(false);
+        }
+
+        SyncSpeedWindow();
+    }
+
     private void TriggerNewNAVState()
     {
         if (Session.PlayerAircraft == null)

@@ -20,4 +20,7 @@ EditorBuildSettings:
   - enabled: 0
     path: Assets/_Game/_Scenes/Level Test.unity
     guid: 377245ac0ce3468d96c27fb7638f3818
+  - enabled: 0
+    path: Assets/_Game/_Scenes/Autopilot.unity
+    guid: a8c3f1e2b4d5467091abcdef98765432
   m_configObjects: {}
