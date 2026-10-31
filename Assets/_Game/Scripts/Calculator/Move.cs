@@ -218,7 +218,8 @@ public class Move : Singleton<Move>
     /*
      * BORDERGUARD
      * -----------
-     * 1) DCT, heading, or a row that was not opened early defines route A→B.
+     * 1) DCT/heading: A = position at clearance, B = cleared fix.
+     *    Other non-early rows: A→B = previous route fix → this row's fix (LNAV leg), not aircraft→fix chord.
      *    An early call (Speed_nx > 2 on this row or the previous one) keeps the previous B
      *    unless this row itself has DCT or heading.
      * 2) Soft: cone from B abeam ±1.3 NM toward A at 13°.
@@ -263,7 +264,7 @@ public class Move : Singleton<Move>
         float distToRouteB = Vector2.Distance(Session.PlayerAircraft.NMPosition, _routeB);
         bool beyondAb = distToRouteB > abLen + beyondAbExtraNm;
 
-        if (distToRouteB <= hardGateNm)
+        if (distToRouteB <= hardGateNm || InstructionFixPassed())
             _borderLegComplete = true;
 
         // string modeName = _hardActive || xte > hardHalf || beyondAb
@@ -315,6 +316,8 @@ public class Move : Singleton<Move>
         {
             if (!_softClearanceIssued)
             {
+                LogBorderGuardSoftCone(
+                    xte, softHalf, abLen, distToRouteB, alongFromBTowardA, routeBrg, signedXte);
                 _softClearanceIssued = true;
                 SlowDown();
                 RefreshAtcFactoredClearance();
@@ -324,6 +327,50 @@ public class Move : Singleton<Move>
         {
             _softClearanceIssued = false;
         }
+    }
+
+    static string BorderGuardFixLabel(Vector2 nm)
+    {
+        var route = Session.OriginalReferenceRoute;
+        if (route?.Points == null)
+            return null;
+
+        for (int i = 0; i < route.Points.Length; i++)
+        {
+            var p = route.Points[i];
+            if (p == null)
+                continue;
+            if (Vector2.Distance(p.CartesianPosition, nm) < 0.08f)
+                return $"{p.Name}#{i}";
+        }
+
+        return null;
+    }
+
+    void LogBorderGuardSoftCone(
+        float xte,
+        float softHalf,
+        float abLen,
+        float distToConeB,
+        float alongFromBTowardA,
+        float routeBrg,
+        float signedXte)
+    {
+        var route = Session.OriginalReferenceRoute;
+        string atcFix = "?";
+        if (route?.Points != null && point >= 0 && point < route.Points.Length && route.Points[point] != null)
+            atcFix = route.Points[point].Name;
+
+        string aFix = BorderGuardFixLabel(_routeA);
+        string bFix = BorderGuardFixLabel(_routeB);
+        string aPart = aFix ?? $"AC/pos ({_routeA.x:F2},{_routeA.y:F2})";
+        string bPart = bFix ?? $"({_routeB.x:F2},{_routeB.y:F2})";
+
+        Debug.Log(
+            "[BorderGuard Soft cone] " +
+            $"ATC row={_currentInstructionIndex} pt={point} target={atcFix} distTarget={DistanceToPoint:F2} NM | " +
+            $"cone {aPart} → {bPart} (|AB|={abLen:F2}) distConeB={distToConeB:F2} along={alongFromBTowardA:F2} brg={routeBrg:F0}° | " +
+            $"XTE={xte:F2} signed={signedXte:F2} softHalf={softHalf:F2}");
     }
 
     /// <summary>
@@ -350,7 +397,7 @@ public class Move : Singleton<Move>
         return true;
     }
 
-    void CaptureRouteAB()
+    void CaptureRouteAB(bool lateralClearance)
     {
         if (Session.PlayerAircraft == null)
         {
@@ -358,8 +405,11 @@ public class Move : Singleton<Move>
             return;
         }
 
-        _routeA = Session.PlayerAircraft.NMPosition;
         _routeB = PointPos(point);
+        if (lateralClearance || point <= 0)
+            _routeA = Session.PlayerAircraft.NMPosition;
+        else
+            _routeA = PointPos(point - 1);
         _routeValid = true;
     }
 
@@ -1490,7 +1540,7 @@ public class Move : Singleton<Move>
             bool earlyDistance = _openedByEarlyCall || Speed_nx > 2;
             if (!_borderGuardDisabled && (lateralClearance || !earlyDistance))
             {
-                CaptureRouteAB();
+                CaptureRouteAB(lateralClearance);
                 ResetBorderState();
             }
             _openedByEarlyCall = false;
@@ -1574,7 +1624,8 @@ public class Move : Singleton<Move>
             DistanceToPoint = Vector2.Distance(Session.PlayerAircraft.NMPosition, PointPos(point));
 
             // Heading calls must arrive before LNAV's 1.2 NM seek walks onto the next-leg curve.
-            if ((point != prvWptIdx) && (DistanceToPoint < DistanceToIssueNextCall()))
+            // Also advance on fly-by: fix passed (LNAV segment or DCT track) without entering 1.3 NM circle.
+            if (ShouldAdvanceAtcInstruction(DistanceToPoint))
             {
                 MoveOnNextInstruction();
                 PrvPoint = point;
@@ -1614,7 +1665,7 @@ public class Move : Singleton<Move>
             return;
 
         DistanceToPoint = Vector2.Distance(Session.PlayerAircraft.NMPosition, PointPos(point));
-        if ((point != prvWptIdx) && (DistanceToPoint < DistanceToIssueNextCall()))
+        if (ShouldAdvanceAtcInstruction(DistanceToPoint))
         {
             MoveOnNextInstruction();
             PrvPoint = point;
@@ -1656,6 +1707,81 @@ public class Move : Singleton<Move>
         ATCAltitude = 0;
         prvWptIdx = point;
     }
+
+    int InstructionRowMode()
+    {
+        if (_currentLevelData?.ATCs == null || _currentInstructionIndex < 0
+            || _currentInstructionIndex >= _currentLevelData.ATCs.Length)
+            return 0;
+        return _currentLevelData.ATCs[_currentInstructionIndex].mode;
+    }
+
+    bool InstructionFixPassed()
+    {
+        if (point >= 50 || Session.PlayerAircraft == null)
+            return false;
+
+        int rowMode = InstructionRowMode();
+        if (rowMode == 0)
+        {
+            if (Session.State != null && Session.State.LNAV)
+                return PositionVirtualNode.PassedNodeIndex >= point;
+            return HasPassedRouteLegFix(point);
+        }
+
+        if (rowMode == 1)
+        {
+            if (Session.State != null && Session.State.LNAV && PositionVirtualNode.PassedNodeIndex >= point)
+                return true;
+            return HasPassedDctConeB();
+        }
+
+        return false;
+    }
+
+    bool HasPassedRouteLegFix(int fixIndex)
+    {
+        if (fixIndex <= 0)
+            return false;
+
+        Vector2 fixPos = PointPos(fixIndex);
+        Vector2 prevPos = PointPos(fixIndex - 1);
+        Vector2 ab = fixPos - prevPos;
+        float abLen = ab.magnitude;
+        if (abLen < 0.01f)
+            return false;
+
+        Vector2 abDir = ab / abLen;
+        const float pastNm = 0.15f;
+        float outbound = Vector2.Dot(Session.PlayerAircraft.NMPosition - fixPos, abDir);
+        return outbound > pastNm;
+    }
+
+    bool HasPassedDctConeB()
+    {
+        if (!_routeValid)
+            return HasPassedRouteLegFix(point);
+
+        Vector2 ab = _routeB - _routeA;
+        float abLen = ab.magnitude;
+        if (abLen < 0.01f)
+            return false;
+
+        Vector2 abDir = ab / abLen;
+        const float pastNm = 0.15f;
+        float alongFromB = Vector2.Dot(Session.PlayerAircraft.NMPosition - _routeB, -abDir);
+        return alongFromB < -pastNm;
+    }
+
+    bool ShouldAdvanceAtcInstruction(float distanceToAtcPoint)
+    {
+        if (point == prvWptIdx)
+            return false;
+        if (distanceToAtcPoint < DistanceToIssueNextCall())
+            return true;
+        return InstructionFixPassed();
+    }
+
     /// <summary>
     /// Localizer geometry relative to runway threshold.
     /// alongFromThresholdNm: NM before threshold along inbound course (positive on approach).

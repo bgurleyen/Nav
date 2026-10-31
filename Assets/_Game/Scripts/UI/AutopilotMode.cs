@@ -33,8 +33,10 @@ public static class AutopilotMode
     static bool _stableWaitActive;
     static float _levelFlightStartUnscaled;
     static float _lastAppliedRangeNm = -1f;
+    static float _lastHeadingCorrectionUnscaled;
 
     public const float StableWaitTimeoutSeconds = 300f;
+    public const float HeadingCorrectionIntervalSeconds = 20f;
 
     public static bool IsActive => _isActive;
 
@@ -83,6 +85,7 @@ public static class AutopilotMode
         _stableWaitActive = false;
         _levelFlightStartUnscaled = 0f;
         _lastAppliedRangeNm = -1f;
+        _lastHeadingCorrectionUnscaled = 0f;
     }
 
     public static bool ConsumeAwaitingLevelPick()
@@ -171,6 +174,7 @@ public static class AutopilotMode
             return;
 
         TryAutopilotLnavLegsOnWaypointPass();
+        TryPeriodicNextPointHeadingCorrection();
         TryAutoAckAtc1();
         TryAutoAckAtc2();
         TryAutoArmApproach();
@@ -193,6 +197,7 @@ public static class AutopilotMode
 
         _watchedPassedNodeIndex = passed;
         move.ApplyHeadingToNextLegsWaypoint();
+        _lastHeadingCorrectionUnscaled = Time.unscaledTime;
     }
 
     static void TryAutoRequestDescent()
@@ -211,6 +216,25 @@ public static class AutopilotMode
         _lastAppliedRangeNm = -1f;
         _xfr1LitHandled = false;
         _xfr2LitHandled = false;
+        _lastHeadingCorrectionUnscaled = Time.unscaledTime;
+    }
+
+    static void TryPeriodicNextPointHeadingCorrection()
+    {
+        if (Move.Instance == null || !Move.Instance.IsCurrentAtcLateralLnav())
+            return;
+
+        if (_lastHeadingCorrectionUnscaled <= 0f)
+            _lastHeadingCorrectionUnscaled = Time.unscaledTime;
+
+        if (Time.unscaledTime - _lastHeadingCorrectionUnscaled < HeadingCorrectionIntervalSeconds)
+            return;
+
+        _lastHeadingCorrectionUnscaled = Time.unscaledTime;
+        if (!Move.Instance.TryGetNextHeadingTargetPointIndex(out _))
+            return;
+
+        Move.Instance.ApplyHeadingToNextLegsWaypoint();
     }
 
     static void TryAutoAckAtc1()
