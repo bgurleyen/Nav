@@ -848,6 +848,34 @@ namespace AcRouteEditor
         private readonly bool[] _acOn = new bool[10];
         private readonly bool[] _acHide = new bool[10];
         private double _rwyAlt;
+        private const double StarGsKt = 400.0;
+        private const double RwyGsKt = 140.0;
+        private const double FinalSpacingNm = 5.0;
+        private const double GateNm = 20.0;
+        private const double GateAboveRwyFt = 6000.0;
+        private const double OwnHideNm = 3.0;
+        private const double OwnHideFt = 1000.0;
+        private const double OwnShortFinalNm = 15.0;
+        private const double TrafficNearRunwayNm = 3.0;
+        private const double TcasMaxRangeNm = 40.0;
+        private const double OwnSimGsKt = 300.0;
+        private const double RwyGapMinSec = 60.0;
+        private const double RwyGapMaxSec = 120.0;
+        private const double TrafficGsMinKt = 120.0;
+        private const double TrafficGsMaxKt = 450.0;
+        private static readonly Color TrafficTcasColor = Color.FromArgb(210, 35, 35);
+        private static readonly Color TrafficOffTcasColor = Color.FromArgb(20, 20, 20);
+        private readonly double[] _acPathNm = new double[10];
+        private readonly bool[] _acReleased = new bool[10];
+        private readonly double[] _acReleaseAt = new double[10];
+        private List<int> _ownRouteIds = new List<int>();
+        private double _ownPathNm;
+        private double _simHours;
+        private int _tcasLevelKey = -1;
+        private double[] _landingGapSec;
+        private int _ownQueueIndex = -1;
+        private readonly int[] _acQueueIndex = new int[10];
+        private Random _rwyRng;
 
         public ChartPanel()
         {
@@ -873,7 +901,12 @@ namespace AcRouteEditor
             {
                 _acOn[i] = false;
                 _acHide[i] = false;
+                _acReleased[i] = false;
+                _acReleaseAt[i] = 0;
+                _acPathNm[i] = 0;
+                _acQueueIndex[i] = -1;
             }
+            _simHours = 0;
             if (_flyTimer != null) _flyTimer.Stop();
             if (SimUiChanged != null) SimUiChanged();
             Invalidate();
@@ -1309,6 +1342,7 @@ namespace AcRouteEditor
             DrawLiveTraffic(g, plotX, plotY, plotW, plotH, cx, cy, scale);
             DrawRouteCircles(g);
             DrawSim(g, plotX, plotY, plotW, plotH, cx, cy, scale);
+            DrawSelectedAcDistance(g, plotX, plotY, plotW, plotH);
         }
 
         private void DrawRouteCircles(Graphics g)
@@ -1369,6 +1403,334 @@ namespace AcRouteEditor
             any = true;
         }
 
+        private void EnsureOwnRouteIds()
+        {
+            if (Level == null) return;
+            int key = Level.Info != null && Level.Info.LevelNumber != 0 ? Level.Info.LevelNumber : Level.Index;
+            if (_tcasLevelKey == key && _ownRouteIds != null && _ownRouteIds.Count > 0 && _ownPathNm > 0.01) return;
+            _tcasLevelKey = key;
+            _ownRouteIds = new List<int>();
+            _ownIls = false;
+            int ils = -1;
+            for (int i = 0; i < Level.Atc.Count; i++)
+            {
+                if (Fmt.IsIls(Level.Atc[i])) { ils = i; break; }
+            }
+            int last = ils >= 0 ? ils : Level.Atc.Count - 1;
+            for (int i = 0; i <= last && i < Level.Atc.Count; i++)
+                _ownRouteIds.Add(Level.Atc[i].Point);
+            _ownIls = ils >= 0;
+            if (!_ownIls && Level.RoutePts.Count > 0)
+                _ownRouteIds.Add(Level.RoutePts[Level.RoutePts.Count - 1].Id);
+            _ownPathNm = RoutePathNm(_ownRouteIds);
+        }
+
+        private double RoutePathNm(List<int> ids)
+        {
+            if (ids == null || ids.Count < 2) return 1.0;
+            double sum = 0;
+            for (int i = 0; i < ids.Count - 1; i++)
+            {
+                Vec a, b;
+                if (!WorldOf(ids[i], out a) || !WorldOf(ids[i + 1], out b)) continue;
+                sum += Hyp(a.X, a.Y, b.X, b.Y);
+            }
+            return sum < 0.01 ? 1.0 : sum;
+        }
+
+        private double SelectedTrafficPathNm()
+        {
+            if (Level == null || CurrentRoute == null || CurrentRoute.Count < 1)
+                return 0;
+            var ids = new List<int>(CurrentRoute);
+            int rw = Level.RoutePts.Count > 0 ? Level.RoutePts[Level.RoutePts.Count - 1].Id : -1;
+            if (rw >= 0 && (ids.Count == 0 || ids[ids.Count - 1] != rw))
+                ids.Add(rw);
+            if (ids.Count < 2)
+                return 0;
+            double sum = 0;
+            for (int i = 0; i < ids.Count - 1; i++)
+            {
+                Vec a, b;
+                if (!WorldOf(ids[i], out a) || !WorldOf(ids[i + 1], out b)) continue;
+                sum += Hyp(a.X, a.Y, b.X, b.Y);
+            }
+            return sum;
+        }
+
+        private void DrawSelectedAcDistance(Graphics g, float plotX, float plotY, float plotW, float plotH)
+        {
+            if (Level == null) return;
+            double nm = SelectedTrafficPathNm();
+            string text = string.Format(CultureInfo.InvariantCulture, "AC{0}  {1:0.0} NM to RW", CurrentAc, nm);
+            using (Font f = new Font("Segoe UI", 9.5f, FontStyle.Bold, GraphicsUnit.Point))
+            {
+                SizeF sz = g.MeasureString(text, f);
+                float x = plotX + 8f;
+                float y = plotY + plotH - sz.Height - 10f;
+                RectangleF box = new RectangleF(x - 5f, y - 3f, sz.Width + 10f, sz.Height + 6f);
+                using (SolidBrush bg = new SolidBrush(Color.FromArgb(215, 248, 250, 255)))
+                    g.FillRectangle(bg, box);
+                g.DrawRectangle(Pens.DarkGray, box.X, box.Y, box.Width, box.Height);
+                g.DrawString(text, f, Brushes.Black, x, y);
+            }
+        }
+
+        private static double ProfileGs(double rem, double path)
+        {
+            if (path < 0.01) return RwyGsKt;
+            return RwyGsKt + (StarGsKt - RwyGsKt) * Math.Max(0, Math.Min(1, rem / path));
+        }
+
+        private static double TimeToRwyHours(double rem, double path)
+        {
+            if (rem <= 0) return 0;
+            if (path < 0.01) return rem / RwyGsKt;
+            double span = StarGsKt - RwyGsKt;
+            double starHours = path * Math.Log(StarGsKt / RwyGsKt) / span;
+            if (rem <= path)
+            {
+                double gs = ProfileGs(rem, path);
+                if (gs <= RwyGsKt + 0.01) return rem / RwyGsKt;
+                return path * Math.Log(gs / RwyGsKt) / span;
+            }
+            return starHours + (rem - path) / StarGsKt;
+        }
+
+        private double StarStartAltitudeFt(double gateAlt)
+        {
+            double start = 0;
+            if (Level != null && Level.Info != null && Level.Info.CrzAltitude > 0)
+                start = Level.Info.CrzAltitude;
+            else if (Level != null && Level.RoutePts != null && Level.RoutePts.Count > 0)
+            {
+                RoutePt p0 = Level.RoutePts[0];
+                if (p0 != null && !string.IsNullOrEmpty(p0.RawAltitude))
+                {
+                    double n;
+                    if (double.TryParse(p0.RawAltitude.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out n) && n > 0)
+                        start = n;
+                }
+            }
+            if (start < gateAlt) start = gateAlt;
+            return start;
+        }
+
+        private double ProfileAltitudeForLevel(double rem, double path)
+        {
+            rem = Math.Max(0, rem);
+            double gateAlt = _rwyAlt + GateAboveRwyFt;
+            if (rem <= GateNm)
+                return _rwyAlt + GateAboveRwyFt * (rem / GateNm);
+            double span = path - GateNm;
+            if (span < 0.01) return gateAlt;
+            double startAlt = StarStartAltitudeFt(gateAlt);
+            double t = Math.Max(0, Math.Min(1, (rem - GateNm) / span));
+            return gateAlt + (startAlt - gateAlt) * t;
+        }
+
+        private double OwnAltitudeFt()
+        {
+            EnsureOwnRouteIds();
+            if (_playing && _ownVisible)
+                return ProfileAltitudeForLevel(OwnRemainingNm(), _ownPathNm < 0.01 ? 1.0 : _ownPathNm);
+            if (Live != null && Live.HasOwn && Live.Own != null)
+            {
+                double rem;
+                if (RemainingOnRoute(_ownRouteIds, Live.Own.X, Live.Own.Y, out rem))
+                    return ProfileAltitudeForLevel(rem, _ownPathNm < 0.01 ? 1.0 : _ownPathNm);
+            }
+            return ProfileAltitudeForLevel(_ownPathNm, _ownPathNm < 0.01 ? 1.0 : _ownPathNm);
+        }
+
+        private double TrafficAltitudeFt(int i)
+        {
+            return TrafficAltitudeForRemaining(TrafficRemainingNm(i));
+        }
+
+        private double TrafficAltitudeAt(int acOneBased, double x, double y)
+        {
+            int idx = acOneBased - 1;
+            if (idx < 0 || idx >= 10 || TrafficRoutes == null || idx >= TrafficRoutes.Count || TrafficRoutes[idx] == null)
+                return 0;
+            List<int> ids = TrafficRoutes[idx];
+            double rem;
+            if (!RemainingOnRoute(ids, x, y, out rem))
+            {
+                double path = RoutePathNm(ids);
+                return TrafficAltitudeForRemaining(path);
+            }
+            return TrafficAltitudeForRemaining(rem);
+        }
+
+        private static double TrafficAltitudeForRemaining(double remainingNm)
+        {
+            return Math.Max(0, remainingNm) * 300.0;
+        }
+
+        private bool RemainingOnRoute(List<int> ids, double x, double y, out double remainingNm)
+        {
+            remainingNm = 0;
+            if (ids == null || ids.Count < 2) return false;
+            double bestRem = 0;
+            double bestDist = double.MaxValue;
+            for (int seg = 0; seg < ids.Count - 1; seg++)
+            {
+                Vec a, b;
+                if (!WorldOf(ids[seg], out a) || !WorldOf(ids[seg + 1], out b)) continue;
+                double ax = a.X, ay = a.Y, bx = b.X, by = b.Y;
+                double dx = bx - ax, dy = by - ay;
+                double len = Math.Sqrt(dx * dx + dy * dy);
+                if (len < 1e-6) continue;
+                double t = ((x - ax) * dx + (y - ay) * dy) / (len * len);
+                if (t < 0) t = 0;
+                if (t > 1) t = 1;
+                double px = ax + dx * t;
+                double py = ay + dy * t;
+                double d = Hyp(x, y, px, py);
+                if (d >= bestDist) continue;
+                bestDist = d;
+                double tail = 0;
+                for (int k = seg + 1; k < ids.Count - 1; k++)
+                {
+                    Vec p, q;
+                    if (!WorldOf(ids[k], out p) || !WorldOf(ids[k + 1], out q)) continue;
+                    tail += Hyp(p.X, p.Y, q.X, q.Y);
+                }
+                bestRem = (1 - t) * len + tail;
+            }
+            if (bestDist >= double.MaxValue) return false;
+            remainingNm = bestRem;
+            return true;
+        }
+
+        private double TcasRangeNm()
+        {
+            return TcasMaxRangeNm;
+        }
+
+        private bool InsideTcasWindow(double acX, double acY, double acAltFt, double ownX, double ownY, double ownAltFt)
+        {
+            double relFt = acAltFt - ownAltFt;
+            if (relFt > 2700.0 || relFt < -9900.0) return false;
+            return Hyp(acX, acY, ownX, ownY) <= TcasRangeNm();
+        }
+
+        private bool TrafficVisibleInGame(int i)
+        {
+            if (!_acOn[i] || !_acReleased[i] || _acHide[i]) return false;
+            return InsideTcasWindow(_acX[i], _acY[i], TrafficAltitudeFt(i), _ownX, _ownY, OwnAltitudeFt());
+        }
+
+        private void ApplyTrafficFormation()
+        {
+            _simHours = 0;
+            if (_rwyRng == null) _rwyRng = new Random();
+            _landingGapSec = null;
+            _ownQueueIndex = -1;
+            for (int a = 0; a < 10; a++)
+            {
+                _acReleased[a] = false;
+                _acReleaseAt[a] = 0;
+                _acQueueIndex[a] = -1;
+            }
+
+            var queue = new List<KeyValuePair<int, double>>();
+            queue.Add(new KeyValuePair<int, double>(-1, _ownPathNm < 0.01 ? 1.0 : _ownPathNm));
+            for (int a = 0; a < 10; a++)
+            {
+                if (!_acOn[a]) continue;
+                double path = _acPathNm[a] < 0.01 ? 1.0 : _acPathNm[a];
+                queue.Add(new KeyValuePair<int, double>(a, path));
+            }
+
+            queue.Sort(delegate(KeyValuePair<int, double> x, KeyValuePair<int, double> y)
+            {
+                int c = x.Value.CompareTo(y.Value);
+                return c != 0 ? c : x.Key.CompareTo(y.Key);
+            });
+
+            int n = queue.Count;
+            if (n >= 2)
+            {
+                _landingGapSec = new double[n - 1];
+                for (int g = 0; g < _landingGapSec.Length; g++)
+                    _landingGapSec[g] = RwyGapMinSec + _rwyRng.NextDouble() * (RwyGapMaxSec - RwyGapMinSec);
+            }
+
+            for (int i = 0; i < queue.Count; i++)
+            {
+                int key = queue[i].Key;
+                if (key == -1)
+                    _ownQueueIndex = i;
+                else
+                    _acQueueIndex[key] = i;
+            }
+        }
+
+        private double OwnEtaHours()
+        {
+            double rem = OwnRemainingNm();
+            if (rem < 0.001) rem = 0.001;
+            return rem / OwnSimGsKt;
+        }
+
+        private double TargetRwyAtHours(int queueIndex)
+        {
+            double tOwn = _simHours + OwnEtaHours();
+            if (_ownQueueIndex < 0 || _landingGapSec == null || queueIndex < 0)
+                return tOwn;
+            if (queueIndex == _ownQueueIndex)
+                return tOwn;
+            if (queueIndex < _ownQueueIndex)
+            {
+                double t = tOwn;
+                for (int i = queueIndex; i < _ownQueueIndex; i++)
+                    t -= _landingGapSec[i] / 3600.0;
+                return t;
+            }
+            double after = tOwn;
+            for (int i = _ownQueueIndex; i < queueIndex; i++)
+                after += _landingGapSec[i] / 3600.0;
+            return after;
+        }
+
+        private double TrafficGsKt(int i)
+        {
+            if (!_acOn[i] || !_acReleased[i]) return OwnSimGsKt;
+            int queueIndex = _acQueueIndex[i];
+            if (queueIndex < 0) return OwnSimGsKt;
+            double target = TargetRwyAtHours(queueIndex);
+            double hrs = target - _simHours;
+            if (hrs < 1.0 / 3600.0) hrs = 1.0 / 3600.0;
+            double rem = TrafficRemainingNm(i);
+            if (rem < 0.001) return OwnSimGsKt;
+            double gs = rem / hrs;
+            if (gs < TrafficGsMinKt) gs = TrafficGsMinKt;
+            if (gs > TrafficGsMaxKt) gs = TrafficGsMaxKt;
+            return gs;
+        }
+
+        private double NextReleaseAtHours(int i)
+        {
+            double path = _acPathNm[i] < 0.01 ? 1.0 : _acPathNm[i];
+            double fromStar = TimeToRwyHours(path, path);
+            double gapHours = FinalSpacingNm / RwyGsKt;
+            double arrival = _simHours + fromStar;
+            for (int j = 0; j < 10; j++)
+            {
+                if (j == i || !_acOn[j]) continue;
+                double otherArrival;
+                if (_acReleased[j])
+                    otherArrival = _simHours + TimeToRwyHours(TrafficRemainingNm(j), _acPathNm[j] < 0.01 ? 1.0 : _acPathNm[j]);
+                else
+                    otherArrival = _acReleaseAt[j] + TimeToRwyHours(_acPathNm[j], _acPathNm[j] < 0.01 ? 1.0 : _acPathNm[j]);
+                if (otherArrival + gapHours > arrival)
+                    arrival = otherArrival + gapHours;
+            }
+            return arrival - fromStar;
+        }
+
         private void BeginPlayback()
         {
             if (Level == null) return;
@@ -1414,7 +1776,12 @@ namespace AcRouteEditor
                 _acNext[a] = 1;
                 _acOn[a] = true;
                 _acHide[a] = false;
+                _acPathNm[a] = RoutePathNm(_acIds[a]);
             }
+            _ownRouteIds = new List<int>(_ownIds);
+            _ownPathNm = RoutePathNm(_ownIds);
+            _tcasLevelKey = Level.Info != null && Level.Info.LevelNumber != 0 ? Level.Info.LevelNumber : Level.Index;
+            ApplyTrafficFormation();
             _playing = true;
             _paused = false;
             _finished = false;
@@ -1431,10 +1798,16 @@ namespace AcRouteEditor
             _flyStamp = DateTime.UtcNow;
             if (dt < 0) dt = 0;
             if (dt > 0.25) dt = 0.25;
-            double step = 300.0 / 3600.0 * dt * (_fast ? 10.0 : 1.0);
-            StepOwn(step);
+            _simHours += dt / 3600.0 * (_fast ? 10.0 : 1.0);
+            double dtSim = dt * (_fast ? 10.0 : 1.0);
+            double ownStep = OwnSimGsKt / 3600.0 * dtSim;
+            StepOwn(ownStep);
             for (int i = 0; i < 10; i++)
-                if (_acOn[i]) StepTraffic(i, step);
+            {
+                if (!_acOn[i]) continue;
+                double trStep = TrafficGsKt(i) / 3600.0 * dtSim;
+                StepTraffic(i, trStep);
+            }
             SeparateFromOwn();
             if (_ownPhase >= 3)
             {
@@ -1500,15 +1873,22 @@ namespace AcRouteEditor
         {
             List<int> ids = _acIds[i];
             if (ids == null || ids.Count < 2) return;
+            if (!_acReleased[i])
+            {
+                if (_simHours < _acReleaseAt[i])
+                {
+                    _acHide[i] = true;
+                    return;
+                }
+                _acReleased[i] = true;
+                _acHide[i] = false;
+            }
             while (step > 0.00001)
             {
                 if (_acNext[i] >= ids.Count)
                 {
-                    Vec home;
-                    if (!WorldOf(ids[0], out home)) return;
-                    _acX[i] = home.X;
-                    _acY[i] = home.Y;
-                    _acNext[i] = 1;
+                    RestartAc(i);
+                    return;
                 }
                 Vec tgt;
                 if (!WorldOf(ids[_acNext[i]], out tgt)) { _acNext[i]++; continue; }
@@ -1520,11 +1900,8 @@ namespace AcRouteEditor
                     _acNext[i]++;
                     if (_acNext[i] >= ids.Count)
                     {
-                        Vec home;
-                        if (!WorldOf(ids[0], out home)) return;
-                        _acX[i] = home.X;
-                        _acY[i] = home.Y;
-                        _acNext[i] = 1;
+                        RestartAc(i);
+                        return;
                     }
                     continue;
                 }
@@ -1539,7 +1916,7 @@ namespace AcRouteEditor
 
         private void SeparateFromOwn()
         {
-            double ownAlt = _rwyAlt + OwnRemainingNm() * 300.0;
+            double ownAlt = OwnAltitudeFt();
             Vec rwy = RunwayVec();
             double ownDme = Hyp(_ownX, _ownY, rwy.X, rwy.Y);
             for (int i = 0; i < 10; i++)
@@ -1549,29 +1926,29 @@ namespace AcRouteEditor
                     _acHide[i] = false;
                     continue;
                 }
-                bool close = TooCloseToOwn(i, ownAlt) || TrafficNearRunway(i, ownDme, rwy);
-                if (!close)
+                if (!_acReleased[i])
+                    continue;
+                if (!TooCloseToOwn(i, ownAlt) && !TrafficNearRunway(i, ownDme, rwy))
                 {
                     _acHide[i] = false;
                     continue;
                 }
                 RestartAc(i);
-                _acHide[i] = TooCloseToOwn(i, ownAlt) || TrafficNearRunway(i, ownDme, rwy);
+                _acHide[i] = true;
             }
         }
 
         private bool TooCloseToOwn(int i, double ownAlt)
         {
             double dist = Hyp(_acX[i], _acY[i], _ownX, _ownY);
-            if (dist > 3.0) return false;
-            double acAlt = _rwyAlt + TrafficRemainingNm(i) * 300.0;
-            return Math.Abs(acAlt - ownAlt) <= 1000.0;
+            if (dist > OwnHideNm) return false;
+            return Math.Abs(TrafficAltitudeFt(i) - ownAlt) <= OwnHideFt;
         }
 
         private bool TrafficNearRunway(int i, double ownDme, Vec rwy)
         {
-            if (ownDme > 15.0) return false;
-            return Hyp(_acX[i], _acY[i], rwy.X, rwy.Y) <= 3.0;
+            if (ownDme > OwnShortFinalNm) return false;
+            return Hyp(_acX[i], _acY[i], rwy.X, rwy.Y) <= TrafficNearRunwayNm;
         }
 
         private void RestartAc(int i)
@@ -1583,6 +1960,8 @@ namespace AcRouteEditor
             _acX[i] = home.X;
             _acY[i] = home.Y;
             _acNext[i] = 1;
+            _acReleased[i] = false;
+            _acReleaseAt[i] = 0;
         }
 
         private double OwnRemainingNm()
@@ -1732,10 +2111,11 @@ namespace AcRouteEditor
                 sf.LineAlignment = StringAlignment.Center;
                 for (int i = 0; i < 10; i++)
                 {
-                    if (!_acOn[i] || _acHide[i]) continue;
+                    if (!_acOn[i] || _acHide[i] || !_acReleased[i]) continue;
                     Vec s = Map(_acX[i], _acY[i], plotX, plotY, plotW, plotH, cx, cy, scale);
                     float r = 8f;
-                    g.FillEllipse(new SolidBrush(Color.FromArgb(20, 20, 20)), (float)s.X - r, (float)s.Y - r, r * 2f, r * 2f);
+                    Color col = TrafficVisibleInGame(i) ? TrafficTcasColor : TrafficOffTcasColor;
+                    g.FillEllipse(new SolidBrush(col), (float)s.X - r, (float)s.Y - r, r * 2f, r * 2f);
                     g.DrawString((i + 1).ToString(CultureInfo.InvariantCulture), f, Brushes.White, new RectangleF((float)s.X - r, (float)s.Y - r, r * 2f, r * 2f), sf);
                 }
                 if (_ownVisible)
@@ -1761,6 +2141,11 @@ namespace AcRouteEditor
             if (Live == null || Level == null) return;
             int n = Level.Info != null && Level.Info.LevelNumber != 0 ? Level.Info.LevelNumber : Level.Index;
             if (Live.Level != n) return;
+            EnsureOwnRouteIds();
+            _rwyAlt = RunwayAltitude();
+            double ownAlt = OwnAltitudeFt();
+            double ownX = Live.HasOwn && Live.Own != null ? Live.Own.X : _ownX;
+            double ownY = Live.HasOwn && Live.Own != null ? Live.Own.Y : _ownY;
 
             using (Font fLive = new Font("Segoe UI", 14f, FontStyle.Bold, GraphicsUnit.Point))
             {
@@ -1777,8 +2162,10 @@ namespace AcRouteEditor
                     {
                         Vec w = Live.Others[keys[i]];
                         if (w == null) continue;
+                        double acAlt = TrafficAltitudeAt(keys[i], w.X, w.Y);
+                        bool tcas = InsideTcasWindow(w.X, w.Y, acAlt, ownX, ownY, ownAlt);
                         Vec m = Map(w.X, w.Y, plotX, plotY, plotW, plotH, cx, cy, scale);
-                        DrawLiveGlyph(g, fLive, keys[i].ToString(CultureInfo.InvariantCulture), (float)m.X, (float)m.Y, Color.Black);
+                        DrawLiveGlyph(g, fLive, keys[i].ToString(CultureInfo.InvariantCulture), (float)m.X, (float)m.Y, tcas ? TrafficTcasColor : TrafficOffTcasColor);
                     }
                 }
             }

@@ -39,6 +39,32 @@ public class LegsScreen : ScreenBase {
     private DisplayNodesController _nodesController;
     private NodeSelection _selectionInfo;
     private NodeSelection _lastSelectionClicked;
+    private int _pendingInterceptNodeId = -1;
+    private int? _pendingInterceptCourse;
+    private int _modCourseNodeId = -1;
+
+    internal bool TryGetPendingInterceptCourse(int nodeId, out int courseDeg)
+    {
+        if (_pendingInterceptCourse != null && _pendingInterceptNodeId == nodeId)
+        {
+            courseDeg = _pendingInterceptCourse.Value;
+            return true;
+        }
+
+        courseDeg = 0;
+        return false;
+    }
+
+    internal bool TryGetModCourseDisplay(int nodeId, out int courseDeg)
+    {
+        courseDeg = 0;
+        if (_modCourseNodeId != nodeId || !Session.IsMod || Session.ModRoute == null)
+            return false;
+        if (!Session.ModRoute.GetPoint(nodeId, out var node, out _) || node == null)
+            return false;
+        courseDeg = Mathf.RoundToInt(Mathf.Repeat(node.FmcDisplayLegCourse(), 360f));
+        return true;
+    }
 
     private ScratchPadInterpreter _scratchPadInterpreter;
     private string _scratchPadBuffer = "";
@@ -222,6 +248,56 @@ public class LegsScreen : ScreenBase {
 
             }
         }
+
+        EnsureModErasePrompt();
+        SyncPendingInterceptCoursePrompt();
+        SyncModBottomRightCourse();
+    }
+
+    void SyncModBottomRightCourse()
+    {
+        if (!Session.IsMod || Session.ModRoute == null || lastFRight == null)
+            return;
+        if (Session.State != null && Session.State.MapMode == MapMode.Plan)
+            return;
+        if (_pendingInterceptCourse != null && _pendingInterceptNodeId >= 0)
+            return;
+        if (_modCourseNodeId < 0)
+            return;
+        if (!Session.ModRoute.GetPoint(_modCourseNodeId, out var node, out _) || node == null)
+            return;
+
+        float course = node.FmcDisplayLegCourse();
+        lastFRight.SetAsTall($"{Mathf.RoundToInt(Mathf.Repeat(course, 360f)):000}°");
+    }
+
+    void SyncPendingInterceptCoursePrompt()
+    {
+        _pendingInterceptNodeId = -1;
+        _pendingInterceptCourse = null;
+
+        if (!Session.IsMod || _lastSelectionClicked == null)
+            return;
+
+        var selected = _lastSelectionClicked.GetRouteNode();
+        if (selected == null || !selected.IsModified)
+            return;
+
+        if (!_scratchPadInterpreter.IsLinearApproach(out var angle))
+            return;
+
+        _pendingInterceptNodeId = selected.ID;
+        _pendingInterceptCourse = angle;
+        if (lastFRight != null)
+            lastFRight.SetAsTall($"{angle:000}°");
+    }
+
+    /// <summary>EXECUTE lit (MOD): bottom-left must stay ERASE until mod is cleared or executed.</summary>
+    void EnsureModErasePrompt()
+    {
+        if (!Session.IsMod || Session.ModRoute == null || lastFLeft == null)
+            return;
+        lastFLeft.text = ERASE_TITLE;
     }
 
     public override void OnLineSelectRight(int index) {
@@ -674,6 +750,8 @@ public class LegsScreen : ScreenBase {
                     Calculator.NormalizeAltitudeRegulationToFeet(_scratchPadBuffer);
             }
         }
+
+        SyncPendingInterceptCoursePrompt();
     }
 
     private bool IsFutureNodeInfo(string text, out int lineIndex, out NodeSelection linkedSelection) {
@@ -718,11 +796,15 @@ public class LegsScreen : ScreenBase {
         //Debug.Log("----- Clear Current Operation -----");
         _scratchPadBuffer = "";
         _selectionInfo = null;
+        _pendingInterceptNodeId = -1;
+        _pendingInterceptCourse = null;
     }
 
     private void ClearSelectionHistory() {
         //Debug.Log("----- Clear Selecation History -----");
         _lastSelectionClicked = null;
+        _pendingInterceptNodeId = -1;
+        _pendingInterceptCourse = null;
     }
 
     private void OnMapModeChanged(MapMode obj) {
@@ -733,8 +815,13 @@ public class LegsScreen : ScreenBase {
         }
     }
 
-    public void DisplayOperation(string value, string details = "", bool tallDetails = false) {
+    public void DisplayOperation(string value, string details = "", bool tallDetails = false, int courseNodeId = -1) {
         lastFLeft.text = $"<{value}";
+        if (value == "0k" || !Session.IsMod)
+            _modCourseNodeId = -1;
+        else if (courseNodeId >= 0)
+            _modCourseNodeId = courseNodeId;
+
         switch (tallDetails) {
             case true:
                 lastFRight.SetAsTall(details);
@@ -745,12 +832,16 @@ public class LegsScreen : ScreenBase {
         }
 
         MainScreen.Pad?.Clear();
+        EnsureModErasePrompt();
     }
 
     public void UpdateScratchPad(string buffer, bool withStatus = true) {
         MainScreen.Pad?.SetAsDefault(buffer);
         if (withStatus) {
-            lastFLeft.text = "ok";
+            if (Session.IsMod && Session.ModRoute != null)
+                lastFLeft.text = ERASE_TITLE;
+            else
+                lastFLeft.text = "ok";
         }
     }
 

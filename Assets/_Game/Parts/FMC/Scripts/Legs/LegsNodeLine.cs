@@ -1,9 +1,9 @@
 using Navigation;
 using TMPro;
 using UnityEngine;
+using Unyawn.Utils;
 
-public class LegsNodeLine : MonoBehaviour {
-    [Header("header")]
+public class LegsNodeLine : MonoBehaviour {    [Header("header")]
     public TMP_Text hLeft;
     public TMP_Text hMiddle;
 
@@ -61,7 +61,17 @@ public class LegsNodeLine : MonoBehaviour {
             ? Session.PlayerAircraft.ComputedDistanceLeftOnSegment
             : node.Distance;
         var courseText = $"{node.RawDegrees:000}°";
-        if (node.IsLinearApproach)
+        if (UYServiceLocator.Has<LegsScreen>()
+            && UYServiceLocator.Get<LegsScreen>().TryGetPendingInterceptCourse(node.ID, out var pendingCourse))
+        {
+            courseText = $"{pendingCourse:000}°";
+        }
+        else if (UYServiceLocator.Has<LegsScreen>()
+            && UYServiceLocator.Get<LegsScreen>().TryGetModCourseDisplay(node.ID, out var modCourse))
+        {
+            courseText = $"{modCourse:000}°";
+        }
+        else if (node.IsLinearApproach)
         {
             courseText = $"{Mathf.RoundToInt(Mathf.Repeat(node.LinearApproachAngle, 360f)):000}°";
             distance = InboundInterceptDistance(node);

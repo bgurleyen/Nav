@@ -95,10 +95,8 @@ public class DisplayNodesController
                 if (!pointIsValid || linkedPoint == null)
                 {
                     pointIsValid = false;
-                    if (PlanCenterNodeIndex >= i)
-                    {
-                        SetPlanCenterNode(0);
-                    }
+                    if (PlanCenterNodeIndex > i)
+                        PlanCenterNodeIndex = i;
                     break;
                 }
 

@@ -233,7 +233,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
   m_AnchoredPosition: {x: 0, y: 0}
-  m_SizeDelta: {x: 0, y: 783}
+  m_SizeDelta: {x: 0, y: 1650}
   m_Pivot: {x: 0, y: 1}
 --- !u!1 &25187896
 GameObject:
@@ -11952,16 +11952,26 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: '<size=48><b>How to Play:</b></size>\n\n<size=32><line-height=150%>1. Follow
-    the Flight Plan: The magenta line on the Navigation Display guides you towards
-    your destination.\n2. Maintain Target Speed and Altitude: Use the autopilot or
-    manual controls to keep your airspeed and altitude aligned with the magenta triangles
-    on the PFD.\n3. Intercept the ILS: As you get closer to the airport, you will
-    be instructed to intercept the localizer and glideslope. Follow the guidance
-    provided by the horizontal and vertical bars on the PFD to align with the runway.\n4.
-    Monitor Your Instruments: Pay close attention to all the information on your
-    displays to ensure a stable and safe approach.\n5. Prepare for Landing: As you
-    descend, you will need to manage your speed and configuration for a smooth touchdown.</size>'
+  m_text: '<size=48><b>How to Play</b></size>\n\n<size=28><line-height=150%><b>What
+    it is</b>\nZflite works on the same ideas as Boeing FMC descent planning: route,
+    constraints, vertical path, speed, and fuel. If you know that workflow, most
+    screens are self-explanatory. Each level is a descent scenario (STAR, fixes,
+    runway, cruise altitude, fuel).\n\n<b>Your goal</b>\n- Finish each descent with
+    as little fuel used as you can.\n- Play every section; replay levels to improve.\n-
+    After a save, compare your fuel and metrics with the level average and the best
+    result.\n- Play levels in order, or pick a random level from the menu.\n- Same
+    path and constraints as others; beat them on fuel.\n\n<b>What to use</b>\n-
+    Other traffic: sequencing and spacing on the plan.\n- Banana: vertical path on
+    the side view.\n- VDI: vertical deviation on the PFD in descent.\n- FIX pages:
+    fix altitudes and constraints; check DES and the map.\n- VS / FPA: vertical speed
+    or flight path angle when needed.\n- Meters / Progress: altitude, configuration,
+    speedbrake, and fuel.\n- MOD: change the route (e.g. direct-to); the sim rebuilds
+    the path.\n\n<b>Descent control</b>\nEnough autopilot, speed, configuration, and
+    path control is available for a full descent. Use FMC, modes, and manual inputs
+    as in a trainer.\n\n<b>Level 40 - Free flight</b>\nReal-time flight like a chair-flight
+    session. FMC, modes, and instruments work without a fixed lesson path. Fuel still
+    counts; experiment with descent technique.\n\n<b>Tips</b>\nRead the level briefing
+    before you start. Save a run to lock in debrief and ranking. Privacy: zflite.com/privacy</size>'
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -11988,15 +11998,15 @@ MonoBehaviour:
   m_faceColor:
     serializedVersion: 2
     rgba: 4294967295
-  m_fontSize: 36
-  m_fontSizeBase: 36
+  m_fontSize: 28
+  m_fontSizeBase: 28
   m_fontWeight: 400
   m_enableAutoSizing: 0
   m_fontSizeMin: 18
   m_fontSizeMax: 72
   m_fontStyle: 0
   m_HorizontalAlignment: 1
-  m_VerticalAlignment: 256
+  m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
   m_wordSpacing: 0
@@ -12006,7 +12016,7 @@ MonoBehaviour:
   m_charWidthMaxAdj: 0
   m_enableWordWrapping: 1
   m_wordWrappingRatios: 0.4
-  m_overflowMode: 0
+  m_overflowMode: 4
   m_linkedTextComponent: {fileID: 0}
   parentLinkedComponent: {fileID: 0}
   m_enableKerning: 1

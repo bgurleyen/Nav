@@ -1,0 +1,14 @@
+ZFLITE — DISCLAIMER
+
+Zflite is a training simulation only.
+
+• It is not the same as a real Boeing 737 or any other aircraft. Displays, behaviour, and results are simplified for practice.
+• It is not connected to real aircraft, avionics, airline systems, or live navigation data. Nothing you do in the app affects or replaces real-world flying.
+• It must not be used for operational flight planning, dispatch, training sign-off, or any decision in an actual aircraft.
+• It does not replace your airline manuals, AFM, FCOM, or qualified instruction.
+
+The app may store settings and optional level results on your device or in our cloud service so you can see a debrief and compare scores. That is separate from real-world operations. Details: https://zflite.com/privacy
+
+By using Zflite you accept that you use it at your own risk for entertainment and self-study only.
+
+Contact: info@zflite.com

@@ -185,7 +185,6 @@ public class Move : Singleton<Move>
                 if (_otherACs[i] != null)
                     _otherACs[i].Tick(ACTexts, ACPositions);
             }
-            OtherAC.ApplyVerticalSeparation(ACTexts, ACPositions);
         }
 
         if (AutopilotMode.IsActive)

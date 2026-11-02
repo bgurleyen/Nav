@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using TMPro;
 using UnityEngine;
+using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
@@ -22,7 +23,8 @@ public class MainMenu : MonoBehaviour
 
     private void Awake()
     {
-        EnsureContactButton();
+        EnsureExtraMenuButtons();
+        SetupAgreementPrivacyLink();
 
         if (PlayerPrefsHolder.Agree == 0)
         {
@@ -72,7 +74,12 @@ public class MainMenu : MonoBehaviour
         Application.OpenURL("mailto:info@zflite.com");
     }
 
-    void EnsureContactButton()
+    public void OnPrivacyButtonClick()
+    {
+        Application.OpenURL(ZfliteUrls.Privacy);
+    }
+
+    void EnsureExtraMenuButtons()
     {
         Button source = null;
         var buttons = FindObjectsByType<Button>(FindObjectsInactive.Include, FindObjectsSortMode.None);
@@ -85,20 +92,46 @@ public class MainMenu : MonoBehaviour
             }
         }
 
-        if (source == null || source.transform.parent.Find("Contact us") != null)
+        if (source == null)
             return;
 
-        var copy = Instantiate(source.gameObject, source.transform.parent);
-        copy.name = "Contact us";
+        EnsureMenuButton(source, "Privacy", ">  Privacy", OnPrivacyButtonClick);
+        EnsureMenuButton(source, "Contact us", ">  Contact us", OnContactButtonClick);
+    }
+
+    static void EnsureMenuButton(Button template, string objectName, string labelText, UnityAction onClick)
+    {
+        if (template.transform.parent.Find(objectName) != null)
+            return;
+
+        var copy = Object.Instantiate(template.gameObject, template.transform.parent);
+        copy.name = objectName;
         copy.transform.SetAsLastSibling();
 
         var label = copy.GetComponentInChildren<Text>(true);
         if (label != null)
-            label.text = ">  Contact us";
+            label.text = labelText;
 
         var button = copy.GetComponent<Button>();
         button.onClick = new Button.ButtonClickedEvent();
-        button.onClick.AddListener(OnContactButtonClick);
+        button.onClick.AddListener(onClick);
+    }
+
+    void SetupAgreementPrivacyLink()
+    {
+        if (agreePanel == null)
+            return;
+
+        var tmp = agreePanel.GetComponentInChildren<TextMeshProUGUI>(true);
+        if (tmp == null)
+            return;
+
+        tmp.text =
+            "Continuing means you understand this. Privacy: " +
+            $"<link=\"{ZfliteUrls.Privacy}\"><u>zflite.com/privacy</u></link>";
+
+        if (tmp.GetComponent<TmpLinkOpener>() == null)
+            tmp.gameObject.AddComponent<TmpLinkOpener>();
     }
 
     public void OnAgreeButtonClick()

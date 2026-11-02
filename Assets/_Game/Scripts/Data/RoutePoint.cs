@@ -29,10 +29,24 @@ public class RoutePoint
     public bool IsAltitudeModified { get; internal set; }
 
     public float Degrees => 360 - RawDegrees;
-    public bool IsAfterDiscontinuity => Details.Contains("D");
-    public bool IsLinearApproach => Details.Contains("L");
-    public bool IsHiddenLine => Details.Contains("H");
-    public bool IsPositionNode => Details.Contains("P");
+
+    /// <summary>LEGS/MOD L6R course: published leg on the reference route, not direct-to geometry from present position.</summary>
+    public float FmcDisplayLegCourse()
+    {
+        if (IsLinearApproach)
+            return LinearApproachAngle;
+        if (Session.OriginalReferenceRoute != null
+            && !string.IsNullOrEmpty(Name)
+            && Session.OriginalReferenceRoute.GetPointByName(Name, out var original)
+            && original != null)
+            return original.RawDegrees;
+        return RawDegrees;
+    }
+
+    public bool IsAfterDiscontinuity => !string.IsNullOrEmpty(Details) && Details.Contains("D");
+    public bool IsLinearApproach => !string.IsNullOrEmpty(Details) && Details.Contains("L");
+    public bool IsHiddenLine => !string.IsNullOrEmpty(Details) && Details.Contains("H");
+    public bool IsPositionNode => !string.IsNullOrEmpty(Details) && Details.Contains("P");
     public bool IsVector
     {
         get

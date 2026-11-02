@@ -1,0 +1,14 @@
+ZFLITE — PERFORMANCE DATA NOTE
+
+What we use
+Zflite uses B737-family style performance data for speeds, drag, fuel flow, and descent behaviour in the simulation. Numbers are tuned for training, not for operational use.
+
+Who it is for
+The app is built around a 737-style FMC and PFD layout. The planning habits it practices — path, constraints, econ speed, fuel remaining — are the same ones pilots use for descent planning on Boeing fleets. Many pilots flying other Boeing types can use Zflite to rehearse those habits even though the labels say 737.
+
+What it is not
+This is not an official Boeing product. It is not a substitute for your AFM, FCOM, company performance tools, or dispatch. Always use approved data and procedures in real operations.
+
+Full safety and data handling: see disclaimer.txt and https://zflite.com/privacy
+
+Contact: info@zflite.com

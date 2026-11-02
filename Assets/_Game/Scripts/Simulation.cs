@@ -34,9 +34,20 @@ namespace Navigation {
                 Debug.LogError("[Simulation] LegsScreen is not registered. LEGS scratchpad updates will be skipped.");
         }
 
-        private void DisplayLegsOperation(string value, string details = "", bool tallDetails = false) {
+        private void DisplayLegsOperation(string value, string details = "", bool tallDetails = false, int courseNodeId = -1) {
             if (_legsScreen != null)
-                _legsScreen.DisplayOperation(value, details, tallDetails);
+                _legsScreen.DisplayOperation(value, details, tallDetails, courseNodeId);
+        }
+
+        private void DisplayLegsCourseForNode(int nodeId) {
+            if (Session.ModRoute == null || nodeId < 0 || !Session.ModRoute.GetPoint(nodeId, out var node, out _) || node == null)
+            {
+                DisplayLegsOperation(MainScreen.Keywords.ERASE, courseNodeId: nodeId);
+                return;
+            }
+
+            float course = node.FmcDisplayLegCourse();
+            DisplayLegsOperation(MainScreen.Keywords.ERASE, ToDegreesDisplay(course), true, nodeId);
         }
 
         public void Init() {
@@ -300,14 +311,27 @@ namespace Navigation {
             CheckModForOperation();
             _cachedCommands.Add(command);
 
-            if (!Session.ModRoute.GetPoint(command.FromNodeId, out var node, out _) || node == null)
+            if (!Session.ModRoute.GetPoint(command.FromNodeId, out _, out _)
+                || !Session.ModRoute.GetPoint(command.ToNodeId, out _, out _)) {
+                DisplayLegsOperation(MainScreen.Keywords.ERASE);
                 return;
-            if (!Session.ModRoute.Points.GetNodeIndex(command.ToNodeId, out _))
+            }
+            if (!Session.ModRoute.Points.GetNodeIndex(command.ToNodeId, out _)) {
+                DisplayLegsOperation(MainScreen.Keywords.ERASE);
                 return;
+            }
 
-            DisplayLegsOperation("ERASE", ToDegreesDisplay(node.RawDegrees));
-            Session.ModRoute.ShortcutNodes(command.FromNodeId, command.ToNodeId, out var _);
+            Session.ModRoute.ShortcutNodes(command.FromNodeId, command.ToNodeId, out var reducedPoint);
+            if (reducedPoint == null) {
+                DisplayLegsOperation(MainScreen.Keywords.ERASE);
+                return;
+            }
+
             DataHandler.BuildSetDetails(Session.ModRoute);
+            if (Session.ModRoute.GetPoint(reducedPoint.ID, out var onRoute, out _) && onRoute != null)
+                DisplayLegsCourseForNode(onRoute.ID);
+            else
+                DisplayLegsCourseForNode(reducedPoint.ID);
 
             OnOperationMade?.Invoke();
         }
@@ -334,10 +358,17 @@ namespace Navigation {
             CheckModForOperation();
             _cachedCommands.Add(command);
 
-            Session.ModRoute.AddDirectToCartesianNodeBefore(command.OriginalRouteNodeId, command.OnTopNodeId);
+            Session.ModRoute.AddDirectToCartesianNodeBefore(command.OriginalRouteNodeId, command.OnTopNodeId, out var inserted);
 
             DataHandler.BuildSetDetails(Session.ModRoute);
-            DisplayLegsOperation(MainScreen.Keywords.ERASE);
+            if (inserted != null
+                && Session.ModRoute.GetPointByName(inserted.Name, out var onRoute)
+                && onRoute != null)
+                DisplayLegsCourseForNode(onRoute.ID);
+            else if (inserted != null)
+                DisplayLegsCourseForNode(inserted.ID);
+            else
+                DisplayLegsOperation(MainScreen.Keywords.ERASE);
 
             OnOperationMade?.Invoke();
         }
@@ -348,9 +379,12 @@ namespace Navigation {
             _cachedCommands.Add(command);
 
             Session.ModRoute.AddRelativeNodeBefore(command.BeforeNodeId, command.RawDegrees, command.Distance,
-                command.RelativeNodeId, out _, true);
+                command.RelativeNodeId, out var insertionNode, true);
             DataHandler.BuildSetDetails(Session.ModRoute);
-            DisplayLegsOperation(MainScreen.Keywords.ERASE);
+            if (insertionNode != null)
+                DisplayLegsCourseForNode(insertionNode.ID);
+            else
+                DisplayLegsOperation(MainScreen.Keywords.ERASE);
 
             OnOperationMade?.Invoke();
         }
@@ -362,7 +396,7 @@ namespace Navigation {
 
             Session.ModRoute.CreateLinearApproach(command.ToNodeId, command.Angle);
             DataHandler.BuildSetDetails(Session.ModRoute);
-            DisplayLegsOperation(MainScreen.Keywords.ERASE, ToDegreesDisplay(command.Angle), true);
+            DisplayLegsOperation(MainScreen.Keywords.ERASE, ToDegreesDisplay(command.Angle), true, command.ToNodeId);
 
             OnOperationMade?.Invoke();
         }

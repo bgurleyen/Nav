@@ -28,3 +28,54 @@
 03:37:12 start
 04:27:56 start
 22:50:10 start
+23:00:37 start
+23:05:03 start
+23:06:56 start
+00:01:46 start
+00:02:10 start
+00:08:59 start
+00:31:54 start
+02:57:46 start
+02:58:08 System.IO.IOException: Cannot write ac_routes.txt to C:\Users\User\NavigationShare\Assets\_Game\Data Files\General\ac_routes.txt
+   at AcRouteEditor.RouteStore.Save()
+   at AcRouteEditor.MainForm.PersistCurrent()
+03:08:54 start
+03:11:54 start
+03:26:22 WriteVirtualPoints: The requested operation cannot be performed on a file with a user-mapped section open.
+
+03:26:25 WriteVirtualPoints: The requested operation cannot be performed on a file with a user-mapped section open.
+
+03:26:27 WriteVirtualPoints: The requested operation cannot be performed on a file with a user-mapped section open.
+
+03:26:39 WriteVirtualPoints: The requested operation cannot be performed on a file with a user-mapped section open.
+
+03:26:41 WriteVirtualPoints: The requested operation cannot be performed on a file with a user-mapped section open.
+
+03:26:43 WriteVirtualPoints: The requested operation cannot be performed on a file with a user-mapped section open.
+
+03:26:49 WriteVirtualPoints: The requested operation cannot be performed on a file with a user-mapped section open.
+
+03:27:18 WriteVirtualPoints: The requested operation cannot be performed on a file with a user-mapped section open.
+
+03:27:20 WriteVirtualPoints: The requested operation cannot be performed on a file with a user-mapped section open.
+
+03:27:28 WriteVirtualPoints: The requested operation cannot be performed on a file with a user-mapped section open.
+
+03:27:29 WriteVirtualPoints: The requested operation cannot be performed on a file with a user-mapped section open.
+
+03:27:31 WriteVirtualPoints: The requested operation cannot be performed on a file with a user-mapped section open.
+
+03:27:33 WriteVirtualPoints: The requested operation cannot be performed on a file with a user-mapped section open.
+
+03:27:37 WriteVirtualPoints: The requested operation cannot be performed on a file with a user-mapped section open.
+
+03:27:39 WriteVirtualPoints: The requested operation cannot be performed on a file with a user-mapped section open.
+
+03:53:15 WriteVirtualPoints: The requested operation cannot be performed on a file with a user-mapped section open.
+
+03:53:20 WriteVirtualPoints: The requested operation cannot be performed on a file with a user-mapped section open.
+
+03:53:35 WriteVirtualPoints: The requested operation cannot be performed on a file with a user-mapped section open.
+
+03:55:10 WriteVirtualPoints: The requested operation cannot be performed on a file with a user-mapped section open.
+

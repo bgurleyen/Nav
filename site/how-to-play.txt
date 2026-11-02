@@ -1,0 +1,31 @@
+ZFLITE — HOW TO PLAY
+
+What it is
+Zflite works on the same ideas as Boeing FMC descent planning: route, constraints, vertical path, speed, and fuel. If you know that workflow, most screens are self-explanatory. Each level is a descent scenario (STAR, fixes, runway, cruise altitude, fuel).
+
+Your goal
+• Fly each level and finish the descent with as little fuel used as you can.
+• Play every section to learn the routes; replay levels to improve.
+• After a save, compare your fuel and metrics with the level average and the best result.
+• Pick the next level in order, or choose a random level from the menu when you want variety.
+• The challenge: use the same descent path and constraints as others, but beat them on fuel.
+
+What to use
+• Other traffic — traffic on the plan is part of the picture; stay aware of sequencing and spacing.
+• Banana — vertical path cue on the side view; keep the aircraft on the intended descent path.
+• VDI — vertical deviation on the PFD during descent; fly toward the path.
+• FIX pages — fix altitudes and constraints along the route; check them against DES and the map.
+• VS / FPA — set and fly vertical speed or flight path angle when the scenario calls for it.
+• Meters / Progress page — altitude, configuration, speedbrake, and fuel during and after the flight.
+• MOD — modify the route (e.g. direct-to); the sim rebuilds the path from your change.
+
+Descent control
+Enough autopilot, speed, configuration, and path control is available to fly a full descent. Use FMC, mode control, and manual inputs as you would in a trainer.
+
+Level 40 — Free flight
+Level 40 is free real-time flight, similar to a chair-flight session. You can use FMC, modes, and instruments without having to follow a fixed lesson path. Fuel still counts; use it to experiment with descent technique.
+
+Tips
+Read the level briefing before you start. Save when you are happy with a run to lock in your debrief and ranking. Privacy: https://zflite.com/privacy
+
+Contact: info@zflite.com

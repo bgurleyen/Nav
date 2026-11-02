@@ -391,8 +391,9 @@ namespace Navigation
             Points = newSet;
         }
 
-        public void AddDirectToCartesianNodeBefore(int originalRouteNodeId, int nextNodeId)
+        public void AddDirectToCartesianNodeBefore(int originalRouteNodeId, int nextNodeId, out RoutePoint inserted)
         {
+            inserted = null;
             if (Session.OriginalReferenceRoute == null
                 || !Session.OriginalReferenceRoute.GetPoint(originalRouteNodeId, out var originalRoutePoint, out _)
                 || originalRoutePoint == null
@@ -415,20 +416,16 @@ namespace Navigation
 
             modeAfterNode.IndicateDiscontinuityBefore();
 
-
-            //Old Code...
-            /* var targetPointToAdd = RoutePoint.ConstructFromPosition(
-                originalRoutePoint.CartesianPosition,
-                modNodeBefore,
-                modeAfterNode,
-                GetNewId(false),
-                "D",
-                originalRoutePoint.Name);*/
-
             Debug.Log("modeAfterNode :" + modeAfterNode.Name + "|| targetPointToAdd: " + targetPointToAdd.Name);
             InsertNodes(modIndexAfter, targetPointToAdd);
+            inserted = targetPointToAdd;
 
             ComputeTrace();
+        }
+
+        public void AddDirectToCartesianNodeBefore(int originalRouteNodeId, int nextNodeId)
+        {
+            AddDirectToCartesianNodeBefore(originalRouteNodeId, nextNodeId, out _);
         }
 
 
@@ -596,6 +593,8 @@ namespace Navigation
             target.ClearDetails();
             target.HasHeldIntercept = false;
             target.Distance = CourseInterceptLengthNm;
+            target.LinearApproachAngle = angle;
+            target.Details = "L";
             target.RawDegrees = course;
             target.IsModified = true;
 
