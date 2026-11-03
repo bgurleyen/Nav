@@ -12,8 +12,8 @@ PlayerSettings:
   targetDevice: 2
   useOnDemandResources: 0
   accelerometerFrequency: 60
-  companyName: DefaultCompany
-  productName: Navigation
+  companyName: zflite
+  productName: Descent Tutor
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
   m_SplashScreenBackgroundColor: {r: 0, g: 0, b: 0, a: 1}
@@ -161,9 +161,9 @@ PlayerSettings:
   androidSupportedAspectRatio: 1
   androidMaxAspectRatio: 2.1
   applicationIdentifier:
-    Android: com.DefaultCompany.Navigation
-    Standalone: com.DefaultCompany.Navigation
-    iPhone: com.DefaultCompany.Navigation
+    Android: com.zflite.descenttutor
+    Standalone: com.zflite.descenttutor
+    iPhone: com.zflite.descenttutor
   buildNumber:
     Standalone: 0
     VisionOS: 0
@@ -945,7 +945,7 @@ PlayerSettings:
   cloudProjectId: 6b0e5c0f-32aa-4295-813a-f41fa5f2a9db
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: Navigation
+  projectName: Descent Tutor
   organizationId: bgurleyen
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0
