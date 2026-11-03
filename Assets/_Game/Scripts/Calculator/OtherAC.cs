@@ -12,10 +12,8 @@ public class OtherAC
     const float TcasMaxRangeNm = 40f;
     const float PositionPeriodSec = 1f;
     const float AltitudeFtPerNm = 300f;
-    const float RwyGapMinSec = 60f;
-    const float RwyGapMaxSec = 120f;
-    const float TrafficGsMinKt = 120f;
-    const float TrafficGsMaxKt = 450f;
+    const float AlongTrackGapMinNm = 5f;
+    const float AlongTrackGapMaxNm = 10f;
 
     private ACInfo[] _acItems;
     private string _aircraftKey;
@@ -29,18 +27,12 @@ public class OtherAC
     private float dx, dy, hyp, x, y;
     private Vector2[] _pts;
     private float[] _rem;
-    private bool _released;
-    private float _releaseAtHours;
-    private int _queueIndex = -1;
     private int _lastPosSeq = -1;
-    private static float _simHours;
     private static float _posAccSec;
     private static float _posStepSec;
     private static bool _posDue;
     private static int _posSeq;
     private static int _clockFrame = -1;
-    private static float[] _landingGapSec;
-    private static int _ownQueueIndex = -1;
 
     public OtherAC(int acIndex, LevelDataScriptableObject levelData)
     {
@@ -59,33 +51,20 @@ public class OtherAC
         public float RemNm;
     }
 
-    public static void ApplyFormation(OtherAC[] all)
+    public static void ApplyFormation(OtherAC[] all, int levelNumber)
     {
-        _simHours = 0f;
         _clockFrame = -1;
         _posAccSec = 0f;
         _posStepSec = 0f;
         _posDue = false;
         _posSeq = 0;
-        _landingGapSec = null;
-        _ownQueueIndex = -1;
         if (all == null)
             return;
 
-        for (int i = 0; i < all.Length; i++)
-        {
-            OtherAC ac = all[i];
-            if (ac == null || !ac.HasRoute)
-                continue;
-            ac.PlaceForDesired(ac._rem[0]);
-            ac.Hold();
-            ac._releaseAtHours = 0f;
-        }
-
-        BuildLandingQueue(all);
+        BuildLandingQueue(all, levelNumber);
     }
 
-    static void BuildLandingQueue(OtherAC[] all)
+    static void BuildLandingQueue(OtherAC[] all, int levelNumber)
     {
         var queue = new List<LandingParticipant>();
         if (Move.Instance != null)
@@ -113,59 +92,68 @@ public class OtherAC
             return a.AcIndex.CompareTo(b.AcIndex);
         });
 
-        for (int i = 0; i < all.Length; i++)
+        int n = queue.Count;
+        int ownIndex = -1;
+        for (int i = 0; i < queue.Count; i++)
         {
-            if (all[i] != null)
-                all[i]._queueIndex = -1;
+            if (queue[i].AcIndex == -1)
+                ownIndex = i;
         }
 
-        int n = queue.Count;
         if (n < 2)
+        {
+            PlaceTrafficAtRouteHead(all);
             return;
+        }
 
-        _landingGapSec = new float[n - 1];
-        for (int g = 0; g < _landingGapSec.Length; g++)
-            _landingGapSec[g] = Random.Range(RwyGapMinSec, RwyGapMaxSec);
+        float ownRem = queue[ownIndex >= 0 ? ownIndex : 0].RemNm;
+        if (ownIndex >= 0)
+            ownRem = Move.Instance != null ? Move.Instance.AtcInstructionsRemaining() : ownRem;
 
-        _ownQueueIndex = -1;
+        var targetRem = new float[n];
+        var gaps = new float[n - 1];
+        UnityEngine.Random.State rngState = UnityEngine.Random.state;
+        UnityEngine.Random.InitState(levelNumber * 7919 + 17);
+        for (int g = 0; g < gaps.Length; g++)
+            gaps[g] = Random.Range(AlongTrackGapMinNm, AlongTrackGapMaxNm);
+        UnityEngine.Random.state = rngState;
+
+        int anchor = ownIndex >= 0 ? ownIndex : 0;
+        targetRem[anchor] = ownRem;
+        for (int i = anchor - 1; i >= 0; i--)
+            targetRem[i] = targetRem[i + 1] - gaps[i];
+        for (int i = anchor + 1; i < n; i++)
+            targetRem[i] = targetRem[i - 1] + gaps[i - 1];
+
+        ApplyAlongTrackTargets(all, queue, targetRem);
+    }
+
+    static void PlaceTrafficAtRouteHead(OtherAC[] all)
+    {
+        for (int i = 0; i < all.Length; i++)
+        {
+            OtherAC ac = all[i];
+            if (ac == null || !ac.HasRoute)
+                continue;
+            ac.PlaceForDesired(ac._rem[0]);
+        }
+    }
+
+    static void ApplyAlongTrackTargets(OtherAC[] all, List<LandingParticipant> queue, float[] targetRem)
+    {
         for (int i = 0; i < queue.Count; i++)
         {
             LandingParticipant p = queue[i];
-            if (p.AcIndex == -1)
-                _ownQueueIndex = i;
-            else if (p.AcIndex >= 0 && p.AcIndex < all.Length && all[p.AcIndex] != null)
-                all[p.AcIndex]._queueIndex = i;
+            if (p.AcIndex < 0 || p.AcIndex >= all.Length)
+                continue;
+            OtherAC ac = all[p.AcIndex];
+            if (ac == null || !ac.HasRoute)
+                continue;
+            float desired = targetRem[i];
+            if (desired < 0f)
+                desired = 0f;
+            ac.PlaceForDesired(desired);
         }
-    }
-
-    static float OwnEtaHours()
-    {
-        if (Move.Instance == null)
-            return 1f;
-        float rem = Move.Instance.AtcInstructionsRemaining();
-        if (rem < 0.001f)
-            rem = 0.001f;
-        return rem / OwnGroundSpeedKt();
-    }
-
-    static float TargetRwyAtHours(int queueIndex)
-    {
-        float tOwn = _simHours + OwnEtaHours();
-        if (_ownQueueIndex < 0 || _landingGapSec == null || queueIndex < 0)
-            return tOwn;
-        if (queueIndex == _ownQueueIndex)
-            return tOwn;
-        if (queueIndex < _ownQueueIndex)
-        {
-            float t = tOwn;
-            for (int i = queueIndex; i < _ownQueueIndex; i++)
-                t -= _landingGapSec[i] / 3600f;
-            return t;
-        }
-        float after = tOwn;
-        for (int i = _ownQueueIndex; i < queueIndex; i++)
-            after += _landingGapSec[i] / 3600f;
-        return after;
     }
 
     public void Tick(Dictionary<string, string> acTexts, Dictionary<string, Vector2> acPositions)
@@ -174,24 +162,13 @@ public class OtherAC
             return;
 
         AdvanceClock();
-        if (!_released)
-        {
-            if (_simHours < _releaseAtHours)
-            {
-                SuppressDisplay(acTexts, acPositions);
-                return;
-            }
-            _released = true;
-        }
 
         if (!_posDue || _lastPosSeq == _posSeq)
             return;
         _lastPosSeq = _posSeq;
 
         if (_currentPointIndex >= _acItems.Length)
-            RestartRoute();
-        if (_hidden || !_released)
-            return;
+            _currentPointIndex = _acItems.Length - 1;
 
         float stepLeft = GroundSpeedKt() / 3600f * _posStepSec;
 
@@ -202,7 +179,7 @@ public class OtherAC
         }
 
         int hops = 0;
-        while (stepLeft > 0.0001f && !_hidden && _released && _currentPointIndex < _acItems.Length && hops < 200)
+        while (stepLeft > 0.0001f && !_hidden && _currentPointIndex < _acItems.Length && hops < 200)
         {
             hops++;
             PointIndex = _acItems[_currentPointIndex].Point;
@@ -218,8 +195,8 @@ public class OtherAC
             {
                 if (_currentPointIndex >= _acItems.Length - 1)
                 {
-                    RestartRoute();
-                    continue;
+                    stepLeft = 0f;
+                    break;
                 }
                 _currentPointIndex += 1;
                 continue;
@@ -232,8 +209,8 @@ public class OtherAC
                 stepLeft -= toCheck;
                 if (_currentPointIndex >= _acItems.Length - 1)
                 {
-                    RestartRoute();
-                    continue;
+                    stepLeft = 0f;
+                    break;
                 }
                 _currentPointIndex += 1;
                 continue;
@@ -245,20 +222,7 @@ public class OtherAC
 
         AltitudeC = TrafficAltitudeFt(RemainingNm());
 
-        if (_hidden || !_released)
-        {
-            SuppressDisplay(acTexts, acPositions);
-            return;
-        }
-
-        if (TooCloseToOwn() || HideTrafficNearRunway())
-        {
-            RestartRoute();
-            SuppressDisplay(acTexts, acPositions);
-            return;
-        }
-
-        if (!InsideTcasWindow())
+        if (TooCloseToOwn() || HideTrafficNearRunway() || !InsideTcasWindow())
         {
             SuppressDisplay(acTexts, acPositions);
             return;
@@ -367,13 +331,6 @@ public class OtherAC
         AltitudeC = TrafficAltitudeFt(RemainingNm());
     }
 
-    private void Hold()
-    {
-        _released = false;
-        _releaseAtHours = 0f;
-        _hidden = false;
-    }
-
     private static void AdvanceClock()
     {
         int frame = Time.frameCount;
@@ -383,7 +340,6 @@ public class OtherAC
         float dt = Session.Settings != null ? Session.Settings.FlyingTickDuration : 0f;
         if (dt < 0f)
             dt = 0f;
-        _simHours += dt / 3600f;
         _posAccSec += dt;
         _posStepSec = 0f;
         _posDue = false;
@@ -401,18 +357,7 @@ public class OtherAC
 
     private float GroundSpeedKt()
     {
-        if (!_released || _queueIndex < 0)
-            return OwnGroundSpeedKt();
-
-        float target = TargetRwyAtHours(_queueIndex);
-        float hrs = target - _simHours;
-        if (hrs < 1f / 3600f)
-            hrs = 1f / 3600f;
-        float rem = RemainingNm();
-        if (rem < 0.001f)
-            return OwnGroundSpeedKt();
-        float gs = rem / hrs;
-        return Mathf.Clamp(gs, TrafficGsMinKt, TrafficGsMaxKt);
+        return OwnGroundSpeedKt();
     }
 
     private static float OwnGroundSpeedKt()
@@ -488,25 +433,17 @@ public class OtherAC
         return rem.Length - 2;
     }
 
-    private void RestartRoute()
-    {
-        if (_pts == null || _pts.Length < 2 || _acItems == null || _acItems.Length < 2 || _rem == null)
-        {
-            Hide();
-            return;
-        }
-
-        finalPosition = _pts[0];
-        _currentPointIndex = 1;
-        AltitudeC = TrafficAltitudeFt(_rem[0]);
-        _hidden = false;
-        _released = false;
-        _releaseAtHours = 0f;
-    }
-
     private void Hide(Dictionary<string, string> acTexts = null, Dictionary<string, Vector2> acPositions = null)
     {
         _hidden = true;
         SuppressDisplay(acTexts, acPositions);
     }
+}
+
+[System.Serializable]
+public class ACInfo
+{
+    public int Point;
+    public int Altitude;
+    public int Speed;
 }

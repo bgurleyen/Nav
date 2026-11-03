@@ -167,12 +167,15 @@ public class Move : Singleton<Move>
         RW = originPoints != null ? originPoints.Length - 1 : 0;
         OwnAtcRemainingAtStart = AtcInstructionsRemaining();
 
+        ACPositions.Clear();
+        ACTexts.Clear();
+
         _otherACs = new OtherAC[10];
         for (var i = 0; i < _otherACs.Length; i++)
         {
             _otherACs[i] = new OtherAC(i, _currentLevelData);
         }
-        OtherAC.ApplyFormation(_otherACs);
+        OtherAC.ApplyFormation(_otherACs, _currentLevelData?.levelInfo?.LevelNumber ?? 0);
     }
 
 

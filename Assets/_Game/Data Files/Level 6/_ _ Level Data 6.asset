@@ -16,15 +16,4 @@ MonoBehaviour:
   virtualPoints: {fileID: 11400000, guid: cebdfe1cf85d1d94dbb70c60667e3bdb, type: 2}
   aTCs: {fileID: 11400000, guid: 1812e381f1b4f1643b26062c859fe0fb, type: 2}
   levelInfo: {fileID: 11400000, guid: 4aa1973c5371052448a75adaedea7622, type: 2}
-  otherACs:
-  - {fileID: 11400000, guid: 920854a4ec9498b43b21edde44f957b7, type: 2}
-  - {fileID: 11400000, guid: 5e316aab8327d4248a3f4af96e3f01f4, type: 2}
-  - {fileID: 11400000, guid: 70483e29c65a85047a1fb61e8ae4ed40, type: 2}
-  - {fileID: 11400000, guid: 8b7a61349cb692a4c9b76317d4c22799, type: 2}
-  - {fileID: 11400000, guid: e32a77f5e740a30479507ee66a7c7551, type: 2}
-  - {fileID: 11400000, guid: 03aaf394a64a8d54a82760384b89bf75, type: 2}
-  - {fileID: 11400000, guid: 5b40b3ae111bf794bba9213ac171366f, type: 2}
-  - {fileID: 11400000, guid: 8c6c59239c41888e8981bd5a9333c265, type: 2}
-  - {fileID: 11400000, guid: 1ca918a24c8c190ea2863cc0c7c60fef, type: 2}
-  - {fileID: 11400000, guid: ad00bf6e4f88f348f8ac073da514bc98, type: 2}
   WindTable: {fileID: 11400000, guid: 61ccbd9cecab91442b3e254d2b31042e, type: 2}

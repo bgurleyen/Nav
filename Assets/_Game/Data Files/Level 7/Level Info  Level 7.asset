@@ -19,7 +19,7 @@ MonoBehaviour:
   Runway: 09L
   FieldInfo: 12798FT3901M
   Freq: 110.3
-  Course: 91
+  Course: 93
   ZFW: 48
   Fuel: 12
   CrzSpeed: 247
@@ -27,4 +27,3 @@ MonoBehaviour:
   DesEconSpeed: 300
   DesEconMach: 79
   GlideSlope: 3
-  Reserved: 0

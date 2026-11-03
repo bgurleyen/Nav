@@ -56,6 +56,15 @@ internal static class Program
         public bool IsOwn;
     }
 
+    struct QueueParticipant
+    {
+        public int AcIndex;
+        public double RemNm;
+    }
+
+    const double AlongTrackGapMinNm = 5.0;
+    const double AlongTrackGapMaxNm = 10.0;
+
     [STAThread]
     static int Main(string[] args)
     {
@@ -208,7 +217,9 @@ internal static class Program
         List<Node> ownPath = BuildOwnAtcPath(dir, guids, ctx);
         double ownNm = PathLengthNm(ownPath);
 
-        var entries = new List<DistEntry>();
+        var queue = new List<QueueParticipant>();
+        queue.Add(new QueueParticipant { AcIndex = -1, RemNm = ownNm });
+
         Dictionary<int, List<int>> acMap = ParseAcLevel(acText, levelNo);
         if (acMap != null)
         {
@@ -220,10 +231,68 @@ internal static class Program
                 double nm = TrafficPathNm(ctx, ids);
                 if (nm < 0.01)
                     continue;
-                entries.Add(new DistEntry { Nm = nm, IsOwn = false });
+                queue.Add(new QueueParticipant { AcIndex = ac - 1, RemNm = nm });
             }
         }
-        entries.Add(new DistEntry { Nm = ownNm, IsOwn = true });
+
+        queue.Sort(delegate(QueueParticipant a, QueueParticipant b)
+        {
+            int c = a.RemNm.CompareTo(b.RemNm);
+            if (c != 0) return c;
+            return a.AcIndex.CompareTo(b.AcIndex);
+        });
+
+        var entries = new List<DistEntry>();
+        int n = queue.Count;
+        if (n < 2)
+        {
+            for (int i = 0; i < n; i++)
+            {
+                QueueParticipant p = queue[i];
+                entries.Add(new DistEntry
+                {
+                    Nm = p.AcIndex < 0 ? ownNm : p.RemNm,
+                    IsOwn = p.AcIndex < 0
+                });
+            }
+        }
+        else
+        {
+            int ownIndex = -1;
+            for (int i = 0; i < n; i++)
+            {
+                if (queue[i].AcIndex < 0)
+                    ownIndex = i;
+            }
+
+            var targetRem = new double[n];
+            var gaps = new double[n - 1];
+            var rng = new Random(levelNo * 7919 + 17);
+            for (int g = 0; g < gaps.Length; g++)
+                gaps[g] = AlongTrackGapMinNm + rng.NextDouble() * (AlongTrackGapMaxNm - AlongTrackGapMinNm);
+
+            int anchor = ownIndex >= 0 ? ownIndex : 0;
+            targetRem[anchor] = ownNm;
+            for (int i = anchor - 1; i >= 0; i--)
+                targetRem[i] = targetRem[i + 1] - gaps[i];
+            for (int i = anchor + 1; i < n; i++)
+                targetRem[i] = targetRem[i - 1] + gaps[i - 1];
+
+            for (int i = 0; i < n; i++)
+            {
+                QueueParticipant p = queue[i];
+                if (p.AcIndex < 0)
+                {
+                    entries.Add(new DistEntry { Nm = ownNm, IsOwn = true });
+                    continue;
+                }
+                double desired = targetRem[i];
+                if (desired < 0.0)
+                    desired = 0.0;
+                entries.Add(new DistEntry { Nm = desired, IsOwn = false });
+            }
+        }
+
         entries.Sort(delegate(DistEntry a, DistEntry b)
         {
             int c = a.Nm.CompareTo(b.Nm);

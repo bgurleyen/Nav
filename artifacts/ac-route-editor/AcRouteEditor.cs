@@ -1697,18 +1697,7 @@ namespace AcRouteEditor
 
         private double TrafficGsKt(int i)
         {
-            if (!_acOn[i] || !_acReleased[i]) return OwnSimGsKt;
-            int queueIndex = _acQueueIndex[i];
-            if (queueIndex < 0) return OwnSimGsKt;
-            double target = TargetRwyAtHours(queueIndex);
-            double hrs = target - _simHours;
-            if (hrs < 1.0 / 3600.0) hrs = 1.0 / 3600.0;
-            double rem = TrafficRemainingNm(i);
-            if (rem < 0.001) return OwnSimGsKt;
-            double gs = rem / hrs;
-            if (gs < TrafficGsMinKt) gs = TrafficGsMinKt;
-            if (gs > TrafficGsMaxKt) gs = TrafficGsMaxKt;
-            return gs;
+            return OwnSimGsKt;
         }
 
         private double NextReleaseAtHours(int i)

@@ -1161,6 +1161,7 @@ namespace VPtsChange
                 if (v.IsRawZero || v.Number == Level.OriginNumber) continue;
                 Include(v.X, v.Y, ref minX, ref maxX, ref minY, ref maxY, ref any);
             }
+            IncludeIlsCourseExtent(Level, ref minX, ref maxX, ref minY, ref maxY, ref any);
             if (!any)
             {
                 for (int i = 0; i < pts.Count; i++)
@@ -1254,6 +1255,8 @@ namespace VPtsChange
                     g.DrawLine(routePen, (float)a.X, (float)a.Y, (float)b.X, (float)b.Y);
                 }
             }
+
+            DrawIlsCourse(g, plotX, plotY, plotW, plotH, cx, cy, scale);
 
             using (Pen atcPen = new Pen(Color.FromArgb(240, 196, 0), 2.4f))
             {
@@ -1526,6 +1529,62 @@ namespace VPtsChange
             if (p == null) return true;
             if (IsStartName(p.Name)) return true;
             return Math.Abs(p.X) < 0.05 && Math.Abs(p.Y) < 0.05;
+        }
+
+        public const double IlsCourseMaxNm = 23.0;
+        public const double IlsCourseStepNm = 1.0;
+
+        /// <summary>World points from runway threshold outbound along LOC (approach side), 0..maxNm.</summary>
+        public static List<Vec> IlsCourseWorldPoints(LevelData level, double maxNm, double stepNm)
+        {
+            List<Vec> list = new List<Vec>();
+            if (level == null || level.Info == null || stepNm < 0.05) return list;
+            Vec rw = level.Runway;
+            if (level.RoutePts != null && level.RoutePts.Count > 0)
+                rw = new Vec(level.RoutePts[level.RoutePts.Count - 1].X, level.RoutePts[level.RoutePts.Count - 1].Y);
+            double course = level.Info.Course;
+            double rad = course * Math.PI / 180.0;
+            double backX = -Math.Sin(rad);
+            double backY = -Math.Cos(rad);
+            for (double d = 0; d <= maxNm + 1e-6; d += stepNm)
+                list.Add(new Vec(rw.X + backX * d, rw.Y + backY * d));
+            return list;
+        }
+
+        private static void IncludeIlsCourseExtent(LevelData level, ref double minX, ref double maxX, ref double minY, ref double maxY, ref bool any)
+        {
+            List<Vec> pts = IlsCourseWorldPoints(level, IlsCourseMaxNm, IlsCourseStepNm);
+            for (int i = 0; i < pts.Count; i++)
+                Include(pts[i].X, pts[i].Y, ref minX, ref maxX, ref minY, ref maxY, ref any);
+        }
+
+        private void DrawIlsCourse(Graphics g, float plotX, float plotY, float plotW, float plotH, double cx, double cy, double scale)
+        {
+            if (Level == null || Level.RoutePts == null || Level.RoutePts.Count == 0) return;
+            List<Vec> wpts = IlsCourseWorldPoints(Level, IlsCourseMaxNm, IlsCourseStepNm);
+            if (wpts.Count < 2) return;
+
+            List<PointF> scr = new List<PointF>(wpts.Count);
+            for (int i = 0; i < wpts.Count; i++)
+            {
+                Vec m = Map(wpts[i].X, wpts[i].Y, plotX, plotY, plotW, plotH, cx, cy, scale);
+                scr.Add(new PointF((float)m.X, (float)m.Y));
+            }
+
+            Color ilsBlue = Color.FromArgb(30, 100, 210);
+            using (Pen segPen = new Pen(ilsBlue, 2.2f))
+            {
+                segPen.LineJoin = LineJoin.Round;
+                segPen.StartCap = LineCap.Round;
+                segPen.EndCap = LineCap.Round;
+                for (int i = 1; i < scr.Count; i++)
+                    g.DrawLine(segPen, scr[i - 1], scr[i]);
+            }
+            using (SolidBrush dot = new SolidBrush(ilsBlue))
+            {
+                for (int i = 0; i < scr.Count; i++)
+                    g.FillEllipse(dot, scr[i].X - 2.5f, scr[i].Y - 2.5f, 5f, 5f);
+            }
         }
 
         private static void Include(double x, double y, ref double minX, ref double maxX, ref double minY, ref double maxY, ref bool any)

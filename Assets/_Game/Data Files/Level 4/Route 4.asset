@@ -99,8 +99,8 @@ MonoBehaviour:
     Details: 
   - ID: 12
     Name: CI26L
-    RawDegrees: 48
-    Distance: 2.3
+    RawDegrees: 18
+    Distance: 5
     RawSpeed: 179
     RawAltitude: 3000
     Details: 
