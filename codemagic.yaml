@@ -3,7 +3,7 @@
 #
 # Codemagic UI setup (once):
 # 1. Team → Global variables / groups → create group "unity_credentials" with secrets:
-#    UNITY_EMAIL, UNITY_SERIAL, UNITY_PASSWORD
+#    UNITY_EMAIL (not UNITY_USERNAME), UNITY_SERIAL, UNITY_PASSWORD
 # 2. App Store Connect API (pick ONE approach):
 #    A) Team settings → Integrations → Developer Portal → add key; set integrations.app_store_connect below to that exact name.
 #    B) Team or app → Environment variables → group "appstore_credentials" (secrets):
@@ -53,10 +53,33 @@ workflows:
       - name: Activate Unity license
         script: |
           set -e
-          "$UNITY_HOME/Contents/MacOS/Unity" -batchmode -quit -logFile - \
-            -serial "${UNITY_SERIAL}" \
-            -username "${UNITY_EMAIL}" \
-            -password "${UNITY_PASSWORD}"
+          if [ -z "${UNITY_EMAIL:-}" ] || [ -z "${UNITY_SERIAL:-}" ] || [ -z "${UNITY_PASSWORD:-}" ]; then
+            echo "Missing unity_credentials: set UNITY_EMAIL, UNITY_SERIAL, UNITY_PASSWORD (not UNITY_USERNAME)."
+            exit 1
+          fi
+          case "$UNITY_SERIAL" in
+            *UnityPers*|*Personal*)
+              echo "UNITY_SERIAL looks like Personal; Codemagic needs Unity Pro serial from Hub → Manage licenses."
+              exit 1
+              ;;
+          esac
+          activate_unity() {
+            "$UNITY_HOME/Contents/MacOS/Unity" -batchmode -quit -nographics -logFile - \
+              -serial "${UNITY_SERIAL}" \
+              -username "${UNITY_EMAIL}" \
+              -password "${UNITY_PASSWORD}"
+          }
+          for attempt in 1 2 3 4 5; do
+            echo "Unity license activation attempt ${attempt}/5..."
+            if activate_unity; then
+              echo "Unity license activated."
+              exit 0
+            fi
+            echo "Activation failed; waiting 30s before retry (Unity login rate limits)..."
+            sleep 30
+          done
+          echo "Unity license activation failed after 5 attempts."
+          exit 1
 
       - name: Set up keychain for code signing
         script: |
@@ -146,3 +169,102 @@ workflows:
         key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
         issuer_id: $APP_STORE_CONNECT_ISSUER_ID
         submit_to_testflight: true
+
+  descent-tutor-android:
+    name: Descent Tutor Android (UI Test scene)
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+
+    environment:
+      unity: 2022.3.10f1
+      android_signing:
+        - descent_tutor_keystore
+      groups:
+        - unity_credentials
+        - google_play
+      vars:
+        PACKAGE_NAME: com.zflite.descenttutor
+        GOOGLE_PLAY_TRACK: internal
+        UNITY_ANDROID_DIR: Build/Android
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+        - pattern: master
+          include: true
+
+    scripts:
+      - name: Activate Unity license
+        script: |
+          set -e
+          if [ -z "${UNITY_EMAIL:-}" ] || [ -z "${UNITY_SERIAL:-}" ] || [ -z "${UNITY_PASSWORD:-}" ]; then
+            echo "Missing unity_credentials: set UNITY_EMAIL, UNITY_SERIAL, UNITY_PASSWORD (not UNITY_USERNAME)."
+            exit 1
+          fi
+          case "$UNITY_SERIAL" in
+            *UnityPers*|*Personal*)
+              echo "UNITY_SERIAL looks like Personal; Codemagic needs Unity Pro serial from Hub → Manage licenses."
+              exit 1
+              ;;
+          esac
+          activate_unity() {
+            "$UNITY_HOME/Contents/MacOS/Unity" -batchmode -quit -nographics -logFile - \
+              -serial "${UNITY_SERIAL}" \
+              -username "${UNITY_EMAIL}" \
+              -password "${UNITY_PASSWORD}"
+          }
+          for attempt in 1 2 3 4 5; do
+            echo "Unity license activation attempt ${attempt}/5..."
+            if activate_unity; then
+              echo "Unity license activated."
+              exit 0
+            fi
+            echo "Activation failed; waiting 30s before retry (Unity login rate limits)..."
+            sleep 30
+          done
+          echo "Unity license activation failed after 5 attempts."
+          exit 1
+
+      - name: Set Android bundle version code from Google Play
+        script: |
+          set -e
+          BUILD_NUMBER=$(($(google-play get-latest-build-number \
+            --package-name "$PACKAGE_NAME" \
+            --tracks="$GOOGLE_PLAY_TRACK") + 1))
+          echo "ANDROID_BUILD_NUMBER=$BUILD_NUMBER" >> $CM_ENV
+
+      - name: Export Android App Bundle from Unity
+        script: |
+          set -e
+          "$UNITY_HOME/Contents/MacOS/Unity" -batchmode -quit -logFile - \
+            -projectPath "$CM_BUILD_DIR" \
+            -executeMethod CiBuild.BuildAndroid \
+            -nographics
+
+      - name: Copy AAB for artifacts
+        script: |
+          set -e
+          mkdir -p "$CM_BUILD_DIR/build/android"
+          cp "$CM_BUILD_DIR/$UNITY_ANDROID_DIR/"*.aab "$CM_BUILD_DIR/build/android/" 2>/dev/null || \
+          cp "$CM_BUILD_DIR/$UNITY_ANDROID_DIR/DescentTutor.aab" "$CM_BUILD_DIR/build/android/"
+
+    artifacts:
+      - build/android/*.aab
+      - Build/Android/*.aab
+
+    publishing:
+      scripts:
+        - name: Deactivate Unity license
+          script: |
+            set -e
+            "$UNITY_HOME/Contents/MacOS/Unity" -batchmode -quit -logFile - \
+              -returnlicense \
+              -username "${UNITY_EMAIL}" \
+              -password "${UNITY_PASSWORD}"
+      google_play:
+        credentials: $GCLOUD_SERVICE_ACCOUNT_CREDENTIALS
+        track: $GOOGLE_PLAY_TRACK
+        submit_as_draft: true
