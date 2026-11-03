@@ -4,11 +4,11 @@
 # Codemagic UI setup (once):
 # 1. Team → Global variables / groups → create group "unity_credentials" with secrets:
 #    UNITY_EMAIL, UNITY_SERIAL, UNITY_PASSWORD
-# 2. Team integrations → Developer Portal → App Store Connect API key
-# 3. Code signing identities → iOS cert + provisioning profile for com.zflite.descenttutor
-#    (or use automatic fetch via ios_signing below)
-# 4. Replace APP_STORE_APPLE_ID and app_store_connect integration name below
-# 5. Unity Personal licenses cannot activate on CI — Plus or Pro required
+# 2. Team integrations → Developer Portal → App Store Connect API key (required for signing)
+#    Rename integrations.app_store_connect below to that integration's name.
+#    Apple Developer → Identifiers must include App ID com.zflite.descenttutor.
+# 3. Replace APP_STORE_APPLE_ID below
+# 4. Unity Personal licenses cannot activate on CI — Plus or Pro required
 
 workflows:
   descent-tutor-ios:
@@ -22,13 +22,13 @@ workflows:
     environment:
       unity: 2022.3.10f1
       xcode: latest
-      ios_signing:
-        distribution_type: app_store
-        bundle_identifier: com.zflite.descenttutor
       groups:
         - unity_credentials
+        # Optional if ASC CLI cannot use the team integration alone:
+        # - appstore_credentials  # APP_STORE_CONNECT_* + CERTIFICATE_PRIVATE_KEY
       vars:
         BUNDLE_ID: com.zflite.descenttutor
+        APPLE_TEAM_ID: 2UAB2MQ7J5 # App ID Prefix / Apple Developer Team ID
         UNITY_IOS_DIR: Build/iOS
         XCODE_PROJECT: Unity-iPhone.xcodeproj
         XCODE_SCHEME: Unity-iPhone
@@ -52,6 +52,29 @@ workflows:
             -serial "${UNITY_SERIAL}" \
             -username "${UNITY_EMAIL}" \
             -password "${UNITY_PASSWORD}"
+
+      - name: Set up keychain for code signing
+        script: |
+          set -e
+          keychain initialize
+
+      - name: Fetch App Store signing files from Apple
+        script: |
+          set -e
+          app-store-connect fetch-signing-files "$BUNDLE_ID" \
+            --type IOS_APP_STORE \
+            --create
+
+      - name: Fetch iOS distribution certificate
+        script: |
+          set -e
+          app-store-connect certificates list --type IOS_DISTRIBUTION --save || \
+          app-store-connect certificates create --type IOS_DISTRIBUTION --save
+
+      - name: Add signing certificates to keychain
+        script: |
+          set -e
+          keychain add-certificates
 
       - name: Export Xcode project from Unity
         script: |
