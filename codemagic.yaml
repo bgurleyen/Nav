@@ -1,0 +1,118 @@
+# Descent Tutor — Unity 2022.3.10f1 iOS CI/CD
+# Docs: https://docs.codemagic.io/yaml-quick-start/building-a-unity-app/
+#
+# Codemagic UI setup (once):
+# 1. Team → Global variables / groups → create group "unity_credentials" with secrets:
+#    UNITY_EMAIL, UNITY_SERIAL, UNITY_PASSWORD
+# 2. Team integrations → Developer Portal → App Store Connect API key
+# 3. Code signing identities → iOS cert + provisioning profile for com.zflite.descenttutor
+#    (or use automatic fetch via ios_signing below)
+# 4. Replace APP_STORE_APPLE_ID and app_store_connect integration name below
+# 5. Unity Personal licenses cannot activate on CI — Plus or Pro required
+
+workflows:
+  descent-tutor-ios:
+    name: Descent Tutor iOS
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+
+    integrations:
+      app_store_connect: codemagic # rename to your Codemagic ASC integration name
+
+    environment:
+      unity: 2022.3.10f1
+      xcode: latest
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.zflite.descenttutor
+      groups:
+        - unity_credentials
+      vars:
+        BUNDLE_ID: com.zflite.descenttutor
+        UNITY_IOS_DIR: Build/iOS
+        XCODE_PROJECT: Unity-iPhone.xcodeproj
+        XCODE_SCHEME: Unity-iPhone
+        # Numeric Apple ID from App Store Connect → App Information
+        APP_STORE_APPLE_ID: 0
+
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+        - pattern: master
+          include: true
+
+    scripts:
+      - name: Activate Unity license
+        script: |
+          set -e
+          "$UNITY_HOME/Contents/MacOS/Unity" -batchmode -quit -logFile - \
+            -serial "${UNITY_SERIAL}" \
+            -username "${UNITY_EMAIL}" \
+            -password "${UNITY_PASSWORD}"
+
+      - name: Export Xcode project from Unity
+        script: |
+          set -e
+          "$UNITY_HOME/Contents/MacOS/Unity" -batchmode -quit -logFile - \
+            -projectPath "$CM_BUILD_DIR" \
+            -executeMethod CiBuild.BuildiOS \
+            -nographics
+
+      - name: Set up code signing on Xcode project
+        script: |
+          set -e
+          xcode-project use-profiles
+
+      - name: Set iOS build number from App Store Connect
+        script: |
+          set -e
+          if [ "$APP_STORE_APPLE_ID" = "0" ]; then
+            echo "APP_STORE_APPLE_ID is not set; skipping agvtool bump."
+            exit 0
+          fi
+          BUILD_NUMBER=$(($(app-store-connect get-latest-app-store-build-number "$APP_STORE_APPLE_ID") + 1))
+          cd "$CM_BUILD_DIR/$UNITY_IOS_DIR"
+          agvtool new-version -all "$BUILD_NUMBER"
+
+      - name: Install CocoaPods (Firebase / EDM)
+        script: |
+          set -e
+          if [ -f "$CM_BUILD_DIR/$UNITY_IOS_DIR/Podfile" ]; then
+            cd "$CM_BUILD_DIR/$UNITY_IOS_DIR"
+            pod install
+          fi
+
+      - name: Build IPA
+        script: |
+          set -e
+          IOS_DIR="$CM_BUILD_DIR/$UNITY_IOS_DIR"
+          if [ -d "$IOS_DIR/Unity-iPhone.xcworkspace" ]; then
+            xcode-project build-ipa \
+              --workspace "$IOS_DIR/Unity-iPhone.xcworkspace" \
+              --scheme "$XCODE_SCHEME"
+          else
+            xcode-project build-ipa \
+              --project "$IOS_DIR/$XCODE_PROJECT" \
+              --scheme "$XCODE_SCHEME"
+          fi
+
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - Build/iOS/**/*.dSYM
+      - $HOME/Library/Developer/Xcode/DerivedData/**/Build/**/*.dSYM
+
+    publishing:
+      scripts:
+        - name: Deactivate Unity license
+          script: |
+            set -e
+            "$UNITY_HOME/Contents/MacOS/Unity" -batchmode -quit -logFile - \
+              -returnlicense \
+              -username "${UNITY_EMAIL}" \
+              -password "${UNITY_PASSWORD}"
+      app_store_connect:
+        auth: integration
+        submit_to_testflight: true
