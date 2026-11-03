@@ -53,8 +53,14 @@ workflows:
       - name: Activate Unity license
         script: |
           set -e
+          UNITY_EMAIL="${UNITY_EMAIL:-${UNITY_USERNAME:-}}"
           if [ -z "${UNITY_EMAIL:-}" ] || [ -z "${UNITY_SERIAL:-}" ] || [ -z "${UNITY_PASSWORD:-}" ]; then
-            echo "Missing unity_credentials: set UNITY_EMAIL, UNITY_SERIAL, UNITY_PASSWORD (not UNITY_USERNAME)."
+            echo "unity_credentials missing or empty in this build."
+            echo "  UNITY_EMAIL/UNITY_USERNAME set: $([ -n "${UNITY_EMAIL:-}" ] && echo yes || echo NO)"
+            echo "  UNITY_SERIAL set: $([ -n "${UNITY_SERIAL:-}" ] && echo yes || echo NO)"
+            echo "  UNITY_PASSWORD set: $([ -n "${UNITY_PASSWORD:-}" ] && echo yes || echo NO)"
+            echo "Codemagic → this app → Environment variables → group name must be: unity_credentials"
+            echo "Variables: UNITY_EMAIL (or UNITY_USERNAME), UNITY_SERIAL, UNITY_PASSWORD — all marked Secret."
             exit 1
           fi
           case "$UNITY_SERIAL" in
@@ -200,8 +206,14 @@ workflows:
       - name: Activate Unity license
         script: |
           set -e
+          UNITY_EMAIL="${UNITY_EMAIL:-${UNITY_USERNAME:-}}"
           if [ -z "${UNITY_EMAIL:-}" ] || [ -z "${UNITY_SERIAL:-}" ] || [ -z "${UNITY_PASSWORD:-}" ]; then
-            echo "Missing unity_credentials: set UNITY_EMAIL, UNITY_SERIAL, UNITY_PASSWORD (not UNITY_USERNAME)."
+            echo "unity_credentials missing or empty in this build."
+            echo "  UNITY_EMAIL/UNITY_USERNAME set: $([ -n "${UNITY_EMAIL:-}" ] && echo yes || echo NO)"
+            echo "  UNITY_SERIAL set: $([ -n "${UNITY_SERIAL:-}" ] && echo yes || echo NO)"
+            echo "  UNITY_PASSWORD set: $([ -n "${UNITY_PASSWORD:-}" ] && echo yes || echo NO)"
+            echo "Codemagic → this app → Environment variables → group name must be: unity_credentials"
+            echo "Variables: UNITY_EMAIL (or UNITY_USERNAME), UNITY_SERIAL, UNITY_PASSWORD — all marked Secret."
             exit 1
           fi
           case "$UNITY_SERIAL" in
