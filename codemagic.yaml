@@ -4,11 +4,16 @@
 # Codemagic UI setup (once):
 # 1. Team → Global variables / groups → create group "unity_credentials" with secrets:
 #    UNITY_EMAIL, UNITY_SERIAL, UNITY_PASSWORD
-# 2. Team integrations → Developer Portal → App Store Connect API key (required for signing)
-#    Rename integrations.app_store_connect below to that integration's name.
-#    Apple Developer → Identifiers must include App ID com.zflite.descenttutor.
-# 3. Replace APP_STORE_APPLE_ID below
-# 4. Unity Personal licenses cannot activate on CI — Plus or Pro required
+# 2. App Store Connect API (pick ONE approach):
+#    A) Team settings → Integrations → Developer Portal → add key; set integrations.app_store_connect below to that exact name.
+#    B) Team or app → Environment variables → group "appstore_credentials" (secrets):
+#       APP_STORE_CONNECT_PRIVATE_KEY (.p8 contents)
+#       APP_STORE_CONNECT_KEY_IDENTIFIER (Key ID)
+#       APP_STORE_CONNECT_ISSUER_ID (Issuer ID)
+#       CERTIFICATE_PRIVATE_KEY (optional; RSA key if CI must create a new distribution cert)
+# 3. Apple Developer App ID: com.zflite.descenttutor (Team ID 2UAB2MQ7J5)
+# 4. Replace APP_STORE_APPLE_ID below
+# 5. Unity Personal licenses cannot activate on CI — Plus or Pro required
 
 workflows:
   descent-tutor-ios:
@@ -16,16 +21,16 @@ workflows:
     max_build_duration: 120
     instance_type: mac_mini_m2
 
-    integrations:
-      app_store_connect: codemagic # rename to your Codemagic ASC integration name
+    # Option A: uncomment and set to your Developer Portal integration key name in Codemagic UI:
+    # integrations:
+    #   app_store_connect: YOUR_ASC_KEY_NAME
 
     environment:
       unity: 2022.3.10f1
       xcode: latest
       groups:
         - unity_credentials
-        # Optional if ASC CLI cannot use the team integration alone:
-        # - appstore_credentials  # APP_STORE_CONNECT_* + CERTIFICATE_PRIVATE_KEY
+        - appstore_credentials
       vars:
         BUNDLE_ID: com.zflite.descenttutor
         APPLE_TEAM_ID: 2UAB2MQ7J5 # App ID Prefix / Apple Developer Team ID
@@ -137,5 +142,7 @@ workflows:
               -username "${UNITY_EMAIL}" \
               -password "${UNITY_PASSWORD}"
       app_store_connect:
-        auth: integration
+        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
+        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
+        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
         submit_to_testflight: true
