@@ -5,7 +5,30 @@ using UnityEngine;
 
 public static class CiBuild
 {
+    const string UiTestScenePath = "Assets/_Game/_Scenes/UI - Test.unity";
+
     public static void BuildiOS()
+    {
+        BuildPlayer(BuildTarget.iOS, Path.Combine("Build", "iOS"), CollectEnabledScenes());
+    }
+
+    public static void BuildAndroid()
+    {
+        var buildNumber = System.Environment.GetEnvironmentVariable("ANDROID_BUILD_NUMBER");
+        if (!string.IsNullOrEmpty(buildNumber) && int.TryParse(buildNumber, out var versionCode))
+        {
+            PlayerSettings.Android.bundleVersionCode = versionCode;
+        }
+
+        EditorUserBuildSettings.buildAppBundle = true;
+        EditorUserBuildSettings.androidBuildSystem = AndroidBuildSystem.Gradle;
+        BuildPlayer(
+            BuildTarget.Android,
+            Path.Combine("Build", "Android", "DescentTutor.aab"),
+            new[] { UiTestScenePath });
+    }
+
+    static string[] CollectEnabledScenes()
     {
         var scenes = EditorBuildSettings.scenes;
         var enabledScenes = new string[scenes.Length];
@@ -26,23 +49,28 @@ public static class CiBuild
             sceneList[i] = enabledScenes[i];
         }
 
-        var outputPath = Path.Combine(Directory.GetCurrentDirectory(), "Build", "iOS");
-        Directory.CreateDirectory(outputPath);
+        return sceneList;
+    }
 
-        var report = BuildPipeline.BuildPlayer(
-            sceneList,
-            outputPath,
-            BuildTarget.iOS,
-            BuildOptions.None);
+    static void BuildPlayer(BuildTarget target, string outputRelativePath, string[] scenes)
+    {
+        var outputPath = Path.Combine(Directory.GetCurrentDirectory(), outputRelativePath);
+        var outputDir = Path.GetDirectoryName(outputPath);
+        if (!string.IsNullOrEmpty(outputDir))
+        {
+            Directory.CreateDirectory(outputDir);
+        }
+
+        var report = BuildPipeline.BuildPlayer(scenes, outputPath, target, BuildOptions.None);
 
         if (report.summary.result != BuildResult.Succeeded)
         {
-            Debug.LogError($"iOS build failed: {report.summary.result}");
+            Debug.LogError($"{target} build failed: {report.summary.result}");
             EditorApplication.Exit(1);
             return;
         }
 
-        Debug.Log($"iOS build succeeded: {outputPath}");
+        Debug.Log($"{target} build succeeded: {outputPath}");
         EditorApplication.Exit(0);
     }
 }

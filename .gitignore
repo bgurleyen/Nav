@@ -83,4 +83,11 @@ crashlytics-build.properties
 # Temporary auto-generated Android Assets
 /[Aa]ssets/[Ss]treamingAssets/aa.meta
 /[Aa]ssets/[Ss]treamingAssets/aa/*
+# Apple signing / API keys (never commit)
+AuthKey_*.p8
+*.p8
+AppleSigning/UNITY_P12_PASSWORD.txt
+AppleSigning/api-key-base64.txt
+AppleSigning/ios_distribution.key
+
 # *.cs
