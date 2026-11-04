@@ -4,13 +4,10 @@
 # Codemagic UI setup (once):
 # 1. Team → Global variables / groups → create group "unity_credentials" with secrets:
 #    UNITY_EMAIL (not UNITY_USERNAME), UNITY_SERIAL, UNITY_PASSWORD
-# 2. App Store Connect API (pick ONE approach):
-#    A) Team settings → Integrations → Developer Portal → add key; set integrations.app_store_connect below to that exact name.
-#    B) Team or app → Environment variables → group "appstore_credentials" (secrets):
-#       APP_STORE_CONNECT_PRIVATE_KEY (.p8 contents)
-#       APP_STORE_CONNECT_KEY_IDENTIFIER (Key ID)
-#       APP_STORE_CONNECT_ISSUER_ID (Issuer ID)
-#       CERTIFICATE_PRIVATE_KEY (optional; RSA key if CI must create a new distribution cert)
+# 2. Apple signing / TestFlight — Team settings → Integrations → Developer Portal:
+#    Add App Store Connect API key; set integrations.app_store_connect below to that exact name.
+#    Alternative: Environment variables group "appstore_credentials" with APP_STORE_CONNECT_* secrets
+#    and uncomment that group in yaml.
 # 3. Apple Developer App ID: com.zflite.descenttutor (Team ID 2UAB2MQ7J5)
 # 4. Replace APP_STORE_APPLE_ID below
 # 5. Unity Personal licenses cannot activate on CI — Plus or Pro required
@@ -21,16 +18,16 @@ workflows:
     max_build_duration: 120
     instance_type: mac_mini_m2
 
-    # Option A: uncomment and set to your Developer Portal integration key name in Codemagic UI:
-    # integrations:
-    #   app_store_connect: YOUR_ASC_KEY_NAME
+    # Name from Team settings → Integrations → Developer Portal (must exist before build):
+    integrations:
+      app_store_connect: zflite_apple
 
     environment:
       unity: 2022.3.10f1
       xcode: latest
       groups:
         - unity_credentials
-        - appstore_credentials
+        # - appstore_credentials  # only if using APP_STORE_CONNECT_* env vars instead of integration
       vars:
         BUNDLE_ID: com.zflite.descenttutor
         APPLE_TEAM_ID: 2UAB2MQ7J5 # App ID Prefix / Apple Developer Team ID
@@ -171,9 +168,7 @@ workflows:
               -username "${UNITY_EMAIL}" \
               -password "${UNITY_PASSWORD}"
       app_store_connect:
-        api_key: $APP_STORE_CONNECT_PRIVATE_KEY
-        key_id: $APP_STORE_CONNECT_KEY_IDENTIFIER
-        issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+        auth: integration
         submit_to_testflight: true
 
   descent-tutor-android:
