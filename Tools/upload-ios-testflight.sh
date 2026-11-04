@@ -40,7 +40,17 @@ fi
 
 chmod 600 "$PRIVATE_KEY_FILE"
 
-if xcrun altool --upload-app -t ios -f "$PATH_TO_IPA" \
+UPLOAD_IPA="$PATH_TO_IPA"
+PATCH_DIR=$(mktemp -d)
+unzip -q "$UPLOAD_IPA" -d "$PATCH_DIR"
+if find "$PATCH_DIR" -path "*/UnityFramework.framework/Frameworks" -type d 2>/dev/null | grep -q .; then
+  echo "Stripping nested UnityFramework.framework/Frameworks (90206 workaround)"
+  find "$PATCH_DIR" -path "*/UnityFramework.framework/Frameworks" -type d -exec rm -rf {} + 2>/dev/null || true
+  UPLOAD_IPA="${PATCH_DIR}/patched.ipa"
+  (cd "$PATCH_DIR" && zip -qr "$UPLOAD_IPA" Payload)
+fi
+
+if xcrun altool --upload-app -t ios -f "$UPLOAD_IPA" \
   --apiKey "$APPLE_API_KEY_ID" \
   --apiIssuer "$APPLE_API_ISSUER_ID"; then
   echo "Upload to App Store Connect succeeded."
