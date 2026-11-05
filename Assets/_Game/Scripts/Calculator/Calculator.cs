@@ -2813,12 +2813,29 @@ public class Calculator : MonoBehaviour
         if (LGDown == down) return;
 
         LGDown = down;
+        if (down)
+            NdPauseOverlay.PulseWarningHaptic();
     }
 
     public void SetSB(bool Up, bool fromUI)
     {
         if (SBUp == !Up) return;
-        if (fromUI) SBUp = !Up;
+        var deploying = !Up;
+        if (fromUI)
+        {
+            SBUp = deploying;
+            if (deploying)
+                NdPauseOverlay.PulseWarningHaptic();
+        }
+    }
+
+    public static void SetSpeedBrakeDeployed(bool deployed)
+    {
+        if (SBUp == deployed)
+            return;
+        SBUp = deployed;
+        if (deployed)
+            NdPauseOverlay.PulseWarningHaptic();
     }
     public static int NormalizeHeading360(int heading)
     {

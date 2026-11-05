@@ -136,7 +136,7 @@ public static class AutopilotMode
         Session.State.Speed10X.Set(true);
         Session.Settings.SpeedMultiplier = ForcedSpeedMultiplier;
 
-        Calculator.SBUp = true;
+        Calculator.SetSpeedBrakeDeployed(true);
 
         _flightAutomationEnabled = true;
         AutopilotDialog.NotifyLevelRunning(PlayerPrefsHolder.Level);
@@ -307,7 +307,7 @@ public static class AutopilotMode
         calc.SnapSpeedBug();
 
         calc.SetLG(true, false);
-        Calculator.SBUp = false;
+        Calculator.SetSpeedBrakeDeployed(false);
 
         Debug.Log("[Autopilot] Final descent row — flaps 40, 140 kt, gear down, speed brake stowed");
     }

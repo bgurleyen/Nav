@@ -18,6 +18,9 @@ public class SFXAudioManager : MonoBehaviour
     [SerializeField] private AudioSource audioSource;
     [SerializeField] private SFXAudioClips[] customButtonSounds;
     private Dictionary<string, SFXAudioClips> soundIdMap;
+    private float _lastKnobTurnSoundTime;
+    private const float KnobTurnMinInterval = 0.05f;
+    private const string KnobTurnSoundId = "KnobTurning";
 
     private void Awake()
     {
@@ -50,7 +53,7 @@ public class SFXAudioManager : MonoBehaviour
 
     public void PlaySound(AudioClip clip, float volume = 1f, float pitch = 1f)
     {
-        if (clip == null) return;
+        if (clip == null || !FlightFeedbackSettings.SoundsEnabled) return;
         audioSource.pitch = pitch;
         audioSource.PlayOneShot(clip, volume);
     }
@@ -73,6 +76,17 @@ public class SFXAudioManager : MonoBehaviour
 
         if (soundIdMap.TryGetValue(soundId, out SFXAudioClips SfxClip))
         {
+            if (soundId == KnobTurnSoundId)
+            {
+                var now = Time.unscaledTime;
+                if (now - _lastKnobTurnSoundTime < KnobTurnMinInterval)
+                    return;
+                _lastKnobTurnSoundTime = now;
+                var pitch = SfxClip.pitch * UnityEngine.Random.Range(0.94f, 1.06f);
+                PlaySound(SfxClip.clip, SfxClip.volume, pitch);
+                return;
+            }
+
             PlaySound(SfxClip.clip, SfxClip.volume, SfxClip.pitch);
         }
         else

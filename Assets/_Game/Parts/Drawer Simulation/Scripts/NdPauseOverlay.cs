@@ -1,4 +1,5 @@
 using Navigation;
+using MoreMountains.NiceVibrations;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -19,6 +20,26 @@ public class NdPauseOverlay : MonoBehaviour
     static readonly Color NdRed = new Color(1f, 0.12f, 0.12f, 1f);
 
     static float _checkSpeedUntilUnscaled;
+
+    bool _wasOverspeed;
+    bool _wasCheckSpeed;
+    bool _hapticStatePrimed;
+
+    static float _lastRedWarningHapticTime;
+    const float RedWarningHapticCooldown = 0.35f;
+
+    public static void PulseWarningHaptic()
+    {
+        if (!FlightFeedbackSettings.VibrationEnabled)
+            return;
+        var now = Time.unscaledTime;
+        if (now - _lastRedWarningHapticTime < RedWarningHapticCooldown)
+            return;
+        _lastRedWarningHapticTime = now;
+        MMVibrationManager.Haptic(HapticTypes.Warning);
+    }
+
+    static void PulseRedWarning() => PulseWarningHaptic();
 
     Transform _pivot;
     TMP_Text _fontSource;
@@ -55,6 +76,22 @@ public class NdPauseOverlay : MonoBehaviour
         var overspeed = !pause && IsOverspeed();
         TickOverspeedFuel(overspeed);
         var show = overspeed || checkSpeed || pause;
+
+        if (_hapticStatePrimed)
+        {
+            if (overspeed && !_wasOverspeed)
+                PulseRedWarning();
+            if (checkSpeed && !_wasCheckSpeed)
+                PulseRedWarning();
+        }
+        else
+        {
+            _hapticStatePrimed = true;
+        }
+
+        _wasOverspeed = overspeed;
+        _wasCheckSpeed = checkSpeed;
+
         if (force || _label.gameObject.activeSelf != show)
             _label.gameObject.SetActive(show);
 
