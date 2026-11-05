@@ -172,7 +172,7 @@ workflows:
         submit_to_testflight: true
 
   descent-tutor-android:
-    name: Descent Tutor Android (UI Test scene)
+    name: Descent Tutor Android
     max_build_duration: 120
     instance_type: mac_mini_m2
 
@@ -246,6 +246,7 @@ workflows:
       - name: Export Android App Bundle from Unity
         script: |
           set -e
+          # CiBuild.BuildAndroid uses Editor Build Settings enabled scenes (UI - Test, Main, EMPTY).
           "$UNITY_HOME/Contents/MacOS/Unity" -batchmode -quit -logFile - \
             -projectPath "$CM_BUILD_DIR" \
             -executeMethod CiBuild.BuildAndroid \

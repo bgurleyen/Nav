@@ -18,12 +18,12 @@ MonoBehaviour:
     RawDegrees: 271
     Distance: 0
     RawSpeed: 0
-    RawAltitude: 30000
+    RawAltitude: 3000
     Details: 
   - ID: 1
     Name: XAVER
     RawDegrees: 276
-    Distance: 119.8
+    Distance: 40
     RawSpeed: 179
     RawAltitude: 3000
     Details: 

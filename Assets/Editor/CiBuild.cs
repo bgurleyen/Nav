@@ -5,8 +5,6 @@ using UnityEngine;
 
 public static class CiBuild
 {
-    const string UiTestScenePath = "Assets/_Game/_Scenes/UI - Test.unity";
-
     public static void BuildiOS()
     {
         BuildPlayer(BuildTarget.iOS, Path.Combine("Build", "iOS"), CollectEnabledScenes());
@@ -25,7 +23,7 @@ public static class CiBuild
         BuildPlayer(
             BuildTarget.Android,
             Path.Combine("Build", "Android", "DescentTutor.aab"),
-            new[] { UiTestScenePath });
+            CollectEnabledScenes());
     }
 
     static string[] CollectEnabledScenes()
@@ -60,6 +58,8 @@ public static class CiBuild
         {
             Directory.CreateDirectory(outputDir);
         }
+
+        Debug.Log($"[{target}] Building with scenes: {string.Join(", ", scenes)}");
 
         var report = BuildPipeline.BuildPlayer(scenes, outputPath, target, BuildOptions.None);
 

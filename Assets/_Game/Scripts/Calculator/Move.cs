@@ -17,6 +17,9 @@ public class Move : Singleton<Move>
     public Dictionary<string, string> ACTexts = new Dictionary<string, string>();
 
     public Image LOCIndex, GSIndex;
+    [SerializeField] Sprite approachNeedleHollow;
+
+    Sprite _approachNeedleFilledSprite;
 
     public Text Atc1, Atc2, Atc3;
     public Text TimerText;
@@ -1375,6 +1378,8 @@ public class Move : Singleton<Move>
     public const float LocCaptureDmeMinNm = 3f;
     public const float LocCaptureDmeMaxNm = 25f;
     public const float GsCaptureAltBandFt = 150f;
+    /// <summary>Within this DME, inactive LOC/GS pointers show at deviation position, hollow.</summary>
+    public const float ApproachNeedleHollowDmeMaxNm = 35f;
 
     /// <summary>True when APP armed and aircraft is within LOC capture window.</summary>
     public bool CanCaptureLoc(float course)
@@ -1806,10 +1811,23 @@ public class Move : Singleton<Move>
     {
         ComputeLocTrackErrors(course, out float alongFromThreshold, out float crossTrackNm);
 
-        if (alongFromThreshold < 0.5f)
-            return Mathf.DeltaAngle(course, TrackToPoint(RW));
+        // Keep one geometry: bearing-to-threshold flips sign vs cross-track near the RW.
+        const float minAlongNm = 0.5f;
+        float alongNm = Mathf.Max(alongFromThreshold, minAlongNm);
+        return Mathf.Rad2Deg * Mathf.Atan2(crossTrackNm, alongNm);
+    }
 
-        return Mathf.Rad2Deg * Mathf.Atan2(crossTrackNm, alongFromThreshold);
+    /// <summary>LOC bar deflection: same geometry as deviation, flipped when heading opposes inbound course.</summary>
+    float LocNeedleDeviationDegrees(float course)
+    {
+        float deviation = ComputeLocDeviationDegrees(course);
+        if (Session.PlayerAircraft == null)
+            return deviation;
+
+        float hdgToCourse = Mathf.Abs(Mathf.DeltaAngle(course, Session.PlayerAircraft.HeadingDegrees));
+        if (hdgToCourse > 90f)
+            deviation = -deviation;
+        return deviation;
     }
 
     void UpdateApproachNeedles()
@@ -1820,6 +1838,31 @@ public class Move : Singleton<Move>
         GsDeviation(Session.CurrentLevel.levelInfo.GlideSlope);
     }
 
+    void CacheApproachNeedleSprites()
+    {
+        if (_approachNeedleFilledSprite == null && LOCIndex != null)
+            _approachNeedleFilledSprite = LOCIndex.sprite;
+    }
+
+    void ShowHollowApproachNeedle(Image needle, float x, float y)
+    {
+        if (needle == null)
+            return;
+        CacheApproachNeedleSprites();
+        needle.enabled = true;
+        if (approachNeedleHollow != null)
+            needle.sprite = approachNeedleHollow;
+        else if (_approachNeedleFilledSprite != null)
+            needle.sprite = _approachNeedleFilledSprite;
+        needle.transform.localPosition = new Vector2(x, y);
+    }
+
+    static void HideApproachNeedle(Image needle)
+    {
+        if (needle != null)
+            needle.enabled = false;
+    }
+
     public float LocDeviation(float course)
     {
         float Deviation = ComputeLocDeviationDegrees(course);
@@ -1827,18 +1870,24 @@ public class Move : Singleton<Move>
         if (LOCIndex == null)
             return Deviation;
 
+        float locFullScaleDegrees = LocCaptureDegrees;
+        float needleDeviation = LocNeedleDeviationDegrees(course);
+        // Positive deviation is right of course. The bar shows the localizer, so it moves the other way.
+        float locNeedleX = Mathf.Clamp((-needleDeviation / locFullScaleDegrees) * 1243f, -1243f, 1243f);
+        const float locNeedleY = -645f;
+
         if (((Mathf.Abs(Deviation) < 35) && (DME() < 10)) || ((Mathf.Abs(Deviation) < 10) && (DME() < 25)))
         {
             LOCIndex.enabled = true;
-            float locFullScaleDegrees = LocCaptureDegrees;
-            // Positive deviation is right of course. The bar shows the localizer, so it moves the other way.
-            float locNeedleX = Mathf.Clamp((-Deviation / locFullScaleDegrees) * 1243f, -1243f, 1243f);
-            LOCIndex.transform.localPosition = new Vector2(locNeedleX, -645);
+            CacheApproachNeedleSprites();
+            if (_approachNeedleFilledSprite != null)
+                LOCIndex.sprite = _approachNeedleFilledSprite;
+            LOCIndex.transform.localPosition = new Vector2(locNeedleX, locNeedleY);
         }
+        else if (DME() < ApproachNeedleHollowDmeMaxNm)
+            ShowHollowApproachNeedle(LOCIndex, locNeedleX, locNeedleY);
         else
-        {
-            LOCIndex.enabled = false;
-        }
+            HideApproachNeedle(LOCIndex);
 
         return Deviation;
     }
@@ -1873,15 +1922,21 @@ public class Move : Singleton<Move>
         if (GSIndex == null)
             return Deviation;
 
+        const float gsNeedleX = 1373f;
+        float gsNeedleY = Mathf.Clamp(-needleDev * 1500, -541, 541);
+
         if ((Mathf.Abs(ComputeLocDeviationDegrees(_currentLevelData.levelInfo.Course)) < 5) && (DME() < 20))
         {
             GSIndex.enabled = true;
-            GSIndex.transform.localPosition = new Vector2(1373, Mathf.Clamp(-needleDev * 1500, -541, 541));
+            CacheApproachNeedleSprites();
+            if (_approachNeedleFilledSprite != null)
+                GSIndex.sprite = _approachNeedleFilledSprite;
+            GSIndex.transform.localPosition = new Vector2(gsNeedleX, gsNeedleY);
         }
+        else if (DME() < ApproachNeedleHollowDmeMaxNm)
+            ShowHollowApproachNeedle(GSIndex, gsNeedleX, gsNeedleY);
         else
-        {
-            GSIndex.enabled = false;
-        }
+            HideApproachNeedle(GSIndex);
 
         return Deviation;
     }
