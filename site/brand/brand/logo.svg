@@ -1,6 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 160" role="img" aria-label="Zflite">
-  <rect width="160" height="160" rx="32" fill="#0c0c24"/>
-  <path d="M40 48 H116 L48 112 H124" fill="none" stroke="#f4edc3" stroke-width="16" stroke-linejoin="miter" stroke-miterlimit="2" stroke-linecap="butt"/>
-  <circle cx="116" cy="48" r="5.5" fill="#6cb4d8"/>
-  <text x="196" y="108" fill="#f4edc3" font-family="Georgia, 'Times New Roman', serif" font-size="92">Zflite</text>
-</svg>

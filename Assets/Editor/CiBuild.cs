@@ -7,6 +7,12 @@ public static class CiBuild
 {
     public static void BuildiOS()
     {
+        var buildNumber = System.Environment.GetEnvironmentVariable("IOS_BUILD_NUMBER");
+        if (!string.IsNullOrEmpty(buildNumber) && int.TryParse(buildNumber, out var version))
+        {
+            PlayerSettings.iOS.buildNumber = buildNumber;
+        }
+
         BuildPlayer(BuildTarget.iOS, Path.Combine("Build", "iOS"), CollectEnabledScenes());
     }
 
