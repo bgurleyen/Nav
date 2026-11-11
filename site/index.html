@@ -16,47 +16,27 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header class="top">
-    <a class="mark" href="#top"><img src="brand/mark.svg" alt="">Zflite</a>
-    <p class="top-note">39 levels · descent trainer</p>
-  </header>
-
-  <main id="top">
-    <section class="hero">
-      <div class="hero-copy">
-        <p class="kicker">Navigation trainer</p>
-        <h1>Train the descent, not the scenery.</h1>
-        <p class="lede">Zflite is a 737 procedure trainer. Each level is a descent: a STAR, a runway, a cruise altitude, and a fuel load. You set the FMC, fly the vertical path, and see where the airplane actually was.</p>
+  <section class="stage" id="top">
+    <video autoplay muted loop playsinline preload="auto" aria-label="Zflite intro from the cockpit.">
+      <source src="media/intro.mp4" type="video/mp4">
+    </video>
+    <header class="top on-stage">
+      <a class="mark" href="#top"><img src="brand/mark.svg" alt="">Zflite</a>
+      <p class="top-note">39 levels · descent trainer</p>
+    </header>
+    <div class="stage-copy">
+      <p class="kicker">Navigation trainer</p>
+      <h1>Train the descent, not the scenery.</h1>
+      <p class="lede">Zflite is a 737 procedure trainer. Each level is a descent: a STAR, a runway, a cruise altitude, and a fuel load. You set the FMC, fly the vertical path, and see where the airplane actually was.</p>
+      <div class="cta">
+        <a class="btn" href="https://play.google.com/store/apps/details?id=com.zflite.descenttutor">Get it on Google Play</a>
+        <a class="btn ghost" href="#how">How a level works</a>
       </div>
+    </div>
+  </section>
 
-      <figure class="plate">
-        <figcaption>
-          <span>Vertical path</span>
-          <span>Sample level</span>
-        </figcaption>
-        <svg viewBox="0 0 520 280" role="img" aria-label="A cruise segment, top of descent, and a descending path to the runway.">
-          <line x1="36" y1="28" x2="36" y2="236" />
-          <line x1="36" y1="236" x2="492" y2="236" />
-          <path class="path" d="M52 78 H250 L470 214" />
-          <circle cx="250" cy="78" r="4" />
-          <g class="ticks">
-            <line x1="318" y1="122" x2="318" y2="236" />
-            <line x1="378" y1="160" x2="378" y2="236" />
-            <line x1="438" y1="198" x2="438" y2="236" />
-          </g>
-          <g class="labels">
-            <text x="48" y="68">CRZ</text>
-            <text x="258" y="68">TOD</text>
-            <text x="318" y="258" text-anchor="middle">FLAPS</text>
-            <text x="378" y="258" text-anchor="middle">GEAR</text>
-            <text x="438" y="258" text-anchor="middle">S/B</text>
-            <text x="468" y="204" text-anchor="end">RWY</text>
-          </g>
-        </svg>
-      </figure>
-    </section>
-
-    <section class="checklist" aria-label="What a level asks you to do">
+  <main>
+    <section class="checklist" id="how" aria-label="What a level asks you to do">
       <ol>
         <li>
           <span>01</span>

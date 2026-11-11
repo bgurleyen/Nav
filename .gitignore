@@ -90,4 +90,9 @@ AppleSigning/UNITY_P12_PASSWORD.txt
 AppleSigning/api-key-base64.txt
 AppleSigning/ios_distribution.key
 
+# Android signing secrets (never commit)
+*.keystore
+*.jks
+AndroidSigning/KEYSTORE_PASSWORD.txt
+
 # *.cs

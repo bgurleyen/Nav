@@ -50,12 +50,105 @@ footer {
   margin-inline: auto;
 }
 
+.stage {
+  position: relative;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  overflow: hidden;
+  color: var(--paper);
+}
+
+.stage video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+}
+
+.stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(90deg, rgba(12, 12, 36, 0.72) 0%, rgba(12, 12, 36, 0.28) 52%, rgba(12, 12, 36, 0.18) 100%),
+    linear-gradient(180deg, rgba(12, 12, 36, 0.55) 0%, rgba(12, 12, 36, 0.12) 34%, rgba(12, 12, 36, 0.78) 100%);
+  pointer-events: none;
+}
+
 .top {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   padding: 28px 0 18px;
   border-bottom: 1px solid var(--line);
+}
+
+.top.on-stage {
+  position: relative;
+  z-index: 2;
+  width: min(1120px, calc(100% - 40px));
+  border-bottom-color: rgba(244, 237, 195, 0.18);
+}
+
+.stage-copy {
+  position: relative;
+  z-index: 2;
+  width: min(1120px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 0 0 64px;
+}
+
+.stage-copy h1 {
+  max-width: 14ch;
+  text-shadow: 0 6px 28px rgba(12, 12, 36, 0.9);
+}
+
+.stage-copy .lede {
+  max-width: 34rem;
+  text-shadow: 0 2px 16px rgba(12, 12, 36, 0.9);
+}
+
+.cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 28px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 12px 18px;
+  background: var(--paper);
+  color: var(--bg);
+  border: 1px solid var(--paper);
+  border-radius: 4px;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  text-transform: uppercase;
+}
+
+.btn.ghost {
+  background: transparent;
+  color: var(--paper);
+  border-color: rgba(244, 237, 195, 0.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage video {
+    display: none;
+  }
+
+  .stage {
+    background: #0c0c24;
+  }
 }
 
 .mark {
@@ -366,6 +459,14 @@ footer a {
   .hero {
     gap: 36px;
     padding-top: 48px;
+  }
+
+  .stage-copy {
+    padding-bottom: 40px;
+  }
+
+  .stage-copy h1 {
+    font-size: clamp(2.6rem, 12vw, 4.2rem);
   }
 
   .checklist li,

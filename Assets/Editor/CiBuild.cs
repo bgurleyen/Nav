@@ -24,12 +24,52 @@ public static class CiBuild
             PlayerSettings.Android.bundleVersionCode = versionCode;
         }
 
+        if (!ApplyAndroidSigning())
+        {
+            EditorApplication.Exit(1);
+            return;
+        }
+
         EditorUserBuildSettings.buildAppBundle = true;
         EditorUserBuildSettings.androidBuildSystem = AndroidBuildSystem.Gradle;
         BuildPlayer(
             BuildTarget.Android,
             Path.Combine("Build", "Android", "DescentTutor.aab"),
             CollectEnabledScenes());
+    }
+
+    static bool ApplyAndroidSigning()
+    {
+        var projectRoot = Directory.GetCurrentDirectory();
+        var keystorePath = Path.Combine(projectRoot, "AndroidSigning", "descent-tutor.keystore");
+        if (!File.Exists(keystorePath))
+        {
+            Debug.LogError("Android keystore missing: " + keystorePath);
+            return false;
+        }
+
+        var password = System.Environment.GetEnvironmentVariable("ANDROID_KEYSTORE_PASS");
+        if (string.IsNullOrEmpty(password))
+        {
+            var passwordFile = Path.Combine(projectRoot, "AndroidSigning", "KEYSTORE_PASSWORD.txt");
+            if (File.Exists(passwordFile))
+            {
+                password = File.ReadAllText(passwordFile).Trim();
+            }
+        }
+
+        if (string.IsNullOrEmpty(password))
+        {
+            Debug.LogError("Set ANDROID_KEYSTORE_PASS or create AndroidSigning/KEYSTORE_PASSWORD.txt");
+            return false;
+        }
+
+        PlayerSettings.Android.useCustomKeystore = true;
+        PlayerSettings.Android.keystoreName = keystorePath;
+        PlayerSettings.Android.keyaliasName = "upload";
+        PlayerSettings.Android.keystorePass = password;
+        PlayerSettings.Android.keyaliasPass = password;
+        return true;
     }
 
     static string[] CollectEnabledScenes()
