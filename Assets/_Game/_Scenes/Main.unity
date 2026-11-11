@@ -1135,7 +1135,7 @@ MonoBehaviour:
   __messageText: 
   LOCIndex: {fileID: 894392005}
   GSIndex: {fileID: 804653058}
-  approachNeedleHollow: {fileID: 21300000, guid: fb66e24d9beeecd4d87e1902371cb199, type: 3}
+  approachNeedleHollow: {fileID: 21300000, guid: a7c3e91b4d2f48e6b0c15a8d7e6f3092, type: 3}
   Atc1: {fileID: 1785371170}
   Atc2: {fileID: 345340441}
   Atc3: {fileID: 54676240}
@@ -8247,7 +8247,7 @@ PrefabInstance:
     - target: {fileID: 2719986834627965449, guid: 9104df00b47524a3bba9d5718acc7432,
         type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 557
+      value: 517
       objectReference: {fileID: 0}
     - target: {fileID: 2719986834627965449, guid: 9104df00b47524a3bba9d5718acc7432,
         type: 3}

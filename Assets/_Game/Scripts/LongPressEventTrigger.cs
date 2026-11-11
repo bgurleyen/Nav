@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.EventSystems;
@@ -11,6 +11,14 @@ public class LongPressEventTrigger : MonoBehaviour, IPointerDownHandler, IPointe
     [SerializeField] private float repeatTime = 0.1f;
 
     public UnityEvent onClick = new UnityEvent();
+
+    public void CopyTimingFrom(LongPressEventTrigger other)
+    {
+        if (other == null)
+            return;
+        holdTime = other.holdTime;
+        repeatTime = other.repeatTime;
+    }
 
     private bool isDown;
     private bool isHeld;

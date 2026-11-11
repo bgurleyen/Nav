@@ -31,6 +31,7 @@ public static class AutopilotMode
     static bool _hasSavedPlayerLevel;
     static bool _advancing;
     static bool _stableWaitActive;
+    static bool _stabilizationReadout;
     static float _levelFlightStartUnscaled;
     static float _lastAppliedRangeNm = -1f;
     static float _lastHeadingCorrectionUnscaled;
@@ -83,6 +84,7 @@ public static class AutopilotMode
         _xfr2LitHandled = false;
         _watchedPassedNodeIndex = -1;
         _stableWaitActive = false;
+        _stabilizationReadout = false;
         _levelFlightStartUnscaled = 0f;
         _lastAppliedRangeNm = -1f;
         _lastHeadingCorrectionUnscaled = 0f;
@@ -147,7 +149,7 @@ public static class AutopilotMode
 
     public static void EnforceFlightConfig()
     {
-        if (!_isActive || Session.State == null || Session.Settings == null)
+        if (!_isActive || _stabilizationReadout || Session.State == null || Session.Settings == null)
             return;
 
         Session.Settings.SpeedMultiplier = ForcedSpeedMultiplier;
@@ -157,7 +159,7 @@ public static class AutopilotMode
 
     public static void Tick()
     {
-        if (!_isActive || !_flightAutomationEnabled)
+        if (!_isActive || !_flightAutomationEnabled || _stabilizationReadout)
             return;
 
         EnforceFlightConfig();
@@ -358,30 +360,20 @@ public static class AutopilotMode
         AdvanceToNextLevelOrEnd();
     }
 
-    /// <summary>STABLE / NOT STABLE dialog: log full box, auto Exit, then normal finish → next level.</summary>
-    public static void PresentStabilizationAndFinish(string title, string body, bool isStable)
+    /// <summary>1000 ft readout started. Log the locked result and stop forcing 10x until the next level.</summary>
+    public static void BeginStabilizationReadout(bool isStable)
     {
         if (!_isActive)
             return;
 
         _stableWaitActive = false;
+        _stabilizationReadout = true;
         string statusLabel = isStable ? "Stable" : "Not Stable";
         float minutes = (Time.unscaledTime - _levelFlightStartUnscaled) / 60f;
         if (isStable)
             AutopilotLog.AppendLevelResult(PlayerPrefsHolder.Level, statusLabel, minutes);
         else
             AutopilotLog.AppendLevelResult(PlayerPrefsHolder.Level, statusLabel);
-
-        ApproachStatusDialog.Show(title, body, "Exit", () =>
-        {
-            Aircraft aircraft = UnityEngine.Object.FindAnyObjectByType<Aircraft>();
-            if (aircraft != null)
-            {
-                aircraft.FinishGame(isStable: isStable);
-                Calculator.CAltitude = 10000;
-            }
-        });
-        ApproachStatusDialog.AutoPressExit();
     }
 
     static void AdvanceToNextLevelOrEnd()

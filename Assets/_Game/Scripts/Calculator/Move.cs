@@ -1854,6 +1854,19 @@ public class Move : Singleton<Move>
             needle.sprite = approachNeedleHollow;
         else if (_approachNeedleFilledSprite != null)
             needle.sprite = _approachNeedleFilledSprite;
+        needle.color = Color.white;
+        needle.transform.localPosition = new Vector2(x, y);
+    }
+
+    void ShowFilledApproachNeedle(Image needle, float x, float y)
+    {
+        if (needle == null)
+            return;
+        CacheApproachNeedleSprites();
+        needle.enabled = true;
+        if (_approachNeedleFilledSprite != null)
+            needle.sprite = _approachNeedleFilledSprite;
+        needle.color = Color.white;
         needle.transform.localPosition = new Vector2(x, y);
     }
 
@@ -1877,13 +1890,7 @@ public class Move : Singleton<Move>
         const float locNeedleY = -645f;
 
         if (((Mathf.Abs(Deviation) < 35) && (DME() < 10)) || ((Mathf.Abs(Deviation) < 10) && (DME() < 25)))
-        {
-            LOCIndex.enabled = true;
-            CacheApproachNeedleSprites();
-            if (_approachNeedleFilledSprite != null)
-                LOCIndex.sprite = _approachNeedleFilledSprite;
-            LOCIndex.transform.localPosition = new Vector2(locNeedleX, locNeedleY);
-        }
+            ShowFilledApproachNeedle(LOCIndex, locNeedleX, locNeedleY);
         else if (DME() < ApproachNeedleHollowDmeMaxNm)
             ShowHollowApproachNeedle(LOCIndex, locNeedleX, locNeedleY);
         else
@@ -1926,13 +1933,7 @@ public class Move : Singleton<Move>
         float gsNeedleY = Mathf.Clamp(-needleDev * 1500, -541, 541);
 
         if ((Mathf.Abs(ComputeLocDeviationDegrees(_currentLevelData.levelInfo.Course)) < 5) && (DME() < 20))
-        {
-            GSIndex.enabled = true;
-            CacheApproachNeedleSprites();
-            if (_approachNeedleFilledSprite != null)
-                GSIndex.sprite = _approachNeedleFilledSprite;
-            GSIndex.transform.localPosition = new Vector2(gsNeedleX, gsNeedleY);
-        }
+            ShowFilledApproachNeedle(GSIndex, gsNeedleX, gsNeedleY);
         else if (DME() < ApproachNeedleHollowDmeMaxNm)
             ShowHollowApproachNeedle(GSIndex, gsNeedleX, gsNeedleY);
         else

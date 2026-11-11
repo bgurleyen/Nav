@@ -468,7 +468,7 @@ public class CRZScreen : ScreenBase
 
     public void UpdateScratchPad(string buffer, bool withStatus = true)
     {
-        MainScreen.Pad?.SetAsDefault(buffer);
+        MainScreen.Pad?.SetAsScratchpad(buffer);
         if (withStatus)
         {
             //lastHLeft.text = "ECON";

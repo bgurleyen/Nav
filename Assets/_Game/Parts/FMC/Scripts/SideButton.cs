@@ -12,6 +12,8 @@ public class SideButton : MonoBehaviour
 
     public void OnClick()
     {
+        FlightFeedbackSettings.PulseKey();
+
         var screen = FMC_Screens.Instance != null ? FMC_Screens.Instance.CurrentScreen : null;
         if (screen == null)
             return;

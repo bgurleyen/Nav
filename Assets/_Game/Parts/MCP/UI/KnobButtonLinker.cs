@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using DG.Tweening;
@@ -14,6 +14,9 @@ public class KnobButtonLinker : MonoBehaviour
 
     private Sequence seq;
     private LongPressEventTrigger button;
+
+    public bool IsPositive => isPositive;
+    public LongPressEventTrigger Trigger => button;
 
     private void Awake()
     {

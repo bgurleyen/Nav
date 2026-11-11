@@ -23,7 +23,8 @@ public class PFD_Animation : MonoBehaviour
     private int RSpeed = 220;
     private double CSpeed = 250;
     private float AttInc;
-    private int maxFlapSpeedPos;
+    // Flaps-up placard until SetFlaps runs. 0 would publish a 125 kt limit and trip OVERSPEED at level start.
+    private int maxFlapSpeedPos = FlapMaxBandY[0];
     public static int LimitSpeed;
     public int CBank;
     public void Start()
@@ -72,6 +73,7 @@ public class PFD_Animation : MonoBehaviour
         }
         else Fspeed.GetComponent<UnityEngine.UI.Text>().text = "";
         maxFlapSpeedPos = FlapMaxBandY[idx]; // red limit band
+        SpeedTapeUpdate();
     }
     public void SpeedTapeUpdate()
     {

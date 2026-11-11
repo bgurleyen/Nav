@@ -36,4 +36,13 @@ public static class FlightFeedbackSettings
         PlayerPrefs.SetInt(VibrationEnabledKey, VibrationEnabled ? 1 : 0);
         MMVibrationManager.SetHapticsActive(VibrationEnabled);
     }
+
+    /// <summary>Short tick for an FMC key. Respects the MENU vibration toggle.</summary>
+    public static void PulseKey()
+    {
+        if (!VibrationEnabled)
+            return;
+
+        MMVibrationManager.Haptic(HapticTypes.Selection);
+    }
 }

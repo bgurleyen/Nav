@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 using Unyawn.Utils;
 
@@ -23,6 +24,14 @@ public class McpUI : MonoBehaviour
     private void Awake()
     {
         UYServiceLocator.Register(this);
+        if (headingText != null && headingText.GetComponent<HeadingWindowClick>() == null)
+            headingText.gameObject.AddComponent<HeadingWindowClick>();
+    }
+
+    private void Start()
+    {
+        Canvas.ForceUpdateCanvases();
+        TurnKnobSideHits.Create(transform);
     }
 
     
@@ -85,5 +94,13 @@ public class McpUI : MonoBehaviour
         }
 
         Calculator.Instance?.SetLG(wantDown, true);
+    }
+}
+
+public class HeadingWindowClick : MonoBehaviour, IPointerClickHandler
+{
+    public void OnPointerClick(PointerEventData eventData)
+    {
+        Calculator.Instance?.SyncRHeadingToCurrent();
     }
 }

@@ -347,7 +347,7 @@ public class FIXScreen : ScreenBase
 
     public void UpdateScratchPad(string buffer, bool withStatus = true)
     {
-        MainScreen.Instance.scratchPadText.SetAsDefault(buffer);
+        MainScreen.Instance.scratchPadText.SetAsScratchpad(buffer);
         if (withStatus)
         {
             //lastFLeft.text = "ok";

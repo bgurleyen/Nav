@@ -45,6 +45,14 @@ public class Drawer : MonoBehaviour
     [SerializeField] private GameObject[] centerHolder;
     [SerializeField] private GameObject[] planHolder;
 
+    // Plan/Center rose sits slightly left of the ND center. Vertical nudge is
+    // small; the previous full mask offset (-1.67) dropped the rose too far.
+    const float PlanCenterPivotX = 0.39f;
+    const float PlanCenterPivotY = -0.4f;
+    static readonly Vector3 MapMaskLocalPosition = new Vector3(0f, -1.6686f, 0f);
+
+    Transform _ndMask;
+
     private void Awake()
     {
         Session.ZoomMultiplier = _gameConfig.Settings.StartingZoom;
@@ -54,6 +62,28 @@ public class Drawer : MonoBehaviour
         if (pauseOverlay == null)
             pauseOverlay = gameObject.AddComponent<NdPauseOverlay>();
         pauseOverlay.Initialize(pivot, _reference40);
+
+        if (pivot != null)
+            _ndMask = pivot.Find("Compas/Masking");
+    }
+
+    private void LateUpdate()
+    {
+        if (pivot == null || Session.State == null)
+            return;
+
+        // Animator write-defaults puts the pivot back at the origin in these modes.
+        bool centeredRose = Session.State.MapMode != MapMode.Map;
+        if (centeredRose)
+            pivot.localPosition = new Vector3(PlanCenterPivotX, PlanCenterPivotY, 0.12f);
+
+        if (_ndMask == null)
+            return;
+
+        // Keep the round clip on the bezel while the rose moves.
+        _ndMask.localPosition = centeredRose
+            ? MapMaskLocalPosition - new Vector3(PlanCenterPivotX, PlanCenterPivotY, 0f)
+            : MapMaskLocalPosition;
     }
 
     private void Start()

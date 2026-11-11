@@ -2,8 +2,8 @@ using UnityEngine;
 using UnityEngine.UI;
 
 /// <summary>
-/// Groups canvas children under a 1920×1080 HUD root. When the game camera uses
-/// <see cref="AspectRatioLetterbox"/>, CanvasScaler already fits that viewport — no extra scale here.
+/// Groups canvas children under a 1920×1080 HUD root and stretches that root to the
+/// game-camera viewport, including the shortened frame left by <see cref="AspectRatioLetterbox"/>.
 /// </summary>
 [DefaultExecutionOrder(-200)]
 [DisallowMultipleComponent]
@@ -17,9 +17,6 @@ public class CockpitHudCanvasLayout : MonoBehaviour
     RectTransform _canvasRect;
     Canvas _canvas;
     RectTransform _hudRoot;
-    Vector2Int _lastScreenSize;
-    Rect _lastCameraRect;
-
     void Awake()
     {
         _canvas = GetComponent<Canvas>();
@@ -37,18 +34,6 @@ public class CockpitHudCanvasLayout : MonoBehaviour
 
     void LateUpdate()
     {
-        var cam = _canvas != null && _canvas.renderMode != RenderMode.ScreenSpaceOverlay
-            ? _canvas.worldCamera
-            : null;
-        var camRect = cam != null ? cam.rect : new Rect(0f, 0f, 1f, 1f);
-
-        if (_lastScreenSize.x == Screen.width &&
-            _lastScreenSize.y == Screen.height &&
-            _lastCameraRect == camRect)
-        {
-            return;
-        }
-
         ApplyLayout();
     }
 
@@ -98,24 +83,21 @@ public class CockpitHudCanvasLayout : MonoBehaviour
         var cam = _canvas != null && _canvas.renderMode != RenderMode.ScreenSpaceOverlay
             ? _canvas.worldCamera
             : null;
-        _lastScreenSize = new Vector2Int(Screen.width, Screen.height);
-        _lastCameraRect = cam != null ? cam.rect : new Rect(0f, 0f, 1f, 1f);
-
         _hudRoot.anchorMin = new Vector2(0.5f, 0.5f);
         _hudRoot.anchorMax = new Vector2(0.5f, 0.5f);
         _hudRoot.pivot = new Vector2(0.5f, 0.5f);
         _hudRoot.sizeDelta = referenceResolution;
 
+        var viewportPixels = AspectRatioLetterbox.GetViewportPixelRect(cam);
+
         var letterbox = cam != null ? cam.GetComponent<AspectRatioLetterbox>() : null;
         if (letterbox != null)
         {
-            // Viewport is already 16:9; CanvasScaler maps reference resolution to camera pixels.
-            _hudRoot.localScale = Vector3.one;
+            _hudRoot.localScale = ScaleToPixels(viewportPixels.width, viewportPixels.height);
             _hudRoot.anchoredPosition = Vector2.zero;
             return;
         }
 
-        var viewportPixels = AspectRatioLetterbox.GetViewportPixelRect(cam);
         var viewportWidth = viewportPixels.width;
         var viewportHeight = viewportPixels.height;
         var refAspect = referenceResolution.x / referenceResolution.y;
@@ -134,15 +116,8 @@ public class CockpitHudCanvasLayout : MonoBehaviour
             fitHeight = fitWidth / refAspect;
         }
 
-        var scaleFactor = _canvas != null ? _canvas.rootCanvas.scaleFactor : 1f;
-        if (scaleFactor <= 0f)
-        {
-            scaleFactor = 1f;
-        }
-
-        var scaleX = fitWidth / (referenceResolution.x * scaleFactor);
-        var scaleY = fitHeight / (referenceResolution.y * scaleFactor);
-        var uniformScale = Mathf.Min(scaleX, scaleY);
+        var scale = ScaleToPixels(fitWidth, fitHeight);
+        var uniformScale = Mathf.Min(scale.x, scale.y);
         _hudRoot.localScale = new Vector3(uniformScale, uniformScale, 1f);
 
         var viewportCenter = new Vector2(
@@ -153,5 +128,18 @@ public class CockpitHudCanvasLayout : MonoBehaviour
         {
             _hudRoot.anchoredPosition = localCenter;
         }
+    }
+
+    Vector3 ScaleToPixels(float pixelWidth, float pixelHeight)
+    {
+        var scaleFactor = _canvas != null ? _canvas.rootCanvas.scaleFactor : 1f;
+        if (scaleFactor <= 0f)
+        {
+            scaleFactor = 1f;
+        }
+
+        var scaleX = pixelWidth / (referenceResolution.x * scaleFactor);
+        var scaleY = pixelHeight / (referenceResolution.y * scaleFactor);
+        return new Vector3(scaleX, scaleY, 1f);
     }
 }

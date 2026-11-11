@@ -56,6 +56,23 @@ public class BgText : MonoBehaviour
         SetText(false, null, new TextBuilder{ State = TextState.Default, Text = text});
     }
 
+    public void SetAsScratchpad(string text)
+    {
+        if (string.IsNullOrEmpty(text))
+        {
+            Clear();
+            return;
+        }
+
+        m_text = text;
+        if (label == null)
+            return;
+
+        // Same face and size as LEGS waypoint names (label font, 42).
+        label.text = text;
+        label.ForceMeshUpdate(true);
+    }
+
     public void SetAsMagenta(string text)
     {
         SetText(false, null, new TextBuilder{ State = TextState.Magenta, Text = text});

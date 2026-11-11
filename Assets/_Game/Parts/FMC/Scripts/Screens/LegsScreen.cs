@@ -42,6 +42,7 @@ public class LegsScreen : ScreenBase {
     private int _pendingInterceptNodeId = -1;
     private int? _pendingInterceptCourse;
     private int _modCourseNodeId = -1;
+    private string _rnpLineText;
 
     internal bool TryGetPendingInterceptCourse(int nodeId, out int courseDeg)
     {
@@ -74,7 +75,16 @@ public class LegsScreen : ScreenBase {
 
     protected override void Awake() {
         base.Awake();
+        if (lastFLeft != null)
+            _rnpLineText = lastFLeft.text;
         UYServiceLocator.Register(this);
+    }
+
+    void RestoreRnpLine()
+    {
+        if (lastFLeft == null || string.IsNullOrEmpty(_rnpLineText))
+            return;
+        lastFLeft.text = _rnpLineText;
     }
 
     private IEnumerator Start() {
@@ -816,7 +826,10 @@ public class LegsScreen : ScreenBase {
     }
 
     public void DisplayOperation(string value, string details = "", bool tallDetails = false, int courseNodeId = -1) {
-        lastFLeft.text = $"<{value}";
+        if (value == "0k")
+            RestoreRnpLine();
+        else if (lastFLeft != null)
+            lastFLeft.text = $"<{value}";
         if (value == "0k" || !Session.IsMod)
             _modCourseNodeId = -1;
         else if (courseNodeId >= 0)
@@ -836,12 +849,12 @@ public class LegsScreen : ScreenBase {
     }
 
     public void UpdateScratchPad(string buffer, bool withStatus = true) {
-        MainScreen.Pad?.SetAsDefault(buffer);
+        MainScreen.Pad?.SetAsScratchpad(buffer);
         if (withStatus) {
             if (Session.IsMod && Session.ModRoute != null)
                 lastFLeft.text = ERASE_TITLE;
             else
-                lastFLeft.text = "ok";
+                RestoreRnpLine();
         }
     }
 

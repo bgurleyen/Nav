@@ -14,6 +14,8 @@ public class KeyboardButton : MonoBehaviour
 
     private void OnClickPress()
     {
+        FlightFeedbackSettings.PulseKey();
+
         var label = GetComponentInChildren<TMP_Text>();
         if (label == null || !TryCurrentScreen(out var screen))
             return;

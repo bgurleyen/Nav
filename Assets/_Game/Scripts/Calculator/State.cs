@@ -129,11 +129,21 @@ public class State
 
         LNAV.Switch_Oneway();
         if (LNAV)
-        {
             HDG.Set(false);
-        }
 
         TriggerNewNAVState();
+    }
+
+    /// <summary>
+    /// LNAV dropped without HDG already selected: hold the present heading.
+    /// </summary>
+    private void EngageHeadingHoldAtCurrent()
+    {
+        if (HDG || LOCCaptured)
+            return;
+
+        Calculator.Instance?.SyncRHeadingToCurrent();
+        HDG.Set(true);
     }
 
     private void UIOnAHAttemptToggle()
@@ -180,6 +190,13 @@ public class State
     {
         if (GSCaptured)
             return;
+
+        // VNAV already on: another press closes an open speed window and keeps VNAV.
+        if (VNAV)
+        {
+            Calculator.Instance?.CloseSpeedWindow();
+            return;
+        }
 
         VNAV.Switch_Oneway();
 
@@ -271,14 +288,12 @@ private void UIOnHDGAttemptToggle()
         LNAV.Set(state);
 
         if (state)
-        {
             HDG.Set(false);
-        }
+        else
+            EngageHeadingHoldAtCurrent();
 
-        if (!silent)
-        {
+        if (!silent || HDG)
             TriggerNewNAVState();
-        }
     }
 
     public void AutoSetHDG(bool state)
