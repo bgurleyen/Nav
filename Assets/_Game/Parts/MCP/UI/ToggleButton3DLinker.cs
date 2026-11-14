@@ -38,6 +38,7 @@ public class ToggleButton3DLinker : ToggleButtonLinker, IPointerUpHandler, IPoin
             return;
 
         _meshAnimator.SetTrigger("Pressed");
+        FlightFeedbackSettings.PulseKey();
         OnPressed?.Invoke();
     }
 

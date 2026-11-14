@@ -4,7 +4,6 @@ using System.Collections.Generic;
 using System.Text;
 using System.Text.RegularExpressions;
 using JetBrains.Annotations;
-using MoreMountains.NiceVibrations;
 using Navigation;
 using Navigation.Data;
 using TMPro;
@@ -2714,8 +2713,6 @@ public class Calculator : MonoBehaviour
         {
             Flap_Idx += 1;
             SetFlaps();
-
-            MMVibrationManager.Haptic(HapticTypes.MediumImpact);
             return;
         }
 
@@ -2728,8 +2725,6 @@ public class Calculator : MonoBehaviour
             Flap_Idx -= 1;
             if (Flap_Idx < 0) Flap_Idx = 0;
             SetFlaps();
-
-            MMVibrationManager.Haptic(HapticTypes.MediumImpact);
         }
     }
     public void SetFlaps()
@@ -3164,8 +3159,8 @@ public class Calculator : MonoBehaviour
         if (LevelTestMode.IsActive)
             return;
 
-        // Gate is 1000 ft on final. Values are taken once here and never refreshed.
-        if (CAltitude > 1000)
+        float dme = Move.Instance.DME();
+        if (dme >= 3f && CAltitude > 1000)
             return;
 
         // Overflying RW / short final on a heading other than inbound final: keep flying.
@@ -3174,14 +3169,14 @@ public class Calculator : MonoBehaviour
 
         _approachEndTriggered = true;
 
-        string[] lines = BuildStabilizationLines(out bool allOk);
-        ExitTenTimesSpeed();
-        MMVibrationManager.ContinuousHaptic(1f, 0.55f, 2.5f, HapticTypes.HeavyImpact, this);
-
+        var report = BuildStabilizationReport(out bool allOk);
         if (AutopilotMode.IsActive)
-            AutopilotMode.BeginStabilizationReadout(allOk);
+        {
+            AutopilotMode.PresentStabilizationAndFinish(allOk ? "STABLE" : "NOT STABLE", report, allOk);
+            return;
+        }
 
-        ApproachStatusDialog.ShowLinesOnePerSecond(allOk ? "STABLE" : "NOT STABLE", lines, () =>
+        ApproachStatusDialog.Show(allOk ? "STABLE" : "NOT STABLE", report, "Exit", () =>
         {
             Aircraft aircraft = FindAnyObjectByType<Aircraft>();
             if (aircraft != null)
@@ -3192,21 +3187,7 @@ public class Calculator : MonoBehaviour
         });
     }
 
-    static void ExitTenTimesSpeed()
-    {
-        bool tenTimes = Session.Settings != null && Session.Settings.SpeedMultiplier > 1;
-        if (Session.State != null && Session.State.Speed10X)
-            tenTimes = true;
-        if (!tenTimes)
-            return;
-
-        if (Session.State != null)
-            Session.State.Speed10X.Set(false);
-        if (Session.Settings != null)
-            Session.Settings.SpeedMultiplier = 1;
-    }
-
-    string[] BuildStabilizationLines(out bool allOk)
+    string BuildStabilizationReport(out bool allOk)
     {
         var levelInfo = Session.CurrentLevel?.levelInfo;
         float course = levelInfo != null ? levelInfo.Course : 0f;
@@ -3231,16 +3212,15 @@ public class Calculator : MonoBehaviour
         allOk = localizerOk && glideSlopeOk && verticalSpeedOk && speedOk
                 && landingGearOk && flapsOk && speedBrakeOk;
 
-        return new[]
-        {
-            FormatStatusLine("Localizer", OkNo(localizerOk), localizerOk),
-            FormatStatusLine("Glide Slope", OkNo(glideSlopeOk), glideSlopeOk),
-            FormatStatusLine("Vertical Speed", OkNo(verticalSpeedOk), verticalSpeedOk),
-            FormatStatusLine("Speed", OkNo(speedOk), speedOk),
-            FormatStatusLine("Landing Gear", landingGearOk ? "Down" : "Up", landingGearOk),
-            FormatStatusLine("Flaps", flapSetting + "°", flapsOk),
-            FormatStatusLine("Speed Brake", speedBrakeOk ? "Armed" : "Extended", speedBrakeOk),
-        };
+        string lf = Environment.NewLine;
+        return
+            FormatStatusLine(lf + "Localizer", OkNo(localizerOk), localizerOk) + lf +
+            FormatStatusLine("Glide Slope", OkNo(glideSlopeOk), glideSlopeOk) + lf +
+            FormatStatusLine("Vertical Speed", OkNo(verticalSpeedOk), verticalSpeedOk) + lf +
+            FormatStatusLine("Speed", OkNo(speedOk), speedOk) + lf +
+            FormatStatusLine("Landing Gear", landingGearOk ? "Down" : "Up", landingGearOk) + lf +
+            FormatStatusLine("Flaps", flapSetting + "°", flapsOk) + lf +
+            FormatStatusLine("Speed Brake", speedBrakeOk ? "Armed" : "Extended", speedBrakeOk);
     }
 
     static string OkNo(bool ok) => ok ? "ok" : "no";

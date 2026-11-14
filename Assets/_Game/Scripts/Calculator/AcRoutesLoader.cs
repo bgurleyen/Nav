@@ -68,6 +68,7 @@ public static class AcRoutesLoader
 
     static string ReadText()
     {
+#if UNITY_EDITOR
         string path = FilePath();
         try
         {
@@ -87,5 +88,14 @@ public static class AcRoutesLoader
             Debug.LogWarning("[AcRoutesLoader] " + e.Message);
         }
         return _cachedText;
+#else
+        if (_cachedText != null)
+            return _cachedText;
+        TextAsset asset = Resources.Load<TextAsset>("ac_routes");
+        _cachedText = asset != null ? asset.text : null;
+        if (string.IsNullOrEmpty(_cachedText))
+            Debug.LogWarning("[AcRoutesLoader] ac_routes is missing from the player build.");
+        return _cachedText;
+#endif
     }
 }

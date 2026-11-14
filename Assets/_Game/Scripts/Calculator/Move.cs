@@ -165,6 +165,7 @@ public class Move : Singleton<Move>
         else
             RestoreArmHome();
 
+        HookPressHaptics();
         _currentInstructionIndex = 0;
         var originPoints = Session.OriginalReferenceRoute != null ? Session.OriginalReferenceRoute.Points : null;
         RW = originPoints != null ? originPoints.Length - 1 : 0;
@@ -720,6 +721,21 @@ public class Move : Singleton<Move>
         SetXfrGlow(3, false);
     }
 
+    void HookPressHaptics()
+    {
+        HookPressHaptic(XFR1);
+        HookPressHaptic(XFR2);
+        HookPressHaptic(XFR3);
+    }
+
+    static void HookPressHaptic(Button button)
+    {
+        if (button == null)
+            return;
+        button.onClick.RemoveListener(FlightFeedbackSettings.PulseKey);
+        button.onClick.AddListener(FlightFeedbackSettings.PulseKey);
+    }
+
     void EnsureArmButton()
     {
         if (_armButton != null)
@@ -741,6 +757,7 @@ public class Move : Singleton<Move>
         _armButton = go.GetComponent<Button>();
         _armButton.onClick = new Button.ButtonClickedEvent();
         _armButton.onClick.AddListener(OnArmApproachClicked);
+        _armButton.onClick.AddListener(FlightFeedbackSettings.PulseKey);
         _armButton.interactable = true;
 
         var colors = _armButton.colors;

@@ -32,6 +32,28 @@ public class McpUI : MonoBehaviour
     {
         Canvas.ForceUpdateCanvases();
         TurnKnobSideHits.Create(transform);
+        HookPressHaptics();
+    }
+
+    void HookPressHaptics()
+    {
+        foreach (var button in GetComponentsInChildren<Button>(true))
+        {
+            if (button.GetComponent<KnobButtonLinker>() != null)
+                continue;
+            button.onClick.AddListener(FlightFeedbackSettings.PulseKey);
+        }
+
+        foreach (var toggle in GetComponentsInChildren<Toggle>(true))
+        {
+            var trigger = toggle.gameObject.GetComponent<EventTrigger>();
+            if (trigger == null)
+                trigger = toggle.gameObject.AddComponent<EventTrigger>();
+
+            var entry = new EventTrigger.Entry { eventID = EventTriggerType.PointerDown };
+            entry.callback.AddListener(_ => FlightFeedbackSettings.PulseKey());
+            trigger.triggers.Add(entry);
+        }
     }
 
     
@@ -101,6 +123,7 @@ public class HeadingWindowClick : MonoBehaviour, IPointerClickHandler
 {
     public void OnPointerClick(PointerEventData eventData)
     {
+        FlightFeedbackSettings.PulseKey();
         Calculator.Instance?.SyncRHeadingToCurrent();
     }
 }

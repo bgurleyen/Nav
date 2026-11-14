@@ -2,10 +2,9 @@ using UnityEngine;
 
 /// <summary>
 /// Letterboxes/pillarboxes the game camera to a fixed aspect (default 16:9).
-/// A black strip half an FMC key tall stays under the frame so the bottom keys are not on the screen edge.
-/// The 16:9 picture keeps its width and is squeezed vertically into the area above that strip.
-/// Camera.aspect follows that shorter rect; a locked 16:9 aspect makes Unity narrow the
-/// rendered width and clip a few millimeters off each side.
+/// The frame stays centered horizontally and vertically on every screen.
+/// When that centered frame would sit on the bottom edge, it scales down until the
+/// black margin under it is half an FMC key. Top and side margins match.
 /// A full-screen clear camera paints the bars black.
 /// </summary>
 [DefaultExecutionOrder(-300)]
@@ -137,21 +136,19 @@ public class AspectRatioLetterbox : MonoBehaviour
         ConfigureClearCamera();
     }
 
-    /// <summary>
-    /// Half an FMC key, as a fraction of the 16:9 frame height. The frame is scaled down until the
-    /// black strip under it matches this fraction of the frame that is actually on screen.
-    /// </summary>
+    /// <summary>Half an FMC key, as a fraction of the centered frame height.</summary>
     public static float BottomGapOverContentHeight =>
         0.5f * FmsButtonReferenceHeight / HudReferenceHeight;
 
     /// <summary>
     /// Uses landscape dimensions so ultrawide / swapped Screen.width×height still pillarbox correctly.
-    /// The frame is then pinned to the top, leaving a black strip at the bottom.
+    /// The frame is centered on the screen. It only shrinks when a centered fit would leave
+    /// less than half an FMC key of black under the bottom keys.
     /// </summary>
     public static Rect ComputeNormalizedViewportRect(int screenWidth, int screenHeight, float targetAspect)
     {
         var fitted = FitLandscapeAspect(screenWidth, screenHeight, targetAspect);
-        return InsetBottomGap(fitted, screenWidth, screenHeight, BottomGapOverContentHeight);
+        return CenterWithBottomClearance(fitted, screenWidth, screenHeight, BottomGapOverContentHeight);
     }
 
     static float ViewportPixelAspect(Rect normalized, int screenWidth, int screenHeight)
@@ -187,9 +184,9 @@ public class AspectRatioLetterbox : MonoBehaviour
         return new Rect(0f, (1f - height) * 0.5f, 1f, height);
     }
 
-    static Rect InsetBottomGap(Rect fitted, int screenWidth, int screenHeight, float gapOverContent)
+    static Rect CenterWithBottomClearance(Rect fitted, int screenWidth, int screenHeight, float gapOverContent)
     {
-        if (screenWidth <= 0 || screenHeight <= 0 || gapOverContent <= 0f)
+        if (screenWidth <= 0 || screenHeight <= 0)
         {
             return fitted;
         }
@@ -201,14 +198,20 @@ public class AspectRatioLetterbox : MonoBehaviour
             return fitted;
         }
 
-        var maxContentH = screenHeight / (1f + gapOverContent);
-        if (contentH > maxContentH)
+        if (gapOverContent > 0f)
         {
-            contentH = maxContentH;
+            // Equal top and bottom margins, so each one is at least half a key.
+            var maxContentH = screenHeight / (1f + 2f * gapOverContent);
+            if (contentH > maxContentH)
+            {
+                var scale = maxContentH / contentH;
+                contentH *= scale;
+                contentW *= scale;
+            }
         }
 
-        var x = fitted.x * screenWidth;
-        var y = screenHeight - contentH;
+        var x = (screenWidth - contentW) * 0.5f;
+        var y = (screenHeight - contentH) * 0.5f;
         return new Rect(
             x / screenWidth,
             y / screenHeight,

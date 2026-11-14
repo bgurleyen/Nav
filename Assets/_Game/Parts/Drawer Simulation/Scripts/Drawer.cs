@@ -164,6 +164,7 @@ public class Drawer : MonoBehaviour
 
     public void OnZoomIn()
     {
+        FlightFeedbackSettings.PulseKey();
         Clear();
         //Session.ZoomMultiplier *= 2f;
         //Debug.Log($"Zoom : {Session.ZoomMultiplier}");
@@ -174,6 +175,7 @@ public class Drawer : MonoBehaviour
 
     public void OnZoomOut()
     {
+        FlightFeedbackSettings.PulseKey();
         Clear();
         //Session.ZoomMultiplier /= 2f;
         Session.ZoomMultiplier = Mathf.Clamp(Session.ZoomMultiplier / 2f, 0.5f, 16f);

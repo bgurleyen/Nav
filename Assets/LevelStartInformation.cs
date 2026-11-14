@@ -29,6 +29,8 @@ public class LevelStartInformation : MonoBehaviour
     {
         if (LevelStartInfo != null)
             LevelStartInfo.gameObject.SetActive(false);
+        if (okButton != null)
+            okButton.onClick.AddListener(FlightFeedbackSettings.PulseKey);
     }
 
     public void ShowInfo()

@@ -24,5 +24,9 @@ public class ToggleButtonToggleLinker : ToggleButtonLinker, IPointerUpHandler, I
 
     public void OnPointerDown(PointerEventData eventData)
     {
+        if (!Interactable)
+            return;
+
+        FlightFeedbackSettings.PulseKey();
     }
 }

@@ -22,7 +22,19 @@ public class LongPressEventTrigger : MonoBehaviour, IPointerDownHandler, IPointe
 
     private bool isDown;
     private bool isHeld;
+    private bool clickCancelled;
     private float lastExecute;
+
+    /// <summary>
+    /// Drop the press that is in progress so pointer-up does not also count as a click.
+    /// Used when a drag on a knob takes over the gesture.
+    /// </summary>
+    public void CancelPendingClick()
+    {
+        clickCancelled = true;
+        isDown = false;
+        isHeld = false;
+    }
 
     private void Update()
     {
@@ -48,18 +60,19 @@ public class LongPressEventTrigger : MonoBehaviour, IPointerDownHandler, IPointe
 
     public void OnPointerDown(PointerEventData eventData)
     {
+        clickCancelled = false;
         isDown = true;
+        isHeld = false;
         lastExecute = Time.time;
     }
 
     public void OnPointerUp(PointerEventData eventData)
     {
-        if (!isHeld)
-        {
+        if (!isHeld && !clickCancelled)
             Execute();
-        }
         isDown = false;
         isHeld = false;
+        clickCancelled = false;
     }
 
     public void OnPointerExit(PointerEventData eventData)

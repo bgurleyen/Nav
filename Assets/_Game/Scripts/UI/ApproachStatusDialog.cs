@@ -1,6 +1,5 @@
 using System;
-using System.Collections;
-using System.Text;
+using MoreMountains.NiceVibrations;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -14,8 +13,6 @@ public class ApproachStatusDialog : MonoBehaviour
 
     Action _onClosed;
     CanvasGroup _canvasGroup;
-    Coroutine _lineReveal;
-    bool _revealRunning;
 
     public static void Show(string title, string body, string buttonLabel = "Exit", Action onClosed = null)
     {
@@ -23,18 +20,6 @@ public class ApproachStatusDialog : MonoBehaviour
             _instance = Create();
 
         _instance.Present(title, body, buttonLabel, onClosed);
-    }
-
-    /// <summary>
-    /// Title at once, then one locked stab line each second. Flight keeps running.
-    /// After the last line, OK stays up until it is pressed, then <paramref name="onFinished"/> runs.
-    /// </summary>
-    public static void ShowLinesOnePerSecond(string title, string[] lines, Action onFinished = null)
-    {
-        if (_instance == null)
-            _instance = Create();
-
-        _instance.PresentLines(title, lines, onFinished);
     }
 
     static ApproachStatusDialog Create()
@@ -121,83 +106,9 @@ public class ApproachStatusDialog : MonoBehaviour
         gameObject.SetActive(false);
     }
 
-    void PresentLines(string title, string[] lines, Action onFinished)
-    {
-        StopLineReveal();
-        Present(title, "", "Exit", onFinished);
-        _revealRunning = true;
-
-        var exit = transform.Find("Panel/Exit Button");
-        if (exit != null)
-            exit.gameObject.SetActive(false);
-
-        var dimmer = transform.Find("Dimmer")?.GetComponent<Button>();
-        if (dimmer != null)
-            dimmer.interactable = false;
-
-        // Flight continues at 1x while the lines appear. FinishGame pauses at the end.
-        Time.timeScale = 1f;
-
-        var bodyTmp = transform.Find("Panel/Body")?.GetComponent<TMP_Text>();
-        if (bodyTmp != null)
-            bodyTmp.overflowMode = TextOverflowModes.Overflow;
-
-        _lineReveal = StartCoroutine(RevealLines(bodyTmp, lines));
-    }
-
-    IEnumerator RevealLines(TMP_Text body, string[] lines)
-    {
-        var shown = new StringBuilder();
-        if (lines != null)
-        {
-            for (int i = 0; i < lines.Length; i++)
-            {
-                if (shown.Length > 0)
-                    shown.Append('\n');
-                shown.Append(lines[i]);
-                if (body != null)
-                    body.text = shown.ToString();
-                if (i < lines.Length - 1)
-                    yield return new WaitForSecondsRealtime(1f);
-            }
-        }
-
-        _lineReveal = null;
-        _revealRunning = false;
-
-        var exit = transform.Find("Panel/Exit Button");
-        if (exit != null)
-            exit.gameObject.SetActive(true);
-        var buttonLabelTmp = transform.Find("Panel/Exit Button/Label")?.GetComponent<TMP_Text>();
-        if (buttonLabelTmp != null)
-            buttonLabelTmp.text = "OK";
-
-        Time.timeScale = 0f;
-    }
-
-    void StopLineReveal()
-    {
-        if (_lineReveal != null)
-        {
-            StopCoroutine(_lineReveal);
-            _lineReveal = null;
-        }
-
-        _revealRunning = false;
-    }
-
     void Present(string title, string body, string buttonLabel, Action onClosed)
     {
-        StopLineReveal();
         _onClosed = onClosed;
-
-        var exit = transform.Find("Panel/Exit Button");
-        if (exit != null)
-            exit.gameObject.SetActive(true);
-
-        var dimmer = transform.Find("Dimmer")?.GetComponent<Button>();
-        if (dimmer != null)
-            dimmer.interactable = true;
 
         var titleTmp = transform.Find("Panel/Title")?.GetComponent<TMP_Text>();
         var bodyTmp = transform.Find("Panel/Body")?.GetComponent<TMP_Text>();
@@ -212,6 +123,10 @@ public class ApproachStatusDialog : MonoBehaviour
                 titleTmp.text = "<color=#E85D5D>NOT STABLE</color>";
             else
                 titleTmp.text = $"<color=#E85D5D>{title}</color>";
+
+            if (string.Equals(title, "STABLE", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(title, "NOT STABLE", StringComparison.OrdinalIgnoreCase))
+                MMVibrationManager.Haptic(HapticTypes.MediumImpact);
         }
 
         if (bodyTmp != null)
@@ -268,10 +183,6 @@ public class ApproachStatusDialog : MonoBehaviour
 
     void Close()
     {
-        if (_revealRunning)
-            return;
-
-        StopLineReveal();
         gameObject.SetActive(false);
         var callback = _onClosed;
         _onClosed = null;

@@ -14,6 +14,7 @@ public class KnobButtonLinker : MonoBehaviour
 
     private Sequence seq;
     private LongPressEventTrigger button;
+    static float nextPulseTime;
 
     public bool IsPositive => isPositive;
     public LongPressEventTrigger Trigger => button;
@@ -27,10 +28,20 @@ public class KnobButtonLinker : MonoBehaviour
 
     private void ButtonClick()
     {
+        if (Time.unscaledTime >= nextPulseTime)
+        {
+            FlightFeedbackSettings.PulseKey();
+            nextPulseTime = Time.unscaledTime + 0.045f;
+        }
+
+        if (rotatingMesh == null)
+            return;
+
         var degrees = isPositive ? stepDegrees : -stepDegrees;
-        seq?.Kill();
+        if (seq != null && seq.IsActive())
+            seq.Complete();
         seq = DOTween.Sequence()
-            .Append(rotatingMesh.DOLocalRotate(_rotatingAxis * degrees, 0.15f, RotateMode.LocalAxisAdd))
+            .Append(rotatingMesh.DOLocalRotate(_rotatingAxis * degrees, 0.12f, RotateMode.LocalAxisAdd))
             .SetLink(rotatingMesh.gameObject);
     }
 

@@ -23,6 +23,8 @@ public static class TurnKnobSideHits
     {
         public Rect Rect;
         public LongPressEventTrigger Source;
+        public LongPressEventTrigger Negative;
+        public LongPressEventTrigger Positive;
         public RectTransform Panel;
         public bool Priority;
     }
@@ -35,6 +37,12 @@ public static class TurnKnobSideHits
         var knobs = CollectKnobs(mcpRoot);
         if (knobs.Count == 0)
             return;
+
+        foreach (var knob in knobs)
+        {
+            KnobDragInput.Attach(knob.Negative, knob.Negative, knob.Positive);
+            KnobDragInput.Attach(knob.Positive, knob.Negative, knob.Positive);
+        }
 
         var pieces = new List<Piece>();
         foreach (var knob in knobs)
@@ -120,6 +128,8 @@ public static class TurnKnobSideHits
         {
             Rect = new Rect(xMin, yMin, side, side),
             Source = source,
+            Negative = knob.Negative,
+            Positive = knob.Positive,
             Panel = knob.Panel,
             Priority = left && IsAltitude(knob)
         });
@@ -161,6 +171,7 @@ public static class TurnKnobSideHits
         trigger.CopyTimingFrom(piece.Source);
         var source = piece.Source;
         trigger.onClick.AddListener(() => source.onClick.Invoke());
+        KnobDragInput.Attach(trigger, piece.Negative, piece.Positive);
     }
 
     static Rect WorldRectIn(RectTransform space, RectTransform target)
