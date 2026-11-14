@@ -277,6 +277,12 @@ public class GraphManage : MonoBehaviour
 
     void OnLevelChosen(int level)
     {
+        if (!Entitlements.AllowsLevel(level))
+        {
+            PaywallDialog.Show();
+            return;
+        }
+
         PlayerPrefsHolder.Level = level;
         PlayerPrefsHolder.ShowLevelSelectOnLoad = false;
         Time.timeScale = 1f;
@@ -677,6 +683,16 @@ public class GraphManage : MonoBehaviour
 
     public void OnContinueButtonClick()
     {
+        int next = PlayerPrefsHolder.Level < PlayerPrefsHolder.MaxLevel
+            ? PlayerPrefsHolder.Level + 1
+            : PlayerPrefsHolder.Level;
+
+        if (next != PlayerPrefsHolder.Level && !Entitlements.AllowsLevel(next))
+        {
+            PaywallDialog.Show();
+            return;
+        }
+
         if (PlayerPrefsHolder.Level < PlayerPrefsHolder.MaxLevel)
             PlayerPrefsHolder.Level += 1;
 

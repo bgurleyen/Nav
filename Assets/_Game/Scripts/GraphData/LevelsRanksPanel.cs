@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -32,6 +33,7 @@ public class LevelsRanksPanel : MonoBehaviour
 
     public Action<int> CellClicked;
     bool _selectable;
+    readonly Dictionary<Image, Color> _baseColors = new Dictionary<Image, Color>();
 
     void Awake()
     {
@@ -40,6 +42,22 @@ public class LevelsRanksPanel : MonoBehaviour
             EnsureLayoutBuilt();
             BindRanks(DefaultRanks);
         }
+    }
+
+    void OnEnable()
+    {
+        Entitlements.Changed += OnEntitlementsChanged;
+    }
+
+    void OnDisable()
+    {
+        Entitlements.Changed -= OnEntitlementsChanged;
+    }
+
+    void OnEntitlementsChanged()
+    {
+        if (_selectable)
+            ApplyCellInteractivity();
     }
 
     public void PrepareForDisplay()
@@ -318,13 +336,25 @@ public class LevelsRanksPanel : MonoBehaviour
                 button.transition = Selectable.Transition.ColorTint;
 
                 int level = i + 1;
+                ApplyLockTint(image, !Entitlements.AllowsLevel(level));
                 button.onClick.RemoveAllListeners();
-                button.onClick.AddListener(() => CellClicked?.Invoke(level));
+                button.onClick.AddListener(() =>
+                {
+                    if (!Entitlements.AllowsLevel(level))
+                    {
+                        PaywallDialog.Show();
+                        return;
+                    }
+
+                    CellClicked?.Invoke(level);
+                });
                 button.interactable = true;
                 button.enabled = true;
             }
             else
             {
+                ApplyLockTint(image, false);
+
                 if (button != null)
                 {
                     button.onClick.RemoveAllListeners();
@@ -361,13 +391,25 @@ public class LevelsRanksPanel : MonoBehaviour
 
             button.targetGraphic = image;
             button.transition = Selectable.Transition.ColorTint;
+            ApplyLockTint(image, !Entitlements.AllowsLevel(PlayerPrefsHolder.FreeFlightLevel));
             button.onClick.RemoveAllListeners();
-            button.onClick.AddListener(() => CellClicked?.Invoke(PlayerPrefsHolder.FreeFlightLevel));
+            button.onClick.AddListener(() =>
+            {
+                if (!Entitlements.AllowsLevel(PlayerPrefsHolder.FreeFlightLevel))
+                {
+                    PaywallDialog.Show();
+                    return;
+                }
+
+                CellClicked?.Invoke(PlayerPrefsHolder.FreeFlightLevel);
+            });
             button.interactable = true;
             button.enabled = true;
         }
         else
         {
+            ApplyLockTint(image, false);
+
             if (button != null)
             {
                 button.onClick.RemoveAllListeners();
@@ -377,6 +419,20 @@ public class LevelsRanksPanel : MonoBehaviour
             if (image != null)
                 image.raycastTarget = false;
         }
+    }
+
+    void ApplyLockTint(Image image, bool locked)
+    {
+        if (image == null)
+            return;
+
+        if (!_baseColors.ContainsKey(image))
+            _baseColors[image] = image.color;
+
+        Color baseColor = _baseColors[image];
+        image.color = locked
+            ? new Color(baseColor.r * 0.4f, baseColor.g * 0.4f, baseColor.b * 0.4f, baseColor.a)
+            : baseColor;
     }
 
     public void BindRanks(int[] ranks)

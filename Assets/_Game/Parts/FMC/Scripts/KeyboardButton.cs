@@ -1,4 +1,4 @@
-﻿using Navigation;
+using Navigation;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -12,8 +12,20 @@ public class KeyboardButton : MonoBehaviour
             button.onClick.AddListener(OnClickPress);
     }
 
+    static bool BlockedByPaywall()
+    {
+        if (Entitlements.HasFullUnlock)
+            return false;
+
+        PaywallDialog.Show();
+        return true;
+    }
+
     private void OnClickPress()
     {
+        if (BlockedByPaywall())
+            return;
+
         FlightFeedbackSettings.PulseKey();
 
         var label = GetComponentInChildren<TMP_Text>();
@@ -66,71 +78,110 @@ public class KeyboardButton : MonoBehaviour
 
     public void OnExecPress()
     {
+        if (BlockedByPaywall())
+            return;
+
         if (TryCurrentScreen(out var screen))
             screen.OnExecPress();
     }
 
     public void OnPreviousPageClick()
     {
+        if (BlockedByPaywall())
+            return;
+
         if (TryCurrentScreen(out var screen))
             screen.DisplayPrevPage();
     }
 
     public void OnNextPageClick()
     {
+        if (BlockedByPaywall())
+            return;
+
         if (TryCurrentScreen(out var screen))
             screen.DisplayNextPage();
     }
 
     public void OnMenuButtonClick()
     {
+        if (BlockedByPaywall())
+            return;
+
         FMC_Screens.Instance?.ShowPage(FMCScreens.Menu);
     }
 
 
     public void OnLEGSButtonClick()
     {
+        if (BlockedByPaywall())
+            return;
+
         FMC_Screens.Instance?.ShowPage(FMCScreens.Legs);
     }
 
 
     public void OnINITButtonClick()
     {
+        if (BlockedByPaywall())
+            return;
+
         FMC_Screens.Instance?.ShowPage(FMCScreens.Init);
     }
 
     public void OnRTEButtonClick()
     {
+        if (BlockedByPaywall())
+            return;
+
         FMC_Screens.Instance?.ShowPage(FMCScreens.Rte);
     }
 
     public void OnCRZButtonClick()
     {
+        if (BlockedByPaywall())
+            return;
+
         FMC_Screens.Instance?.ShowPage(FMCScreens.Crz);
     }
 
     public void OnDESButtonClick()
     {
+        if (BlockedByPaywall())
+            return;
+
         FMC_Screens.Instance?.ShowPage(FMCScreens.Des);
     }
 
     public void OnARRButtonClick()
     {
+        if (BlockedByPaywall())
+            return;
+
         FMC_Screens.Instance?.ShowPage(FMCScreens.Arr);
     }
 
     public void OnPROGButtonClick()
     {
+        if (BlockedByPaywall())
+            return;
+
         FMC_Screens.Instance?.ShowPage(FMCScreens.Prog);
     }
 
     public void OnFIXButtonClick()
     {
+        if (BlockedByPaywall())
+            return;
+
         FMC_Screens.Instance?.ShowPage(FMCScreens.Fix);
     }
 
     public void OnPAUSEButtonClick()
     {
+        if (BlockedByPaywall())
+            return;
+
         if (LevelStartInformation.IsAwaitingRequestDescent || GraphManage.IsEndScreenVisible)
             return;
 

@@ -48,8 +48,14 @@ public class GameManager : MonoBehaviour
         _legsScreen = UYServiceLocator.Get<LegsScreen>();
         _legsScreen.OnLeftCornerPressErase += LEGS_OnLeftCornerPressErase;
         _legsScreen.OnExecButtonPress += LEGS_OnExecButtonPress;
-        //PlayerPrefsHolder.Level = 1;                                        //REmove for level
-        InitForLevel(PlayerPrefsHolder.Level);
+        int level = PlayerPrefsHolder.Level;
+        if (!Entitlements.AllowsLevel(level))
+        {
+            level = PlayerPrefsHolder.FirstRankedLevel;
+            PlayerPrefsHolder.Level = level;
+        }
+
+        InitForLevel(level);
     }
 
     private void InitForLevel(int index)
