@@ -8,10 +8,10 @@ using UnityEngine;
 /// </summary>
 public static class Entitlements
 {
-    public const string FullUnlockProductId = "zflite_full";
+    public const string FullUnlockProductId = "descenttutor_full";
 
-    const string ReceiptCacheKey = "iap_zflite_full";
-    const string EditorGrantKey = "iap_zflite_full_editor";
+    const string ReceiptCacheKey = "iap_descenttutor_full";
+    const string EditorGrantKey = "iap_descenttutor_full_editor";
 
     static bool _receiptOwned;
 
