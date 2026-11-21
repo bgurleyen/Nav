@@ -26,7 +26,7 @@ public static class CiBuild
 
         if (!ApplyAndroidSigning())
         {
-            EditorApplication.Exit(1);
+            ExitOnFailure();
             return;
         }
 
@@ -36,6 +36,28 @@ public static class CiBuild
             BuildTarget.Android,
             Path.Combine("Build", "Android", "DescentTutor.aab"),
             CollectEnabledScenes());
+    }
+
+    [MenuItem("Build/Descent Tutor Android AAB (Release)")]
+    public static void BuildAndroidFromMenu()
+    {
+        BuildAndroid();
+    }
+
+    static void ExitOnFailure()
+    {
+        if (Application.isBatchMode)
+        {
+            EditorApplication.Exit(1);
+        }
+    }
+
+    static void ExitOnSuccess()
+    {
+        if (Application.isBatchMode)
+        {
+            EditorApplication.Exit(0);
+        }
     }
 
     static bool ApplyAndroidSigning()
@@ -112,11 +134,11 @@ public static class CiBuild
         if (report.summary.result != BuildResult.Succeeded)
         {
             Debug.LogError($"{target} build failed: {report.summary.result}");
-            EditorApplication.Exit(1);
+            ExitOnFailure();
             return;
         }
 
         Debug.Log($"{target} build succeeded: {outputPath}");
-        EditorApplication.Exit(0);
+        ExitOnSuccess();
     }
 }

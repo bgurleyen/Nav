@@ -87,18 +87,12 @@ public class KeyboardButton : MonoBehaviour
 
     public void OnPreviousPageClick()
     {
-        if (BlockedByPaywall())
-            return;
-
         if (TryCurrentScreen(out var screen))
             screen.DisplayPrevPage();
     }
 
     public void OnNextPageClick()
     {
-        if (BlockedByPaywall())
-            return;
-
         if (TryCurrentScreen(out var screen))
             screen.DisplayNextPage();
     }
