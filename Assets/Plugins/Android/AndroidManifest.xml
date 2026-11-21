@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <!-- Landscape-only Player Settings add required=true; optional keeps Play device reach while activity stays landscape. -->
+    <uses-feature
+        android:name="android.hardware.screen.landscape"
+        android:required="false"
+        tools:replace="android:required" />
+</manifest>
