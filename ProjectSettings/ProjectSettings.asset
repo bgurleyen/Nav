@@ -137,7 +137,7 @@ PlayerSettings:
   vulkanEnableLateAcquireNextImage: 0
   vulkanEnableCommandBufferRecycling: 1
   loadStoreDebugModeEnabled: 0
-  bundleVersion: 1.5
+  bundleVersion: 1.6
   preloadedAssets: []
   metroInputSource: 0
   wsaTransparentSwapchain: 0
@@ -164,10 +164,10 @@ PlayerSettings:
   buildNumber:
     Standalone: 0
     VisionOS: 0
-    iPhone: 15
+    iPhone: 16
     tvOS: 0
   overrideDefaultApplicationIdentifier: 1
-  AndroidBundleVersionCode: 15
+  AndroidBundleVersionCode: 16
   AndroidMinSdkVersion: 24
   AndroidTargetSdkVersion: 28
   AndroidPreferredInstallLocation: 1
@@ -979,7 +979,7 @@ PlayerSettings:
   cloudProjectId: 6b0e5c0f-32aa-4295-813a-f41fa5f2a9db
   framebufferDepthMemorylessMode: 0
   qualitySettingsNames: []
-  projectName: Descent Tutor
+  projectName: Navigation
   organizationId: bgurleyen
   cloudEnabled: 0
   legacyClampBlendShapeWeights: 0

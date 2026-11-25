@@ -20,11 +20,13 @@ public class MainMenu : MonoBehaviour
     //private AsyncOperation asyncLoad;
     private int minLength = 3;
     private int maxLength = 20;
+    private Button _createUserNameButton;
 
     private void Awake()
     {
         EnsureExtraMenuButtons();
         SetupAgreementPrivacyLink();
+        SetupUserNameSaveButton();
 
         if (PlayerPrefsHolder.Agree == 0)
         {
@@ -35,6 +37,7 @@ public class MainMenu : MonoBehaviour
             if (string.IsNullOrEmpty(PlayerPrefsHolder.UserName))
             {
                 namePanel.SetActive(true);
+                RefreshCreateUserNameButton();
             }
             else
             {
@@ -146,7 +149,40 @@ public class MainMenu : MonoBehaviour
         else
         {
             namePanel.SetActive(true);
+            RefreshCreateUserNameButton();
         }
+    }
+
+    void SetupUserNameSaveButton()
+    {
+        if (userNameField == null || namePanel == null)
+            return;
+
+        _createUserNameButton = null;
+        var buttons = namePanel.GetComponentsInChildren<Button>(true);
+        for (int i = 0; i < buttons.Length; i++)
+        {
+            if (buttons[i].gameObject.name == "Create")
+            {
+                _createUserNameButton = buttons[i];
+                break;
+            }
+        }
+
+        userNameField.onValueChanged.RemoveListener(OnUserNameFieldChanged);
+        userNameField.onValueChanged.AddListener(OnUserNameFieldChanged);
+        RefreshCreateUserNameButton();
+    }
+
+    void OnUserNameFieldChanged(string _) => RefreshCreateUserNameButton();
+
+    void RefreshCreateUserNameButton()
+    {
+        if (_createUserNameButton == null)
+            return;
+
+        string text = userNameField != null ? userNameField.text : string.Empty;
+        _createUserNameButton.interactable = IsUsernameValid(text, out _);
     }
 
     public void OnCreateButtonClick()
