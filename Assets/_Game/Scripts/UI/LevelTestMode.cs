@@ -16,7 +16,6 @@ public static class LevelTestMode
     static bool _isActive;
     static bool _awaitingLevelPick;
     static bool _pendingApplyConfig;
-    static bool _finishInvoked;
     static bool _advancing;
     static int _savedPlayerLevel;
     static bool _hasSavedPlayerLevel;
@@ -34,7 +33,6 @@ public static class LevelTestMode
         _isActive = true;
         _awaitingLevelPick = true;
         _pendingApplyConfig = false;
-        _finishInvoked = false;
         _advancing = false;
         PlayerPrefsHolder.ShowLevelSelectOnLoad = false;
     }
@@ -50,7 +48,6 @@ public static class LevelTestMode
         _isActive = false;
         _awaitingLevelPick = false;
         _pendingApplyConfig = false;
-        _finishInvoked = false;
         _advancing = false;
         PlayerPrefsHolder.ShowLevelSelectOnLoad = false;
 
@@ -75,7 +72,6 @@ public static class LevelTestMode
             return false;
 
         _pendingApplyConfig = false;
-        _finishInvoked = false;
         _advancing = false;
         return true;
     }
@@ -92,7 +88,6 @@ public static class LevelTestMode
         // Abort current run (if any) and restart chosen level from the beginning.
         _awaitingLevelPick = false;
         _pendingApplyConfig = true;
-        _finishInvoked = false;
         _advancing = false;
         Session.IsRunning = false;
         Time.timeScale = 1f;
@@ -159,7 +154,6 @@ public static class LevelTestMode
             return true;
 
         _advancing = true;
-        _finishInvoked = true;
 
         int current = PlayerPrefsHolder.Level;
         int next = current + 1;

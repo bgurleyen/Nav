@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -59,6 +60,126 @@ public static class FirebaseEditorMenu
             "OK");
     }
 
+    [MenuItem("Game/Firestore/Deploy firestore.rules (herkes + level)")]
+    static void DeployFirestoreRules()
+    {
+        if (!File.Exists(RulesFilePath))
+        {
+            EditorUtility.DisplayDialog("Firestore Rules", "firebase/firestore.rules not found.", "OK");
+            return;
+        }
+
+        if (!EditorUtility.DisplayDialog(
+                "Deploy Firestore rules",
+                "Proje: " + ResolveCurrentProjectId() + "\n\n" +
+                "herkes için canlı Firestore kuralları güncellenmeli.\n\nDevam?",
+                "Deploy",
+                "Cancel"))
+            return;
+
+        if (!TryStartRulesDeploy(out string error))
+        {
+            EditorUtility.DisplayDialog(
+                "Firestore Rules",
+                "Otomatik deploy başarısız.\n\n" + error +
+                "\n\nAlternatif:\n" +
+                "1) Game → Firestore → Copy firestore.rules to clipboard\n" +
+                "2) Game → Firestore → Open Rules in Firebase Console\n" +
+                "3) Yapıştır → Publish",
+                "OK");
+        }
+    }
+
+    [MenuItem("Game/Firestore/Open Rules in Firebase Console")]
+    static void OpenRulesInConsole()
+    {
+        Application.OpenURL(
+            $"https://console.firebase.google.com/project/{ResolveCurrentProjectId()}/firestore/rules");
+    }
+
+    [MenuItem("Game/Firestore/Copy firestore.rules to clipboard")]
+    static void CopyRulesToClipboard()
+    {
+        if (!File.Exists(RulesFilePath))
+        {
+            EditorUtility.DisplayDialog("Firestore Rules", "firebase/firestore.rules not found.", "OK");
+            return;
+        }
+
+        EditorGUIUtility.systemCopyBuffer = File.ReadAllText(RulesFilePath);
+        EditorUtility.DisplayDialog(
+            "Firestore Rules",
+            "firestore.rules panoya kopyalandı.\n\nConsole → Firestore → Rules → Publish.\nSonra Create ile tekrar dene.",
+            "OK");
+    }
+
+    static string RulesFilePath =>
+        Path.GetFullPath(Path.Combine(Application.dataPath, "..", "firebase", "firestore.rules"));
+
+    static string RulesWorkingDir =>
+        Path.GetFullPath(Path.Combine(Application.dataPath, "..", "firebase"));
+
+    static string ResolveCurrentProjectId()
+    {
+        string jsonPath = Path.Combine(Application.streamingAssetsPath, "google-services.json");
+        if (!File.Exists(jsonPath))
+            return "navigationshare-alpha-618e7";
+
+        return ExtractProjectId(File.ReadAllText(jsonPath));
+    }
+
+    static bool TryStartRulesDeploy(out string error)
+    {
+        error = null;
+        string[] attempts =
+        {
+            "firebase deploy --only firestore:rules",
+            "npx --yes firebase-tools deploy --only firestore:rules",
+        };
+
+        foreach (string args in attempts)
+        {
+            try
+            {
+                var start = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = "cmd.exe",
+                    Arguments = $"/c {args}",
+                    WorkingDirectory = RulesWorkingDir,
+                    UseShellExecute = true,
+                };
+
+                if (System.Diagnostics.Process.Start(start) != null)
+                {
+                    Debug.Log($"[Firestore] Rules deploy started: {args}");
+                    return true;
+                }
+            }
+            catch (Exception e)
+            {
+                error = e.Message;
+            }
+        }
+
+        if (string.IsNullOrEmpty(error))
+            error = "firebase / npx bulunamadı. Console'dan Publish kullanın.";
+
+        return false;
+    }
+
+    [MenuItem("Game/Firestore/Test herkes write (Play Mode)")]
+    static void TestHerkesWrite()
+    {
+        if (!Application.isPlaying)
+        {
+            EditorUtility.DisplayDialog("herkes test", "Önce Play mode'a gir.", "OK");
+            return;
+        }
+
+        FirestoreController.RegisterEveryoneName("HerkesTest_" + DateTime.Now.ToString("HHmmss"));
+        Debug.Log("[Firestore] Test herkes write — Console'da sonucu kontrol et.");
+    }
+
     [MenuItem("Game/Firestore/List All Records (Play Mode)")]
     static void ListAllRecords()
     {
@@ -71,7 +192,7 @@ public static class FirebaseEditorMenu
             return;
         }
 
-        FirestoreController controller = Object.FindObjectOfType<FirestoreController>();
+        FirestoreController controller = UnityEngine.Object.FindObjectOfType<FirestoreController>();
         if (controller == null)
         {
             EditorUtility.DisplayDialog(

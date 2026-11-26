@@ -13,6 +13,9 @@ public class FirestoreController : MonoBehaviour
     // Per-player level stats: one doc per player, fields LEVEL 1 … LEVEL 39.
     const string LevelsCollection = "level";
 
+    // Display names submitted from the first-screen Create button (no uniqueness check).
+    const string EveryoneCollection = "herkes";
+
     const string AverageDocId = "average";
     const string BestDocId = "best";
 
@@ -24,6 +27,7 @@ public class FirestoreController : MonoBehaviour
     private FirebaseFirestore database;
     private Firebase.DependencyStatus dependencyStatus = Firebase.DependencyStatus.UnavailableOther;
     bool _initStarted;
+    readonly List<string> _pendingEveryoneNames = new List<string>();
 
     public void Awake()
     {
@@ -69,16 +73,97 @@ public class FirestoreController : MonoBehaviour
                     Debug.Log("Firestore Init");
                     database = FirebaseFirestore.DefaultInstance;
                     userId = SystemInfo.deviceUniqueIdentifier;
+                    FlushPendingEveryoneNames();
                 }
                 catch (Exception e)
                 {
-                    Debug.Log("FirestoreController:InitializeFirestore::" + e);
+                    Debug.LogWarning("FirestoreController:InitializeFirestore::" + e);
+                    _initStarted = false;
                 }
             }
             else
             {
-                Debug.Log("Could not resolve all Firebase dependencies: " + dependencyStatus);
+                Debug.LogWarning(
+                    $"Could not resolve all Firebase dependencies: {dependencyStatus}. " +
+                    $"{_pendingEveryoneNames.Count} pending herkes name(s) not sent.");
+                _initStarted = false;
             }
+        });
+    }
+
+    /// <summary>UI scene has no Firestore object; bootstrap from the name Create button.</summary>
+    public static void RegisterEveryoneName(string displayName)
+    {
+        if (string.IsNullOrWhiteSpace(displayName))
+            return;
+
+        Debug.Log($"[Firestore] RegisterEveryoneName: {displayName.Trim()}");
+        EnsureInstance();
+        if (Instance == null)
+            return;
+
+        Instance.QueueEveryoneName(displayName.Trim());
+    }
+
+    static void EnsureInstance()
+    {
+        if (Instance != null)
+            return;
+
+        var host = new GameObject("Firestore");
+        host.AddComponent<FirestoreController>();
+    }
+
+    void QueueEveryoneName(string displayName) => WriteEveryoneName(displayName);
+
+    void FlushPendingEveryoneNames()
+    {
+        if (database == null || _pendingEveryoneNames.Count == 0)
+            return;
+
+        var pending = new List<string>(_pendingEveryoneNames);
+        _pendingEveryoneNames.Clear();
+        foreach (string name in pending)
+            WriteEveryoneName(name);
+    }
+
+    void WriteEveryoneName(string displayName)
+    {
+        if (string.IsNullOrEmpty(displayName))
+            return;
+
+        if (database == null)
+        {
+            _pendingEveryoneNames.Add(displayName);
+            InitializeFirestore();
+            return;
+        }
+
+        AddHerkesDocument(displayName);
+    }
+
+    void AddHerkesDocument(string displayName)
+    {
+        if (database == null)
+            return;
+
+        var payload = new Dictionary<string, object> { { "name", displayName } };
+
+        _ = database.Collection(EveryoneCollection).AddAsync(payload).ContinueWithOnMainThread(task =>
+        {
+            if (task.IsCanceled || task.IsFaulted)
+            {
+                string message = task.Exception?.GetBaseException().Message ?? "unknown";
+                string hint = message.IndexOf("permission", StringComparison.OrdinalIgnoreCase) >= 0
+                    ? " Deploy firebase/firestore.rules (Game → Firestore → Deploy firestore.rules)."
+                    : string.Empty;
+                Debug.LogError(
+                    $"[Firestore] herkes write failed for \"{displayName}\": {message}.{hint}");
+                return;
+            }
+
+            string docId = task.Result != null ? task.Result.Id : "?";
+            Debug.Log($"[Firestore] herkes/{docId} saved name=\"{displayName}\"");
         });
     }
 
@@ -512,9 +597,10 @@ public class FirestoreController : MonoBehaviour
         Debug.Log($"[FirestoreDump] === START === project: {ResolveFirebaseProjectId()}");
         DumpCollection(AggregatesCollection, fuelOnly: false);
         DumpCollection(LevelsCollection, fuelOnly: true);
+        DumpCollection(EveryoneCollection, fuelOnly: false, everyoneOnly: true);
     }
 
-    void DumpCollection(string collectionName, bool fuelOnly)
+    void DumpCollection(string collectionName, bool fuelOnly, bool everyoneOnly = false)
     {
         try
         {
@@ -534,7 +620,11 @@ public class FirestoreController : MonoBehaviour
                     if (!doc.Exists)
                         continue;
 
-                    string body = fuelOnly ? FormatLevelFuelDocument(doc) : FormatGameStatsDocument(doc);
+                    string body = everyoneOnly
+                        ? FormatEveryoneDocument(doc)
+                        : fuelOnly
+                            ? FormatLevelFuelDocument(doc)
+                            : FormatGameStatsDocument(doc);
                     Debug.Log($"[FirestoreDump] {collectionName}/{doc.Id}\n{body}");
                 }
             });
@@ -592,6 +682,23 @@ public class FirestoreController : MonoBehaviour
             }
 
             return lines.Length > 0 ? lines.ToString().TrimEnd() : "(no fuels)";
+        }
+        catch (Exception e)
+        {
+            return $"(parse error: {e.Message})";
+        }
+    }
+
+    static string FormatEveryoneDocument(DocumentSnapshot doc)
+    {
+        try
+        {
+            Dictionary<string, object> data = doc.ToDictionary();
+            if (data == null || data.Count == 0)
+                return "(empty)";
+
+            data.TryGetValue("name", out object name);
+            return $"name={name ?? "(no name)"}";
         }
         catch (Exception e)
         {

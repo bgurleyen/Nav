@@ -8,8 +8,26 @@ public class KeyboardButton : MonoBehaviour
     private void Awake()
     {
         var button = GetComponent<Button>();
-        if (button != null)
-            button.onClick.AddListener(OnClickPress);
+        if (button == null || UsesDedicatedClickHandler(button))
+            return;
+
+        button.onClick.AddListener(OnClickPress);
+    }
+
+    /// <summary>
+    /// NEXT/PREV, EXEC, and screen keys wire their own persistent onClick handlers.
+    /// Only the numeric/letter keypad should fall through to <see cref="OnClickPress"/>.
+    /// </summary>
+    static bool UsesDedicatedClickHandler(Button button)
+    {
+        int count = button.onClick.GetPersistentEventCount();
+        for (int i = 0; i < count; i++)
+        {
+            if (!string.IsNullOrEmpty(button.onClick.GetPersistentMethodName(i)))
+                return true;
+        }
+
+        return false;
     }
 
     static bool BlockedByPaywall()

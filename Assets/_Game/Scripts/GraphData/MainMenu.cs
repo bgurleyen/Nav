@@ -191,6 +191,7 @@ public class MainMenu : MonoBehaviour
         {
             Debug.Log("Username is valid: " + userNameField.text);
             PlayerPrefsHolder.UserName = userNameField.text;
+            FirestoreController.RegisterEveryoneName(userNameField.text);
             UserNameShowInText();
 
             namePanel.SetActive(false);

@@ -1,4 +1,6 @@
 using System;
+using System.Collections;
+using Unity.Services.Core;
 using UnityEngine;
 using UnityEngine.Purchasing;
 using UnityEngine.Purchasing.Extension;
@@ -59,12 +61,28 @@ public class PurchaseService : MonoBehaviour, IDetailedStoreListener
         var host = new GameObject(nameof(PurchaseService));
         DontDestroyOnLoad(host);
         _instance = host.AddComponent<PurchaseService>();
-        _instance.Initialize();
+        _instance.StartCoroutine(_instance.InitializeWhenReady());
     }
 
-    void Initialize()
+    IEnumerator InitializeWhenReady()
     {
         _refreshing = true;
+
+        if (UnityServices.State != ServicesInitializationState.Initialized)
+        {
+            var servicesTask = UnityServices.InitializeAsync();
+            while (!servicesTask.IsCompleted)
+                yield return null;
+
+            if (servicesTask.Exception != null)
+            {
+                _refreshing = false;
+                Debug.LogWarning("[IAP] Unity Gaming Services init failed: " + servicesTask.Exception);
+                Updated?.Invoke();
+                yield break;
+            }
+        }
+
         var module = StandardPurchasingModule.Instance();
         var builder = ConfigurationBuilder.Instance(module);
         builder.AddProduct(Entitlements.FullUnlockProductId, ProductType.NonConsumable);
@@ -80,7 +98,7 @@ public class PurchaseService : MonoBehaviour, IDetailedStoreListener
         if (_instance == null || _instance._refreshing || _pending != null)
             return;
 
-        _instance.Initialize();
+        _instance.StartCoroutine(_instance.InitializeWhenReady());
     }
 
     public static void Buy(Action<string> onFinished)

@@ -12,6 +12,9 @@ service cloud.firestore {
     match /level/{userId} {
       allow read, write: if true;
     }
+    match /herkes/{docId} {
+      allow read, write: if true;
+    }
     match /progress_stats/{userId} {
       allow read, write: if true;
     }
